@@ -21,6 +21,10 @@ function App() {
     const url = import.meta.env.VITE_SUPABASE_URL || 'NOT LOADED'
     const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'NOT LOADED'
     
+    console.log('🔍 Environment check:')
+    console.log('- VITE_SUPABASE_URL:', url)
+    console.log('- VITE_SUPABASE_ANON_KEY:', key === 'NOT LOADED' ? 'NOT LOADED' : 'LOADED ✅')
+    
     setEnvStatus({
       url,
       key: key === 'NOT LOADED' ? 'NOT LOADED' : 'LOADED ✅',
