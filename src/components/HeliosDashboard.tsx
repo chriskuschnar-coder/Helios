@@ -26,7 +26,7 @@ ChartJS.register(
   Filler
 )
 
-interface DashboardData {
+export interface DashboardData {
   account: {
     balance: number
     equity: number
