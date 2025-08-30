@@ -121,7 +121,7 @@ class DeployedSupabaseClient {
     console.log('🎭 Using demo mode for:', endpoint)
     
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 300))
     
     if (endpoint === 'test-connection') {
       return {
