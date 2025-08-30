@@ -34,7 +34,6 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
   const elements = useElements()
   
   const [loading, setLoading] = useState(false)
-  const [cardError, setCardError] = useState('')
   const [cardComplete, setCardComplete] = useState(false)
 
   const handleCardChange = (event: any) => {
