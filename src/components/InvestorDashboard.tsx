@@ -15,6 +15,7 @@ import {
 import { useAuth } from './auth/AuthProvider'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
+import { supabaseClient } from '../lib/supabase-client'
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
@@ -42,6 +43,7 @@ const CARD_ELEMENT_OPTIONS = {
 function StripeCardForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
   const stripe = useStripe()
   const elements = useElements()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [cardError, setCardError] = useState('')
 
@@ -62,18 +64,58 @@ function StripeCardForm({ amount, onSuccess, onError }: { amount: number, onSucc
     setLoading(true)
 
     try {
-      // For demo - simulate successful payment
-      setTimeout(() => {
+      // Create payment intent
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          amount: amount * 100, // Convert to cents
+          currency: 'usd',
+          user_id: user?.id || 'demo-user'
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+      }
+
+      const { client_secret } = await response.json()
+      console.log('✅ Payment intent created')
+
+      // Confirm payment with Stripe
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: user?.full_name || 'Account Holder',
+            email: user?.email
+          },
+        }
+      })
+
+      if (confirmError) {
+        console.log('❌ Payment failed:', confirmError)
+        onError(confirmError.message || 'Payment failed')
+      } else if (paymentIntent?.status === 'succeeded') {
+        console.log('✅ Payment succeeded:', paymentIntent)
         onSuccess({
-          id: 'demo_payment_' + Date.now(),
-          amount: amount,
+          id: paymentIntent.id,
+          amount: paymentIntent.amount / 100, // Convert back from cents
           method: 'card',
           status: 'completed'
         })
-        setLoading(false)
-      }, 2000)
+      } else {
+        onError('Payment was not completed successfully')
+      }
     } catch (error) {
-      onError('Payment failed')
+      console.error('❌ Payment processing error:', error)
+      onError(error instanceof Error ? error.message : 'Payment processing failed')
+    } finally {
       setLoading(false)
     }
   }
@@ -120,7 +162,7 @@ function StripeCardForm({ amount, onSuccess, onError }: { amount: number, onSucc
 }
 
 export function InvestorDashboard() {
-  const { user, account, refreshAccount } = useAuth()
+  const { user, account, refreshAccount, processFunding } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [showFunding, setShowFunding] = useState(false)
   const [fundingAmount, setFundingAmount] = useState(1000)
@@ -167,20 +209,15 @@ export function InvestorDashboard() {
     console.log('💰 Funding successful:', result)
     
     try {
-      // Update account balance locally for immediate feedback
-      if (account) {
-        account.balance += result.amount
-        account.available_balance += result.amount
-        account.total_deposits += result.amount
-      }
-      
-      // Refresh account data from server
+      // Process funding through auth provider
+      await processFunding(result.amount, result.method, `Card payment - ${result.id}`)
       await refreshAccount()
       
       setShowFunding(false)
       setFundingAmount(1000)
     } catch (error) {
       console.error('Error updating account:', error)
+      alert('Error processing funding: ' + error.message)
     }
   }
 
