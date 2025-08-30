@@ -1,9 +1,16 @@
 import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { CreditCard, Ban as Bank, Wallet, Building, Lock, CheckCircle, AlertCircle, X, Copy, ExternalLink } from 'lucide-react'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
+// Initialize Stripe with proper error handling
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
+
+// Debug Stripe loading
+console.log('🔍 Stripe Environment Check:')
+console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
+console.log('Stripe Promise:', stripePromise)
 
 interface PaymentProcessorProps {
   amount: number
@@ -70,30 +77,49 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
+  const [stripeReady, setStripeReady] = useState(false)
+
+  useEffect(() => {
+    if (stripe && elements) {
+      setStripeReady(true)
+      console.log('✅ Stripe and Elements loaded successfully')
+    } else {
+      console.log('⏳ Waiting for Stripe to load...')
+    }
+  }, [stripe, elements])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!stripe || !elements) {
-      onError('Stripe not loaded')
+      onError('Payment system not ready. Please wait a moment and try again.')
       return
     }
 
     setLoading(true)
 
     try {
-      // Create payment intent on server
-      const response = await fetch('/api/create-payment-intent', {
+      // Create payment intent via Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amount * 100 }) // Convert to cents
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ 
+          amount: amount * 100, // Convert to cents
+          user_id: 'demo-user' // In production, get from auth context
+        })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create payment intent')
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create payment intent')
       }
 
       const { client_secret } = await response.json()
+      console.log('✅ Payment intent created:', client_secret)
 
       // Confirm payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
@@ -104,7 +130,9 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
 
       if (error) {
         onError(error.message || 'Payment failed')
+        console.log('❌ Payment failed:', error)
       } else if (paymentIntent?.status === 'succeeded') {
+        console.log('✅ Payment succeeded:', paymentIntent)
         onSuccess({
           id: paymentIntent.id,
           amount: paymentIntent.amount / 100,
@@ -113,10 +141,20 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
         })
       }
     } catch (error) {
+      console.error('❌ Payment processing error:', error)
       onError('Payment processing failed')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!stripeReady) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading payment system...</p>
+      </div>
+    )
   }
 
   return (

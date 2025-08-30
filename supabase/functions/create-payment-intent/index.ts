@@ -17,6 +17,8 @@ serve(async (req) => {
   try {
     const { amount, currency = 'usd', user_id } = await req.json()
     
+    console.log('Creating payment intent:', { amount, currency, user_id })
+    
     // Create Stripe payment intent
     const stripeResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
@@ -34,10 +36,12 @@ serve(async (req) => {
 
     if (!stripeResponse.ok) {
       const error = await stripeResponse.json()
+      console.error('Stripe API error:', error)
       throw new Error(error.error?.message || 'Failed to create payment intent')
     }
 
     const paymentIntent = await stripeResponse.json()
+    console.log('✅ Payment intent created successfully')
 
     return new Response(JSON.stringify({
       client_secret: paymentIntent.client_secret,
