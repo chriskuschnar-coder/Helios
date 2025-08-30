@@ -81,6 +81,7 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
   const [cardError, setCardError] = useState('')
   const [cardError, setCardError] = useState('')
   const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
 
   useEffect(() => {
     if (stripe && elements) {
@@ -91,6 +92,13 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
     }
   }, [stripe, elements])
 
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
   const handleCardChange = (event: any) => {
     if (event.error) {
       setCardError(event.error.message)
@@ -148,8 +156,14 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
       onError('Card information is required')
       return
     }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
 
     setLoading(true)
+    setCardError('')
     setCardError('')
     setCardError('')
     setCardError('')
@@ -214,12 +228,20 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
         <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
         <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
         <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
       </div>
     )
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
         <div className="flex items-center space-x-2 mb-2">
           <CreditCard className="h-5 w-5 text-blue-600" />
