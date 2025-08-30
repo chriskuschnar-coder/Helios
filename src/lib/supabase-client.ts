@@ -12,14 +12,22 @@ class DeployedSupabaseClient {
   private anonKey: string
   private session: any = null
   private isWebContainer: boolean
+  private isWebContainer: boolean
 
   constructor() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
+    this.isWebContainer = window?.location?.hostname?.includes('webcontainer') || 
+                         window?.location?.hostname?.includes('stackblitz') ||
+                         window?.location?.hostname?.includes('bolt') || false
+    
     if (!supabaseUrl || !anonKey) {
       console.warn('Missing Supabase environment variables - using demo mode')
       this.edgeFunctionUrl = ''
+      this.anonKey = ''
+      return
+    }
       this.anonKey = ''
       this.isWebContainer = true
       return
@@ -47,6 +55,11 @@ class DeployedSupabaseClient {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
+    // If missing config, use demo mode
+    if (!this.edgeFunctionUrl || !this.anonKey) {
+      return this.handleDemoMode(endpoint, options)
+    }
+
     // If in WebContainer or missing config, use demo mode
     if (this.isWebContainer || !this.edgeFunctionUrl) {
       return this.handleDemoMode(endpoint, options)
@@ -113,6 +126,83 @@ class DeployedSupabaseClient {
     
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500))
+    
+    if (endpoint === 'test-connection') {
+      return {
+        data: { message: 'Demo mode - connection simulated' },
+        error: null,
+        success: true
+      }
+    }
+    
+    if (endpoint === 'auth/signin') {
+      const body = JSON.parse(options.body as string || '{}')
+      const { email, password } = body
+      
+      // Demo credentials
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        const demoSession = {
+          user: { id: 'demo-user', email: email },
+          access_token: 'demo-token'
+        }
+        this.session = demoSession
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        
+        return {
+          data: { user: demoSession.user, session: demoSession },
+          error: null,
+          success: true
+        }
+      } else {
+        return {
+          data: null,
+          error: { message: 'Invalid credentials. Use demo@globalmarket.com / demo123456' },
+          success: false
+        }
+      }
+    }
+    
+    if (endpoint === 'auth/signup') {
+      const body = JSON.parse(options.body as string || '{}')
+      const { email } = body
+      
+      const newUser = {
+        user: { id: 'new-user-' + Date.now(), email: email },
+        access_token: 'new-user-token'
+      }
+      this.session = newUser
+      localStorage.setItem('supabase-session', JSON.stringify(newUser))
+      
+      return {
+        data: { user: newUser.user, session: newUser },
+        error: null,
+        success: true
+      }
+    }
+    
+    if (endpoint === 'auth/signout') {
+      this.session = null
+      localStorage.removeItem('supabase-session')
+      return {
+        data: null,
+        error: null,
+        success: true
+      }
+    }
+    
+    // Default demo response
+    return {
+      data: { message: 'Demo mode active' },
+      error: null,
+      success: true
+    }
+  }
+
+  private async handleDemoMode(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
+    console.log('🎭 Using demo mode for:', endpoint)
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 300))
     
     if (endpoint === 'test-connection') {
       return {
