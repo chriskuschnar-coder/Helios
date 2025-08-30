@@ -7,6 +7,7 @@ import {
   DollarSign,
   ArrowUpRight,
   Activity,
+  X
 } from 'lucide-react'
 import { supabaseClient } from '../lib/supabase-client'
 import { PaymentProcessor } from './PaymentProcessor'
@@ -451,18 +452,19 @@ export function InvestorDashboard() {
                       required
                     />
                   </div>
-                {transferStatus && (
-                  <div className={`p-3 rounded-lg text-sm ${
-                    transferStatus.includes('success') || transferStatus.includes('Connected') 
-                      ? 'bg-green-50 text-green-700 border border-green-200' 
-                      : transferStatus.includes('failed') || transferStatus.includes('error')
-                      ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-blue-50 text-blue-700 border border-blue-200'
-                  }`}>
-                    {transferStatus}
-                  </div>
-                )}
+                  {transferStatus && (
+                    <div className={`p-3 rounded-lg text-sm ${
+                      transferStatus.includes('success') || transferStatus.includes('Connected') 
+                        ? 'bg-green-50 text-green-700 border border-green-200' 
+                        : transferStatus.includes('failed') || transferStatus.includes('error')
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      {transferStatus}
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">Minimum funding: $100</p>
+                </div>
                 <div className="flex space-x-3">
                   <button
                     type="button"
@@ -482,19 +484,6 @@ export function InvestorDashboard() {
               </form>
             </div>
           </div>
-        )}
-                </div>
-        {/* Payment Processor Modal */}
-        {showPaymentProcessor && (
-          <PaymentProcessor
-            amount={fundingAmountForPayment}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-            onClose={() => {
-              setShowPaymentProcessor(false)
-              setShowFundingModal(true)
-            }}
-          />
         )}
       </div>
     </div>
