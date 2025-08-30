@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -62,11 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccount(accountResult.data)
         
         // Update saved session
-        const savedSession = localStorage.getItem('hedge-fund-session')
+        const savedSession = localStorage.getItem('supabase-session')
         if (savedSession) {
           const session = JSON.parse(savedSession)
           session.account = accountResult.data
-          localStorage.setItem('hedge-fund-session', JSON.stringify(session))
+          localStorage.setItem('supabase-session', JSON.stringify(session))
         }
       }
     } catch (error) {
@@ -169,6 +170,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    console.log('💰 Processing funding:', { amount, method, user: user?.email })
+    
+    if (!user) {
+      throw new Error('No authenticated user')
+    }
+
+    try {
+      const result = await supabaseClient.processFunding(amount, method, description)
+      
+      if (result.success) {
+        // Update local account state
+        if (account) {
+          const updatedAccount = {
+            ...account,
+            balance: account.balance + amount,
+            available_balance: account.available_balance + amount,
+            total_deposits: account.total_deposits + amount
+          }
+          setAccount(updatedAccount)
+          
+          // Update saved session
+          const savedSession = localStorage.getItem('supabase-session')
+          if (savedSession) {
+            const session = JSON.parse(savedSession)
+            session.account = updatedAccount
+            localStorage.setItem('supabase-session', JSON.stringify(session))
+          }
+        }
+        
+        console.log('✅ Funding processed successfully')
+        return result
+      } else {
+        throw new Error(result.error?.message || 'Funding failed')
+      }
+    } catch (error) {
+      console.error('❌ Funding error:', error)
+      throw error
+    }
+  }
+
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
@@ -262,6 +304,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     account,
     refreshAccount,
+    processFunding,
     signIn,
     signUp,
     signOut

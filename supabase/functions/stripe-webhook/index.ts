@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.203.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -7,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
@@ -52,6 +51,22 @@ serve(async (req) => {
           throw new Error('Missing user ID in payment metadata')
         }
 
+        // Update payment record
+        const { error: paymentUpdateError } = await supabase
+          .from('payments')
+          .update({
+            status: 'completed',
+            is_paid: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_payment_intent_id', paymentIntent.id)
+
+        if (paymentUpdateError) {
+          console.error('Error updating payment record:', paymentUpdateError)
+        } else {
+          console.log('✅ Payment record updated successfully')
+        }
+
         // Create transaction record
         const { error: transactionError } = await supabase
           .from('transactions')
@@ -72,7 +87,8 @@ serve(async (req) => {
 
         if (transactionError) {
           console.error('Error creating transaction:', transactionError)
-          throw transactionError
+        } else {
+          console.log('✅ Transaction record created')
         }
 
         // Get user's account
@@ -115,9 +131,19 @@ serve(async (req) => {
         const failedPayment = event.data.object
         console.log('Processing failed payment:', failedPayment.id)
         
+        // Update payment record
+        await supabase
+          .from('payments')
+          .update({
+            status: 'failed',
+            is_paid: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_payment_intent_id', failedPayment.id)
+
         const failedUserId = failedPayment.metadata?.user_id
         if (failedUserId) {
-          // Log failed payment
+          // Log failed payment transaction
           await supabase
             .from('transactions')
             .insert({
@@ -138,7 +164,15 @@ serve(async (req) => {
 
       case 'payment_intent.requires_action':
         console.log('Payment requires additional action:', event.data.object.id)
-        // Handle 3D Secure or other authentication requirements
+        
+        // Update payment status to processing
+        await supabase
+          .from('payments')
+          .update({
+            status: 'processing',
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_payment_intent_id', event.data.object.id)
         break
 
       default:
