@@ -9,7 +9,6 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 // Debug Stripe loading
 console.log('🔍 Stripe Environment Check:')
 console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
-console.log('Stripe Promise:', stripePromise)
 
 interface PaymentProcessorProps {
   amount: number
@@ -72,12 +71,36 @@ const paymentMethods: PaymentMethod[] = [
   }
 ]
 
+// Stripe CardElement options
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#374151',
+      letterSpacing: '0.025em',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      lineHeight: '1.5',
+      padding: '12px 0',
+      '::placeholder': {
+        color: '#9CA3AF',
+      },
+    },
+    invalid: {
+      color: '#EF4444',
+    },
+    complete: {
+      color: '#059669',
+    },
+  },
+  hidePostalCode: true,
+}
+
 function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
-  const [stripeReady, setStripeReady] = useState(false)
   const [cardError, setCardError] = useState('')
+  const [stripeReady, setStripeReady] = useState(false)
 
   useEffect(() => {
     if (stripe && elements) {
@@ -191,31 +214,13 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Card Information
           </label>
-          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[80px]">
-            <CardElement
-              onChange={handleCardChange}
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#374151',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    lineHeight: '1.5',
-                    padding: '12px 0',
-                    '::placeholder': {
-                      color: '#9CA3AF',
-                    },
-                  },
-                  invalid: {
-                    color: '#EF4444',
-                  },
-                  complete: {
-                    color: '#059669',
-                  },
-                },
-                hidePostalCode: true,
-              }}
-            />
+          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[80px] flex items-center">
+            <div className="w-full">
+              <CardElement
+                onChange={handleCardChange}
+                options={CARD_ELEMENT_OPTIONS}
+              />
+            </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
             Enter your card number, expiry date (MM/YY), and security code (CVC)
