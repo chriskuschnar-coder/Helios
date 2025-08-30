@@ -324,5 +324,6 @@ export function InvestorDashboard() {
           </div>
         </div>
       </div>
+    </div>
   )
 }
