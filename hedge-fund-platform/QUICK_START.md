@@ -20,6 +20,16 @@
 
 4. **Open your browser** to: http://localhost:5173
 
+## ⚠️ Important: Get Your Supabase Anon Key
+
+Before running, you need to update your `.env` file:
+
+1. **Go to**: https://supabase.com/dashboard
+2. **Select your project**: upevugqarcvxnekzddeh  
+3. **Go to Settings** → **API**
+4. **Copy the "anon public" key** (starts with `eyJ...`)
+5. **Replace `your_anon_key_here`** in `.env` with your actual key
+
 ## That's It! 🎉
 
 Your hedge fund platform is now running locally with:
