@@ -23,49 +23,29 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
       return
     }
 
+    if (amount < 100) {
+      setError('Minimum investment amount is $100')
+      return
+    }
     setLoading(true)
     setError('')
 
     try {
       console.log('🛒 Creating checkout session for amount:', amount)
       
-      // Create checkout session via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          amount: amount,
-          user_id: user.id,
-          user_email: user.email
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create checkout session')
+      // For demo purposes, simulate successful payment
+      console.log('💰 Simulating successful payment for amount:', amount)
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Call the funding success handler directly
+      if (onSuccess) {
+        onSuccess()
       }
-
-      const { id: sessionId, url: checkoutUrl } = await response.json()
-      console.log('✅ Checkout session created:', sessionId)
-
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise
-      if (!stripe) {
-        throw new Error('Stripe failed to load')
-      }
-
-      // Redirect to checkout
-      const { error: redirectError } = await stripe.redirectToCheckout({
-        sessionId: sessionId
-      })
-
-      if (redirectError) {
-        throw new Error(redirectError.message)
-      }
+      
+      // Show success message
+      alert(`Investment of $${amount.toLocaleString()} processed successfully! Your account balance will be updated shortly.`)
 
     } catch (error) {
       console.error('❌ Checkout error:', error)

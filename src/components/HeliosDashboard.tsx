@@ -337,15 +337,17 @@ export function HeliosDashboard() {
                     type="number"
                     value={fundingAmount}
                     onChange={(e) => setFundingAmount(Number(e.target.value))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="100"
+                    max="10000000"
                     step="100"
+                    placeholder="1000"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Minimum: $100 for live trading</p>
               </div>
 
-              {fundingAmount >= 100 && (
+              {fundingAmount >= 100 ? (
                 <CheckoutButton
                   amount={fundingAmount}
                   onSuccess={handleFundingSuccess}
@@ -353,6 +355,13 @@ export function HeliosDashboard() {
                 >
                   Proceed to Secure Checkout
                 </CheckoutButton>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-gray-400 text-white px-4 py-3 rounded-lg font-medium cursor-not-allowed"
+                >
+                  Enter amount $100 or more
+                </button>
               )}
 
               <button
