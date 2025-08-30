@@ -92,6 +92,22 @@ class DeployedSupabaseClient {
         return {
           data: null,
           error: { 
+            message: 'WebContainer network restriction - Edge Function cannot be reached',
+            details: error.message,
+            suggestion: 'This is expected in WebContainer. Download and run locally for full functionality.'
+          },
+          success: false
+        }
+      }
+      
+      return {
+        data: null,
+        error: { message: error.message || 'Unknown error' },
+        success: false
+      }
+    }
+  }
+
   private async handleDemoMode(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
     console.log('🎭 Using demo mode for:', endpoint)
     
@@ -155,6 +171,7 @@ class DeployedSupabaseClient {
       this.session = null
       localStorage.removeItem('supabase-session')
       return {
+        data: null,
         error: null,
         success: true
       }
@@ -165,21 +182,6 @@ class DeployedSupabaseClient {
       data: { message: 'Demo mode active' },
       error: null,
       success: true
-    }
-  }
-            message: 'WebContainer network restriction - Edge Function cannot be reached',
-            details: error.message,
-            suggestion: 'This is expected in WebContainer. Download and run locally for full functionality.'
-          },
-          success: false
-        }
-      }
-      
-      return {
-        data: null,
-        error: { message: error.message || 'Unknown error' },
-        success: false
-      }
     }
   }
 
