@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      // Check demo credentials first
+      // Handle demo credentials
       if (email === 'demo@globalmarket.com' && password === 'demo123456') {
         const demoUser = {
           id: 'demo-user-' + Date.now(),
@@ -112,12 +112,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: null }
       }
       
-      // For other credentials, show error
-      console.log('❌ Invalid credentials provided')
-      return { 
-        error: { 
-          message: 'Invalid credentials. Please use demo@globalmarket.com / demo123456' 
-        } 
+      // Handle real user authentication
+      console.log('🔐 Attempting real user authentication...')
+      
+      // Check if user exists in localStorage (simulated database)
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email && u.password === password)
+      
+      if (existingUser) {
+        console.log('✅ Found existing user:', existingUser.email)
+        
+        // Get user's account data
+        const userAccount = {
+          id: existingUser.accountId,
+          balance: existingUser.balance || 0,
+          available_balance: existingUser.available_balance || 0,
+          total_deposits: existingUser.total_deposits || 0,
+          total_withdrawals: existingUser.total_withdrawals || 0,
+          currency: 'USD',
+          status: 'active'
+        }
+        
+        const userSession = {
+          user: { 
+            id: existingUser.id, 
+            email: existingUser.email, 
+            full_name: existingUser.full_name 
+          },
+          account: userAccount,
+          access_token: 'user-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(userSession))
+        setUser(userSession.user)
+        setAccount(userAccount)
+        
+        console.log('✅ Real user login successful')
+        return { error: null }
+      } else {
+        console.log('❌ Invalid credentials for real user')
+        return { 
+          error: { 
+            message: 'Invalid email or password. Please check your credentials.' 
+          } 
+        }
       }
       
     } catch (error) {
@@ -134,16 +173,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
+      // Check if user already exists
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email)
+      
+      if (existingUser) {
+        return { 
+          error: { 
+            message: 'An account with this email already exists. Please sign in instead.' 
+          } 
+        }
+      }
+      
       // Create new user
       const newUser = {
         id: 'user-' + Date.now(),
         email: email,
-        full_name: metadata?.full_name || 'New User'
+        password: password, // In production, this would be hashed
+        full_name: metadata?.full_name || 'New User',
+        accountId: 'account-' + Date.now(),
+        balance: 0.00,
+        available_balance: 0.00,
+        total_deposits: 0.00,
+        total_withdrawals: 0.00,
+        created_at: new Date().toISOString()
       }
+      
+      // Save user to localStorage (simulated database)
+      allUsers.push(newUser)
+      localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
       
       // New users start with $0 balance
       const newAccount = {
-        id: 'account-' + Date.now(),
+        id: newUser.accountId,
         balance: 0.00,
         available_balance: 0.00,
         total_deposits: 0.00,
@@ -153,17 +215,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       const newSession = {
-        user: newUser,
+        user: { 
+          id: newUser.id, 
+          email: newUser.email, 
+          full_name: newUser.full_name 
+        },
         account: newAccount,
         access_token: 'token-' + Date.now()
       }
       
       // Save session
       localStorage.setItem('supabase-session', JSON.stringify(newSession))
-      setUser(newUser)
+      setUser(newSession.user)
       setAccount(newAccount)
       
-      console.log('✅ Sign up successful')
+      console.log('✅ Sign up successful for:', email)
       return { error: null }
       
     } catch (error) {

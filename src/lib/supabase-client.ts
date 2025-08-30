@@ -317,6 +317,66 @@ class DeployedSupabaseClient {
 
   // Funding operations
   async processFunding(amount: number, method: string, description?: string): Promise<SupabaseResponse> {
+    console.log('💰 Processing funding in client:', { amount, method })
+    
+    // In demo mode, update localStorage directly
+    if (this.isWebContainer || !this.edgeFunctionUrl) {
+      try {
+        // Get current session
+        const savedSession = localStorage.getItem('supabase-session')
+        if (!savedSession) {
+          throw new Error('No active session')
+        }
+        
+        const session = JSON.parse(savedSession)
+        if (!session.user) {
+          throw new Error('No user in session')
+        }
+        
+        // Update user's account in localStorage
+        if (session.user.email === 'demo@globalmarket.com') {
+          // Demo user - just update session
+          session.account.balance += amount
+          session.account.available_balance += amount
+          session.account.total_deposits += amount
+        } else {
+          // Real user - update in users array
+          const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+          const userIndex = allUsers.findIndex((u: any) => u.email === session.user.email)
+          
+          if (userIndex !== -1) {
+            allUsers[userIndex].balance += amount
+            allUsers[userIndex].available_balance += amount
+            allUsers[userIndex].total_deposits += amount
+            localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+            
+            // Update session
+            session.account.balance += amount
+            session.account.available_balance += amount
+            session.account.total_deposits += amount
+          }
+        }
+        
+        // Save updated session
+        localStorage.setItem('supabase-session', JSON.stringify(session))
+        
+        console.log('✅ Funding processed successfully')
+        return {
+          data: { success: true, new_balance: session.account.balance },
+          error: null,
+          success: true
+        }
+      } catch (error) {
+        console.error('❌ Funding error:', error)
+        return {
+          data: null,
+          error: { message: error.message },
+          success: false
+        }
+      }
+    }
+    
+    // Production mode - use Edge Function
     return this.makeRequest('funding/process', {
       method: 'POST',
       body: JSON.stringify({ amount, method, description }),
