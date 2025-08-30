@@ -254,11 +254,11 @@ export function InvestorDashboard() {
                       {holdings.map((holding, index) => (
                         <tr key={index} className="border-b border-gray-100">
                           <td className="py-4 font-medium text-gray-900">{holding.name}</td>
-                          <td className="py-4 text-right text-gray-600">{holding.allocation}%</td>
+                          <td className="py-4 text-right text-gray-600">100%</td>
                           <td className="py-4 text-right font-medium text-gray-900">
                             ${holding.value.toLocaleString()}
                           </td>
-                          <td className="py-4 text-right font-medium text-green-600">
+                          <td className="py-4 text-right font-medium text-red-600">
                             +{holding.return}%
                           </td>
                           <td className="py-4 text-right">
