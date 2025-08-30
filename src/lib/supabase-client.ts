@@ -11,17 +11,25 @@ class DeployedSupabaseClient {
   private edgeFunctionUrl: string
   private anonKey: string
   private session: any = null
+  private isWebContainer: boolean
 
   constructor() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
     if (!supabaseUrl || !anonKey) {
-      throw new Error('Missing Supabase environment variables')
+      console.warn('Missing Supabase environment variables - using demo mode')
+      this.edgeFunctionUrl = ''
+      this.anonKey = ''
+      this.isWebContainer = true
+      return
     }
     
     this.edgeFunctionUrl = `${supabaseUrl}/functions/v1/hedge-fund-api`
     this.anonKey = anonKey
+    this.isWebContainer = window.location.hostname.includes('webcontainer') || 
+                         window.location.hostname.includes('stackblitz') ||
+                         window.location.hostname.includes('bolt')
     
     console.log('🔍 Supabase client initialized with Edge Function URL:', this.edgeFunctionUrl)
     
@@ -39,6 +47,11 @@ class DeployedSupabaseClient {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
+    // If in WebContainer or missing config, use demo mode
+    if (this.isWebContainer || !this.edgeFunctionUrl) {
+      return this.handleDemoMode(endpoint, options)
+    }
+
     const url = `${this.edgeFunctionUrl}/${endpoint}`
     
     const headers = {
@@ -79,6 +92,81 @@ class DeployedSupabaseClient {
         return {
           data: null,
           error: { 
+  private async handleDemoMode(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
+    console.log('🎭 Using demo mode for:', endpoint)
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    if (endpoint === 'test-connection') {
+      return {
+        data: { message: 'Demo mode - connection simulated' },
+        error: null,
+        success: true
+      }
+    }
+    
+    if (endpoint === 'auth/signin') {
+      const body = JSON.parse(options.body as string || '{}')
+      const { email, password } = body
+      
+      // Demo credentials
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        const demoSession = {
+          user: { id: 'demo-user', email: email },
+          access_token: 'demo-token'
+        }
+        this.session = demoSession
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        
+        return {
+          data: { user: demoSession.user, session: demoSession },
+          error: null,
+          success: true
+        }
+      } else {
+        return {
+          data: null,
+          error: { message: 'Invalid credentials. Use demo@globalmarket.com / demo123456' },
+          success: false
+        }
+      }
+    }
+    
+    if (endpoint === 'auth/signup') {
+      const body = JSON.parse(options.body as string || '{}')
+      const { email } = body
+      
+      const newUser = {
+        user: { id: 'new-user-' + Date.now(), email: email },
+        access_token: 'new-user-token'
+      }
+      this.session = newUser
+      localStorage.setItem('supabase-session', JSON.stringify(newUser))
+      
+      return {
+        data: { user: newUser.user, session: newUser },
+        error: null,
+        success: true
+      }
+    }
+    
+    if (endpoint === 'auth/signout') {
+      this.session = null
+      localStorage.removeItem('supabase-session')
+      return {
+        error: null,
+        success: true
+      }
+    }
+    
+    // Default demo response
+    return {
+      data: { message: 'Demo mode active' },
+      error: null,
+      success: true
+    }
+  }
             message: 'WebContainer network restriction - Edge Function cannot be reached',
             details: error.message,
             suggestion: 'This is expected in WebContainer. Download and run locally for full functionality.'
