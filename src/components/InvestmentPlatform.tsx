@@ -17,12 +17,13 @@ export function InvestmentPlatform() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-navy-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
             <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
-          <div className="text-navy-900 text-lg font-medium">Loading...</div>
+          <div className="text-navy-900 text-lg font-medium">Loading Platform...</div>
+          <div className="text-gray-600 text-sm mt-2">Initializing investment systems</div>
         </div>
       </div>
     )
@@ -43,7 +44,7 @@ export function InvestmentPlatform() {
         />
         <button
           onClick={() => setAuthMode(null)}
-          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
+          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium transition-colors"
         >
           ← Back to Home
         </button>
@@ -60,7 +61,7 @@ export function InvestmentPlatform() {
         />
         <button
           onClick={() => setAuthMode(null)}
-          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
+          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium transition-colors"
         >
           ← Back to Home
         </button>
@@ -68,7 +69,7 @@ export function InvestmentPlatform() {
     )
   }
 
-  // Default: show marketing site
+  // Default: show beautiful marketing website
   return (
     <main className="min-h-screen bg-white">
       <Header onNavigateToLogin={() => setAuthMode('login')} />

@@ -17,10 +17,10 @@ export function Performance() {
     <section id="performance" className="py-20 bg-navy-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             Quantitative Performance Track Record
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-navy-200 max-w-3xl mx-auto">
             Live trading results demonstrating consistent alpha generation through 
             mathematical models and systematic risk management across multiple market cycles.
           </p>
@@ -112,17 +112,17 @@ export function Performance() {
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
+              <div className="text-3xl font-bold text-gold-600 mb-2">3.4:1</div>
               <div className="text-gray-700 font-medium">Profit Factor</div>
               <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">0.28</div>
+              <div className="text-3xl font-bold text-gold-600 mb-2">0.28</div>
               <div className="text-gray-700 font-medium">Kelly Fraction</div>
               <div className="text-sm text-gray-600 mt-1">Optimal Position Size</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">52%</div>
+              <div className="text-3xl font-bold text-gold-600 mb-2">52%</div>
               <div className="text-gray-700 font-medium">Slippage Reduction</div>
               <div className="text-sm text-gray-600 mt-1">vs TWAP Benchmark</div>
             </div>

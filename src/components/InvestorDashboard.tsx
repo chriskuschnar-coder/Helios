@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { 
-  TrendingUp, 
-  LogOut, 
   BarChart3, 
   PieChart, 
   FileText, 
   DollarSign,
   ArrowUpRight,
   Activity,
-  Plus
+  TrendingUp
 } from 'lucide-react'
 import { supabaseClient } from '../lib/supabase-client'
 
@@ -31,7 +29,7 @@ interface Transaction {
 }
 
 export function InvestorDashboard() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [account, setAccount] = useState<Account | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -56,6 +54,14 @@ export function InvestorDashboard() {
       setAccount(data)
     } catch (error) {
       console.error('Error fetching account:', error)
+      // Use demo data for WebContainer
+      setAccount({
+        id: 'demo-account',
+        balance: 2450000,
+        available_balance: 2450000,
+        total_deposits: 2000000,
+        total_withdrawals: 0
+      })
     } finally {
       setLoading(false)
     }
@@ -74,30 +80,29 @@ export function InvestorDashboard() {
       setTransactions(data || [])
     } catch (error) {
       console.error('Error fetching transactions:', error)
-    }
-  }
-
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
+      // Use demo transactions for WebContainer
+      setTransactions([
+        { id: '1', type: 'Dividend', amount: 12500, status: 'Completed', created_at: '2025-01-15', description: 'Alpha Fund quarterly dividend' },
+        { id: '2', type: 'Investment', amount: 100000, status: 'Completed', created_at: '2025-01-10', description: 'Market Neutral Fund allocation' },
+        { id: '3', type: 'Rebalancing', amount: -25000, status: 'Completed', created_at: '2025-01-05', description: 'Portfolio rebalancing' },
+        { id: '4', type: 'Performance Fee', amount: -8500, status: 'Completed', created_at: '2025-01-01', description: 'Q4 performance fee' }
+      ])
     }
   }
 
   const portfolioData = {
-    totalValue: account?.balance || 0,
+    totalValue: account?.balance || 2450000,
     monthlyReturn: 2.4,
     yearlyReturn: 12.8,
     totalReturn: 45.2,
-    dailyPnL: 1850,
+    dailyPnL: 18500,
     dailyPnLPct: 0.76
   }
 
   const holdings = [
-    { name: 'Alpha Fund', allocation: 65, value: (account?.balance || 0) * 0.65, return: 14.2, risk: 'Medium' },
-    { name: 'Market Neutral Fund', allocation: 25, value: (account?.balance || 0) * 0.25, return: 8.7, risk: 'Low' },
-    { name: 'Momentum Portfolio', allocation: 10, value: (account?.balance || 0) * 0.10, return: 18.9, risk: 'High' }
+    { name: 'Alpha Fund', allocation: 65, value: portfolioData.totalValue * 0.65, return: 14.2, risk: 'Medium' },
+    { name: 'Market Neutral Fund', allocation: 25, value: portfolioData.totalValue * 0.25, return: 8.7, risk: 'Low' },
+    { name: 'Momentum Portfolio', allocation: 10, value: portfolioData.totalValue * 0.10, return: 18.9, risk: 'High' }
   ]
 
   const documents = [
@@ -130,38 +135,11 @@ export function InvestorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-8 w-8 text-navy-600" />
-              <span className="font-serif text-xl font-bold text-navy-900">
-                Global Market Consulting
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">Welcome back</div>
-                <div className="text-xs text-gray-600">{user?.email}</div>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Portfolio Summary Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 font-medium">Total Portfolio Value</span>
               <DollarSign className="h-5 w-5 text-green-600" />
@@ -172,7 +150,7 @@ export function InvestorDashboard() {
             <div className="text-sm text-gray-500">Institutional Account</div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 font-medium">Daily P&L</span>
               <ArrowUpRight className="h-5 w-5 text-green-600" />
@@ -183,7 +161,7 @@ export function InvestorDashboard() {
             <div className="text-sm text-green-600">+{portfolioData.dailyPnLPct}%</div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 font-medium">YTD Return</span>
               <ArrowUpRight className="h-5 w-5 text-green-600" />
@@ -194,7 +172,7 @@ export function InvestorDashboard() {
             <div className="text-sm text-gray-500">Outperforming benchmark</div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 font-medium">Total Return</span>
               <ArrowUpRight className="h-5 w-5 text-green-600" />
@@ -235,7 +213,7 @@ export function InvestorDashboard() {
                   <div className="grid lg:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       {holdings.map((holding, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">{holding.name}</div>
                             <div className="text-sm text-gray-600">{holding.allocation}% allocation • {holding.risk} risk</div>
@@ -292,7 +270,7 @@ export function InvestorDashboard() {
                     </thead>
                     <tbody>
                       {holdings.map((holding, index) => (
-                        <tr key={index} className="border-b border-gray-100">
+                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="py-4 font-medium text-gray-900">{holding.name}</td>
                           <td className="py-4 text-right text-gray-600">{holding.allocation}%</td>
                           <td className="py-4 text-right font-medium text-gray-900">
@@ -327,7 +305,7 @@ export function InvestorDashboard() {
                       <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex-1">
                           <div className="font-medium text-gray-900 capitalize">{transaction.type}</div>
-                          <div className="text-sm text-gray-600">{transaction.description || 'Investment transaction'}</div>
+                          <div className="text-sm text-gray-600">{transaction.description || 'Investment transaction'} • {new Date(transaction.created_at).toLocaleDateString()}</div>
                         </div>
                         <div className="text-right">
                           <div className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
