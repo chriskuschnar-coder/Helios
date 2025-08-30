@@ -269,6 +269,7 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           `Secure Payment - $${amount.toLocaleString()}`
         )}
       </button>
+
       <p className="text-xs text-gray-500 text-center">
         Your payment information is encrypted and secure. Powered by bank-level security.
       </p>
