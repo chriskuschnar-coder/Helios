@@ -47,11 +47,11 @@ export function StripeCardForm({ amount, onSuccess, onError, userId }: StripeCar
     try {
       console.log('💳 Creating payment intent for amount:', amount)
       
-      // Create payment intent
+      // Create payment intent via Supabase Edge Function
       const { client_secret, payment_intent_id } = await createPaymentIntent(amount, userId)
       console.log('✅ Payment intent created:', payment_intent_id)
 
-      // Confirm payment
+      // Confirm payment with Stripe
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
           card: cardElement,

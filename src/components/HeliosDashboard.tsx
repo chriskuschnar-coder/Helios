@@ -1,803 +1,872 @@
-'use client'
+import React, { useState, useEffect } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { CreditCard, Ban as Bank, Wallet, Building, Lock, CheckCircle, AlertCircle, X, Copy, ExternalLink } from 'lucide-react'
 
-import { useState, useEffect } from 'react'
-import { TrendingUp, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Target, Shield, Zap, Plus, CreditCard, Ban as Bank, Wallet, X } from 'lucide-react'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js'
-import { Line } from 'react-chartjs-2'
-import { useAuth } from './auth/AuthProvider'
-import { supabaseClient } from '../lib/supabase-client'
-import { PaymentProcessor } from './PaymentProcessor'
+// Initialize Stripe with proper error handling
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-)
+// Debug Stripe loading
+console.log('🔍 Stripe Environment Check:')
+console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Using fallback ⚠️')
 
-export interface DashboardData {
-  account: {
-    balance: number
-    equity: number
-    margin: number
-    free_margin: number
-    profit: number
-    initial_balance: number
-  }
-  positions: Array<{
-    ticket: string
-    symbol: string
-    type: 'BUY' | 'SELL'
-    volume: number
-    price_open: number
-    price_current: number
-    profit: number
-    profit_pct: number
-    time: string
-  }>
-  metrics: {
-    win_rate: number
-    profit_factor: number
-    sharpe_ratio: number
-    max_drawdown: number
-    avg_win: number
-    avg_loss: number
-    sortino_ratio: number
-    calmar_ratio: number
-    total_trades: number
-  }
-  risk_metrics: {
-    var_daily: number
-    var_weekly: number
-    leverage: number
-    position_concentration: number
-    exposure_net: number
-  }
-  active_signals: Array<{
-    time: string
-    symbol: string
-    type: 'BUY' | 'SELL'
-    strategy: string
-    confidence: number
-  }>
-  chart_data: {
-    timestamps: number[]
-    balance: number[]
-    equity: number[]
-  }
+interface PaymentProcessorProps {
+  amount: number
+  onSuccess: (result: any) => void
+  onError: (error: string) => void
+  onClose: () => void
 }
 
-const marketData = [
-  { symbol: 'BTC/USD', price: 43420.00, change: 1.2 },
-  { symbol: 'ETH/USD', price: 2175.00, change: -0.8 },
-  { symbol: 'S&P 500', price: 5970.50, change: 0.3 },
-  { symbol: 'NASDAQ', price: 19850.30, change: 0.7 },
-  { symbol: 'EUR/USD', price: 1.0845, change: -0.2 },
-  { symbol: 'GBP/USD', price: 1.2650, change: 0.4 },
-  { symbol: 'USD/JPY', price: 149.85, change: 0.1 },
-  { symbol: 'GOLD', price: 2045.50, change: 0.9 },
-  { symbol: 'CRUDE OIL', price: 78.25, change: -1.1 },
-  { symbol: 'TESLA', price: 248.50, change: 2.3 }
+interface PaymentMethod {
+  id: string
+  name: string
+  description: string
+  icon: React.ComponentType<any>
+  fees: string
+  timeframe: string
+  minAmount: number
+  maxAmount: number
+}
+
+const paymentMethods: PaymentMethod[] = [
+  {
+    id: 'card',
+    name: 'Debit/Credit Card',
+    description: 'Instant funding with any major card',
+    icon: CreditCard,
+    fees: '2.9% + $0.30',
+    timeframe: 'Instant',
+    minAmount: 100,
+    maxAmount: 50000
+  },
+  {
+    id: 'ach',
+    name: 'Bank Transfer (ACH)',
+    description: 'Direct bank account transfer',
+    icon: Bank,
+    fees: '$5 flat fee',
+    timeframe: '1-3 business days',
+    minAmount: 100,
+    maxAmount: 500000
+  },
+  {
+    id: 'wire',
+    name: 'Wire Transfer',
+    description: 'Large amount transfers',
+    icon: Building,
+    fees: '$25 + bank fees',
+    timeframe: 'Same day',
+    minAmount: 10000,
+    maxAmount: 10000000
+  },
+  {
+    id: 'crypto',
+    name: 'Cryptocurrency',
+    description: 'Bitcoin, Ethereum, USDC, USDT',
+    icon: Wallet,
+    fees: 'Network fees only',
+    timeframe: '10-60 minutes',
+    minAmount: 100,
+    maxAmount: 1000000
+  }
 ]
 
-export function HeliosDashboard() {
-  const { user, account, refreshAccount } = useAuth()
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState('1D')
-  const [isLoading, setIsLoading] = useState(true)
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [fundingAmount, setFundingAmount] = useState('')
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bank')
-  const [isProcessingFunding, setIsProcessingFunding] = useState(false)
-  const [transferStatus, setTransferStatus] = useState<string | null>(null)
-  const [showPaymentProcessor, setShowPaymentProcessor] = useState(false)
-  const [fundingAmountForPayment, setFundingAmountForPayment] = useState(0)
+// Stripe CardElement options
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#32325d',
+      letterSpacing: '0.025em',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      lineHeight: '1.5',
+      '::placeholder': {
+        color: '#a0aec0',
+      },
+    },
+    invalid: {
+      color: '#fa755a',
+    },
+    complete: {
+      color: '#059669',
+    },
+  },
+  hidePostalCode: true,
+}
 
-  // Generate data based on user's actual account
-  const generateUserData = (userAccount: any): DashboardData => ({
-    account: {
-      balance: userAccount?.balance || 0,
-      equity: userAccount?.balance || 0,
-      margin: 0,
-      free_margin: userAccount?.available_balance || 0,
-      profit: 0,
-      initial_balance: userAccount?.total_deposits || 0
-    },
-    positions: [
-      // Only show positions if user has balance > 0
-      ...(userAccount?.balance > 0 ? [
-        {
-          ticket: '12345',
-          symbol: 'BTCUSD',
-          type: 'BUY' as const,
-          volume: 0.1,
-          price_open: 43250.00,
-          price_current: 43420.00,
-          profit: 17.00,
-          profit_pct: 0.39,
-          time: '14:32:15'
-        },
-        {
-          ticket: '12346',
-          symbol: 'ETHUSD',
-          type: 'SELL' as const,
-          volume: 1.5,
-          price_open: 2180.00,
-          price_current: 2175.00,
-          profit: 7.50,
-          profit_pct: 0.23,
-          time: '14:28:42'
-        }
-      ] : [])
-    ],
-    metrics: {
-      win_rate: 68.5,
-      profit_factor: 1.42,
-      sharpe_ratio: 1.18,
-      max_drawdown: 3.2,
-      avg_win: 45.20,
-      avg_loss: 28.50,
-      sortino_ratio: 1.65,
-      calmar_ratio: 2.34,
-      total_trades: 127
-    },
-    risk_metrics: {
-      var_daily: 125.50,
-      var_weekly: 280.75,
-      leverage: 2.1,
-      position_concentration: 15.8,
-      exposure_net: 1250.00
-    },
-    active_signals: [
-      // Only show signals if user has balance > 0
-      ...(userAccount?.balance > 0 ? [
-        {
-          time: '14:35:22',
-          symbol: 'BTCUSD',
-          type: 'BUY' as const,
-          strategy: 'Trend Following',
-          confidence: 85
-        },
-        {
-          time: '14:33:18',
-          symbol: 'XAUUSD',
-          type: 'SELL' as const,
-          strategy: 'Mean Reversion',
-          confidence: 72
-        }
-      ] : [])
-    ],
-    chart_data: {
-      timestamps: Array.from({ length: 50 }, (_, i) => Date.now() - (50 - i) * 60000),
-      balance: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25),
-      equity: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25)
+function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  
+  // States
+  const [stripeReady, setStripeReady] = useState(false)
+  const [cardError, setCardError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (stripe && elements) {
+      setStripeReady(true)
+      console.log('✅ Stripe and Elements loaded successfully')
+    } else {
+      console.log('⏳ Waiting for Stripe to load...')
     }
-  })
+  }, [stripe, elements])
 
-  useEffect(() => {
-    // Generate data based on user's actual account
-    const timer = setTimeout(() => {
-      setData(generateUserData(account))
-      setIsLoading(false)
-    }, 1000)
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
 
-    return () => clearTimeout(timer)
-  }, [account])
-
-  // Real-time updates simulation
-  useEffect(() => {
-    if (!data) return
-
-    const interval = setInterval(() => {
-      setData(prevData => {
-        if (!prevData) return prevData
-
-        // Only simulate movements if user has balance
-        if (prevData.account.balance === 0) return prevData
-
-        // Simulate small price movements for active accounts
-        const updatedPositions = prevData.positions.map(pos => ({
-          ...pos,
-          price_current: pos.price_current + (Math.random() - 0.5) * 2,
-          profit: pos.profit + (Math.random() - 0.5) * 5
-        }))
-
-        // Add new chart data point
-        const newTimestamp = Date.now()
-        const newBalance = prevData.account.balance + (Math.random() - 0.5) * 10
-        const newEquity = prevData.account.equity + (Math.random() - 0.5) * 10
-
-        return {
-          ...prevData,
-          positions: updatedPositions,
-          account: {
-            ...prevData.account,
-            balance: newBalance,
-            equity: newEquity,
-            profit: updatedPositions.reduce((sum, pos) => sum + pos.profit, 0)
-          },
-          chart_data: {
-            timestamps: [...prevData.chart_data.timestamps.slice(-49), newTimestamp],
-            balance: [...prevData.chart_data.balance.slice(-49), newBalance],
-            equity: [...prevData.chart_data.equity.slice(-49), newEquity]
-          }
-        }
-      })
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [data])
-
-  const handleFunding = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const amount = parseFloat(fundingAmount)
-    
-    if (amount < 100) {
-      setTransferStatus('Minimum funding amount is $100')
+    if (!stripe || !elements) {
+      onError('Payment system not ready. Please wait a moment and try again.')
       return
     }
-    
-    // Show payment processor instead of direct funding
-    setFundingAmountForPayment(amount)
-    setShowPaymentProcessor(true)
-    setShowFundingModal(false)
-  }
 
-  const handlePaymentSuccess = async (paymentResult: any) => {
-    setIsProcessingFunding(true)
-    setShowPaymentProcessor(false)
-    setTransferStatus(null)
-    
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+
+    setLoading(true)
+    setCardError('')
+
     try {
-      console.log('💰 Processing funding after payment:', paymentResult)
-      
-      // Process funding through Supabase
-      const result = await supabaseClient.processFunding(
-        paymentResult.amount, 
-        paymentResult.method, 
-        `Account funding via ${paymentResult.method} - ${paymentResult.id}`
-      )
-      
-      if (result.success) {
-        // Update local account state immediately for better UX
-        if (account) {
-          // This will trigger useEffect to regenerate dashboard data
-          await refreshAccount()
+      // Create payment intent via Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ 
+          amount: amount * 100, // Convert to cents
+          user_id: 'demo-user' // In production, get from auth context
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+      }
+
+      const { client_secret } = await response.json()
+      console.log('✅ Payment intent created:', client_secret)
+
+      // Confirm payment
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+        payment_method: {
+          card: cardElement,
         }
-        
-        setTransferStatus(`Funds added successfully! Payment ID: ${paymentResult.id}`)
-        console.log('✅ Funding successful')
-      } else {
-        setTransferStatus(result.error?.message || 'Funding failed. Please try again.')
-        console.log('❌ Funding failed:', result.error)
+      })
+
+      if (confirmError) {
+        onError(confirmError.message || 'Payment failed')
+        console.log('❌ Payment failed:', confirmError)
+      } else if (paymentIntent?.status === 'succeeded') {
+        console.log('✅ Payment succeeded:', paymentIntent)
+        onSuccess({
+          id: paymentIntent.id,
+          amount: paymentIntent.amount / 100,
+          method: 'card',
+          status: 'completed'
+        })
       }
     } catch (error) {
-      console.error('Funding error:', error)
-      setTransferStatus('An error occurred. Please try again.')
+      console.error('❌ Payment processing error:', error)
+      onError('Payment processing failed')
     } finally {
-      setIsProcessingFunding(false)
-      setShowFundingModal(true) // Show modal again to display status
-      setTimeout(() => {
-        setShowFundingModal(false)
-        setFundingAmount('')
-        setTransferStatus(null)
-      }, 3000)
+      setLoading(false)
     }
   }
 
-  const handlePaymentError = (error: string) => {
-    setShowPaymentProcessor(false)
-    setShowFundingModal(true)
-    setTransferStatus(`Payment failed: ${error}`)
+  if (!stripeReady) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading payment system...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+      </div>
+    )
   }
 
-  // ✅ Loading state inside component function
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <TrendingUp className="h-8 w-8 text-white" />
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+          Your payment information is encrypted and secure. Powered by bank-level security.
+        </p>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Card Information
+          </label>
+          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[60px] flex items-center">
+            <div className="w-full">
+              <CardElement
+                onChange={handleCardChange}
+                options={CARD_ELEMENT_OPTIONS}
+              />
+            </div>
           </div>
-          <div className="text-white text-lg font-medium">Loading Helios Dashboard...</div>
-          <div className="text-gray-400 text-sm mt-2">Connecting to trading systems</div>
+          <p className="text-xs text-gray-500 mt-2">
+            Enter your card number, expiry date (MM/YY), and security code (CVC)
+          </p>
+          {cardError && (
+            <div className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {cardError}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-700">Amount:</span>
+            <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+            <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
+          </div>
+          <div className="border-t border-gray-200 pt-2 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-900">Total charge:</span>
+              <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={!stripe || loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Processing Payment...
+            </>
+          ) : (
+            `Secure Payment - $${amount.toLocaleString()}`
+          )}
+        </button>
+        
+        <p className="text-xs text-gray-500 text-center">
+          Your payment information is encrypted and secure. Powered by bank-level security.
+        </p>
+      </form>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function ACHPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
+  const [bankDetails, setBankDetails] = useState({
+    accountNumber: '',
+    routingNumber: '',
+    accountType: 'checking',
+    accountHolderName: ''
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Simulate ACH processing
+    setTimeout(() => {
+      onSuccess({
+        id: 'ach_' + Math.random().toString(36).substr(2, 9),
+        amount,
+        method: 'ach',
+        status: 'pending',
+        estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()
+      })
+    }, 1000)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Bank className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">ACH Bank Transfer</span>
+        </div>
+        <p className="text-sm text-blue-700">
+          Funds will be debited from your bank account in 1-3 business days. 
+          Lower fees than card payments.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Account Holder Name
+          </label>
+          <input
+            type="text"
+            value={bankDetails.accountHolderName}
+            onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Full name on account"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Account Type
+          </label>
+          <select
+            value={bankDetails.accountType}
+            onChange={(e) => setBankDetails({...bankDetails, accountType: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Routing Number
+        </label>
+        <input
+          type="text"
+          value={bankDetails.routingNumber}
+          onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="9-digit routing number"
+          pattern="[0-9]{9}"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Account Number
+        </label>
+        <input
+          type="text"
+          value={bankDetails.accountNumber}
+          onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Account number"
+          required
+        />
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Transfer amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">ACH fee:</span>
+          <span className="text-gray-600 text-sm">$5.00</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total debit:</span>
+            <span className="font-bold text-gray-900">${(amount + 5).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+      >
+        Initiate ACH Transfer - ${amount.toLocaleString()}
+      </button>
+    </form>
+  )
+}
+
+function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
+  const [copied, setCopied] = useState('')
+
+  const wireInstructions = {
+    bankName: 'JPMorgan Chase Bank, N.A.',
+    routingNumber: '021000021',
+    accountNumber: '4567890123',
+    accountName: 'Global Market Consulting LLC',
+    swiftCode: 'CHASUS33',
+    referenceCode: `GMC-${Date.now().toString().slice(-6)}`
+  }
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(field)
+    setTimeout(() => setCopied(''), 2000)
+  }
+
+  const handleConfirm = () => {
+    onSuccess({
+      id: 'wire_' + wireInstructions.referenceCode,
+      amount,
+      method: 'wire',
+      status: 'pending',
+      reference_code: wireInstructions.referenceCode,
+      estimated_completion: 'Same business day'
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Building className="h-5 w-5 text-yellow-600" />
+          <span className="font-medium text-yellow-900">Wire Transfer Instructions</span>
+        </div>
+        <p className="text-sm text-yellow-700">
+          Use these details to send a wire transfer from your bank. 
+          Include the reference code to ensure proper crediting.
+        </p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="font-medium text-gray-900 mb-4">Banking Details</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Bank Name:</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-gray-900">{wireInstructions.bankName}</span>
+              <button
+                onClick={() => copyToClipboard(wireInstructions.bankName, 'bank')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Routing Number:</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-mono font-medium text-gray-900">{wireInstructions.routingNumber}</span>
+              <button
+                onClick={() => copyToClipboard(wireInstructions.routingNumber, 'routing')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              {copied === 'routing' && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Account Number:</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-mono font-medium text-gray-900">{wireInstructions.accountNumber}</span>
+              <button
+                onClick={() => copyToClipboard(wireInstructions.accountNumber, 'account')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              {copied === 'account' && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Account Name:</span>
+            <span className="font-medium text-gray-900">{wireInstructions.accountName}</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">SWIFT Code:</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-mono font-medium text-gray-900">{wireInstructions.swiftCode}</span>
+              <button
+                onClick={() => copyToClipboard(wireInstructions.swiftCode, 'swift')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              {copied === 'swift' && <CheckCircle className="h-4 w-4 text-green-500" />}
+            </div>
+          </div>
+          
+          <div className="bg-red-50 border border-red-200 rounded p-3">
+            <div className="flex justify-between items-center">
+              <span className="text-red-700 font-medium">Reference Code:</span>
+              <div className="flex items-center space-x-2">
+                <span className="font-mono font-bold text-red-900">{wireInstructions.referenceCode}</span>
+                <button
+                  onClick={() => copyToClipboard(wireInstructions.referenceCode, 'reference')}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+                {copied === 'reference' && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </div>
+            </div>
+            <p className="text-xs text-red-600 mt-1">
+              CRITICAL: Include this reference code in your wire transfer memo
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Wire amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Wire fee:</span>
+          <span className="text-gray-600 text-sm">$25.00</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 text-sm">Bank fees:</span>
+          <span className="text-gray-600 text-sm">Varies by bank</span>
+        </div>
+      </div>
+
+      <button
+        onClick={handleConfirm}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+      >
+        I've Sent the Wire Transfer
+      </button>
+    </div>
+  )
+}
+
+function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
+  const [selectedCrypto, setSelectedCrypto] = useState('USDC')
+  const [showAddress, setShowAddress] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  const cryptoOptions = [
+    { symbol: 'USDC', name: 'USD Coin', rate: 1.00, network: 'Ethereum' },
+    { symbol: 'USDT', name: 'Tether', rate: 1.00, network: 'Ethereum' },
+    { symbol: 'BTC', name: 'Bitcoin', rate: 0.000023, network: 'Bitcoin' },
+    { symbol: 'ETH', name: 'Ethereum', rate: 0.00046, network: 'Ethereum' }
+  ]
+
+  const selectedOption = cryptoOptions.find(opt => opt.symbol === selectedCrypto)!
+  const cryptoAmount = amount * selectedOption.rate
+
+  const addresses = {
+    USDC: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e',
+    USDT: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e',
+    BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    ETH: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e'
+  }
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(field)
+    setTimeout(() => setCopied(''), 2000)
+  }
+
+  const handleGenerateAddress = () => {
+    setShowAddress(true)
+  }
+
+  const handleConfirmSent = () => {
+    onSuccess({
+      id: 'crypto_' + Math.random().toString(36).substr(2, 9),
+      amount,
+      method: 'crypto',
+      currency: selectedCrypto,
+      status: 'pending',
+      address: addresses[selectedCrypto as keyof typeof addresses],
+      estimated_completion: '10-60 minutes'
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Wallet className="h-5 w-5 text-purple-600" />
+          <span className="font-medium text-purple-900">Cryptocurrency Payment</span>
+        </div>
+        <p className="text-sm text-purple-700">
+          Send cryptocurrency to our secure wallet. Funds are credited after network confirmation.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Select Cryptocurrency
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {cryptoOptions.map((crypto) => (
+            <button
+              key={crypto.symbol}
+              type="button"
+              onClick={() => setSelectedCrypto(crypto.symbol)}
+              className={`p-4 border rounded-lg text-left transition-colors ${
+                selectedCrypto === crypto.symbol
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-medium text-gray-900">{crypto.symbol}</div>
+              <div className="text-sm text-gray-600">{crypto.name}</div>
+              <div className="text-xs text-gray-500">{crypto.network}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">USD Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">{selectedCrypto} Amount:</span>
+          <span className="font-mono font-bold text-gray-900">
+            {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : selectedCrypto === 'ETH' ? 6 : 2)} {selectedCrypto}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 text-sm">Network fees:</span>
+          <span className="text-gray-600 text-sm">Paid by sender</span>
+        </div>
+      </div>
+
+      {!showAddress ? (
+        <button
+          onClick={handleGenerateAddress}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+        >
+          Generate {selectedCrypto} Address
+        </button>
+      ) : (
+        <div className="space-y-4">
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-300 text-sm">Send {selectedCrypto} to:</span>
+              <button
+                onClick={() => copyToClipboard(addresses[selectedCrypto as keyof typeof addresses], 'address')}
+                className="text-gray-400 hover:text-gray-200"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="font-mono text-white text-sm break-all bg-gray-800 p-3 rounded">
+              {addresses[selectedCrypto as keyof typeof addresses]}
+            </div>
+            <div className="flex items-center space-x-2 mt-2">
+              <span className="text-gray-400 text-xs">Network: {selectedOption.network}</span>
+              <span className="text-gray-400 text-xs">•</span>
+              <span className="text-gray-400 text-xs">Amount: {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : 6)} {selectedCrypto}</span>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <span className="font-medium text-red-900">Important</span>
+            </div>
+            <ul className="text-sm text-red-700 space-y-1">
+              <li>• Send exactly {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : 6)} {selectedCrypto}</li>
+              <li>• Use {selectedOption.network} network only</li>
+              <li>• Double-check the address before sending</li>
+              <li>• Funds are credited after 3 network confirmations</li>
+            </ul>
+          </div>
+
+          <button
+            onClick={handleConfirmSent}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            I've Sent the Cryptocurrency
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function PaymentProcessor({ amount, onSuccess, onError, onClose }: PaymentProcessorProps) {
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
+
+  const handleMethodSelect = (methodId: string) => {
+    const method = paymentMethods.find(m => m.id === methodId)
+    if (method && amount >= method.minAmount && amount <= method.maxAmount) {
+      setSelectedMethod(methodId)
+    }
+  }
+
+  const handlePaymentSuccess = async (result: any) => {
+    setProcessing(true)
+    
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    onSuccess(result)
+    setProcessing(false)
+  }
+
+  if (processing) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Processed</h3>
+          <p className="text-gray-600 mb-4">
+            Your funding request has been submitted successfully. 
+            Your account will be updated once the payment is confirmed.
+          </p>
+          <div className="animate-pulse text-sm text-gray-500">
+            Updating your account balance...
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!data) return null
-
-  const dailyPnl = data.account.balance - data.account.initial_balance
-  const dailyPnlPct = data.account.initial_balance > 0 ? (dailyPnl / data.account.initial_balance) * 100 : 0
-  const totalGrowth = data.account.balance - data.account.initial_balance
-  const growthPct = data.account.initial_balance > 0 ? (totalGrowth / data.account.initial_balance) * 100 : 0
-
-  // Chart configuration
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top' as const,
-        labels: { 
-          color: '#71717a',
-          font: { family: 'Inter', size: 11 },
-          padding: 20
-        }
-      },
-      title: {
-        display: false
-      }
-    },
-    interaction: {
-      intersect: false
-    },
-    scales: {
-      x: {
-        grid: { 
-          color: '#27282c',
-          drawBorder: false,
-          lineWidth: 0.5
-        },
-        ticks: { 
-          color: '#71717a',
-          font: { size: 10, family: 'Inter' },
-          maxRotation: 0,
-          callback: function(value: any, index: number) {
-            const timestamp = data.chart_data.timestamps[index]
-            if (timestamp) {
-              const date = new Date(timestamp)
-              return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
-            }
-            return ''
-          }
-        }
-      },
-      y: {
-        beginAtZero: false,
-        grid: { 
-          color: '#27282c',
-          drawBorder: false,
-          lineWidth: 0.5
-        },
-        ticks: { 
-          color: '#71717a',
-          font: { size: 10, family: 'Inter' },
-          callback: function(value: any) {
-            return '$' + value.toLocaleString()
-          }
-        }
-      }
-    }
-  }
-
-  const chartData = {
-    labels: data.chart_data.timestamps.map(ts => {
-      const date = new Date(ts)
-      return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
-    }),
-    datasets: [
-      {
-        label: 'Balance',
-        data: data.chart_data.balance,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.2,
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        pointHoverBackgroundColor: '#3b82f6'
-      },
-      {
-        label: 'Equity',
-        data: data.chart_data.equity,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.2,
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        pointHoverBackgroundColor: '#10b981'
-      }
-    ]
-  }
-
-  // ✅ Main return inside component function
-  return (
-    <>
-      <div className="min-h-screen bg-gray-900">
-        {/* Header */}
-        <header className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">HELIOS CAPITAL</h1>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">Quantitative Trading System</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-gray-400">Live Data</span>
-                </div>
-                <button
-                  onClick={() => setShowFundingModal(true)}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Capital</span>
-                </button>
-              </div>
-            </div>
+  if (!selectedMethod) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Add Capital - ${amount.toLocaleString()}</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </header>
-
-        {/* Market Ticker */}
-        <div className="bg-gray-800 border-b border-gray-700 py-2 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="animate-scroll flex items-center space-x-8 text-sm whitespace-nowrap">
-              {[...marketData, ...marketData].map((item, index) => (
-                <div key={index} className="flex items-center space-x-2 flex-shrink-0">
-                  <span className="text-gray-400">{item.symbol}</span>
-                  <span className="text-white font-medium">
-                    {item.symbol.includes('/') || item.symbol === 'BTC/USD' || item.symbol === 'ETH/USD' 
-                      ? `$${item.price.toLocaleString()}` 
-                      : item.price.toLocaleString()}
-                  </span>
-                  <span className={item.change >= 0 ? 'text-green-400' : 'text-red-400'}>
-                    {item.change >= 0 ? '+' : ''}{item.change}%
-                  </span>
-                </div>
-              ))}
+          
+          <div className="p-6">
+            <p className="text-gray-600 mb-6">
+              Choose your preferred payment method to fund your trading account.
+            </p>
+            
+            <div className="grid gap-4">
+              {paymentMethods.map((method) => {
+                const isAvailable = amount >= method.minAmount && amount <= method.maxAmount
+                
+                return (
+                  <button
+                    key={method.id}
+                    onClick={() => isAvailable && handleMethodSelect(method.id)}
+                    disabled={!isAvailable}
+                    className={`p-4 border rounded-lg text-left transition-colors ${
+                      isAvailable
+                        ? 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                        : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                        isAvailable ? 'bg-blue-100' : 'bg-gray-200'
+                      }`}>
+                        <method.icon className={`h-6 w-6 ${
+                          isAvailable ? 'text-blue-600' : 'text-gray-400'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{method.name}</div>
+                        <div className="text-sm text-gray-600">{method.description}</div>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className="text-xs text-gray-500">Fee: {method.fees}</span>
+                          <span className="text-xs text-gray-500">Time: {method.timeframe}</span>
+                        </div>
+                        {!isAvailable && (
+                          <div className="text-xs text-red-600 mt-1">
+                            Amount must be between ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      {isAvailable && (
+                        <div className="text-blue-600">
+                          <ExternalLink className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
-
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Account Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Balance</span>
-                <DollarSign className="h-4 w-4 text-blue-400" />
-              </div>
-              <div className="text-2xl font-bold text-white mb-1">
-                ${data.account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-              <div className="text-xs text-gray-400">Available Capital</div>
-            </div>
-
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Daily P&L</span>
-                {dailyPnl >= 0 ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-400" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-400" />
-                )}
-              </div>
-              <div className={`text-2xl font-bold mb-1 ${dailyPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {dailyPnl >= 0 ? '+' : ''}${Math.abs(dailyPnl).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-              <div className={`text-xs ${dailyPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {dailyPnl >= 0 ? '+' : ''}{dailyPnlPct.toFixed(2)}%
-              </div>
-            </div>
-
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Open P&L</span>
-                <Activity className="h-4 w-4 text-yellow-400" />
-              </div>
-              <div className={`text-2xl font-bold mb-1 ${data.account.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {data.account.profit >= 0 ? '+' : ''}${Math.abs(data.account.profit).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Total Growth</span>
-                <TrendingUp className="h-4 w-4 text-purple-400" />
-              </div>
-              <div className={`text-2xl font-bold mb-1 ${totalGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {totalGrowth >= 0 ? '+' : ''}${Math.abs(totalGrowth).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-              <div className={`text-xs ${totalGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {totalGrowth >= 0 ? '+' : ''}{growthPct.toFixed(2)}%
-              </div>
-            </div>
-          </div>
-
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-              <h3 className="text-sm font-semibold text-white mb-6">Performance Metrics</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Win Rate</span>
-                  <span className="text-green-400 font-medium">{data.metrics.win_rate.toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Profit Factor</span>
-                  <span className="text-white font-medium">{data.metrics.profit_factor.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Sharpe Ratio</span>
-                  <span className="text-white font-medium">{data.metrics.sharpe_ratio.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Avg Win</span>
-                  <span className="text-green-400 font-medium">${data.metrics.avg_win.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Avg Loss</span>
-                  <span className="text-red-400 font-medium">${data.metrics.avg_loss.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Total Trades</span>
-                  <span className="text-white font-medium">{data.metrics.total_trades}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Portfolio Performance</h3>
-                  <p className="text-xs text-gray-400 mt-1">Real-time equity tracking</p>
-                </div>
-                <div className="flex space-x-2">
-                  {['1D', '1W', '1M', '3M', 'YTD'].map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => setSelectedPeriod(period)}
-                      className={`px-3 py-1 text-xs rounded border transition-colors ${
-                        selectedPeriod === period
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-transparent border-gray-700 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {period}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex space-x-8 mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-0.5 bg-blue-500"></div>
-                  <span className="text-xs text-gray-400">Balance</span>
-                  <span className="text-xs text-white font-semibold">
-                    ${data.account.balance.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-0.5 bg-green-500"></div>
-                  <span className="text-xs text-gray-400">Equity</span>
-                  <span className="text-xs text-white font-semibold">
-                    ${data.account.equity.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-              </div>
-              <div className="h-80">
-                <Line data={chartData} options={chartOptions} />
-              </div>
-            </div>
-          </div>
-
-          {/* Open Positions */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg mb-8 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-sm font-semibold text-white">Open Positions</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-900">
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Ticket</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Symbol</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Volume</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Entry</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Current</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">P&L</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">P&L %</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {data.positions.length > 0 ? (
-                    data.positions.map((position, index) => (
-                      <tr key={index} className="hover:bg-gray-750">
-                        <td className="px-6 py-4 text-sm text-gray-300">{position.ticket}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-white">{position.symbol}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            position.type === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                          }`}>
-                            {position.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-300">{position.volume.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-sm text-gray-300">${position.price_open.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-sm text-white">${position.price_current.toFixed(2)}</td>
-                        <td className={`px-6 py-4 text-sm font-medium ${
-                          position.profit >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {position.profit >= 0 ? '+' : ''}${position.profit.toFixed(2)}
-                        </td>
-                        <td className={`px-6 py-4 text-sm font-medium ${
-                          position.profit_pct >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {position.profit_pct >= 0 ? '+' : ''}{position.profit_pct.toFixed(2)}%
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-400">{position.time}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
-                        No open positions
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Active Trading Signals */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-700">
-              <h3 className="text-sm font-semibold text-white">Active Trading Signals</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-900">
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Symbol</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Strategy</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Confidence</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {data.active_signals.length > 0 ? (
-                    data.active_signals.map((signal, index) => (
-                      <tr key={index} className="hover:bg-gray-750">
-                        <td className="px-6 py-4 text-sm text-gray-300">{signal.time}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-white">{signal.symbol}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            signal.type === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                          }`}>
-                            {signal.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-300">{signal.strategy}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className={`font-medium ${
-                            signal.confidence > 75 ? 'text-green-400' : 
-                            signal.confidence > 50 ? 'text-yellow-400' : 'text-red-400'
-                          }`}>
-                            {signal.confidence}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                        No active signals
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Funding Modal */}
-        {showFundingModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white">Add Capital</h3>
-                <button
-                  onClick={() => setShowFundingModal(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleFunding} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Funding Amount
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      value={fundingAmount}
-                      onChange={(e) => setFundingAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="0.00"
-                      min="100"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Minimum funding: $100</p>
-                </div>
-
-                {transferStatus && (
-                  <div className={`p-3 rounded-lg text-sm ${
-                    transferStatus.includes('success') || transferStatus.includes('Connected') 
-                      ? 'bg-green-900 text-green-300 border border-green-700' 
-                      : transferStatus.includes('failed') || transferStatus.includes('error')
-                      ? 'bg-red-900 text-red-300 border border-red-700'
-                      : 'bg-blue-900 text-blue-300 border border-blue-700'
-                  }`}>
-                    {transferStatus}
-                  </div>
-                )}
-
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowFundingModal(false)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isProcessingFunding}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                  >
-                    {isProcessingFunding ? 'Processing...' : 'Continue to Payment'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Processor Modal */}
-        {showPaymentProcessor && (
-          <PaymentProcessor
-            amount={fundingAmountForPayment}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-            onClose={() => {
-              setShowPaymentProcessor(false)
-              setShowFundingModal(true)
-            }}
-          />
-        )}
       </div>
-    </>
+    )
+  }
+
+  // Show selected payment method form
+  const selectedMethodData = paymentMethods.find(m => m.id === selectedMethod)!
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <selectedMethodData.icon className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">{selectedMethodData.name}</h3>
+          </div>
+          <button
+            onClick={() => setSelectedMethod(null)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="p-6">
+          {selectedMethod === 'card' && (
+            <Elements stripe={stripePromise}>
+              <CardPaymentForm 
+                amount={amount} 
+                onSuccess={handlePaymentSuccess} 
+                onError={onError} 
+              />
+            </Elements>
+          )}
+          
+          {selectedMethod === 'ach' && (
+            <ACHPaymentForm 
+              amount={amount} 
+              onSuccess={handlePaymentSuccess} 
+            />
+          )}
+          
+          {selectedMethod === 'wire' && (
+            <WireTransferForm 
+              amount={amount} 
+              onSuccess={handlePaymentSuccess} 
+            />
+          )}
+          
+          {selectedMethod === 'crypto' && (
+            <CryptoPaymentForm 
+              amount={amount} 
+              onSuccess={handlePaymentSuccess} 
+            />
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
