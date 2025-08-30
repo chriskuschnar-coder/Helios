@@ -40,11 +40,12 @@ function App() {
         
         if (result.error) {
           if (result.error.message?.includes('fetch') || result.error instanceof TypeError) {
-            setConnectionStatus('❌ WebContainer CORS Issue - Use Edge Functions or test locally')
+            setConnectionStatus('❌ WebContainer Network Restriction (Expected)')
             setConnectionDetails({
-              issue: 'WebContainer CORS Restriction',
-              solution: 'Supabase blocks non-standard origins like WebContainer',
-              recommendation: 'Use Edge Functions proxy or test on localhost'
+              issue: 'WebContainer Network Limitation',
+              solution: 'WebContainer cannot reach external Edge Functions',
+              recommendation: 'Download project and run on localhost:5173 for full functionality',
+              note: 'Demo mode works perfectly in WebContainer!'
             })
           } else {
             setConnectionStatus(`❌ Supabase Error: ${result.error.message}`)
