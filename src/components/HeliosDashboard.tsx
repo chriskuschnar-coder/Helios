@@ -12,12 +12,7 @@ import {
   Clock
 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { Elements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
-import { StripeCardForm } from './StripeCardForm'
-
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
+import { StripePayment } from './StripePayment'
 
 export function HeliosDashboard() {
   const { user, account, refreshAccount } = useAuth()
@@ -81,7 +76,7 @@ export function HeliosDashboard() {
             </button>
           </div>
 
-          {/* Funding Modal */}
+          {/* Simple Funding Modal */}
           {showFunding && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -106,13 +101,11 @@ export function HeliosDashboard() {
                 </div>
 
                 {fundingAmount >= 100 && (
-                  <Elements stripe={stripePromise}>
-                    <StripeCardForm
-                      amount={fundingAmount}
-                      onSuccess={handleFundingSuccess}
-                      onError={handleFundingError}
-                    />
-                  </Elements>
+                  <StripePayment
+                    amount={fundingAmount}
+                    onSuccess={handleFundingSuccess}
+                    onError={handleFundingError}
+                  />
                 )}
 
                 <button
@@ -347,7 +340,7 @@ export function HeliosDashboard() {
           </div>
         </div>
 
-        {/* Funding Modal */}
+        {/* Simple Funding Modal */}
         {showFunding && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -372,13 +365,11 @@ export function HeliosDashboard() {
               </div>
 
               {fundingAmount >= 100 && (
-                <Elements stripe={stripePromise}>
-                  <StripeCardForm
-                    amount={fundingAmount}
-                    onSuccess={handleFundingSuccess}
-                    onError={handleFundingError}
-                  />
-                </Elements>
+                <StripePayment
+                  amount={fundingAmount}
+                  onSuccess={handleFundingSuccess}
+                  onError={handleFundingError}
+                />
               )}
 
               <button
