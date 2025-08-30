@@ -11,7 +11,7 @@ function App() {
     key: '',
     origin: ''
   })
-  const [showPlatform, setShowPlatform] = useState(false)
+  const [showPlatform, setShowPlatform] = useState(true)
   const [useProxy, setUseProxy] = useState(false)
   
   useEffect(() => {
