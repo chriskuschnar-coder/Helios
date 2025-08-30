@@ -78,6 +78,9 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
   const [loading, setLoading] = useState(false)
   const [stripeReady, setStripeReady] = useState(false)
   const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
 
   useEffect(() => {
     if (stripe && elements) {
@@ -88,6 +91,27 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
     }
   }, [stripe, elements])
 
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
   const handleCardChange = (event: any) => {
     if (event.error) {
       setCardError(event.error.message)
@@ -109,8 +133,26 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
       onError('Card information is required')
       return
     }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
 
     setLoading(true)
+    setCardError('')
+    setCardError('')
+    setCardError('')
     setCardError('')
 
     try {
@@ -169,6 +211,9 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-gray-600">Loading payment system...</p>
         <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
       </div>
     )
   }
@@ -182,71 +227,120 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           <Lock className="h-4 w-4 text-blue-600" />
         </div>
         <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+    <div className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
           Your payment information is encrypted and secure. Powered by bank-level security.
         </p>
       </div>
-      <div className="bg-white rounded border border-gray-300 p-3">
-        <CardElement
-          onChange={handleCardChange}
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#374151',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                '::placeholder': {
-                  color: '#9CA3AF',
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Card Information
+          </label>
+          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[80px]">
+            <CardElement
+              onChange={handleCardChange}
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#374151',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    lineHeight: '1.5',
+                    padding: '12px 0',
+                    '::placeholder': {
+                      color: '#9CA3AF',
+                    },
+                  },
+                  invalid: {
+                    color: '#EF4444',
+                  },
+                  complete: {
+                    color: '#059669',
+                  },
                 },
-              },
-              invalid: {
-                color: '#EF4444',
-              },
-            },
-          }}
-        />
-      </div>
-      {cardError && (
-        <div className="mt-2 text-sm text-red-600 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {cardError}
+                hidePostalCode: true,
+              }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Enter your card number, expiry date (MM/YY), and security code (CVC)
+          </p>
+          {cardError && (
+            <div className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {cardError}
+            </div>
+          )}
         </div>
-      )}
 
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-          <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">Total charge:</span>
-            <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-700">Amount:</span>
+            <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+            <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
+          </div>
+          <div className="border-t border-gray-200 pt-2 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-900">Total charge:</span>
+              <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button
-        type="submit"
-        disabled={!stripe || loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-      >
-        {loading ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Processing Payment...
-          </>
-        ) : (
-          `Secure Payment - $${amount.toLocaleString()}`
-        )}
-      </button>
-      <p className="text-xs text-gray-500 text-center">
-        Your payment information is encrypted and secure. Powered by bank-level security.
-      </p>
-    </form>
+        <button
+          type="submit"
+          disabled={!stripe || loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Processing Payment...
+            </>
+          ) : (
+            `Secure Payment - $${amount.toLocaleString()}`
+          )}
+        </button>
+        
+        <p className="text-xs text-gray-500 text-center">
+          Your payment information is encrypted and secure. Powered by bank-level security.
+        </p>
+      </form>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
+        </p>
+      </div>
+    </div>
   )
 }
 
