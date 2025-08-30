@@ -28,7 +28,7 @@ export function InvestmentPlatform() {
     )
   }
 
-  // If user is authenticated, show dashboard
+  // If user is authenticated, show dashboard selector
   if (user) {
     return <DashboardSelector />
   }

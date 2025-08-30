@@ -35,45 +35,38 @@ export function InvestorDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user) {
-      fetchAccountData()
-      fetchTransactions()
-    }
-  }, [user])
-
-  const fetchAccountData = async () => {
-    try {
-      const { data, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single()
-
-      if (error) throw error
-      setAccount(data)
-    } catch (error) {
-      console.error('Error fetching account:', error)
-    } finally {
+    // Simulate loading and use demo data
+    const timer = setTimeout(() => {
+      setAccount({
+        id: 'demo-account',
+        balance: 2450000,
+        available_balance: 2450000,
+        total_deposits: 2000000,
+        total_withdrawals: 0
+      })
+      setTransactions([
+        {
+          id: '1',
+          type: 'deposit',
+          amount: 100000,
+          status: 'completed',
+          created_at: '2025-01-15T10:30:00Z',
+          description: 'Initial investment'
+        },
+        {
+          id: '2',
+          type: 'fee',
+          amount: -8500,
+          status: 'completed',
+          created_at: '2025-01-10T14:20:00Z',
+          description: 'Performance fee'
+        }
+      ])
       setLoading(false)
-    }
-  }
+    }, 1000)
 
-  const fetchTransactions = async () => {
-    try {
-      const { data, error } = await supabaseClient
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-      setTransactions(data || [])
-    } catch (error) {
-      console.error('Error fetching transactions:', error)
-    }
-  }
-
+    return () => clearTimeout(timer)
+  }, [user])
 
   const portfolioData = {
     totalValue: account?.balance || 0,

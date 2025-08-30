@@ -23,11 +23,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     try {
       // Demo credentials check first
       if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-        // Set a demo user session
-        localStorage.setItem('supabase-session', JSON.stringify({
+        const demoSession = {
           user: { id: 'demo-user', email: email },
           access_token: 'demo-token'
-        }))
+        }
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        
+        // Update auth context
+        window.dispatchEvent(new CustomEvent('auth-change', { detail: demoSession.user }))
         onSuccess?.()
         return
       }
