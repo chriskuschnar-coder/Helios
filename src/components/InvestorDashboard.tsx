@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { 
-  TrendingUp, 
-  LogOut, 
   BarChart3, 
   PieChart, 
   FileText, 
   DollarSign,
   ArrowUpRight,
   Activity,
-  Plus
 } from 'lucide-react'
 import { supabaseClient } from '../lib/supabase-client'
 
@@ -31,7 +28,7 @@ interface Transaction {
 }
 
 export function InvestorDashboard() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [account, setAccount] = useState<Account | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -77,13 +74,6 @@ export function InvestorDashboard() {
     }
   }
 
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
-  }
 
   const portfolioData = {
     totalValue: account?.balance || 0,
@@ -118,11 +108,9 @@ export function InvestorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <TrendingUp className="h-8 w-8 text-white" />
-          </div>
+          <div className="w-8 h-8 border-4 border-navy-600 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
           <div className="text-navy-900 text-lg font-medium">Loading Dashboard...</div>
         </div>
       </div>
@@ -130,34 +118,7 @@ export function InvestorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-8 w-8 text-navy-600" />
-              <span className="font-serif text-xl font-bold text-navy-900">
-                Global Market Consulting
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">Welcome back</div>
-                <div className="text-xs text-gray-600">{user?.email}</div>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Portfolio Summary Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -370,6 +331,6 @@ export function InvestorDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
