@@ -20,31 +20,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setLoading(true)
     setError('')
 
+    console.log('🔐 Login form submitted with:', { email, password: '***' })
+
     try {
-      // Demo credentials check first
-      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-        const demoSession = {
-          user: { id: 'demo-user', email: email },
-          access_token: 'demo-token'
-        }
-        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
-        
-        // Update auth context
-        window.dispatchEvent(new CustomEvent('auth-change', { detail: demoSession.user }))
-        onSuccess?.()
-        return
-      }
-      
-      // Try real authentication
       const result = await signIn(email, password)
+      
       if (result.error) {
-        setError(result.error.message || 'Authentication failed')
+        console.log('❌ Login failed:', result.error.message)
+        setError(result.error.message)
       } else {
+        console.log('✅ Login successful, calling onSuccess')
         onSuccess?.()
       }
     } catch (err) {
-      console.error('Login error:', err)
-      setError('Connection error - please try demo credentials or test locally')
+      console.error('❌ Login error:', err)
+      setError('Connection error - please try again')
     } finally {
       setLoading(false)
     }

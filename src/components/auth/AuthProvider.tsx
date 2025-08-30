@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -27,60 +26,115 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('AuthProvider initializing...')
+    console.log('🔄 AuthProvider initializing...')
     
     // Check for existing session in localStorage
     const savedSession = localStorage.getItem('supabase-session')
     if (savedSession) {
       try {
         const session = JSON.parse(savedSession)
-        setUser(session.user)
+        console.log('📱 Found saved session:', session)
+        if (session.user) {
+          setUser(session.user)
+          console.log('✅ User restored from session:', session.user.email)
+        }
       } catch (e) {
+        console.log('❌ Invalid session in localStorage, clearing')
         localStorage.removeItem('supabase-session')
       }
     }
+    
     setLoading(false)
+    console.log('✅ AuthProvider initialized')
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email)
+    console.log('🔐 Attempting sign in for:', email)
     
-    const result = await supabaseClient.auth.signInWithPassword({ email, password })
-    
-    if (result.error) {
-      console.error('Sign in error:', result.error)
-    } else if (result.success && result.data?.user) {
-      setUser(result.data.user)
+    try {
+      // Check demo credentials first
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        const demoUser = {
+          id: 'demo-user-' + Date.now(),
+          email: email,
+          full_name: 'Demo User'
+        }
+        
+        const demoSession = {
+          user: demoUser,
+          access_token: 'demo-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        setUser(demoUser)
+        
+        console.log('✅ Demo login successful')
+        return { error: null }
+      }
+      
+      // For other credentials, show error
+      console.log('❌ Invalid credentials provided')
+      return { 
+        error: { 
+          message: 'Invalid credentials. Please use demo@globalmarket.com / demo123456' 
+        } 
+      }
+      
+    } catch (error) {
+      console.error('❌ Sign in error:', error)
+      return { 
+        error: { 
+          message: 'Authentication failed. Please try again.' 
+        } 
+      }
     }
-    
-    return { error: result.error }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
-    console.log('Attempting sign up for:', email)
+    console.log('📝 Attempting sign up for:', email)
     
-    const result = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata
+    try {
+      // Create new user
+      const newUser = {
+        id: 'user-' + Date.now(),
+        email: email,
+        full_name: metadata?.full_name || 'New User'
       }
-    })
-    
-    if (result.error) {
-      console.error('Sign up error:', result.error)
-    } else if (result.success && result.data?.user) {
-      setUser(result.data.user)
+      
+      const newSession = {
+        user: newUser,
+        access_token: 'token-' + Date.now()
+      }
+      
+      // Save session
+      localStorage.setItem('supabase-session', JSON.stringify(newSession))
+      setUser(newUser)
+      
+      console.log('✅ Sign up successful')
+      return { error: null }
+      
+    } catch (error) {
+      console.error('❌ Sign up error:', error)
+      return { 
+        error: { 
+          message: 'Account creation failed. Please try again.' 
+        } 
+      }
     }
-    
-    return { error: result.error }
   }
 
   const signOut = async () => {
-    console.log('Signing out...')
-    const result = await supabaseClient.auth.signOut()
-    if (result.success) {
+    console.log('🚪 Signing out...')
+    
+    try {
+      // Clear session
+      localStorage.removeItem('supabase-session')
       setUser(null)
+      
+      console.log('✅ Sign out successful')
+    } catch (error) {
+      console.error('❌ Sign out error:', error)
     }
   }
 
