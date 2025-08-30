@@ -1,871 +1,395 @@
 import React, { useState, useEffect } from 'react'
+import { 
+  Activity, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  BarChart3, 
+  Zap,
+  Plus,
+  AlertTriangle,
+  Target,
+  Clock
+} from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
+import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { CreditCard, Ban as Bank, Wallet, Building, Lock, CheckCircle, AlertCircle, X, Copy, ExternalLink } from 'lucide-react'
+import { StripeCardForm } from './StripeCardForm'
 
-// Initialize Stripe with proper error handling
+// Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
 
-// Debug Stripe loading
-console.log('🔍 Stripe Environment Check:')
-console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Using fallback ⚠️')
+export function HeliosDashboard() {
+  const { user, account, refreshAccount } = useAuth()
+  const [showFunding, setShowFunding] = useState(false)
+  const [fundingAmount, setFundingAmount] = useState(1000)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-interface PaymentProcessorProps {
-  amount: number
-  onSuccess: (result: any) => void
-  onError: (error: string) => void
-  onClose: () => void
-}
-
-interface PaymentMethod {
-  id: string
-  name: string
-  description: string
-  icon: React.ComponentType<any>
-  fees: string
-  timeframe: string
-  minAmount: number
-  maxAmount: number
-}
-
-const paymentMethods: PaymentMethod[] = [
-  {
-    id: 'card',
-    name: 'Debit/Credit Card',
-    description: 'Instant funding with any major card',
-    icon: CreditCard,
-    fees: '2.9% + $0.30',
-    timeframe: 'Instant',
-    minAmount: 100,
-    maxAmount: 50000
-  },
-  {
-    id: 'ach',
-    name: 'Bank Transfer (ACH)',
-    description: 'Direct bank account transfer',
-    icon: Bank,
-    fees: '$5 flat fee',
-    timeframe: '1-3 business days',
-    minAmount: 100,
-    maxAmount: 500000
-  },
-  {
-    id: 'wire',
-    name: 'Wire Transfer',
-    description: 'Large amount transfers',
-    icon: Building,
-    fees: '$25 + bank fees',
-    timeframe: 'Same day',
-    minAmount: 10000,
-    maxAmount: 10000000
-  },
-  {
-    id: 'crypto',
-    name: 'Cryptocurrency',
-    description: 'Bitcoin, Ethereum, USDC, USDT',
-    icon: Wallet,
-    fees: 'Network fees only',
-    timeframe: '10-60 minutes',
-    minAmount: 100,
-    maxAmount: 1000000
-  }
-]
-
-// Stripe CardElement options
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#32325d',
-      letterSpacing: '0.025em',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      lineHeight: '1.5',
-      '::placeholder': {
-        color: '#a0aec0',
-      },
-    },
-    invalid: {
-      color: '#fa755a',
-    },
-    complete: {
-      color: '#059669',
-    },
-  },
-  hidePostalCode: true,
-}
-
-function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  
-  // States
-  const [stripeReady, setStripeReady] = useState(false)
-  const [cardError, setCardError] = useState('')
-  const [loading, setLoading] = useState(false)
-
+  // Update time every second
   useEffect(() => {
-    if (stripe && elements) {
-      setStripeReady(true)
-      console.log('✅ Stripe and Elements loaded successfully')
-    } else {
-      console.log('⏳ Waiting for Stripe to load...')
-    }
-  }, [stripe, elements])
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-  const handleCardChange = (event: any) => {
-    if (event.error) {
-      setCardError(event.error.message)
-    } else {
-      setCardError('')
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFundingSuccess = async (result: any) => {
+    console.log('💰 Funding successful:', result)
     
-    if (!stripe || !elements) {
-      onError('Payment system not ready. Please wait a moment and try again.')
-      return
-    }
-
-    const cardElement = elements.getElement(CardElement)
-    if (!cardElement) {
-      onError('Card information is required')
-      return
-    }
-
-    setLoading(true)
-    setCardError('')
-
     try {
-      // Create payment intent via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ 
-          amount: amount * 100, // Convert to cents
-          user_id: 'demo-user' // In production, get from auth context
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+      // Update account balance locally for immediate feedback
+      if (account) {
+        account.balance += result.amount
+        account.available_balance += result.amount
+        account.total_deposits += result.amount
       }
-
-      const { client_secret } = await response.json()
-      console.log('✅ Payment intent created:', client_secret)
-
-      // Confirm payment
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
-        payment_method: {
-          card: cardElement,
-        }
-      })
-
-      if (confirmError) {
-        onError(confirmError.message || 'Payment failed')
-        console.log('❌ Payment failed:', confirmError)
-      } else if (paymentIntent?.status === 'succeeded') {
-        console.log('✅ Payment succeeded:', paymentIntent)
-        onSuccess({
-          id: paymentIntent.id,
-          amount: paymentIntent.amount / 100,
-          method: 'card',
-          status: 'completed'
-        })
-      }
+      
+      // Refresh account data from server
+      await refreshAccount()
+      
+      setShowFunding(false)
+      setFundingAmount(1000)
     } catch (error) {
-      console.error('❌ Payment processing error:', error)
-      onError('Payment processing failed')
-    } finally {
-      setLoading(false)
+      console.error('Error updating account:', error)
     }
   }
 
-  if (!stripeReady) {
+  const handleFundingError = (error: string) => {
+    console.error('Funding error:', error)
+    alert('Payment failed: ' + error)
+  }
+
+  // Show empty state if no balance
+  if (!account || account.balance === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading payment system...</p>
-        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <CreditCard className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Card Payment</span>
-          <Lock className="h-4 w-4 text-blue-600" />
-        </div>
-        <p className="text-sm text-blue-700">
-          Your payment information is encrypted and secure. Powered by bank-level security.
-        </p>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Card Information
-          </label>
-          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[60px] flex items-center">
-            <div className="w-full">
-              <CardElement
-                onChange={handleCardChange}
-                options={CARD_ELEMENT_OPTIONS}
-              />
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Activity className="h-12 w-12 text-gray-400" />
             </div>
+            <h2 className="font-serif text-3xl font-bold text-white mb-4">
+              Helios Trading Platform
+            </h2>
+            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+              Your trading account is ready. Add capital to start live trading with our quantitative algorithms.
+            </p>
+            <button
+              onClick={() => setShowFunding(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium inline-flex items-center text-lg"
+            >
+              <Plus className="h-6 w-6 mr-2" />
+              Fund Trading Account
+            </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Enter your card number, expiry date (MM/YY), and security code (CVC)
-          </p>
-          {cardError && (
-            <div className="mt-2 text-sm text-red-600 flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1" />
-              {cardError}
-            </div>
-          )}
-        </div>
 
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-700">Amount:</span>
-            <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-            <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
-          </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900">Total charge:</span>
-              <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
+          {/* Funding Modal */}
+          {showFunding && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Trading Account</h3>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Trading Capital
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={fundingAmount}
+                      onChange={(e) => setFundingAmount(Number(e.target.value))}
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="100"
+                      step="100"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Minimum: $100 for live trading</p>
+                </div>
 
-        <button
-          type="submit"
-          disabled={!stripe || loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-        >
-          {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Processing Payment...
-            </>
-          ) : (
-            `Secure Payment - $${amount.toLocaleString()}`
-          )}
-        </button>
-        
-        <p className="text-xs text-gray-500 text-center">
-          Your payment information is encrypted and secure. Powered by bank-level security.
-        </p>
-      </form>
-      
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-xs text-yellow-700">
-          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
-        </p>
-      </div>
-    </div>
-  )
-}
+                {fundingAmount >= 100 && (
+                  <Elements stripe={stripePromise}>
+                    <StripeCardForm
+                      amount={fundingAmount}
+                      onSuccess={handleFundingSuccess}
+                      onError={handleFundingError}
+                    />
+                  </Elements>
+                )}
 
-function ACHPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
-  const [bankDetails, setBankDetails] = useState({
-    accountNumber: '',
-    routingNumber: '',
-    accountType: 'checking',
-    accountHolderName: ''
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Simulate ACH processing
-    setTimeout(() => {
-      onSuccess({
-        id: 'ach_' + Math.random().toString(36).substr(2, 9),
-        amount,
-        method: 'ach',
-        status: 'pending',
-        estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()
-      })
-    }, 1000)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Bank className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">ACH Bank Transfer</span>
-        </div>
-        <p className="text-sm text-blue-700">
-          Funds will be debited from your bank account in 1-3 business days. 
-          Lower fees than card payments.
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Holder Name
-          </label>
-          <input
-            type="text"
-            value={bankDetails.accountHolderName}
-            onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Full name on account"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Type
-          </label>
-          <select
-            value={bankDetails.accountType}
-            onChange={(e) => setBankDetails({...bankDetails, accountType: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Routing Number
-        </label>
-        <input
-          type="text"
-          value={bankDetails.routingNumber}
-          onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="9-digit routing number"
-          pattern="[0-9]{9}"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Account Number
-        </label>
-        <input
-          type="text"
-          value={bankDetails.accountNumber}
-          onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Account number"
-          required
-        />
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Transfer amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">ACH fee:</span>
-          <span className="text-gray-600 text-sm">$5.00</span>
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">Total debit:</span>
-            <span className="font-bold text-gray-900">${(amount + 5).toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-      >
-        Initiate ACH Transfer - ${amount.toLocaleString()}
-      </button>
-    </form>
-  )
-}
-
-function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
-  const [copied, setCopied] = useState('')
-
-  const wireInstructions = {
-    bankName: 'JPMorgan Chase Bank, N.A.',
-    routingNumber: '021000021',
-    accountNumber: '4567890123',
-    accountName: 'Global Market Consulting LLC',
-    swiftCode: 'CHASUS33',
-    referenceCode: `GMC-${Date.now().toString().slice(-6)}`
-  }
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(field)
-    setTimeout(() => setCopied(''), 2000)
-  }
-
-  const handleConfirm = () => {
-    onSuccess({
-      id: 'wire_' + wireInstructions.referenceCode,
-      amount,
-      method: 'wire',
-      status: 'pending',
-      reference_code: wireInstructions.referenceCode,
-      estimated_completion: 'Same business day'
-    })
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Building className="h-5 w-5 text-yellow-600" />
-          <span className="font-medium text-yellow-900">Wire Transfer Instructions</span>
-        </div>
-        <p className="text-sm text-yellow-700">
-          Use these details to send a wire transfer from your bank. 
-          Include the reference code to ensure proper crediting.
-        </p>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="font-medium text-gray-900 mb-4">Banking Details</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Bank Name:</span>
-            <div className="flex items-center space-x-2">
-              <span className="font-medium text-gray-900">{wireInstructions.bankName}</span>
-              <button
-                onClick={() => copyToClipboard(wireInstructions.bankName, 'bank')}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Routing Number:</span>
-            <div className="flex items-center space-x-2">
-              <span className="font-mono font-medium text-gray-900">{wireInstructions.routingNumber}</span>
-              <button
-                onClick={() => copyToClipboard(wireInstructions.routingNumber, 'routing')}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              {copied === 'routing' && <CheckCircle className="h-4 w-4 text-green-500" />}
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Account Number:</span>
-            <div className="flex items-center space-x-2">
-              <span className="font-mono font-medium text-gray-900">{wireInstructions.accountNumber}</span>
-              <button
-                onClick={() => copyToClipboard(wireInstructions.accountNumber, 'account')}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              {copied === 'account' && <CheckCircle className="h-4 w-4 text-green-500" />}
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Account Name:</span>
-            <span className="font-medium text-gray-900">{wireInstructions.accountName}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">SWIFT Code:</span>
-            <div className="flex items-center space-x-2">
-              <span className="font-mono font-medium text-gray-900">{wireInstructions.swiftCode}</span>
-              <button
-                onClick={() => copyToClipboard(wireInstructions.swiftCode, 'swift')}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              {copied === 'swift' && <CheckCircle className="h-4 w-4 text-green-500" />}
-            </div>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 rounded p-3">
-            <div className="flex justify-between items-center">
-              <span className="text-red-700 font-medium">Reference Code:</span>
-              <div className="flex items-center space-x-2">
-                <span className="font-mono font-bold text-red-900">{wireInstructions.referenceCode}</span>
                 <button
-                  onClick={() => copyToClipboard(wireInstructions.referenceCode, 'reference')}
-                  className="text-red-600 hover:text-red-700"
+                  onClick={() => setShowFunding(false)}
+                  className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
                 >
-                  <Copy className="h-4 w-4" />
+                  Cancel
                 </button>
-                {copied === 'reference' && <CheckCircle className="h-4 w-4 text-green-500" />}
               </div>
             </div>
-            <p className="text-xs text-red-600 mt-1">
-              CRITICAL: Include this reference code in your wire transfer memo
-            </p>
-          </div>
+          )}
         </div>
       </div>
+    )
+  }
 
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Wire amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">Wire fee:</span>
-          <span className="text-gray-600 text-sm">$25.00</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600 text-sm">Bank fees:</span>
-          <span className="text-gray-600 text-sm">Varies by bank</span>
-        </div>
-      </div>
+  // Live trading data (mock)
+  const tradingData = {
+    accountBalance: account?.balance || 0,
+    availableMargin: (account?.balance || 0) * 4, // 4:1 leverage
+    dailyPnL: 2847.50,
+    dailyPnLPct: 3.63,
+    openPositions: 12,
+    totalTrades: 847,
+    winRate: 76.4,
+    currentDrawdown: -1.2
+  }
 
-      <button
-        onClick={handleConfirm}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-      >
-        I've Sent the Wire Transfer
-      </button>
-    </div>
-  )
-}
-
-function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
-  const [selectedCrypto, setSelectedCrypto] = useState('USDC')
-  const [showAddress, setShowAddress] = useState(false)
-  const [copied, setCopied] = useState('')
-
-  const cryptoOptions = [
-    { symbol: 'USDC', name: 'USD Coin', rate: 1.00, network: 'Ethereum' },
-    { symbol: 'USDT', name: 'Tether', rate: 1.00, network: 'Ethereum' },
-    { symbol: 'BTC', name: 'Bitcoin', rate: 0.000023, network: 'Bitcoin' },
-    { symbol: 'ETH', name: 'Ethereum', rate: 0.00046, network: 'Ethereum' }
+  const positions = [
+    { symbol: 'SPY', side: 'LONG', size: 500, entry: 485.20, current: 487.85, pnl: 1325, pnlPct: 0.55 },
+    { symbol: 'QQQ', side: 'SHORT', size: -200, entry: 412.50, current: 410.15, pnl: 470, pnlPct: 0.57 },
+    { symbol: 'IWM', side: 'LONG', size: 300, entry: 218.75, current: 220.40, pnl: 495, pnlPct: 0.75 },
+    { symbol: 'TSLA', side: 'SHORT', size: -50, entry: 248.90, current: 246.20, pnl: 135, pnlPct: 1.08 },
+    { symbol: 'NVDA', side: 'LONG', size: 25, entry: 875.30, current: 892.15, pnl: 421, pnlPct: 1.92 }
   ]
 
-  const selectedOption = cryptoOptions.find(opt => opt.symbol === selectedCrypto)!
-  const cryptoAmount = amount * selectedOption.rate
-
-  const addresses = {
-    USDC: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e',
-    USDT: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e',
-    BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-    ETH: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e'
-  }
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(field)
-    setTimeout(() => setCopied(''), 2000)
-  }
-
-  const handleGenerateAddress = () => {
-    setShowAddress(true)
-  }
-
-  const handleConfirmSent = () => {
-    onSuccess({
-      id: 'crypto_' + Math.random().toString(36).substr(2, 9),
-      amount,
-      method: 'crypto',
-      currency: selectedCrypto,
-      status: 'pending',
-      address: addresses[selectedCrypto as keyof typeof addresses],
-      estimated_completion: '10-60 minutes'
-    })
-  }
+  const recentTrades = [
+    { time: '14:32:15', symbol: 'AAPL', side: 'BUY', size: 100, price: 185.42, pnl: 0, status: 'FILLED' },
+    { time: '14:31:48', symbol: 'MSFT', side: 'SELL', size: 75, price: 412.88, pnl: 287, status: 'FILLED' },
+    { time: '14:31:22', symbol: 'GOOGL', side: 'BUY', size: 25, price: 142.15, pnl: 0, status: 'FILLED' },
+    { time: '14:30:55', symbol: 'AMZN', side: 'SELL', size: 50, price: 178.92, pnl: 445, status: 'FILLED' },
+    { time: '14:30:33', symbol: 'META', side: 'BUY', size: 40, price: 485.67, pnl: 0, status: 'FILLED' }
+  ]
 
   return (
-    <div className="space-y-6">
-      <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Wallet className="h-5 w-5 text-purple-600" />
-          <span className="font-medium text-purple-900">Cryptocurrency Payment</span>
-        </div>
-        <p className="text-sm text-purple-700">
-          Send cryptocurrency to our secure wallet. Funds are credited after network confirmation.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Select Cryptocurrency
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          {cryptoOptions.map((crypto) => (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm">Account Balance</div>
+            <div className="text-2xl font-bold text-white">${tradingData.accountBalance.toLocaleString()}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm">Available Margin</div>
+            <div className="text-2xl font-bold text-blue-400">${tradingData.availableMargin.toLocaleString()}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm">Daily P&L</div>
+            <div className="text-2xl font-bold text-green-400">+${tradingData.dailyPnL.toLocaleString()}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm">Daily %</div>
+            <div className="text-2xl font-bold text-green-400">+{tradingData.dailyPnLPct}%</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm">Open Positions</div>
+            <div className="text-2xl font-bold text-yellow-400">{tradingData.openPositions}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-sm flex items-center justify-between">
+              <span>Add Capital</span>
+              <Clock className="h-4 w-4" />
+            </div>
             <button
-              key={crypto.symbol}
-              type="button"
-              onClick={() => setSelectedCrypto(crypto.symbol)}
-              className={`p-4 border rounded-lg text-left transition-colors ${
-                selectedCrypto === crypto.symbol
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              onClick={() => setShowFunding(true)}
+              className="text-2xl font-bold text-blue-400 hover:text-blue-300 transition-colors"
             >
-              <div className="font-medium text-gray-900">{crypto.symbol}</div>
-              <div className="text-sm text-gray-600">{crypto.name}</div>
-              <div className="text-xs text-gray-500">{crypto.network}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">USD Amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">{selectedCrypto} Amount:</span>
-          <span className="font-mono font-bold text-gray-900">
-            {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : selectedCrypto === 'ETH' ? 6 : 2)} {selectedCrypto}
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600 text-sm">Network fees:</span>
-          <span className="text-gray-600 text-sm">Paid by sender</span>
-        </div>
-      </div>
-
-      {!showAddress ? (
-        <button
-          onClick={handleGenerateAddress}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-        >
-          Generate {selectedCrypto} Address
-        </button>
-      ) : (
-        <div className="space-y-4">
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-300 text-sm">Send {selectedCrypto} to:</span>
-              <button
-                onClick={() => copyToClipboard(addresses[selectedCrypto as keyof typeof addresses], 'address')}
-                className="text-gray-400 hover:text-gray-200"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="font-mono text-white text-sm break-all bg-gray-800 p-3 rounded">
-              {addresses[selectedCrypto as keyof typeof addresses]}
-            </div>
-            <div className="flex items-center space-x-2 mt-2">
-              <span className="text-gray-400 text-xs">Network: {selectedOption.network}</span>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="text-gray-400 text-xs">Amount: {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : 6)} {selectedCrypto}</span>
-            </div>
-          </div>
-
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="font-medium text-red-900">Important</span>
-            </div>
-            <ul className="text-sm text-red-700 space-y-1">
-              <li>• Send exactly {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : 6)} {selectedCrypto}</li>
-              <li>• Use {selectedOption.network} network only</li>
-              <li>• Double-check the address before sending</li>
-              <li>• Funds are credited after 3 network confirmations</li>
-            </ul>
-          </div>
-
-          <button
-            onClick={handleConfirmSent}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-          >
-            I've Sent the Cryptocurrency
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-export function PaymentProcessor({ amount, onSuccess, onError, onClose }: PaymentProcessorProps) {
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
-  const [processing, setProcessing] = useState(false)
-
-  const handleMethodSelect = (methodId: string) => {
-    const method = paymentMethods.find(m => m.id === methodId)
-    if (method && amount >= method.minAmount && amount <= method.maxAmount) {
-      setSelectedMethod(methodId)
-    }
-  }
-
-  const handlePaymentSuccess = async (result: any) => {
-    setProcessing(true)
-    
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    onSuccess(result)
-    setProcessing(false)
-  }
-
-  if (processing) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-8 w-8 text-green-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Processed</h3>
-          <p className="text-gray-600 mb-4">
-            Your funding request has been submitted successfully. 
-            Your account will be updated once the payment is confirmed.
-          </p>
-          <div className="animate-pulse text-sm text-gray-500">
-            Updating your account balance...
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!selectedMethod) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Add Capital - ${amount.toLocaleString()}</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-5 w-5" />
+              + Fund
             </button>
           </div>
-          
-          <div className="p-6">
-            <p className="text-gray-600 mb-6">
-              Choose your preferred payment method to fund your trading account.
-            </p>
-            
-            <div className="grid gap-4">
-              {paymentMethods.map((method) => {
-                const isAvailable = amount >= method.minAmount && amount <= method.maxAmount
-                
-                return (
-                  <button
-                    key={method.id}
-                    onClick={() => isAvailable && handleMethodSelect(method.id)}
-                    disabled={!isAvailable}
-                    className={`p-4 border rounded-lg text-left transition-colors ${
-                      isAvailable
-                        ? 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
-                        : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        isAvailable ? 'bg-blue-100' : 'bg-gray-200'
+        </div>
+
+        {/* Trading Interface */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Positions */}
+          <div className="lg:col-span-2 bg-gray-800 rounded-lg border border-gray-700">
+            <div className="p-4 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white flex items-center">
+                <Target className="h-5 w-5 mr-2 text-blue-400" />
+                Live Positions
+              </h3>
+            </div>
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-gray-400 border-b border-gray-700">
+                      <th className="text-left py-2">Symbol</th>
+                      <th className="text-center py-2">Side</th>
+                      <th className="text-right py-2">Size</th>
+                      <th className="text-right py-2">Entry</th>
+                      <th className="text-right py-2">Current</th>
+                      <th className="text-right py-2">P&L</th>
+                      <th className="text-right py-2">%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {positions.map((position, index) => (
+                      <tr key={index} className="border-b border-gray-700 hover:bg-gray-750">
+                        <td className="py-3 font-mono font-bold text-white">{position.symbol}</td>
+                        <td className="py-3 text-center">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            position.side === 'LONG' 
+                              ? 'bg-green-900 text-green-300' 
+                              : 'bg-red-900 text-red-300'
+                          }`}>
+                            {position.side}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right font-mono text-gray-300">{Math.abs(position.size)}</td>
+                        <td className="py-3 text-right font-mono text-gray-300">${position.entry}</td>
+                        <td className="py-3 text-right font-mono text-white">${position.current}</td>
+                        <td className={`py-3 text-right font-mono font-bold ${
+                          position.pnl >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {position.pnl >= 0 ? '+' : ''}${position.pnl}
+                        </td>
+                        <td className={`py-3 text-right font-mono font-bold ${
+                          position.pnlPct >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {position.pnlPct >= 0 ? '+' : ''}{position.pnlPct}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Trading Stats & Recent Trades */}
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-blue-400" />
+                Trading Stats
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Total Trades</span>
+                  <span className="text-white font-mono">{tradingData.totalTrades}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Win Rate</span>
+                  <span className="text-green-400 font-mono">{tradingData.winRate}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Max Drawdown</span>
+                  <span className="text-red-400 font-mono">{tradingData.currentDrawdown}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Leverage</span>
+                  <span className="text-yellow-400 font-mono">4:1</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Trades */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <Zap className="h-5 w-5 mr-2 text-yellow-400" />
+                Recent Trades
+              </h3>
+              <div className="space-y-2">
+                {recentTrades.map((trade, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-400 font-mono">{trade.time}</span>
+                      <span className="font-mono font-bold text-white">{trade.symbol}</span>
+                      <span className={`px-1 py-0.5 rounded text-xs ${
+                        trade.side === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
                       }`}>
-                        <method.icon className={`h-6 w-6 ${
-                          isAvailable ? 'text-blue-600' : 'text-gray-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">{method.name}</div>
-                        <div className="text-sm text-gray-600">{method.description}</div>
-                        <div className="flex items-center space-x-4 mt-1">
-                          <span className="text-xs text-gray-500">Fee: {method.fees}</span>
-                          <span className="text-xs text-gray-500">Time: {method.timeframe}</span>
-                        </div>
-                        {!isAvailable && (
-                          <div className="text-xs text-red-600 mt-1">
-                            Amount must be between ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                      {isAvailable && (
-                        <div className="text-blue-600">
-                          <ExternalLink className="h-5 w-5" />
-                        </div>
+                        {trade.side}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-white">${trade.price}</div>
+                      {trade.pnl > 0 && (
+                        <div className="text-green-400 font-mono text-xs">+${trade.pnl}</div>
                       )}
                     </div>
-                  </button>
-                )
-              })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+              <h3 className="text-lg font-semibold text-white mb-4">System Status</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Market Data</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-400 text-sm">Live</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Trading Engine</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-400 text-sm">Active</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Risk Monitor</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-400 text-sm">Normal</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Server Time</span>
+                  <span className="text-white font-mono text-sm">
+                    {currentTime.toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )
-  }
 
-  // Show selected payment method form
-  const selectedMethodData = paymentMethods.find(m => m.id === selectedMethod)!
+        {/* Funding Modal */}
+        {showFunding && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Trading Account</h3>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Trading Capital
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={fundingAmount}
+                    onChange={(e) => setFundingAmount(Number(e.target.value))}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    min="100"
+                    step="100"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Minimum: $100 for live trading</p>
+              </div>
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <selectedMethodData.icon className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">{selectedMethodData.name}</h3>
+              {fundingAmount >= 100 && (
+                <Elements stripe={stripePromise}>
+                  <StripeCardForm
+                    amount={fundingAmount}
+                    onSuccess={handleFundingSuccess}
+                    onError={handleFundingError}
+                  />
+                </Elements>
+              )}
+
+              <button
+                onClick={() => setShowFunding(false)}
+                className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setSelectedMethod(null)}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        
-        <div className="p-6">
-          {selectedMethod === 'card' && (
-            <Elements stripe={stripePromise}>
-              <CardPaymentForm 
-                amount={amount} 
-                onSuccess={handlePaymentSuccess} 
-                onError={onError} 
-              />
-            </Elements>
-          )}
-          
-          {selectedMethod === 'ach' && (
-            <ACHPaymentForm 
-              amount={amount} 
-              onSuccess={handlePaymentSuccess} 
-            />
-          )}
-          
-          {selectedMethod === 'wire' && (
-            <WireTransferForm 
-              amount={amount} 
-              onSuccess={handlePaymentSuccess} 
-            />
-          )}
-          
-          {selectedMethod === 'crypto' && (
-            <CryptoPaymentForm 
-              amount={amount} 
-              onSuccess={handlePaymentSuccess} 
-            />
-          )}
-        </div>
+        )}
       </div>
     </div>
   )
