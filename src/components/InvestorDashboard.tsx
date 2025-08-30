@@ -77,18 +77,16 @@ export function InvestorDashboard() {
   }, [user])
 
   const portfolioData = {
-    totalValue: 2450000,
-    monthlyReturn: 22.4,
-    yearlyReturn: 287.0,
-    totalReturn: 1247.0,
-    dailyPnL: 18500,
-    dailyPnLPct: 0.76
+    totalValue: 7850,
+    monthlyReturn: 1.9,
+    yearlyReturn: 1.9,
+    totalReturn: -1.9,
+    dailyPnL: 150,
+    dailyPnLPct: 1.9
   }
 
   const holdings = [
-    { name: 'Alpha Fund', allocation: 65, value: 1592500, return: 342.0, risk: 'Medium' },
-    { name: 'Market Neutral Fund', allocation: 25, value: 612500, return: 156.7, risk: 'Low' },
-    { name: 'Momentum Portfolio', allocation: 10, value: 245000, return: 418.9, risk: 'High' }
+    { name: 'Trading Account', allocation: 100, value: 7850, return: -1.9, risk: 'High' }
   ]
 
   const documents = [
@@ -131,7 +129,7 @@ export function InvestorDashboard() {
             <div className="font-serif text-2xl font-bold text-navy-900 mb-1">
               ${portfolioData.totalValue.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-500">Institutional Account</div>
+            <div className="text-sm text-gray-500">Trading Account</div>
           </div>
           
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -153,15 +151,15 @@ export function InvestorDashboard() {
             <div className="font-serif text-2xl font-bold text-green-600 mb-1">
               +{portfolioData.yearlyReturn}%
             </div>
-            <div className="text-sm text-gray-500">Outperforming benchmark</div>
+            <div className="text-sm text-gray-500">Since January 2025</div>
           </div>
           
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 font-medium">Total Return</span>
-              <ArrowUpRight className="h-5 w-5 text-green-600" />
+              <ArrowUpRight className="h-5 w-5 text-red-600" />
             </div>
-            <div className="font-serif text-2xl font-bold text-green-600 mb-1">
+            <div className="font-serif text-2xl font-bold text-red-600 mb-1">
               +{portfolioData.totalReturn}%
             </div>
             <div className="text-sm text-gray-500">Since inception</div>
