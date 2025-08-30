@@ -185,7 +185,33 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           Your payment information is encrypted and secure. Powered by bank-level security.
         </p>
       </div>
-      
+      <div className="bg-white rounded border border-gray-300 p-3">
+        <CardElement
+          onChange={handleCardChange}
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#374151',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                '::placeholder': {
+                  color: '#9CA3AF',
+                },
+              },
+              invalid: {
+                color: '#EF4444',
+              },
+            },
+          }}
+        />
+      </div>
+      {cardError && (
+        <div className="mt-2 text-sm text-red-600 flex items-center">
+          <AlertCircle className="h-4 w-4 mr-1" />
+          {cardError}
+        </div>
+      )}
+
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
         <div className="flex items-center space-x-2 mb-4">
           <CreditCard className="h-5 w-5 text-gray-600" />
@@ -194,13 +220,11 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
         </div>
         <div className="bg-white rounded border border-gray-300 p-3">
           <CardElement
-            onChange={handleCardChange}
             options={{
               style: {
                 base: {
                   fontSize: '16px',
                   color: '#374151',
-                  fontFamily: 'Inter, system-ui, sans-serif',
                   '::placeholder': {
                     color: '#9CA3AF',
                   },
@@ -212,12 +236,6 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
             }}
           />
         </div>
-        {cardError && (
-          <div className="mt-2 text-sm text-red-600 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            {cardError}
-          </div>
-        )}
       </div>
 
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -251,7 +269,6 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           `Secure Payment - $${amount.toLocaleString()}`
         )}
       </button>
-
       <p className="text-xs text-gray-500 text-center">
         Your payment information is encrypted and secure. Powered by bank-level security.
       </p>
