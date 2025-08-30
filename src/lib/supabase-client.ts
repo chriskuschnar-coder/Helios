@@ -51,11 +51,6 @@ class DeployedSupabaseClient {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
-    // If missing config, use demo mode
-    if (!this.edgeFunctionUrl || !this.anonKey) {
-      return this.handleDemoMode(endpoint, options)
-    }
-
     // If in WebContainer or missing config, use demo mode
     if (this.isWebContainer || !this.edgeFunctionUrl) {
       return this.handleDemoMode(endpoint, options)
@@ -121,7 +116,7 @@ class DeployedSupabaseClient {
     console.log('🎭 Using demo mode for:', endpoint)
     
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 500))
     
     if (endpoint === 'test-connection') {
       return {
