@@ -16,6 +16,7 @@ import {
 import { Line } from 'react-chartjs-2'
 import { useAuth } from './auth/AuthProvider'
 import { supabaseClient } from '../lib/supabase-client'
+import { PaymentProcessor } from './PaymentProcessor'
 
 ChartJS.register(
   CategoryScale,
@@ -103,6 +104,8 @@ export function HeliosDashboard() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bank')
   const [isProcessingFunding, setIsProcessingFunding] = useState(false)
   const [transferStatus, setTransferStatus] = useState<string | null>(null)
+  const [showPaymentProcessor, setShowPaymentProcessor] = useState(false)
+  const [fundingAmountForPayment, setFundingAmountForPayment] = useState(0)
 
   // Generate data based on user's actual account
   const generateUserData = (userAccount: any): DashboardData => ({
@@ -241,32 +244,46 @@ export function HeliosDashboard() {
 
   const handleFunding = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsProcessingFunding(true)
-    setTransferStatus(null)
     
     const amount = parseFloat(fundingAmount)
     
+    if (amount < 100) {
+      setTransferStatus('Minimum funding amount is $100')
+      return
+    }
+    
+    // Show payment processor instead of direct funding
+    setFundingAmountForPayment(amount)
+    setShowPaymentProcessor(true)
+    setShowFundingModal(false)
+  }
+
+  const handlePaymentSuccess = async (paymentResult: any) => {
+    setIsProcessingFunding(true)
+    setShowPaymentProcessor(false)
+    setTransferStatus(null)
+    
     try {
-      console.log('💰 Processing funding:', { amount, method: selectedPaymentMethod })
+      console.log('💰 Processing funding after payment:', paymentResult)
       
       // Process funding through Supabase
       const result = await supabaseClient.processFunding(
-        amount, 
-        selectedPaymentMethod, 
-        `Account funding via ${selectedPaymentMethod}`
+        paymentResult.amount, 
+        paymentResult.method, 
+        `Account funding via ${paymentResult.method} - ${paymentResult.id}`
       )
       
-      if (result.success && amount >= 100) {
+      if (result.success) {
         // Update local account state immediately for better UX
         if (account) {
           // This will trigger useEffect to regenerate dashboard data
           await refreshAccount()
         }
         
-        setTransferStatus('Funds added successfully!')
+        setTransferStatus(`Funds added successfully! Payment ID: ${paymentResult.id}`)
         console.log('✅ Funding successful')
       } else {
-        setTransferStatus(result.error?.message || 'Invalid amount. Minimum funding is $100.')
+        setTransferStatus(result.error?.message || 'Funding failed. Please try again.')
         console.log('❌ Funding failed:', result.error)
       }
     } catch (error) {
@@ -274,12 +291,19 @@ export function HeliosDashboard() {
       setTransferStatus('An error occurred. Please try again.')
     } finally {
       setIsProcessingFunding(false)
+      setShowFundingModal(true) // Show modal again to display status
       setTimeout(() => {
         setShowFundingModal(false)
         setFundingAmount('')
         setTransferStatus(null)
       }, 3000)
     }
+  }
+
+  const handlePaymentError = (error: string) => {
+    setShowPaymentProcessor(false)
+    setShowFundingModal(true)
+    setTransferStatus(`Payment failed: ${error}`)
   }
 
   // ✅ Loading state inside component function
@@ -728,61 +752,6 @@ export function HeliosDashboard() {
                   <p className="text-xs text-gray-400 mt-1">Minimum funding: $100</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Payment Method
-                  </label>
-                  <div className="space-y-3">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="bank"
-                        checked={selectedPaymentMethod === 'bank'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <Bank className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Bank Transfer (ACH)</div>
-                        <div className="text-xs text-gray-400">1-3 business days • No fees</div>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="wire"
-                        checked={selectedPaymentMethod === 'wire'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <CreditCard className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Wire Transfer</div>
-                        <div className="text-xs text-gray-400">Same day • $25 fee</div>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="crypto"
-                        checked={selectedPaymentMethod === 'crypto'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <Wallet className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Cryptocurrency</div>
-                        <div className="text-xs text-gray-400">Instant • USDC, USDT, BTC, ETH</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
                 {transferStatus && (
                   <div className={`p-3 rounded-lg text-sm ${
                     transferStatus.includes('success') || transferStatus.includes('Connected') 
@@ -808,12 +777,25 @@ export function HeliosDashboard() {
                     disabled={isProcessingFunding}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors"
                   >
-                    {isProcessingFunding ? 'Processing...' : 'Add Funds'}
+                    {isProcessingFunding ? 'Processing...' : 'Continue to Payment'}
                   </button>
                 </div>
               </form>
             </div>
           </div>
+        )}
+
+        {/* Payment Processor Modal */}
+        {showPaymentProcessor && (
+          <PaymentProcessor
+            amount={fundingAmountForPayment}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+            onClose={() => {
+              setShowPaymentProcessor(false)
+              setShowFundingModal(true)
+            }}
+          />
         )}
       </div>
     </>

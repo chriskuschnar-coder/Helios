@@ -9,6 +9,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { supabaseClient } from '../lib/supabase-client'
+import { PaymentProcessor } from './PaymentProcessor'
 
 interface Account {
   id: string
@@ -32,6 +33,12 @@ export function InvestorDashboard() {
   const [selectedTab, setSelectedTab] = useState('overview')
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [showPaymentProcessor, setShowPaymentProcessor] = useState(false)
+  const [fundingAmount, setFundingAmount] = useState('')
+  const [fundingAmountForPayment, setFundingAmountForPayment] = useState(0)
+  const [isProcessingFunding, setIsProcessingFunding] = useState(false)
+  const [transferStatus, setTransferStatus] = useState<string | null>(null)
 
   useEffect(() => {
     // Load user-specific data
@@ -71,6 +78,69 @@ export function InvestorDashboard() {
 
     return () => clearTimeout(timer)
   }, [user, account])
+
+  const handleFunding = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const amount = parseFloat(fundingAmount)
+    
+    if (amount < 100) {
+      setTransferStatus('Minimum funding amount is $100')
+      return
+    }
+    
+    // Show payment processor
+    setFundingAmountForPayment(amount)
+    setShowPaymentProcessor(true)
+    setShowFundingModal(false)
+  }
+
+  const handlePaymentSuccess = async (paymentResult: any) => {
+    setIsProcessingFunding(true)
+    setShowPaymentProcessor(false)
+    setTransferStatus(null)
+    
+    try {
+      console.log('💰 Processing funding after payment:', paymentResult)
+      
+      // Process funding through Supabase
+      const result = await supabaseClient.processFunding(
+        paymentResult.amount, 
+        paymentResult.method, 
+        `Account funding via ${paymentResult.method} - ${paymentResult.id}`
+      )
+      
+      if (result.success) {
+        // Update local account state immediately for better UX
+        if (account) {
+          await refreshAccount()
+        }
+        
+        setTransferStatus(`Funds added successfully! Payment ID: ${paymentResult.id}`)
+        console.log('✅ Funding successful')
+      } else {
+        setTransferStatus(result.error?.message || 'Funding failed. Please try again.')
+        console.log('❌ Funding failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Funding error:', error)
+      setTransferStatus('An error occurred. Please try again.')
+    } finally {
+      setIsProcessingFunding(false)
+      setShowFundingModal(true)
+      setTimeout(() => {
+        setShowFundingModal(false)
+        setFundingAmount('')
+        setTransferStatus(null)
+      }, 3000)
+    }
+  }
+
+  const handlePaymentError = (error: string) => {
+    setShowPaymentProcessor(false)
+    setShowFundingModal(true)
+    setTransferStatus(`Payment failed: ${error}`)
+  }
 
   // Calculate portfolio data based on user's actual account
   const portfolioData = account ? {
@@ -244,6 +314,13 @@ export function InvestorDashboard() {
                       </div>
                     </div>
                   </div>
+                  <button
+                    onClick={() => setShowFundingModal(true)}
+                    className="flex items-center space-x-2 bg-navy-600 hover:bg-navy-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    <span>Add Capital</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -341,6 +418,84 @@ export function InvestorDashboard() {
             )}
           </div>
         </div>
+
+        {/* Funding Modal */}
+        {showFundingModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Add Capital</h3>
+                <button
+                  onClick={() => setShowFundingModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleFunding} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Funding Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={fundingAmount}
+                      onChange={(e) => setFundingAmount(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                      placeholder="0.00"
+                      min="100"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                {transferStatus && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    transferStatus.includes('success') || transferStatus.includes('Connected') 
+                      ? 'bg-green-50 text-green-700 border border-green-200' 
+                      : transferStatus.includes('failed') || transferStatus.includes('error')
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    {transferStatus}
+                  </div>
+                )}
+                  <p className="text-xs text-gray-500 mt-1">Minimum funding: $100</p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowFundingModal(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessingFunding}
+                    className="flex-1 bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    {isProcessingFunding ? 'Processing...' : 'Continue to Payment'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+                </div>
+        {/* Payment Processor Modal */}
+        {showPaymentProcessor && (
+          <PaymentProcessor
+            amount={fundingAmountForPayment}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+            onClose={() => {
+              setShowPaymentProcessor(false)
+              setShowFundingModal(true)
+            }}
+          />
+        )}
       </div>
     </div>
   )
