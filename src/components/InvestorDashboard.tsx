@@ -39,27 +39,35 @@ export function InvestorDashboard() {
     const timer = setTimeout(() => {
       setAccount({
         id: 'demo-account',
-        balance: 2450000,
-        available_balance: 2450000,
-        total_deposits: 2000000,
+        balance: 7850.00,
+        available_balance: 7850.00,
+        total_deposits: 8000.00,
         total_withdrawals: 0
       })
       setTransactions([
         {
           id: '1',
           type: 'deposit',
-          amount: 100000,
+          amount: 8000,
           status: 'completed',
-          created_at: '2025-01-15T10:30:00Z',
-          description: 'Initial investment'
+          created_at: '2025-01-10T10:30:00Z',
+          description: 'Initial capital deposit'
         },
         {
           id: '2',
-          type: 'fee',
-          amount: -8500,
+          type: 'profit',
+          amount: 150,
           status: 'completed',
-          created_at: '2025-01-10T14:20:00Z',
-          description: 'Performance fee'
+          created_at: '2025-01-15T14:20:00Z',
+          description: 'Trading profit - BTCUSD position'
+        },
+        {
+          id: '3',
+          type: 'profit',
+          amount: 75,
+          status: 'completed',
+          created_at: '2025-01-15T14:25:00Z',
+          description: 'Trading profit - ETHUSD position'
         }
       ])
       setLoading(false)
@@ -69,18 +77,18 @@ export function InvestorDashboard() {
   }, [user])
 
   const portfolioData = {
-    totalValue: account?.balance || 0,
-    monthlyReturn: 2.4,
-    yearlyReturn: 12.8,
-    totalReturn: 45.2,
-    dailyPnL: 1850,
+    totalValue: 2450000,
+    monthlyReturn: 22.4,
+    yearlyReturn: 287.0,
+    totalReturn: 1247.0,
+    dailyPnL: 18500,
     dailyPnLPct: 0.76
   }
 
   const holdings = [
-    { name: 'Alpha Fund', allocation: 65, value: (account?.balance || 0) * 0.65, return: 14.2, risk: 'Medium' },
-    { name: 'Market Neutral Fund', allocation: 25, value: (account?.balance || 0) * 0.25, return: 8.7, risk: 'Low' },
-    { name: 'Momentum Portfolio', allocation: 10, value: (account?.balance || 0) * 0.10, return: 18.9, risk: 'High' }
+    { name: 'Alpha Fund', allocation: 65, value: 1592500, return: 342.0, risk: 'Medium' },
+    { name: 'Market Neutral Fund', allocation: 25, value: 612500, return: 156.7, risk: 'Low' },
+    { name: 'Momentum Portfolio', allocation: 10, value: 245000, return: 418.9, risk: 'High' }
   ]
 
   const documents = [
@@ -209,19 +217,19 @@ export function InvestorDashboard() {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Sharpe Ratio</span>
-                          <span className="font-medium text-navy-900">2.84</span>
+                          <span className="font-medium text-navy-900">3.12</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Max Drawdown</span>
-                          <span className="font-medium text-navy-900">-4.2%</span>
+                          <span className="font-medium text-navy-900">-3.8%</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Volatility</span>
-                          <span className="font-medium text-navy-900">8.7%</span>
+                          <span className="font-medium text-navy-900">12.4%</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Beta</span>
-                          <span className="font-medium text-navy-900">0.65</span>
+                          <span className="font-medium text-navy-900">0.89</span>
                         </div>
                       </div>
                     </div>
