@@ -314,6 +314,24 @@ class DeployedSupabaseClient {
       body: JSON.stringify({ data, conditions }),
     })
   }
+
+  // Funding operations
+  async processFunding(amount: number, method: string, description?: string): Promise<SupabaseResponse> {
+    return this.makeRequest('funding/process', {
+      method: 'POST',
+      body: JSON.stringify({ amount, method, description }),
+    })
+  }
+
+  // Get user account
+  async getUserAccount(): Promise<SupabaseResponse> {
+    return this.makeRequest('accounts/user')
+  }
+
+  // Get user transactions
+  async getUserTransactions(limit: number = 10): Promise<SupabaseResponse> {
+    return this.makeRequest(`transactions/user?limit=${limit}`)
+  }
 }
 
 export const supabaseClient = new DeployedSupabaseClient()

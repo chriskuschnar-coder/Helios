@@ -28,65 +28,77 @@ interface Transaction {
 }
 
 export function InvestorDashboard() {
-  const { user } = useAuth()
+  const { user, account, refreshAccount } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
-  const [account, setAccount] = useState<Account | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate loading and use demo data
+    // Load user-specific data
     const timer = setTimeout(() => {
-      setAccount({
-        id: 'demo-account',
-        balance: 7850.00,
-        available_balance: 7850.00,
-        total_deposits: 8000.00,
-        total_withdrawals: 0
-      })
-      setTransactions([
-        {
-          id: '1',
-          type: 'deposit',
-          amount: 8000,
-          status: 'completed',
-          created_at: '2025-01-10T10:30:00Z',
-          description: 'Initial capital deposit'
-        },
-        {
-          id: '2',
-          type: 'profit',
-          amount: 150,
-          status: 'completed',
-          created_at: '2025-01-15T14:20:00Z',
-          description: 'Trading profit - BTCUSD position'
-        },
-        {
-          id: '3',
-          type: 'profit',
-          amount: 75,
-          status: 'completed',
-          created_at: '2025-01-15T14:25:00Z',
-          description: 'Trading profit - ETHUSD position'
+      // Load transactions based on account balance
+      if (account) {
+        const transactionList = []
+        
+        if (account.total_deposits > 0) {
+          transactionList.push({
+            id: '1',
+            type: 'deposit',
+            amount: account.total_deposits,
+            status: 'completed',
+            created_at: '2025-01-10T10:30:00Z',
+            description: 'Initial capital deposit'
+          })
         }
-      ])
+        
+        // Add profit transactions if balance is higher than deposits
+        const profit = account.balance - account.total_deposits
+        if (profit > 0) {
+          transactionList.push({
+            id: '2',
+            type: 'profit',
+            amount: profit,
+            status: 'completed',
+            created_at: '2025-01-15T14:20:00Z',
+            description: 'Trading profits'
+          })
+        }
+        
+        setTransactions(transactionList)
+      }
       setLoading(false)
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [user])
+  }, [user, account])
 
-  const portfolioData = {
-    totalValue: 7850,
-    monthlyReturn: 1.9,
-    yearlyReturn: 1.9,
-    totalReturn: -1.9,
-    dailyPnL: 150,
-    dailyPnLPct: 1.9
+  // Calculate portfolio data based on user's actual account
+  const portfolioData = account ? {
+    totalValue: account.balance,
+    monthlyReturn: account.total_deposits > 0 ? ((account.balance - account.total_deposits) / account.total_deposits * 100) : 0,
+    yearlyReturn: account.total_deposits > 0 ? ((account.balance - account.total_deposits) / account.total_deposits * 100) : 0,
+    totalReturn: account.total_deposits > 0 ? ((account.balance - account.total_deposits) / account.total_deposits * 100) : 0,
+    dailyPnL: account.balance - account.total_deposits,
+    dailyPnLPct: account.total_deposits > 0 ? ((account.balance - account.total_deposits) / account.total_deposits * 100) : 0
+  } : {
+    totalValue: 0,
+    monthlyReturn: 0,
+    yearlyReturn: 0,
+    totalReturn: 0,
+    dailyPnL: 0,
+    dailyPnLPct: 0
   }
 
-  const holdings = [
-    { name: 'Trading Account', allocation: 100, value: 7850, return: -1.9, risk: 'High' }
+  const holdings = account ? [
+    { 
+      name: 'Trading Account', 
+      allocation: 100, 
+      value: account.balance, 
+      return: portfolioData.totalReturn, 
+      risk: 'High' 
+    }
+  ] : [
+    { name: 'No Account', allocation: 0, value: 0, return: 0, risk: 'None' }
   ]
 
   const documents = [

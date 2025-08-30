@@ -14,6 +14,8 @@ import {
   Filler,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { useAuth } from './auth/AuthProvider'
+import { supabaseClient } from '../lib/supabase-client'
 
 ChartJS.register(
   CategoryScale,
@@ -92,6 +94,7 @@ const marketData = [
 ]
 
 export function HeliosDashboard() {
+  const { user, account, refreshAccount } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState('1D')
   const [isLoading, setIsLoading] = useState(true)
@@ -101,39 +104,42 @@ export function HeliosDashboard() {
   const [isProcessingFunding, setIsProcessingFunding] = useState(false)
   const [transferStatus, setTransferStatus] = useState<string | null>(null)
 
-  // Mock data for demonstration
-  const mockData: DashboardData = {
+  // Generate data based on user's actual account
+  const generateUserData = (userAccount: any): DashboardData => ({
     account: {
-      balance: 7850.00,
-      equity: 7850.00,
+      balance: userAccount?.balance || 0,
+      equity: userAccount?.balance || 0,
       margin: 0,
-      free_margin: 7850.00,
+      free_margin: userAccount?.available_balance || 0,
       profit: 0,
-      initial_balance: 7700.00
+      initial_balance: userAccount?.total_deposits || 0
     },
     positions: [
-      {
-        ticket: '12345',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        volume: 0.1,
-        price_open: 43250.00,
-        price_current: 43420.00,
-        profit: 17.00,
-        profit_pct: 0.39,
-        time: '14:32:15'
-      },
-      {
-        ticket: '12346',
-        symbol: 'ETHUSD',
-        type: 'SELL',
-        volume: 1.5,
-        price_open: 2180.00,
-        price_current: 2175.00,
-        profit: 7.50,
-        profit_pct: 0.23,
-        time: '14:28:42'
-      }
+      // Only show positions if user has balance > 0
+      ...(userAccount?.balance > 0 ? [
+        {
+          ticket: '12345',
+          symbol: 'BTCUSD',
+          type: 'BUY' as const,
+          volume: 0.1,
+          price_open: 43250.00,
+          price_current: 43420.00,
+          profit: 17.00,
+          profit_pct: 0.39,
+          time: '14:32:15'
+        },
+        {
+          ticket: '12346',
+          symbol: 'ETHUSD',
+          type: 'SELL' as const,
+          volume: 1.5,
+          price_open: 2180.00,
+          price_current: 2175.00,
+          profit: 7.50,
+          profit_pct: 0.23,
+          time: '14:28:42'
+        }
+      ] : [])
     ],
     metrics: {
       win_rate: 68.5,
@@ -154,37 +160,40 @@ export function HeliosDashboard() {
       exposure_net: 1250.00
     },
     active_signals: [
-      {
-        time: '14:35:22',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        strategy: 'Trend Following',
-        confidence: 85
-      },
-      {
-        time: '14:33:18',
-        symbol: 'XAUUSD',
-        type: 'SELL',
-        strategy: 'Mean Reversion',
-        confidence: 72
-      }
+      // Only show signals if user has balance > 0
+      ...(userAccount?.balance > 0 ? [
+        {
+          time: '14:35:22',
+          symbol: 'BTCUSD',
+          type: 'BUY' as const,
+          strategy: 'Trend Following',
+          confidence: 85
+        },
+        {
+          time: '14:33:18',
+          symbol: 'XAUUSD',
+          type: 'SELL' as const,
+          strategy: 'Mean Reversion',
+          confidence: 72
+        }
+      ] : [])
     ],
     chart_data: {
       timestamps: Array.from({ length: 50 }, (_, i) => Date.now() - (50 - i) * 60000),
-      balance: Array.from({ length: 50 }, (_, i) => 7700 + Math.random() * 200 - 100),
-      equity: Array.from({ length: 50 }, (_, i) => 7700 + Math.random() * 200 - 100)
+      balance: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25),
+      equity: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25)
     }
-  }
+  })
 
   useEffect(() => {
-    // Simulate loading and set mock data
+    // Generate data based on user's actual account
     const timer = setTimeout(() => {
-      setData(mockData)
+      setData(generateUserData(account))
       setIsLoading(false)
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [account])
 
   // Real-time updates simulation
   useEffect(() => {
@@ -194,7 +203,10 @@ export function HeliosDashboard() {
       setData(prevData => {
         if (!prevData) return prevData
 
-        // Simulate small price movements
+        // Only simulate movements if user has balance
+        if (prevData.account.balance === 0) return prevData
+
+        // Simulate small price movements for active accounts
         const updatedPositions = prevData.positions.map(pos => ({
           ...pos,
           price_current: pos.price_current + (Math.random() - 0.5) * 2,
@@ -235,25 +247,27 @@ export function HeliosDashboard() {
     const amount = parseFloat(fundingAmount)
     
     try {
-      // Simulate funding process
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('💰 Processing funding:', { amount, method: selectedPaymentMethod })
       
-      if (data && amount >= 100) {
-        setData(prevData => {
-          if (!prevData) return prevData
-          return {
-            ...prevData,
-            account: {
-              ...prevData.account,
-              balance: prevData.account.balance + amount,
-              equity: prevData.account.equity + amount,
-              free_margin: prevData.account.free_margin + amount
-            }
-          }
-        })
+      // Process funding through Supabase
+      const result = await supabaseClient.processFunding(
+        amount, 
+        selectedPaymentMethod, 
+        `Account funding via ${selectedPaymentMethod}`
+      )
+      
+      if (result.success && amount >= 100) {
+        // Update local account state immediately for better UX
+        if (account) {
+          // This will trigger useEffect to regenerate dashboard data
+          await refreshAccount()
+        }
+        
         setTransferStatus('Funds added successfully!')
+        console.log('✅ Funding successful')
       } else {
-        setTransferStatus('Invalid amount. Minimum funding is $100.')
+        setTransferStatus(result.error?.message || 'Invalid amount. Minimum funding is $100.')
+        console.log('❌ Funding failed:', result.error)
       }
     } catch (error) {
       console.error('Funding error:', error)
@@ -286,9 +300,9 @@ export function HeliosDashboard() {
   if (!data) return null
 
   const dailyPnl = data.account.balance - data.account.initial_balance
-  const dailyPnlPct = (dailyPnl / data.account.initial_balance) * 100
-  const totalGrowth = data.account.balance - 8000 // Initial investment
-  const growthPct = (totalGrowth / 8000) * 100
+  const dailyPnlPct = data.account.initial_balance > 0 ? (dailyPnl / data.account.initial_balance) * 100 : 0
+  const totalGrowth = data.account.balance - data.account.initial_balance
+  const growthPct = data.account.initial_balance > 0 ? (totalGrowth / data.account.initial_balance) * 100 : 0
 
   // Chart configuration
   const chartOptions = {
