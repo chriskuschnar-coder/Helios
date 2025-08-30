@@ -78,6 +78,10 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
   const [loading, setLoading] = useState(false)
   const [stripeReady, setStripeReady] = useState(false)
   const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState('')
 
   useEffect(() => {
     if (stripe && elements) {
@@ -95,7 +99,34 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
       setCardError('')
     }
   }
-
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -109,8 +140,31 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
       onError('Card information is required')
       return
     }
-
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
     setLoading(true)
+    setCardError('')
+    setCardError('')
+    setCardError('')
+    setCardError('')
     setCardError('')
 
     try {
@@ -169,6 +223,10 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-gray-600">Loading payment system...</p>
         <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
+        <p className="text-xs text-gray-500 mt-2">Connecting to Stripe...</p>
       </div>
     )
   }
@@ -182,15 +240,34 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           <Lock className="h-4 w-4 text-blue-600" />
         </div>
         <p className="text-sm text-blue-700">
-          Your payment information is encrypted and secure. Powered by bank-level security.
-        </p>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex items-center space-x-2 mb-4">
-          <CreditCard className="h-5 w-5 text-gray-600" />
-          <span className="font-medium text-gray-900">Card Information</span>
-          <Lock className="h-4 w-4 text-gray-400" />
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <CreditCard className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
         </div>
         <div className="bg-white rounded border border-gray-300 p-3">
           <CardElement
@@ -218,6 +295,31 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
             {cardError}
           </div>
         )}
+      </div>
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex items-center space-x-2 mb-4">
+          <CreditCard className="h-5 w-5 text-gray-600" />
+          <span className="font-medium text-gray-900">Card Information</span>
+          <Lock className="h-4 w-4 text-gray-400" />
+        </div>
+        <div className="bg-white rounded border border-gray-300 p-3">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#374151',
+                  '::placeholder': {
+                    color: '#9CA3AF',
+                  },
+                },
+                invalid: {
+                  color: '#EF4444',
+                },
+              },
+            }}
+          />
+        </div>
       </div>
 
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -251,11 +353,10 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           `Secure Payment - $${amount.toLocaleString()}`
         )}
       </button>
-
+    </form>
       <p className="text-xs text-gray-500 text-center">
         Your payment information is encrypted and secure. Powered by bank-level security.
       </p>
-    </form>
   )
 }
 
@@ -534,7 +635,6 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
 function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
   const [selectedCrypto, setSelectedCrypto] = useState('USDC')
   const [showAddress, setShowAddress] = useState(false)
-  const [copied, setCopied] = useState('')
 
   const cryptoOptions = [
     { symbol: 'USDC', name: 'USD Coin', rate: 1.00, network: 'Ethereum' },
@@ -551,12 +651,6 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
     USDT: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e',
     BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
     ETH: '0x742d35Cc6634C0532925a3b8D4C9db96C4b5Da5e'
-  }
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(field)
-    setTimeout(() => setCopied(''), 2000)
   }
 
   const handleGenerateAddress = () => {
