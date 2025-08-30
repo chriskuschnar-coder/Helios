@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { supabaseClient } from './lib/supabase-client'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { InvestmentPlatform } from './components/InvestmentPlatform'
@@ -11,7 +11,7 @@ function App() {
     key: '',
     origin: ''
   })
-  const [showPlatform, setShowPlatform] = useState(false)
+  const [showPlatform, setShowPlatform] = useState(true)
   const [useProxy, setUseProxy] = useState(false)
   
   useEffect(() => {
