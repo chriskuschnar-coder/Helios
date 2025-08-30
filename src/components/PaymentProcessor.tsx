@@ -8,7 +8,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 
 // Debug Stripe loading
 console.log('🔍 Stripe Environment Check:')
-console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
+console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Using fallback ⚠️')
 
 interface PaymentProcessorProps {
   amount: number
@@ -76,17 +76,16 @@ const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
       fontSize: '16px',
-      color: '#374151',
+      color: '#32325d',
       letterSpacing: '0.025em',
       fontFamily: 'Inter, system-ui, sans-serif',
       lineHeight: '1.5',
-      padding: '12px 0',
       '::placeholder': {
-        color: '#9CA3AF',
+        color: '#a0aec0',
       },
     },
     invalid: {
-      color: '#EF4444',
+      color: '#fa755a',
     },
     complete: {
       color: '#059669',
@@ -98,9 +97,11 @@ const CARD_ELEMENT_OPTIONS = {
 function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
   const stripe = useStripe()
   const elements = useElements()
-  const [loading, setLoading] = useState(false)
-  const [cardError, setCardError] = useState('')
+  
+  // States
   const [stripeReady, setStripeReady] = useState(false)
+  const [cardError, setCardError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (stripe && elements) {
@@ -214,7 +215,7 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Card Information
           </label>
-          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[80px] flex items-center">
+          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[60px] flex items-center">
             <div className="w-full">
               <CardElement
                 onChange={handleCardChange}
