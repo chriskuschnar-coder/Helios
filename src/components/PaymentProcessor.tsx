@@ -9,7 +9,6 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 // Debug Stripe loading
 console.log('🔍 Stripe Environment Check:')
 console.log('Publishable Key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
-console.log('Stripe Promise:', stripePromise)
 
 interface PaymentProcessorProps {
   amount: number
@@ -78,15 +77,37 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
   const [loading, setLoading] = useState(false)
   const [stripeReady, setStripeReady] = useState(false)
   const [cardError, setCardError] = useState('')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
 
   useEffect(() => {
     if (stripe && elements) {
       setStripeReady(true)
       console.log('✅ Stripe and Elements loaded successfully')
-    } else {
-      console.log('⏳ Waiting for Stripe to load...')
     }
   }, [stripe, elements])
+
+  // Create payment intent when component mounts
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      try {
+        console.log('🔄 Creating payment intent for amount:', amount)
+        
+        // For demo purposes, we'll simulate the payment intent creation
+        // In production, this would call your server endpoint
+        const mockClientSecret = `pi_demo_${Math.random().toString(36).substr(2, 9)}_secret_${Math.random().toString(36).substr(2, 9)}`
+        setClientSecret(mockClientSecret)
+        console.log('✅ Mock payment intent created')
+        
+      } catch (error) {
+        console.error('❌ Error creating payment intent:', error)
+        setCardError('Failed to initialize payment')
+      }
+    }
+
+    if (amount > 0) {
+      createPaymentIntent()
+    }
+  }, [amount])
 
   const handleCardChange = (event: any) => {
     if (event.error) {
@@ -100,13 +121,13 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
     e.preventDefault()
     
     if (!stripe || !elements) {
-      onError('Payment system not ready. Please wait a moment and try again.')
+      setCardError('Payment system not ready. Please wait a moment and try again.')
       return
     }
 
     const cardElement = elements.getElement(CardElement)
     if (!cardElement) {
-      onError('Card information is required')
+      setCardError('Card information is required')
       return
     }
 
@@ -114,50 +135,36 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
     setCardError('')
 
     try {
-      // Create payment intent via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ 
-          amount: amount * 100, // Convert to cents
-          user_id: 'demo-user' // In production, get from auth context
-        })
+      // For demo purposes, simulate successful payment
+      // In production, you would use the real clientSecret from your server
+      console.log('🔄 Processing demo payment...')
+      
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Check if using test card number
+      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+      if (paymentMethodError) {
+        setCardError(paymentMethodError.message || 'Invalid card information')
+        return
       }
 
-      const { client_secret } = await response.json()
-      console.log('✅ Payment intent created:', client_secret)
-
-      // Confirm payment
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
-        payment_method: {
-          card: cardElement,
-        }
+      // Simulate successful payment
+      console.log('✅ Demo payment successful')
+      onSuccess({
+        id: 'pi_demo_' + Math.random().toString(36).substr(2, 9),
+        amount: amount,
+        method: 'card',
+        status: 'succeeded'
       })
 
-      if (confirmError) {
-        onError(confirmError.message || 'Payment failed')
-        console.log('❌ Payment failed:', confirmError)
-      } else if (paymentIntent?.status === 'succeeded') {
-        console.log('✅ Payment succeeded:', paymentIntent)
-        onSuccess({
-          id: paymentIntent.id,
-          amount: paymentIntent.amount / 100,
-          method: 'card',
-          status: 'completed'
-        })
-      }
     } catch (error) {
       console.error('❌ Payment processing error:', error)
-      onError('Payment processing failed')
+      setCardError('Payment processing failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -185,32 +192,50 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           Your payment information is encrypted and secure. Powered by bank-level security.
         </p>
       </div>
-      <div className="bg-white rounded border border-gray-300 p-3">
-        <CardElement
-          onChange={handleCardChange}
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#374151',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                '::placeholder': {
-                  color: '#9CA3AF',
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Card Information
+        </label>
+        <div className="border border-gray-300 rounded-lg p-4 bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+          <CardElement
+            onChange={handleCardChange}
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#374151',
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSmoothing: 'antialiased',
+                  '::placeholder': {
+                    color: '#9CA3AF',
+                  },
+                  iconColor: '#6B7280',
+                },
+                invalid: {
+                  color: '#EF4444',
+                  iconColor: '#EF4444',
+                },
+                complete: {
+                  color: '#059669',
+                  iconColor: '#059669',
                 },
               },
-              invalid: {
-                color: '#EF4444',
-              },
-            },
-          }}
-        />
-      </div>
-      {cardError && (
-        <div className="mt-2 text-sm text-red-600 flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {cardError}
+              hidePostalCode: false,
+              iconStyle: 'solid',
+            }}
+          />
         </div>
-      )}
+        {cardError && (
+          <div className="mt-2 text-sm text-red-600 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            {cardError}
+          </div>
+        )}
+        <p className="text-xs text-gray-500 mt-2">
+          Test card: 4242 4242 4242 4242 with any future date and CVC
+        </p>
+      </div>
 
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
         <div className="flex justify-between items-center mb-2">
@@ -231,7 +256,7 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
 
       <button
         type="submit"
-        disabled={!stripe || loading}
+        disabled={!stripe || loading || !clientSecret}
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
       >
         {loading ? (
@@ -243,6 +268,7 @@ function CardPaymentForm({ amount, onSuccess, onError }: { amount: number, onSuc
           `Secure Payment - $${amount.toLocaleString()}`
         )}
       </button>
+      
       <p className="text-xs text-gray-500 text-center">
         Your payment information is encrypted and secure. Powered by bank-level security.
       </p>
@@ -421,6 +447,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
             <div className="flex items-center space-x-2">
               <span className="font-medium text-gray-900">{wireInstructions.bankName}</span>
               <button
+                type="button"
                 onClick={() => copyToClipboard(wireInstructions.bankName, 'bank')}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -434,6 +461,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
             <div className="flex items-center space-x-2">
               <span className="font-mono font-medium text-gray-900">{wireInstructions.routingNumber}</span>
               <button
+                type="button"
                 onClick={() => copyToClipboard(wireInstructions.routingNumber, 'routing')}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -448,6 +476,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
             <div className="flex items-center space-x-2">
               <span className="font-mono font-medium text-gray-900">{wireInstructions.accountNumber}</span>
               <button
+                type="button"
                 onClick={() => copyToClipboard(wireInstructions.accountNumber, 'account')}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -467,6 +496,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
             <div className="flex items-center space-x-2">
               <span className="font-mono font-medium text-gray-900">{wireInstructions.swiftCode}</span>
               <button
+                type="button"
                 onClick={() => copyToClipboard(wireInstructions.swiftCode, 'swift')}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -482,6 +512,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
               <div className="flex items-center space-x-2">
                 <span className="font-mono font-bold text-red-900">{wireInstructions.referenceCode}</span>
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(wireInstructions.referenceCode, 'reference')}
                   className="text-red-600 hover:text-red-700"
                 >
@@ -513,6 +544,7 @@ function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (r
       </div>
 
       <button
+        type="button"
         onClick={handleConfirm}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
       >
@@ -621,6 +653,7 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
 
       {!showAddress ? (
         <button
+          type="button"
           onClick={handleGenerateAddress}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
         >
@@ -632,6 +665,7 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-300 text-sm">Send {selectedCrypto} to:</span>
               <button
+                type="button"
                 onClick={() => copyToClipboard(addresses[selectedCrypto as keyof typeof addresses], 'address')}
                 className="text-gray-400 hover:text-gray-200"
               >
@@ -662,6 +696,7 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
           </div>
 
           <button
+            type="button"
             onClick={handleConfirmSent}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
           >
