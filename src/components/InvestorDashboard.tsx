@@ -13,156 +13,10 @@ import {
   CheckCircle
 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
-import { supabaseClient } from '../lib/supabase-client'
-
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
-
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#374151',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      '::placeholder': {
-        color: '#9CA3AF',
-      },
-    },
-    invalid: {
-      color: '#EF4444',
-    },
-    complete: {
-      color: '#059669',
-    },
-  },
-  hidePostalCode: true,
-}
-
-function StripeCardForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [cardError, setCardError] = useState('')
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!stripe || !elements) {
-      onError('Payment system not ready')
-      return
-    }
-
-    const cardElement = elements.getElement(CardElement)
-    if (!cardElement) {
-      onError('Card information required')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      // Create payment intent
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          amount: amount * 100, // Convert to cents
-          currency: 'usd',
-          user_id: user?.id || 'demo-user'
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create payment intent')
-      }
-
-      const { client_secret } = await response.json()
-      console.log('✅ Payment intent created')
-
-      // Confirm payment with Stripe
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: user?.full_name || 'Account Holder',
-            email: user?.email
-          },
-        }
-      })
-
-      if (confirmError) {
-        console.log('❌ Payment failed:', confirmError)
-        onError(confirmError.message || 'Payment failed')
-      } else if (paymentIntent?.status === 'succeeded') {
-        console.log('✅ Payment succeeded:', paymentIntent)
-        onSuccess({
-          id: paymentIntent.id,
-          amount: paymentIntent.amount / 100, // Convert back from cents
-          method: 'card',
-          status: 'completed'
-        })
-      } else {
-        onError('Payment was not completed successfully')
-      }
-    } catch (error) {
-      console.error('❌ Payment processing error:', error)
-      onError(error instanceof Error ? error.message : 'Payment processing failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Information
-        </label>
-        <div className="border border-gray-300 rounded-lg p-3 bg-white">
-          <CardElement
-            options={CARD_ELEMENT_OPTIONS}
-            onChange={(event) => {
-              if (event.error) {
-                setCardError(event.error.message)
-              } else {
-                setCardError('')
-              }
-            }}
-          />
-        </div>
-        {cardError && (
-          <p className="text-red-600 text-sm mt-1">{cardError}</p>
-        )}
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="flex justify-between">
-          <span>Amount:</span>
-          <span className="font-bold">${amount.toLocaleString()}</span>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium"
-      >
-        {loading ? 'Processing...' : `Pay $${amount.toLocaleString()}`}
-      </button>
-    </form>
-  )
-}
+import { CheckoutButton } from './CheckoutButton'
 
 export function InvestorDashboard() {
-  const { user, account, refreshAccount, processFunding } = useAuth()
+  const { user, account, refreshAccount } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [showFunding, setShowFunding] = useState(false)
   const [fundingAmount, setFundingAmount] = useState(1000)
@@ -205,25 +59,10 @@ export function InvestorDashboard() {
     { id: 'documents', name: 'Documents', icon: FileText }
   ]
 
-  const handleFundingSuccess = async (result: any) => {
-    console.log('💰 Funding successful:', result)
-    
-    try {
-      // Process funding through auth provider
-      await processFunding(result.amount, result.method, `Card payment - ${result.id}`)
-      await refreshAccount()
-      
-      setShowFunding(false)
-      setFundingAmount(1000)
-    } catch (error) {
-      console.error('Error updating account:', error)
-      alert('Error processing funding: ' + error.message)
-    }
-  }
-
-  const handleFundingError = (error: string) => {
-    console.error('Funding error:', error)
-    alert('Payment failed: ' + error)
+  const handleFundingSuccess = () => {
+    setShowFunding(false)
+    setFundingAmount(1000)
+    // Account will be refreshed automatically by the success page
   }
 
   // Show empty state if no balance
@@ -253,7 +92,15 @@ export function InvestorDashboard() {
         {showFunding && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Capital</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Add Capital</h3>
+                <button
+                  onClick={() => setShowFunding(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -274,13 +121,13 @@ export function InvestorDashboard() {
               </div>
 
               {fundingAmount >= 100 && (
-                <Elements stripe={stripePromise}>
-                  <StripeCardForm
-                    amount={fundingAmount}
-                    onSuccess={handleFundingSuccess}
-                    onError={handleFundingError}
-                  />
-                </Elements>
+                <CheckoutButton
+                  amount={fundingAmount}
+                  onSuccess={handleFundingSuccess}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium"
+                >
+                  Proceed to Secure Checkout
+                </CheckoutButton>
               )}
 
               <button
@@ -512,7 +359,15 @@ export function InvestorDashboard() {
       {showFunding && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Capital to Account</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add Capital to Account</h3>
+              <button
+                onClick={() => setShowFunding(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
             
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -533,13 +388,13 @@ export function InvestorDashboard() {
             </div>
 
             {fundingAmount >= 100 ? (
-              <Elements stripe={stripePromise}>
-                <StripeCardForm
-                  amount={fundingAmount}
-                  onSuccess={handleFundingSuccess}
-                  onError={handleFundingError}
-                />
-              </Elements>
+              <CheckoutButton
+                amount={fundingAmount}
+                onSuccess={handleFundingSuccess}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium"
+              >
+                Proceed to Secure Checkout
+              </CheckoutButton>
             ) : (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center">

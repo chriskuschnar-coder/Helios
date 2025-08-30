@@ -1,5 +1,3 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -18,13 +16,11 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
     const body = await req.text()
     
-    console.log('Received Stripe webhook with signature:', signature ? 'Present' : 'Missing')
+    console.log('Received Stripe webhook')
     
     // Initialize Supabase client with service role
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     // Parse webhook event
     let event
@@ -38,141 +34,142 @@ Deno.serve(async (req) => {
 
     // Process different event types
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object
-        console.log('Processing successful payment:', paymentIntent.id)
+      case 'checkout.session.completed':
+        const session = event.data.object
+        console.log('Processing completed checkout session:', session.id)
         
-        // Extract user ID from metadata
-        const userId = paymentIntent.metadata?.user_id
-        const amount = paymentIntent.amount / 100 // Convert from cents
+        const userId = session.metadata?.user_id
+        const amount = session.amount_total / 100 // Convert from cents
         
         if (!userId) {
-          console.error('No user_id in payment metadata')
-          throw new Error('Missing user ID in payment metadata')
+          console.error('No user_id in session metadata')
+          throw new Error('Missing user ID in session metadata')
         }
 
         // Update payment record
-        const { error: paymentUpdateError } = await supabase
-          .from('payments')
-          .update({
+        const paymentUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${session.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
             status: 'completed',
             is_paid: true,
+            stripe_payment_intent_id: session.payment_intent,
             updated_at: new Date().toISOString()
           })
-          .eq('stripe_payment_intent_id', paymentIntent.id)
+        })
 
-        if (paymentUpdateError) {
-          console.error('Error updating payment record:', paymentUpdateError)
+        if (!paymentUpdateResponse.ok) {
+          console.error('Error updating payment record')
         } else {
           console.log('✅ Payment record updated successfully')
         }
 
         // Create transaction record
-        const { error: transactionError } = await supabase
-          .from('transactions')
-          .insert({
+        const transactionResponse = await fetch(`${supabaseUrl}/rest/v1/transactions`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
             user_id: userId,
             type: 'deposit',
             method: 'stripe',
             amount: amount,
             status: 'completed',
-            external_id: paymentIntent.id,
-            description: `Card payment - ${paymentIntent.id}`,
+            external_id: session.id,
+            description: `Hedge fund investment - ${session.id}`,
             metadata: {
-              stripe_payment_intent: paymentIntent.id,
-              payment_method: paymentIntent.payment_method,
-              currency: paymentIntent.currency
+              stripe_session_id: session.id,
+              stripe_payment_intent: session.payment_intent,
+              investment_type: 'hedge_fund_capital'
             }
           })
+        })
 
-        if (transactionError) {
-          console.error('Error creating transaction:', transactionError)
+        if (!transactionResponse.ok) {
+          console.error('Error creating transaction record')
         } else {
           console.log('✅ Transaction record created')
         }
 
         // Get user's account
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
+        const accountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          }
+        })
 
-        if (accountError) {
-          console.error('Error fetching account:', accountError)
-          throw accountError
+        if (!accountResponse.ok) {
+          console.error('Error fetching account')
+          throw new Error('Failed to fetch account')
+        }
+
+        const accounts = await accountResponse.json()
+        const account = accounts[0]
+
+        if (!account) {
+          console.error('No account found for user:', userId)
+          throw new Error('Account not found')
         }
 
         // Update account balance
-        const newBalance = (accountData.balance || 0) + amount
-        const newAvailableBalance = (accountData.available_balance || 0) + amount
-        const newTotalDeposits = (accountData.total_deposits || 0) + amount
+        const newBalance = (account.balance || 0) + amount
+        const newAvailableBalance = (account.available_balance || 0) + amount
+        const newTotalDeposits = (account.total_deposits || 0) + amount
 
-        const { error: updateError } = await supabase
-          .from('accounts')
-          .update({
+        const balanceUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
             balance: newBalance,
             available_balance: newAvailableBalance,
             total_deposits: newTotalDeposits,
             updated_at: new Date().toISOString()
           })
-          .eq('user_id', userId)
+        })
 
-        if (updateError) {
-          console.error('Error updating account balance:', updateError)
-          throw updateError
+        if (!balanceUpdateResponse.ok) {
+          console.error('Error updating account balance')
+          throw new Error('Failed to update account balance')
         }
 
-        console.log(`✅ Payment processed successfully: $${amount} for user ${userId}`)
+        console.log(`✅ Investment processed successfully: $${amount} for user ${userId}`)
         console.log(`New balance: $${newBalance}`)
         break
 
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object
-        console.log('Processing failed payment:', failedPayment.id)
+      case 'checkout.session.expired':
+        const expiredSession = event.data.object
+        console.log('Processing expired checkout session:', expiredSession.id)
         
-        // Update payment record
-        await supabase
-          .from('payments')
-          .update({
-            status: 'failed',
-            is_paid: false,
+        // Update payment record to expired
+        await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${expiredSession.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            status: 'expired',
             updated_at: new Date().toISOString()
           })
-          .eq('stripe_payment_intent_id', failedPayment.id)
-
-        const failedUserId = failedPayment.metadata?.user_id
-        if (failedUserId) {
-          // Log failed payment transaction
-          await supabase
-            .from('transactions')
-            .insert({
-              user_id: failedUserId,
-              type: 'deposit',
-              method: 'stripe',
-              amount: failedPayment.amount / 100,
-              status: 'failed',
-              external_id: failedPayment.id,
-              description: `Failed card payment - ${failedPayment.id}`,
-              metadata: {
-                stripe_payment_intent: failedPayment.id,
-                failure_reason: failedPayment.last_payment_error?.message
-              }
-            })
-        }
-        break
-
-      case 'payment_intent.requires_action':
-        console.log('Payment requires additional action:', event.data.object.id)
-        
-        // Update payment status to processing
-        await supabase
-          .from('payments')
-          .update({
-            status: 'processing',
-            updated_at: new Date().toISOString()
-          })
-          .eq('stripe_payment_intent_id', event.data.object.id)
+        })
         break
 
       default:
