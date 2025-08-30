@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com 'unsafe-inline' 'unsafe-eval';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https://*.tradingview.com https://s3.tradingview.com https://s.tradingview.com;
+        frame-src https://www.tradingview.com https://s.tradingview.com https://charting-library.tradingview.com;
+        connect-src 'self' https://*.tradingview.com https://s.tradingview.com wss://data.tradingview.com wss://prodata.tradingview.com wss://widgetdata.tradingview.com;
+        object-src 'none';
+        base-uri 'self';
+        frame-ancestors 'self';
+      ">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Hedge Fund Platform Setup</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
