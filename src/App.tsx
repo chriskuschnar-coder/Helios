@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { supabaseClient } from './lib/supabase-client'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { InvestmentPlatform } from './components/InvestmentPlatform'
