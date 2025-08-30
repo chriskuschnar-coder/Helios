@@ -29,7 +29,6 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
       handlePortalClick(e)
     }
   }
-
   return (
     <header className="fixed w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

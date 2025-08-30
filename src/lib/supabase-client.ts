@@ -79,9 +79,9 @@ class DeployedSupabaseClient {
         return {
           data: null,
           error: { 
-            message: 'WebContainer network restriction - Edge Function cannot be reached',
+            message: 'Network error - Edge Function may not be deployed or reachable',
             details: error.message,
-            suggestion: 'This is expected in WebContainer. Download and run locally for full functionality.'
+            suggestion: 'Try testing locally with npm run dev on localhost:5173'
           },
           success: false
         }
