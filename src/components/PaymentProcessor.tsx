@@ -1,18 +1,7 @@
 import React, { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { 
-  CreditCard, 
-  Bank, 
-  Wallet, 
-  Building, 
-  Lock, 
-  CheckCircle, 
-  AlertCircle,
-  X,
-  Copy,
-  ExternalLink
-} from 'lucide-react'
+import { CreditCard, Ban as Bank, Wallet, Building, Lock, CheckCircle, AlertCircle, X, Copy, ExternalLink } from 'lucide-react'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!)
 
