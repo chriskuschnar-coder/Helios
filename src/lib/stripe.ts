@@ -1,6 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js'
 
-// Use your working Stripe keys directly
+// Use your working Stripe sandbox keys
 const stripePublishableKey = 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
 
 console.log('🔍 Stripe Configuration:')
@@ -66,20 +66,14 @@ export async function createPaymentIntent(amount: number, userId?: string) {
       throw new Error('Minimum amount is $100')
     }
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    if (!supabaseUrl) {
-      throw new Error('Supabase URL not configured')
-    }
-
-    const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
+    // Use local API endpoint instead of Supabase Edge Function
+    const response = await fetch('/api/create-payment-intent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
         amount: amount * 100, // Convert to cents
-        currency: 'usd',
         user_id: userId || 'demo-user'
       })
     })

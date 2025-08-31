@@ -4,7 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { CreditCard, Lock, AlertCircle, CheckCircle, Shield, X, Loader2 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
-// Use your actual Stripe keys - prioritize hardcoded working keys
+// Use your working Stripe sandbox keys
 const stripePublishableKey = 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
 
 console.log('🔍 Stripe Configuration:')
@@ -158,17 +158,14 @@ function CardPaymentForm({ amount, onSuccess, onError, onClose }: StripeCardForm
     try {
       console.log('💳 Creating payment intent for amount:', amount)
       
-      // Create payment intent via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
+      // Create payment intent via local API
+      const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({ 
           amount: amount * 100, // Convert to cents
-          currency: 'usd',
           user_id: user?.id || 'demo-user'
         })
       })
