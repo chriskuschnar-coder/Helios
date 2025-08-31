@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
-import { SupabaseConnectionBanner } from '../SupabaseConnectionBanner'
 
 interface User {
   id: string
@@ -61,20 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if Supabase is properly configured
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-        const isProduction = window.location.hostname.includes('netlify') || 
-                            window.location.hostname.includes('globalmarketsconsulting.com') ||
-                            window.location.hostname !== 'localhost'
         
         console.log('🔍 Environment check:')
         console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing')
         console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing')
-        console.log('Environment:', isProduction ? 'Production (Supabase mode)' : 'Development (localStorage mode)')
-        console.log('Hostname:', window.location.hostname)
         
         if (supabaseUrl && supabaseKey) {
           // Try to get current session from Supabase
           try {
-            console.log('🔄 Attempting Supabase connection...')
+            console.log('🔄 Checking Supabase session...')
             const { data: { session }, error } = await supabaseClient.auth.getSession()
             
             if (error) {
@@ -100,35 +94,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (supabaseError) {
             console.log('⚠️ Supabase session check failed:', supabaseError)
-            // Only fall back to localStorage in development
-            if (!isProduction) {
-              console.log('🔄 Falling back to localStorage authentication')
-            }
           }
         } else {
-          console.log('⚠️ Supabase not configured')
-          console.log('📱 Click "Connect to Supabase" in Bolt interface for cross-device login')
+          console.log('⚠️ Supabase not configured - using localStorage fallback')
         }
         
-        // Fallback: Check localStorage for existing session (development only)
-        if (!isProduction) {
-          console.log('🔧 Development environment - using localStorage for demo')
-          const storedUser = localStorage.getItem('auth-user')
-          const storedAccount = localStorage.getItem('auth-account')
+        // Fallback: Check localStorage for existing session
+        console.log('🔧 Checking localStorage for session...')
+        const storedUser = localStorage.getItem('auth-user')
+        const storedAccount = localStorage.getItem('auth-account')
+        
+        if (storedUser) {
+          const userData = JSON.parse(storedUser)
+          setUser(userData)
+          console.log('✅ Found localStorage session for:', userData.email)
           
-          if (storedUser) {
-            const userData = JSON.parse(storedUser)
-            setUser(userData)
-            console.log('✅ Found localStorage session for:', userData.email)
-            
-            if (storedAccount) {
-              setAccount(JSON.parse(storedAccount))
-            } else {
-              // Load account from localStorage
-              const accountData = localStorage.getItem(`account-${userData.id}`)
-              if (accountData) {
-                setAccount(JSON.parse(accountData))
-              }
+          if (storedAccount) {
+            setAccount(JSON.parse(storedAccount))
+          } else {
+            // Load account from localStorage
+            const accountData = localStorage.getItem(`account-${userData.id}`)
+            if (accountData) {
+              setAccount(JSON.parse(accountData))
             }
           }
         }
@@ -141,10 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     initializeAuth()
 
-    // Listen for auth changes
+    // Listen for auth changes (only if Supabase is configured)
     let authSubscription: any = null
     
-    // Only set up auth listener if Supabase is configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
@@ -352,7 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting sign in for:', email)
     
-    // Always try Supabase first if configured
+    // Try Supabase first if configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
@@ -377,85 +363,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     
-    // Fallback: localStorage authentication (development only)
-    const isProduction = window.location.hostname.includes('netlify') || 
-                        window.location.hostname.includes('globalmarketsconsulting.com') ||
-                        window.location.hostname !== 'localhost'
+    // Fallback: localStorage authentication
+    console.log('🔧 Using localStorage authentication')
     
-    if (!isProduction) {
-      console.log('🔧 Development mode - using localStorage authentication')
+    if (email === 'demo@globalmarket.com' || email === 'demo') {
+      const demoUser = {
+        id: 'demo-user-id',
+        email: 'demo@globalmarket.com',
+        full_name: 'Demo User'
+      }
       
-      if (email === 'demo@globalmarket.com' || email === 'demo') {
-        const demoUser = {
-          id: 'demo-user-id',
-          email: 'demo@globalmarket.com',
-          full_name: 'Demo User'
+      // Store in localStorage for persistence
+      localStorage.setItem('auth-user', JSON.stringify(demoUser))
+      localStorage.setItem('auth-account', JSON.stringify({
+        id: 'demo-account-id',
+        balance: 7850,
+        available_balance: 7850,
+        total_deposits: 8000,
+        total_withdrawals: 150,
+        currency: 'USD',
+        status: 'active'
+      }))
+      
+      setUser(demoUser)
+      setAccount({
+        id: 'demo-account-id',
+        balance: 7850,
+        available_balance: 7850,
+        total_deposits: 8000,
+        total_withdrawals: 150,
+        currency: 'USD',
+        status: 'active'
+      })
+      
+      console.log('✅ Demo login successful')
+      return { error: null }
+    } else {
+      // Check localStorage for registered users
+      const storedUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
+      const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password)
+      
+      if (foundUser) {
+        const userData = {
+          id: foundUser.id,
+          email: foundUser.email,
+          full_name: foundUser.full_name
         }
         
-        // Store in localStorage for persistence
-        localStorage.setItem('auth-user', JSON.stringify(demoUser))
-        localStorage.setItem('auth-account', JSON.stringify({
-          id: 'demo-account-id',
-          balance: 7850,
-          available_balance: 7850,
-          total_deposits: 8000,
-          total_withdrawals: 150,
-          currency: 'USD',
-          status: 'active'
-        }))
+        localStorage.setItem('auth-user', JSON.stringify(userData))
         
-        setUser(demoUser)
-        setAccount({
-          id: 'demo-account-id',
-          balance: 7850,
-          available_balance: 7850,
-          total_deposits: 8000,
-          total_withdrawals: 150,
-          currency: 'USD',
-          status: 'active'
-        })
+        // Load or create account
+        const accountKey = `account-${foundUser.id}`
+        let accountData = JSON.parse(localStorage.getItem(accountKey) || 'null')
         
-        console.log('✅ Demo login successful')
+        if (!accountData) {
+          accountData = {
+            id: `account-${foundUser.id}`,
+            balance: 0,
+            available_balance: 0,
+            total_deposits: 0,
+            total_withdrawals: 0,
+            currency: 'USD',
+            status: 'active'
+          }
+          localStorage.setItem(accountKey, JSON.stringify(accountData))
+        }
+        
+        setUser(userData)
+        setAccount(accountData)
+        
+        console.log('✅ Fallback login successful')
         return { error: null }
       } else {
-        // Check localStorage for registered users
-        const storedUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
-        const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password)
-        
-        if (foundUser) {
-          const userData = {
-            id: foundUser.id,
-            email: foundUser.email,
-            full_name: foundUser.full_name
-          }
-          
-          localStorage.setItem('auth-user', JSON.stringify(userData))
-          
-          // Load or create account
-          const accountKey = `account-${foundUser.id}`
-          let accountData = JSON.parse(localStorage.getItem(accountKey) || 'null')
-          
-          if (!accountData) {
-            accountData = {
-              id: `account-${foundUser.id}`,
-              balance: 0,
-              available_balance: 0,
-              total_deposits: 0,
-              total_withdrawals: 0,
-              currency: 'USD',
-              status: 'active'
-            }
-            localStorage.setItem(accountKey, JSON.stringify(accountData))
-          }
-          
-          setUser(userData)
-          setAccount(accountData)
-          
-          console.log('✅ Fallback login successful')
-          return { error: null }
-        } else {
-          return { error: { message: 'Invalid email or password' } }
-        }
+        return { error: { message: 'Invalid email or password' } }
       }
     }
   }
@@ -463,7 +443,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
-    // Always try Supabase first if configured
+    // Try Supabase first if configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
@@ -491,63 +471,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     
-    // Fallback: localStorage signup (development only)
-    const isProduction = window.location.hostname.includes('netlify') || 
-                        window.location.hostname.includes('globalmarketsconsulting.com') ||
-                        window.location.hostname !== 'localhost'
+    // Fallback: localStorage signup
+    console.log('🔧 Using localStorage signup')
     
-    if (!isProduction) {
-      console.log('🔧 Development mode - using localStorage signup')
-      
-      const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      
-      const newUser = {
-        id: userId,
-        email,
-        password, // In production, this would be hashed
-        full_name: metadata?.full_name || '',
-        created_at: new Date().toISOString()
-      }
-      
-      // Store user
-      const existingUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
-      
-      // Check if email already exists
-      if (existingUsers.find((u: any) => u.email === email)) {
-        return { error: { message: 'Email already registered' } }
-      }
-      
-      existingUsers.push(newUser)
-      localStorage.setItem('registered-users', JSON.stringify(existingUsers))
-      
-      // Create account
-      const accountData = {
-        id: `account-${userId}`,
-        balance: 0,
-        available_balance: 0,
-        total_deposits: 0,
-        total_withdrawals: 0,
-        currency: 'USD',
-        status: 'active'
-      }
-      localStorage.setItem(`account-${userId}`, JSON.stringify(accountData))
-      
-      // Auto-login the new user
-      const userData = {
-        id: userId,
-        email,
-        full_name: metadata?.full_name || ''
-      }
-      
-      localStorage.setItem('auth-user', JSON.stringify(userData))
-      setUser(userData)
-      setAccount(accountData)
-      
-      console.log('✅ Fallback signup successful')
-      return { error: null }
-    } else {
-      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    const newUser = {
+      id: userId,
+      email,
+      password, // In production, this would be hashed
+      full_name: metadata?.full_name || '',
+      created_at: new Date().toISOString()
     }
+    
+    // Store user
+    const existingUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
+    
+    // Check if email already exists
+    if (existingUsers.find((u: any) => u.email === email)) {
+      return { error: { message: 'Email already registered' } }
+    }
+    
+    existingUsers.push(newUser)
+    localStorage.setItem('registered-users', JSON.stringify(existingUsers))
+    
+    // Create account
+    const accountData = {
+      id: `account-${userId}`,
+      balance: 0,
+      available_balance: 0,
+      total_deposits: 0,
+      total_withdrawals: 0,
+      currency: 'USD',
+      status: 'active'
+    }
+    localStorage.setItem(`account-${userId}`, JSON.stringify(accountData))
+    
+    // Auto-login the new user
+    const userData = {
+      id: userId,
+      email,
+      full_name: metadata?.full_name || ''
+    }
+    
+    localStorage.setItem('auth-user', JSON.stringify(userData))
+    setUser(userData)
+    setAccount(accountData)
+    
+    console.log('✅ Fallback signup successful')
+    return { error: null }
   }
 
   const signOut = async () => {
