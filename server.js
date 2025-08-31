@@ -1,6 +1,6 @@
-const express = require('express')
-const Stripe = require('stripe').default
-const cors = require('cors')
+import express from 'express'
+import Stripe from 'stripe'
+import cors from 'cors'
 
 const app = express()
 const port = 3001
