@@ -90,8 +90,8 @@ export function InvestmentPlatform() {
   // Default: show marketing site
   return (
     <main className="min-h-screen bg-white">
-      {/* Temporary Stripe Debug Test */}
-      <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 9999, background: 'white', border: '2px solid red', padding: '10px' }}>
+      {/* Enhanced Stripe Debug Test */}
+      <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 9999, background: 'white', border: '2px solid #3b82f6', padding: '10px', borderRadius: '8px', maxWidth: '400px', maxHeight: '80vh', overflow: 'auto' }}>
         <StripeDebugTest />
       </div>
       <Header onNavigateToLogin={() => setAuthMode('login')} />
