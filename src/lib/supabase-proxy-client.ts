@@ -6,57 +6,61 @@ class SupabaseProxyClient {
     this.baseUrl = '/api/supabase-proxy'
   }
 
-  private async makeRequest(action: string, data?: any) {
+  private async makeRequest(endpoint: string, options: RequestInit = {}) {
     try {
-      console.log('🔄 Making proxy request:', action, data)
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
+      const url = `${this.baseUrl}${endpoint}`
+      console.log('🔄 Making proxy request to:', url)
+      
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        ...data
+        ...options
       })
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      return await response.json()
+      const result = await response.json()
+      console.log('✅ Proxy request successful:', result)
+      return result
     } catch (error) {
-      console.error('Proxy request failed:', error)
+      console.error('❌ Proxy request failed:', error)
       throw error
     }
   }
 
   // Test connection
   async testConnection() {
-    return this.makeRequest('test-connection', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'test-connection' })
-    })
+    return this.makeRequest('/test-connection')
   }
 
   // Auth methods
   auth = {
     signInWithPassword: async (credentials: { email: string; password: string }) => {
-      return this.makeRequest('auth-signin', {
+      return fetch(`${this.baseUrl}/auth/signin`, {
         method: 'POST',
-        body: JSON.stringify({ action: 'auth-signin', data: credentials })
-      })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials)
+      }).then(res => res.json())
     },
 
     signUp: async (credentials: { email: string; password: string; options?: any }) => {
-      return this.makeRequest('auth-signup', {
+      return fetch(`${this.baseUrl}/auth/signup`, {
         method: 'POST',
-        body: JSON.stringify({ 
-          action: 'auth-signup',
-          data: {
-            email: credentials.email,
-            password: credentials.password,
-            metadata: credentials.options?.data
-          }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+          metadata: credentials.options?.data
         })
-      })
+      }).then(res => res.json())
     },
 
     signOut: async () => {
@@ -87,57 +91,39 @@ class SupabaseProxyClient {
       select: (columns: string = '*') => ({
         eq: (column: string, value: any) => ({
           single: async () => {
-            return this.makeRequest('select', {
-              method: 'POST',
-              body: JSON.stringify({
-                action: 'select',
-                table,
-                data: { columns, single: true },
-                filters: { eq: { column, value } }
-              })
-            })
+            return this.makeRequest(`/${table}?${column}=eq.${value}&select=${columns}`)
           },
           limit: async (count: number) => {
-            return this.makeRequest('select', {
-              method: 'POST',
-              body: JSON.stringify({
-                action: 'select',
-                table,
-                data: { columns },
-                filters: { eq: { column, value }, limit: count }
-              })
-            })
+            return this.makeRequest(`/${table}?${column}=eq.${value}&select=${columns}&limit=${count}`)
           }
         }),
         limit: async (count: number) => {
-          return this.makeRequest('select', {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'select',
-              table,
-              data: { columns },
-              filters: { limit: count }
-            })
-          })
+          return this.makeRequest(`/${table}?select=${columns}&limit=${count}`)
         }
       }),
       insert: (values: any) => ({
         select: () => ({
           single: async () => {
-            return this.makeRequest('insert', {
-              table,
-              data: { values }
-            })
+            return fetch(`${this.baseUrl}/${table}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ values })
+            }).then(res => res.json())
           }
         })
       }),
       update: (values: any) => ({
         eq: (column: string, value: any) => ({
           async then(callback: (result: any) => void) {
-            const result = await this.makeRequest('update', {
-              table,
-              data: { values, where: { column, value } }
-            })
+            const result = await fetch(`${this.baseUrl}/${table}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ values, where: { column, value } })
+            }).then(res => res.json())
             callback(result)
             return result
           }
