@@ -14,7 +14,8 @@ app.use(express.json())
 app.use(express.static('dist'))
 
 // API routes
-app.use('/api/supabase-proxy', supabaseProxy)
+app.all('/api/supabase-proxy', supabaseProxy)
+app.all('/api/supabase-proxy/*', supabaseProxy)
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {

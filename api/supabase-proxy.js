@@ -16,6 +16,8 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
+  console.log('🔄 Proxy request:', req.method, req.url, req.body)
+
   const { method, body } = req
   const { action, table, data, filters } = body || {}
 

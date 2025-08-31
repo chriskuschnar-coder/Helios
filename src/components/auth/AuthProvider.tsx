@@ -110,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Fallback: Check localStorage for existing session
           console.log('🔧 WebContainer environment - using proxy + localStorage for demo')
+        const storedUser = localStorage.getItem('auth-user')
         const storedAccount = localStorage.getItem('auth-account')
         
         if (storedUser) {

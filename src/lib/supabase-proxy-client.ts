@@ -8,12 +8,13 @@ class SupabaseProxyClient {
 
   private async makeRequest(action: string, data?: any) {
     try {
+      console.log('🔄 Making proxy request:', action, data)
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action, ...data })
+        ...data
       })
 
       if (!response.ok) {
@@ -29,22 +30,32 @@ class SupabaseProxyClient {
 
   // Test connection
   async testConnection() {
-    return this.makeRequest('test-connection')
+    return this.makeRequest('test-connection', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'test-connection' })
+    })
   }
 
   // Auth methods
   auth = {
     signInWithPassword: async (credentials: { email: string; password: string }) => {
-      return this.makeRequest('auth-signin', { data: credentials })
+      return this.makeRequest('auth-signin', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'auth-signin', data: credentials })
+      })
     },
 
     signUp: async (credentials: { email: string; password: string; options?: any }) => {
-      return this.makeRequest('auth-signup', { 
-        data: {
-          email: credentials.email,
-          password: credentials.password,
-          metadata: credentials.options?.data
-        }
+      return this.makeRequest('auth-signup', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'auth-signup',
+          data: {
+            email: credentials.email,
+            password: credentials.password,
+            metadata: credentials.options?.data
+          }
+        })
       })
     },
 
@@ -77,24 +88,36 @@ class SupabaseProxyClient {
         eq: (column: string, value: any) => ({
           single: async () => {
             return this.makeRequest('select', {
-              table,
-              data: { columns, single: true },
-              filters: { eq: { column, value } }
+              method: 'POST',
+              body: JSON.stringify({
+                action: 'select',
+                table,
+                data: { columns, single: true },
+                filters: { eq: { column, value } }
+              })
             })
           },
           limit: async (count: number) => {
             return this.makeRequest('select', {
-              table,
-              data: { columns },
-              filters: { eq: { column, value }, limit: count }
+              method: 'POST',
+              body: JSON.stringify({
+                action: 'select',
+                table,
+                data: { columns },
+                filters: { eq: { column, value }, limit: count }
+              })
             })
           }
         }),
         limit: async (count: number) => {
           return this.makeRequest('select', {
-            table,
-            data: { columns },
-            filters: { limit: count }
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'select',
+              table,
+              data: { columns },
+              filters: { limit: count }
+            })
           })
         }
       }),
