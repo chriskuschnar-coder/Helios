@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { CreditCard, Lock, AlertCircle, Loader2 } from 'lucide-react'
+import { CreditCard, Lock, AlertCircle, Loader2, Shield } from 'lucide-react'
 
 interface StripeCardFormInnerProps {
   amount: number
@@ -9,12 +9,13 @@ interface StripeCardFormInnerProps {
   onClose: () => void
 }
 
-export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: StripeCardFormInnerProps) {
+export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError, onClose }: StripeCardFormInnerProps) {
   const stripe = useStripe()
   const elements = useElements()
   
+  // Single source of truth for investment amount
+  const [investmentAmount, setInvestmentAmount] = useState(initialAmount)
   const [loading, setLoading] = useState(false)
-  const [currentAmount, setCurrentAmount] = useState(amount)
   const [errors, setErrors] = useState({
     cardNumber: '',
     cardExpiry: '',
@@ -26,10 +27,19 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
     cardCvc: false
   })
 
-  // Update amount when prop changes
-  useEffect(() => {
-    setCurrentAmount(amount)
-  }, [amount])
+  // Derived values from single state
+  const processingFee = investmentAmount * 0.029 + 0.30
+  const totalCharge = investmentAmount + processingFee
+
+  // Don't render until Stripe is fully ready
+  if (!stripe || !elements) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+        <span className="text-gray-600">Loading secure payment system...</span>
+      </div>
+    )
+  }
 
   const elementOptions = {
     style: {
@@ -96,7 +106,7 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({ 
-          amount: currentAmount * 100, // Convert to cents
+          amount: Math.round(totalCharge * 100), // Convert to cents, including fees
           user_id: 'demo-user'
         })
       })
@@ -120,7 +130,7 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
       } else if (paymentIntent?.status === 'succeeded') {
         onSuccess({
           id: paymentIntent.id,
-          amount: currentAmount,
+          amount: investmentAmount, // Original investment amount (not including fees)
           method: 'card',
           status: 'completed'
         })
@@ -134,14 +144,15 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
   }
 
   const isFormValid = complete.cardNumber && complete.cardExpiry && complete.cardCvc && 
-                     !errors.cardNumber && !errors.cardExpiry && !errors.cardCvc
+                     !errors.cardNumber && !errors.cardExpiry && !errors.cardCvc &&
+                     investmentAmount >= 100
 
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
         <div className="flex items-center space-x-2 mb-2">
-          <CreditCard className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Investment Processing</span>
           <Lock className="h-4 w-4 text-blue-600" />
         </div>
         <p className="text-sm text-blue-700">
@@ -149,17 +160,17 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
         </p>
       </div>
 
-      {/* Amount Input */}
-      <div className="mb-6">
+      {/* Investment Amount Input */}
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Investment Amount
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">$</span>
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-lg">$</span>
           <input
             type="number"
-            value={currentAmount}
-            onChange={(e) => setCurrentAmount(Number(e.target.value) || 0)}
+            value={investmentAmount}
+            onChange={(e) => setInvestmentAmount(Number(e.target.value) || 0)}
             min="100"
             step="100"
             className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
@@ -179,7 +190,7 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
             style={{
               border: `2px solid ${complete.cardNumber ? '#10b981' : errors.cardNumber ? '#ef4444' : '#d1d5db'}`,
               borderRadius: '8px',
-              padding: '12px 16px',
+              padding: '16px',
               backgroundColor: 'white',
               minHeight: '60px',
               display: 'flex',
@@ -210,7 +221,7 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
               style={{
                 border: `2px solid ${complete.cardExpiry ? '#10b981' : errors.cardExpiry ? '#ef4444' : '#d1d5db'}`,
                 borderRadius: '8px',
-                padding: '12px 16px',
+                padding: '16px',
                 backgroundColor: 'white',
                 minHeight: '60px',
                 display: 'flex',
@@ -233,13 +244,13 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              CVC
+              Security Code
             </label>
             <div 
               style={{
                 border: `2px solid ${complete.cardCvc ? '#10b981' : errors.cardCvc ? '#ef4444' : '#d1d5db'}`,
                 borderRadius: '8px',
-                padding: '12px 16px',
+                padding: '16px',
                 backgroundColor: 'white',
                 minHeight: '60px',
                 display: 'flex',
@@ -261,20 +272,20 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
           </div>
         </div>
 
-        {/* Investment Summary */}
+        {/* Investment Summary - All values derived from investmentAmount */}
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-700">Investment Amount:</span>
-            <span className="font-bold text-gray-900">${currentAmount.toLocaleString()}</span>
+            <span className="font-bold text-gray-900">${investmentAmount.toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-            <span className="text-gray-600 text-sm">${((currentAmount * 0.029) + 0.30).toFixed(2)}</span>
+            <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
           </div>
           <div className="border-t border-gray-200 pt-2 mt-2">
             <div className="flex justify-between items-center">
               <span className="font-medium text-gray-900">Total charge:</span>
-              <span className="font-bold text-gray-900">${(currentAmount + (currentAmount * 0.029) + 0.30).toFixed(2)}</span>
+              <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -290,7 +301,10 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
               Processing Investment...
             </>
           ) : (
-            `Secure Investment - $${currentAmount.toLocaleString()}`
+            <>
+              <CreditCard className="h-4 w-4 mr-2" />
+              Secure Investment - ${investmentAmount.toLocaleString()}
+            </>
           )}
         </button>
         
