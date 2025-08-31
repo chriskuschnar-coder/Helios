@@ -141,9 +141,6 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       setLoading(false)
     }
   }
-        })
-      }
-  }
 
   const isFormValid = complete.cardNumber && complete.cardExpiry && complete.cardCvc && 
                      !errors.cardNumber && !errors.cardExpiry && !errors.cardCvc &&
