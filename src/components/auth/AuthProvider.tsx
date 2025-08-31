@@ -17,6 +17,16 @@ interface Account {
   status: string
 }
 
+interface Subscription {
+  subscription_status: string
+  price_id: string | null
+  current_period_start: number | null
+  current_period_end: number | null
+  cancel_at_period_end: boolean
+  payment_method_brand: string | null
+  payment_method_last4: string | null
+}
+
 interface AuthError {
   message: string
 }
@@ -25,7 +35,9 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   account: Account | null
+  subscription: Subscription | null
   refreshAccount: () => Promise<void>
+  refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
@@ -38,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
     console.log('🔄 AuthProvider initializing with Supabase...')
@@ -75,6 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setAccount(accountData)
               console.log('✅ Account loaded:', accountData.balance)
             }
+
+            // Get subscription data
+            await loadSubscription()
           }
         } else {
           console.log('📱 No Supabase session found')
@@ -131,16 +147,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (accountData) {
             setAccount(accountData)
           }
+
+          // Load subscription
+          await loadSubscription()
         }
       } else {
         // User signed out
         setUser(null)
         setAccount(null)
+        setSubscription(null)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const loadSubscription = async () => {
+    try {
+      const { data: subscriptionData, error } = await supabase
+        .from('stripe_user_subscriptions')
+        .select('*')
+        .maybeSingle()
+      
+      if (subscriptionData && !error) {
+        setSubscription(subscriptionData)
+        console.log('✅ Subscription loaded:', subscriptionData.subscription_status)
+      } else if (error) {
+        console.error('Error loading subscription:', error)
+      }
+    } catch (error) {
+      console.error('Error loading subscription:', error)
+    }
+  }
 
   const refreshAccount = async () => {
     if (!user) return
@@ -159,6 +197,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error refreshing account:', error)
     }
+  }
+
+  const refreshSubscription = async () => {
+    await loadSubscription()
   }
 
   const processFunding = async (amount: number, method: string, description?: string) => {
@@ -302,6 +344,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
+          emailRedirectTo: undefined, // Disable email confirmation
           data: {
             full_name: metadata?.full_name || 'New User'
           }
@@ -330,6 +373,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('hedge-fund-session')
       setUser(null)
       setAccount(null)
+      setSubscription(null)
       console.log('✅ Sign out successful')
     } catch (error) {
       console.error('❌ Sign out error:', error)
@@ -340,7 +384,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     account,
+    subscription,
     refreshAccount,
+    refreshSubscription,
     processFunding,
     signIn,
     signUp,

@@ -3,8 +3,8 @@ import { useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
-import { FundingSuccessPage } from './FundingSuccessPage'
-import { FundingCancelledPage } from './FundingCancelledPage'
+import { SuccessPage } from './SuccessPage'
+import { CancelPage } from './CancelPage'
 import { Hero } from './Hero'
 import { About } from './About'
 import { Services } from './Services'
@@ -17,11 +17,9 @@ export function InvestmentPlatform() {
   const { user, loading } = useAuth()
   const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
 
-  // Check for funding success/cancel pages
-  const urlParams = new URLSearchParams(window.location.search)
-  const sessionId = urlParams.get('session_id')
-  const isFundingSuccess = window.location.pathname === '/funding-success' || sessionId
-  const isFundingCancelled = window.location.pathname === '/funding-cancelled'
+  // Check for success/cancel pages
+  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
+  const isCancelPage = window.location.pathname === '/cancel'
 
   if (loading) {
     return (
@@ -36,14 +34,14 @@ export function InvestmentPlatform() {
     )
   }
 
-  // Show funding success page
-  if (isFundingSuccess) {
-    return <FundingSuccessPage />
+  // Show success page
+  if (isSuccessPage) {
+    return <SuccessPage />
   }
 
-  // Show funding cancelled page
-  if (isFundingCancelled) {
-    return <FundingCancelledPage />
+  // Show cancel page
+  if (isCancelPage) {
+    return <CancelPage />
   }
 
   // If user is authenticated, show dashboard selector
