@@ -53,15 +53,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
-    console.log('🔄 AuthProvider initializing with Supabase...')
+    console.log('🔄 AuthProvider initializing...')
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing')
+    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing')
     
     const initializeAuth = async () => {
       try {
+        // Check if Supabase is properly configured
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          console.error('❌ Supabase environment variables not configured')
+          console.log('Please click "Connect to Supabase" in the top right corner')
+          setLoading(false)
+          return
+        }
+        
         // Get current session from Supabase
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Session error:', error)
+          console.error('❌ Session error:', error)
           setLoading(false)
           return
         }
