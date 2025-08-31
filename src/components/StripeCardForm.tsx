@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { CreditCard, Lock, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface StripeCardFormProps {
@@ -9,146 +9,106 @@ interface StripeCardFormProps {
 }
 
 export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCardFormProps) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [cardReady, setCardReady] = useState(false)
+  const [isReady, setIsReady] = useState(false)
+  const [error, setError] = useState('')
   const [processing, setProcessing] = useState(false)
-  const cardElementRef = useRef<any>(null)
-  const stripeRef = useRef<any>(null)
-  const elementsRef = useRef<any>(null)
+  const [stripe, setStripe] = useState<any>(null)
+  const [cardElement, setCardElement] = useState<any>(null)
 
   useEffect(() => {
     let mounted = true
-    let timeoutId: NodeJS.Timeout
+    let checkCount = 0
+    const maxChecks = 50 // 10 seconds max wait
 
-    const initStripe = async () => {
-      try {
-        console.log('🔄 Starting Stripe initialization...')
+    const checkStripe = () => {
+      checkCount++
+      console.log(`🔍 Checking for Stripe... attempt ${checkCount}`)
+      
+      if ((window as any).Stripe) {
+        console.log('✅ Stripe found! Initializing...')
         
-        // Set a timeout to prevent infinite loading
-        timeoutId = setTimeout(() => {
-          if (mounted && isLoading) {
-            console.error('❌ Stripe initialization timeout')
-            setError('Payment system took too long to load. Please refresh.')
-            setIsLoading(false)
-          }
-        }, 10000)
-
-        // Check if Stripe is available globally
-        if (!(window as any).Stripe) {
-          console.log('📦 Stripe not found, loading script...')
+        try {
+          const stripeInstance = (window as any).Stripe('pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
+          setStripe(stripeInstance)
           
-          // Dynamically load Stripe if not already loaded
-          const script = document.createElement('script')
-          script.src = 'https://js.stripe.com/v3/'
-          script.async = true
-          script.onload = () => {
-            console.log('✅ Stripe script loaded')
-            setupStripe()
-          }
-          script.onerror = () => {
-            console.error('❌ Failed to load Stripe script')
-            setError('Failed to load payment system')
-            setIsLoading(false)
-          }
-          document.body.appendChild(script)
-        } else {
-          console.log('✅ Stripe already available')
-          setupStripe()
-        }
-      } catch (err) {
-        console.error('❌ Init error:', err)
-        setError('Failed to initialize payment')
-        setIsLoading(false)
-      }
-    }
-
-    const setupStripe = () => {
-      try {
-        console.log('🔧 Setting up Stripe elements...')
-        
-        // Initialize Stripe with your key
-        const stripe = (window as any).Stripe('pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
-        stripeRef.current = stripe
-        
-        // Create elements
-        const elements = stripe.elements()
-        elementsRef.current = elements
-        
-        // Create card element with professional styling
-        const card = elements.create('card', {
-          style: {
-            base: {
-              fontSize: '16px',
-              color: '#1f2937',
-              letterSpacing: '0.025em',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              lineHeight: '1.5',
-              '::placeholder': {
-                color: '#9ca3af',
-              },
-              ':-webkit-autofill': {
+          const elements = stripeInstance.elements()
+          const card = elements.create('card', {
+            style: {
+              base: {
+                fontSize: '16px',
                 color: '#1f2937',
+                letterSpacing: '0.025em',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                lineHeight: '1.5',
+                '::placeholder': {
+                  color: '#9ca3af',
+                },
+              },
+              invalid: {
+                color: '#ef4444',
+                iconColor: '#ef4444'
+              },
+              complete: {
+                color: '#059669',
+                iconColor: '#059669'
+              },
+            },
+            hidePostalCode: false,
+          })
+          
+          setCardElement(card)
+          
+          // Wait a bit for DOM to be ready
+          setTimeout(() => {
+            if (mounted) {
+              const container = document.getElementById('stripe-card-element')
+              if (container) {
+                card.mount('#stripe-card-element')
+                console.log('🎯 Card element mounted successfully')
+                
+                card.on('ready', () => {
+                  console.log('✅ Card element ready!')
+                  if (mounted) {
+                    setIsReady(true)
+                  }
+                })
+                
+                card.on('change', (event: any) => {
+                  if (mounted) {
+                    if (event.error) {
+                      setError(event.error.message)
+                    } else {
+                      setError('')
+                    }
+                  }
+                })
+              } else {
+                console.error('❌ Card container not found')
+                setError('Payment form container not found')
               }
-            },
-            invalid: {
-              color: '#ef4444',
-              iconColor: '#ef4444'
-            },
-            complete: {
-              color: '#059669',
-              iconColor: '#059669'
-            },
-          },
-          hidePostalCode: false,
-        })
-        cardElementRef.current = card
-        
-        // Mount after a small delay to ensure DOM is ready
-        setTimeout(() => {
-          if (mounted) {
-            const container = document.getElementById('stripe-card-element')
-            if (container) {
-              card.mount('#stripe-card-element')
-              console.log('🎯 Card element mounted to container')
-              
-              card.on('ready', () => {
-                console.log('✅ Card element is ready!')
-                clearTimeout(timeoutId)
-                setCardReady(true)
-                setIsLoading(false)
-              })
-              
-              card.on('change', (event: any) => {
-                if (event.error) {
-                  console.log('⚠️ Card validation error:', event.error.message)
-                  setError(event.error.message)
-                } else {
-                  setError(null)
-                }
-              })
-            } else {
-              console.error('❌ Container #stripe-card-element not found')
-              setError('Payment form container not found')
-              setIsLoading(false)
             }
-          }
-        }, 200)
-      } catch (err) {
-        console.error('❌ Setup error:', err)
-        setError('Failed to setup payment form')
-        setIsLoading(false)
+          }, 100)
+          
+        } catch (err) {
+          console.error('❌ Stripe initialization error:', err)
+          setError('Failed to initialize payment system')
+        }
+      } else if (checkCount < maxChecks) {
+        console.log(`⏳ Stripe not ready yet, retrying in 200ms...`)
+        setTimeout(checkStripe, 200)
+      } else {
+        console.error('❌ Stripe failed to load after maximum attempts')
+        setError('Payment system failed to load. Please refresh the page.')
       }
     }
 
-    initStripe()
+    checkStripe()
 
     return () => {
       mounted = false
-      clearTimeout(timeoutId)
-      if (cardElementRef.current) {
+      if (cardElement) {
         try {
-          cardElementRef.current.destroy()
+          cardElement.destroy()
           console.log('🧹 Card element destroyed')
         } catch (e) {
           console.log('Card element already destroyed')
@@ -160,24 +120,24 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!stripeRef.current || !cardElementRef.current) {
+    if (!stripe || !cardElement) {
       setError('Payment system not ready')
       return
     }
 
-    if (!cardReady) {
+    if (!isReady) {
       setError('Please wait for the payment form to load')
       return
     }
 
     setProcessing(true)
-    setError(null)
+    setError('')
 
     try {
       console.log('💳 Processing payment for amount:', amount)
       
-      // For demo purposes, create a token (this works without backend)
-      const { token, error: tokenError } = await stripeRef.current.createToken(cardElementRef.current)
+      // Create token (works without backend)
+      const { token, error: tokenError } = await stripe.createToken(cardElement)
       
       if (tokenError) {
         console.error('❌ Token creation failed:', tokenError.message)
@@ -190,7 +150,7 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Call success handler with payment result
+      // Call success handler
       onSuccess({
         id: token.id,
         amount: amount,
@@ -208,7 +168,7 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
   }
 
   // Loading state
-  if (isLoading) {
+  if (!isReady && !error) {
     return (
       <div className="space-y-6">
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
@@ -229,14 +189,14 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
         </div>
         
         <p className="text-sm text-gray-500 text-center">
-          Loading payment form... This may take a few seconds.
+          Loading payment form... Please wait.
         </p>
       </div>
     )
   }
 
-  // Error state (if Stripe fails to load)
-  if (error && !cardReady) {
+  // Error state
+  if (error && !isReady) {
     return (
       <div className="space-y-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -314,7 +274,7 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
 
         <button
           type="submit"
-          disabled={!cardReady || processing}
+          disabled={!isReady || processing}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
         >
           {processing ? (
@@ -322,18 +282,16 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               Processing Payment...
             </>
-          ) : cardReady ? (
+          ) : (
             <>
               <CheckCircle className="h-4 w-4 mr-2" />
               Invest ${amount.toLocaleString()} Capital
             </>
-          ) : (
-            'Initializing Payment...'
           )}
         </button>
         
         <p className="text-xs text-gray-500 text-center">
-          Your payment information is encrypted and secure. Powered by bank-level security.
+          Your payment information is encrypted and secure.
         </p>
       </form>
       

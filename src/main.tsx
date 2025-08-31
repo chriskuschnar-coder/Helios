@@ -5,9 +5,7 @@ import { AuthProvider } from './components/auth/AuthProvider';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <InvestmentPlatform />
-    </AuthProvider>
-  </StrictMode>
+  <AuthProvider>
+    <InvestmentPlatform />
+  </AuthProvider>
 );
