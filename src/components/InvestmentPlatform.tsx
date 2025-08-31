@@ -12,6 +12,7 @@ import { Performance } from './Performance'
 import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { SystemStatusCheck } from './SystemStatusCheck'
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
@@ -20,6 +21,12 @@ export function InvestmentPlatform() {
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
+  const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
+
+  // Show system test page
+  if (isTestPage) {
+    return <SystemStatusCheck />
+  }
 
   if (loading) {
     return (
