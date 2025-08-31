@@ -39,12 +39,20 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Test connection
-supabaseClient.from('users').select('count').limit(1)
-  .then(() => console.log('✅ Supabase connection successful'))
-  .catch((error) => {
-    console.error('❌ Supabase connection failed:', error)
-    console.log('Using localStorage fallback for WebContainer environment')
-  })
+// Test connection only if we're not in WebContainer
+const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                      window.location.hostname.includes('local-credentialless')
+
+if (!isWebContainer) {
+  supabaseClient.from('users').select('count').limit(1)
+    .then(() => console.log('✅ Supabase connection successful'))
+    .catch((error) => {
+      console.error('❌ Supabase connection failed:', error)
+      console.log('Using localStorage fallback for WebContainer environment')
+    })
+} else {
+  console.log('🔧 WebContainer detected - skipping Supabase connection test')
+  console.log('📱 For cross-device login, click "Connect to Supabase" in top right')
+}
 
 console.log('✅ Supabase client initialized')

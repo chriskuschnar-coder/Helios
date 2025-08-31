@@ -57,15 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
-        // Check if Supabase is properly configured
+        // Check if Supabase is properly configured and not in WebContainer
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                              window.location.hostname.includes('local-credentialless')
         
         console.log('🔍 Environment check:')
         console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing')
         console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing')
+        console.log('WebContainer:', isWebContainer ? 'Yes (localStorage mode)' : 'No (Supabase mode)')
         
-        if (supabaseUrl && supabaseKey) {
+        if (supabaseUrl && supabaseKey && !isWebContainer) {
           // Try to get current session from Supabase
           try {
             console.log('🔄 Attempting Supabase session check...')
@@ -97,7 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('Falling back to localStorage authentication')
           }
         } else {
-          console.log('⚠️ Supabase not configured, using localStorage only')
+          if (isWebContainer) {
+            console.log('🔧 WebContainer environment detected - using localStorage for demo')
+            console.log('📱 For cross-device login, click "Connect to Supabase" in Bolt interface')
+          } else {
+            console.log('⚠️ Supabase not configured, using localStorage only')
+          }
         }
         
         // Fallback: Check localStorage for existing session
@@ -340,11 +348,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      // Check if Supabase is available
+      // Check if Supabase is available and not in WebContainer
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                            window.location.hostname.includes('local-credentialless')
       
-      if (supabaseUrl && supabaseKey) {
+      if (supabaseUrl && supabaseKey && !isWebContainer) {
         console.log('🔄 Attempting Supabase authentication...')
         
         try {
@@ -363,7 +373,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('⚠️ Supabase auth failed, using fallback:', supabaseError)
         }
       } else {
-        console.log('⚠️ Supabase not configured, using localStorage only')
+        if (isWebContainer) {
+          console.log('🔧 WebContainer mode - using localStorage authentication')
+        } else {
+          console.log('⚠️ Supabase not configured, using localStorage only')
+        }
       }
       
       // Fallback authentication for WebContainer
@@ -449,11 +463,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
-      // Check if Supabase is available
+      // Check if Supabase is available and not in WebContainer
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                            window.location.hostname.includes('local-credentialless')
       
-      if (supabaseUrl && supabaseKey) {
+      if (supabaseUrl && supabaseKey && !isWebContainer) {
         console.log('🔄 Attempting Supabase signup...')
         
         try {
@@ -475,7 +491,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('⚠️ Supabase signup failed, using localStorage fallback:', supabaseError)
         }
       } else {
-        console.log('⚠️ Supabase not configured, using localStorage only')
+        if (isWebContainer) {
+          console.log('🔧 WebContainer mode - using localStorage for demo')
+        } else {
+          console.log('⚠️ Supabase not configured, using localStorage only')
+        }
       }
       
       // Fallback registration for WebContainer
