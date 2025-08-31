@@ -18,12 +18,15 @@ const isWebContainer = typeof window !== 'undefined' && (
 
 console.log('🔧 Environment:', isWebContainer ? 'WebContainer (Edge Functions mode)' : 'Standard (Direct mode)')
 
+// Create the client - export at top level, assign conditionally
+let clientInstance: any
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase environment variables')
   console.log('📱 Please click "Connect to Supabase" button in the top right to set up Supabase')
   
   // Create a mock client for development
-  export const supabaseClient = {
+  clientInstance = {
     auth: {
       signInWithPassword: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
       signUp: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
@@ -50,7 +53,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 } else {
   // Create real Supabase client
-  export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -79,9 +82,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // Test connection only if not in WebContainer
   if (!isWebContainer) {
     console.log('🔄 Testing direct Supabase connection...')
-    supabaseClient.from('users').select('count').limit(1)
+    clientInstance.from('users').select('count').limit(1)
       .then(() => console.log('✅ Direct Supabase connection successful'))
-      .catch((error) => {
+      .catch((error: any) => {
         console.error('❌ Direct Supabase connection failed:', error)
         console.log('💡 This is normal in WebContainer - Edge Functions will handle API calls')
       })
@@ -92,3 +95,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
   console.log('✅ Supabase client initialized')
 }
+
+// Export the client at top level
+export const supabaseClient = clientInstance

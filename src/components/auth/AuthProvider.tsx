@@ -378,7 +378,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('⚠️ Supabase not configured, using localStorage only')
       }
     }
-      
+    
+    try {
+      // Fallback: localStorage authentication
+      if (email === 'demo@globalmarket.com' || email === 'demo') {
         const demoUser = {
           id: 'demo-user-id',
           email: 'demo@globalmarket.com',
@@ -493,6 +496,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('⚠️ Supabase not configured, using localStorage only')
       }
     }
+    
+    try {
+      // Fallback: localStorage signup
+      const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       
       const newUser = {
         id: userId,
