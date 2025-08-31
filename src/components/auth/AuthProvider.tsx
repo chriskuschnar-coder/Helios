@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+// import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -47,6 +47,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Force demo mode in WebContainer
+  const isWebContainer = true
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
@@ -57,136 +59,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Initialize auth state
     const initializeAuth = async () => {
-      try {
-        // Check for existing session
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
-        
-        if (sessionError) {
-          console.error('❌ Session error:', sessionError)
-          setLoading(false)
-          return
+      // Check localStorage for existing session
+      const savedSession = localStorage.getItem('supabase-session')
+      if (savedSession) {
+        try {
+          const session = JSON.parse(savedSession)
+          setUser(session.user)
+          setAccount(session.account)
+          console.log('✅ Restored session from localStorage')
+        } catch (e) {
+          console.log('❌ Invalid session in localStorage, clearing')
+          localStorage.removeItem('supabase-session')
         }
-        
-        if (session?.user) {
-          console.log('✅ Found existing session for:', session.user.email)
-          await loadUserData(session.user.id)
-        } else {
-          console.log('📱 No existing session found')
-        }
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error)
-      } finally {
-        setLoading(false)
       }
+        setLoading(false)
     }
     
     initializeAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event)
-      
-      if (session?.user) {
-        console.log('✅ User signed in:', session.user.email)
-        await loadUserData(session.user.id)
-      } else {
-        console.log('🚪 User signed out')
-        setUser(null)
-        setAccount(null)
-        setSubscription(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
   }, [])
 
-  const loadUserData = async (userId: string) => {
-    try {
-      // Load user profile
-      const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-      
-      if (userError) {
-        console.error('❌ Error loading user data:', userError)
-        return
-      }
-      
-      if (userData) {
-        setUser({
-          id: userData.id,
-          email: userData.email,
-          full_name: userData.full_name
-        })
-        console.log('✅ User data loaded:', userData.email)
-        
-        // Load account data
-        const { data: accountData, error: accountError } = await supabaseClient
-          .from('accounts')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
-        
-        if (accountError) {
-          console.error('❌ Error loading account data:', accountError)
-        } else if (accountData) {
-          setAccount(accountData)
-          console.log('✅ Account data loaded - Balance:', accountData.balance)
-        }
-
-        // Load subscription data
-        await loadSubscription()
-      }
-    } catch (error) {
-      console.error('❌ Error in loadUserData:', error)
-    }
-  }
-
-  const loadSubscription = async () => {
-    try {
-      const { data: subscriptionData, error } = await supabaseClient
-        .from('stripe_user_subscriptions')
-        .select('*')
-        .limit(1)
-      
-      if (subscriptionData && subscriptionData.length > 0 && !error) {
-        setSubscription(subscriptionData[0])
-        console.log('✅ Subscription loaded:', subscriptionData[0].subscription_status)
-      } else if (error) {
-        console.error('❌ Error loading subscription:', error)
-      } else {
-        console.log('📭 No subscription found')
-      }
-    } catch (error) {
-      console.error('❌ Error loading subscription:', error)
-    }
-  }
-
   const refreshAccount = async () => {
-    if (!user) return
-    
-    try {
-      const { data: accountData, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (accountData && !error) {
-        setAccount(accountData)
-        console.log('✅ Account refreshed - Balance:', accountData.balance)
-      } else {
-        console.error('❌ Error refreshing account:', error)
+    // In WebContainer, refresh from localStorage
+    const savedSession = localStorage.getItem('supabase-session')
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession)
+        setAccount(session.account)
+        console.log('✅ Account refreshed from localStorage')
+      } catch (e) {
+        console.log('❌ Error refreshing account from localStorage')
       }
-    } catch (error) {
-      console.error('❌ Error refreshing account:', error)
     }
   }
 
   const refreshSubscription = async () => {
-    await loadSubscription()
+    // Demo mode - no subscriptions
+    console.log('📭 No subscription system in demo mode')
   }
 
   const processFunding = async (amount: number, method: string, description?: string) => {
@@ -200,100 +108,152 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Minimum funding amount is $100')
     }
     
-    try {
-      // Use the robust funding processor
-      const result = await supabaseClient.processFunding(amount, method, description)
-      
-      // Refresh account data to get updated balance
-      await refreshAccount()
-      
-      return result
-      
-    } catch (error) {
-      console.error('❌ Funding error:', error)
-      throw error
+    // WebContainer demo mode - update localStorage directly
+    const savedSession = localStorage.getItem('supabase-session')
+    if (!savedSession) {
+      throw new Error('No active session')
+    }
+    
+    const session = JSON.parse(savedSession)
+    if (!session.user) {
+      throw new Error('No user in session')
+    }
+    
+    // Update account balance
+    session.account.balance += amount
+    session.account.available_balance += amount
+    session.account.total_deposits += amount
+    
+    // Save updated session
+    localStorage.setItem('supabase-session', JSON.stringify(session))
+    
+    // Update state
+    setAccount(session.account)
+    
+    console.log('✅ Funding processed successfully in demo mode')
+    return {
+      data: { success: true, new_balance: session.account.balance },
+      error: null,
+      success: true
     }
   }
 
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting sign in for:', email)
     
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      })
-      
-      if (error) {
-        console.log('❌ Sign in failed:', error.message)
-        return { error: { message: error.message } }
+    // Demo mode authentication
+    if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+      const demoSession = {
+        user: { id: 'demo-user', email: email, full_name: 'Demo User' },
+        account: {
+          id: 'demo-account',
+          balance: 7850,
+          available_balance: 7850,
+          total_deposits: 10000,
+          total_withdrawals: 0,
+          currency: 'USD',
+          status: 'active'
+        }
       }
       
-      if (data.user) {
-        console.log('✅ Sign in successful for:', data.user.email)
-        // User data will be loaded by the auth state change listener
-        return { error: null }
+      localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+      setUser(demoSession.user)
+      setAccount(demoSession.account)
+      
+      console.log('✅ Demo login successful')
+      return { error: null }
+    }
+    
+    // Check for existing users in localStorage
+    const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+    const existingUser = allUsers.find((u: any) => u.email === email && u.password === password)
+    
+    if (existingUser) {
+      const userSession = {
+        user: { id: existingUser.id, email: existingUser.email, full_name: existingUser.full_name },
+        account: {
+          id: existingUser.account_id,
+          balance: existingUser.balance,
+          available_balance: existingUser.available_balance,
+          total_deposits: existingUser.total_deposits,
+          total_withdrawals: existingUser.total_withdrawals,
+          currency: 'USD',
+          status: 'active'
+        }
       }
       
-      return { error: { message: 'Sign in failed' } }
+      localStorage.setItem('supabase-session', JSON.stringify(userSession))
+      setUser(userSession.user)
+      setAccount(userSession.account)
       
-    } catch (error) {
-      console.error('❌ Sign in error:', error)
-      return { error: { message: 'Authentication failed' } }
+      console.log('✅ User login successful')
+      return { error: null }
+    }
+    
+    return { error: { message: 'Invalid credentials' } }
     }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: undefined, // Disable email confirmation
-          data: {
-            full_name: metadata?.full_name || 'New User'
-          }
-        }
-      })
-      
-      if (error) {
-        console.log('❌ Sign up failed:', error.message)
-        return { error: { message: error.message } }
+    // Check if user already exists
+    const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+    const existingUser = allUsers.find((u: any) => u.email === email)
+    
+    if (existingUser) {
+      return { error: { message: 'User already exists' } }
+    }
+    
+    // Create new user
+    const newUser = {
+      id: 'user-' + Date.now(),
+      email: email,
+      password: password,
+      full_name: metadata?.full_name || 'New User',
+      account_id: 'account-' + Date.now(),
+      balance: 0,
+      available_balance: 0,
+      total_deposits: 0,
+      total_withdrawals: 0,
+      created_at: new Date().toISOString()
+    }
+    
+    // Save to localStorage
+    allUsers.push(newUser)
+    localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+    
+    // Create session
+    const userSession = {
+      user: { id: newUser.id, email: newUser.email, full_name: newUser.full_name },
+      account: {
+        id: newUser.account_id,
+        balance: newUser.balance,
+        available_balance: newUser.available_balance,
+        total_deposits: newUser.total_deposits,
+        total_withdrawals: newUser.total_withdrawals,
+        currency: 'USD',
+        status: 'active'
       }
-      
-      if (data.user) {
-        console.log('✅ Sign up successful for:', data.user.email)
-        // Account will be auto-created by trigger
-        return { error: null }
-      }
-      
-      return { error: { message: 'Sign up failed' } }
-      
-    } catch (error) {
-      console.error('❌ Sign up error:', error)
-      return { error: { message: 'Account creation failed' } }
+    }
+    
+    localStorage.setItem('supabase-session', JSON.stringify(userSession))
+    setUser(userSession.user)
+    setAccount(userSession.account)
+    
+    console.log('✅ New user created successfully')
+    return { error: null }
     }
   }
 
   const signOut = async () => {
     console.log('🚪 Signing out...')
     
-    try {
-      const { error } = await supabaseClient.auth.signOut()
-      
-      if (error) {
-        console.error('❌ Sign out error:', error)
-      } else {
-        console.log('✅ Sign out successful')
-        setUser(null)
-        setAccount(null)
-        setSubscription(null)
-      }
-    } catch (error) {
-      console.error('❌ Sign out error:', error)
-    }
+    localStorage.removeItem('supabase-session')
+    setUser(null)
+    setAccount(null)
+    setSubscription(null)
+    console.log('✅ Sign out successful')
   }
 
   const value = {
