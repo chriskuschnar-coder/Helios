@@ -61,12 +61,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
+        // Add a small delay to ensure environment is ready
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
         // Test Supabase connection first
         console.log('🔍 Testing Supabase connection...')
         const connectionWorking = await testSupabaseConnection()
         
         if (!connectionWorking) {
-          setConnectionError(`Unable to connect to Supabase database. Origin: ${window.location.origin}`)
+          setConnectionError(`Unable to connect to Supabase database. Please check your Supabase configuration. Origin: ${window.location.origin}`)
           setLoading(false)
           return
         }
@@ -74,27 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Supabase connection verified')
         setConnectionError(null)
         
-        // Additional connection verification
-        console.log('🔍 Testing auth endpoint...')
-        const { data: authTest, error: authError } = await supabaseClient.auth.getSession()
-        
-        if (authError) {
-          console.error('❌ Auth endpoint error:', authError)
-          setConnectionError(`Auth service unavailable: ${authError.message}. Domain may not be whitelisted in Supabase.`)
-          setLoading(false)
-          return
-        }
-        
-        console.log('✅ Auth endpoint working')
-        
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
-          setConnectionError(`Auth session error: ${sessionError.message}. Check Supabase URL configuration.`)
-          setLoading(false)
-          return
+          console.warn('⚠️ Session error (continuing anyway):', sessionError.message)
         }
         
         if (session?.user) {
@@ -105,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error)
-        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}. Check CORS settings in Supabase.`)
+        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}. This usually means the domain isn't whitelisted in Supabase CORS settings.`)
       } finally {
         setLoading(false)
       }
