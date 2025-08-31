@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { stripeProducts } from '../stripe-config'
-import { supabaseClient } from '../lib/supabase-client'
 import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield } from 'lucide-react'
 
 interface StripeCheckoutProps {
@@ -11,10 +10,11 @@ interface StripeCheckoutProps {
 }
 
 export function StripeCheckout({ productId, className = '', customAmount }: StripeCheckoutProps) {
-  const { user } = useAuth()
+  const { user, processFunding } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [amount, setAmount] = useState(customAmount || 10000) // Default $100
+  const [success, setSuccess] = useState(false)
 
   // Find the product or use the first one as default
   const product = productId 
@@ -52,52 +52,51 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     setError('')
 
     try {
-      console.log('💳 Creating Stripe checkout for amount:', amount)
+      console.log('💳 Processing demo investment for amount:', amount)
       
-      // Get the current session
-      const { data: { session } } = await supabaseClient.auth.getSession()
+      // Simulate Stripe checkout processing
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
-      if (!session) {
-        throw new Error('No active session - please sign in again')
-      }
-
-      // Call the Stripe checkout edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          price_id: product.priceId,
-          mode: product.mode,
-          amount: amount * 100, // Convert to cents
-          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-          cancel_url: `${window.location.origin}/cancel`,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Checkout creation failed:', errorData)
-        throw new Error(errorData.error || 'Failed to create checkout session')
-      }
-
-      const { url } = await response.json()
+      // Process funding through auth provider (uses localStorage in WebContainer)
+      await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
       
-      if (url) {
-        console.log('✅ Redirecting to Stripe checkout:', url)
-        // Redirect to Stripe Checkout
-        window.location.href = url
-      } else {
-        throw new Error('No checkout URL received')
-      }
-
+      console.log('✅ Demo investment successful')
+      setSuccess(true)
+      
+      // Reset form after success
+      setTimeout(() => {
+        setSuccess(false)
+        setAmount(10000)
+      }, 3000)
+      
     } catch (error) {
-      console.error('❌ Checkout error:', error)
-      setError(error instanceof Error ? error.message : 'Checkout failed')
+      console.error('❌ Investment processing error:', error)
+      setError(error instanceof Error ? error.message : 'Investment failed')
+    } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <h3 className="text-xl font-bold text-green-900 mb-2">Investment Successful!</h3>
+          <p className="text-green-700 mb-4">
+            ${amount.toLocaleString()} has been added to your account
+          </p>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-700">
+              <strong>Demo Mode:</strong> In production, this would redirect to Stripe Checkout 
+              and process real payments. Your account balance has been updated for demonstration.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -144,13 +143,14 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       </div>
 
       {/* Security Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Payment Processing</span>
+          <Shield className="h-5 w-5 text-yellow-600" />
+          <span className="font-medium text-yellow-900">Demo Payment Mode</span>
         </div>
-        <p className="text-sm text-blue-700">
-          Payments are processed securely through Stripe. You'll be redirected to Stripe's secure checkout page.
+        <p className="text-sm text-yellow-700">
+          This is a demo environment. In production, this would redirect to Stripe's secure checkout page.
+          Your account balance will be updated immediately for demonstration purposes.
         </p>
       </div>
 
@@ -171,12 +171,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         {loading ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Creating secure checkout...
+            Processing Demo Investment...
           </>
         ) : (
           <>
             <CreditCard className="h-5 w-5 mr-2" />
-            Invest ${amount.toLocaleString()} Securely
+            Invest ${amount.toLocaleString()} (Demo)
           </>
         )}
       </button>
@@ -189,7 +189,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       <div className="mt-4 text-center">
         <p className="text-xs text-gray-500">
-          Secure payment processing powered by Stripe • SSL encrypted
+          Demo mode - No real payments processed • WebContainer compatible
         </p>
       </div>
     </div>
