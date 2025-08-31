@@ -1,5 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+let clientInstance: any
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Create mock client for development
+  console.log('⚠️ Supabase credentials not found, using mock client')
+  clientInstance = {
+    auth: {
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
     from: () => ({
