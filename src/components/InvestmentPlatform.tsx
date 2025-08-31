@@ -94,7 +94,6 @@ export function InvestmentPlatform() {
     return <CancelPage />
   }
 
-
   // If user is authenticated, show dashboard selector
   if (user) {
     return <DashboardSelector />

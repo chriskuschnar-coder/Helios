@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
+import { SupabaseConnectionBanner } from '../SupabaseConnectionBanner'
 
 interface User {
   id: string
@@ -456,9 +457,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: { message: 'Invalid email or password' } }
         }
       }
-    } else {
-      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
-    }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
