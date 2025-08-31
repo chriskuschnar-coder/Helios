@@ -12,11 +12,6 @@ import { Performance } from './Performance'
 import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { Elements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
-
-// Initialize Stripe at the top level
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
@@ -93,16 +88,14 @@ export function InvestmentPlatform() {
 
   // Default: show marketing site
   return (
-    <Elements stripe={stripePromise}>
-      <main className="min-h-screen bg-white">
-        <Header onNavigateToLogin={() => setAuthMode('login')} />
-        <Hero />
-        <About />
-        <Services />
-        <Performance />
-        <Contact />
-        <Footer />
-      </main>
-    </Elements>
+    <main className="min-h-screen bg-white">
+      <Header onNavigateToLogin={() => setAuthMode('login')} />
+      <Hero />
+      <About />
+      <Services />
+      <Performance />
+      <Contact />
+      <Footer />
+    </main>
   )
 }

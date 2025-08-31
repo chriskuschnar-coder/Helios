@@ -2,10 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { StripeCardFormInner } from './StripeCardFormInner'
-import { Loader2, Shield, CreditCard, AlertCircle } from 'lucide-react'
+import { Loader2, Shield, AlertCircle } from 'lucide-react'
 
-// Create Stripe promise - single instance
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
+// Create Stripe promise - single instance with proper key
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
+
+console.log('🔍 Stripe Configuration:')
+console.log('Publishable Key:', STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
+console.log('Key format:', STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_') ? 'Test key ✅' : 'Live key ✅')
+
+// Create the Stripe promise
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY)
 
 interface StripeCardFormProps {
   amount: number
@@ -15,83 +22,69 @@ interface StripeCardFormProps {
 }
 
 export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCardFormProps) {
-  const [stripe, setStripe] = useState<any>(null)
-  const [stripeLoading, setStripeLoading] = useState(true)
+  const [stripeReady, setStripeReady] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
 
   useEffect(() => {
-    let mounted = true
-    console.log('🔄 StripeCardForm: Starting Stripe initialization...')
+    console.log('🔄 StripeCardForm: Testing Stripe initialization...')
     
-    const initializeStripe = async () => {
+    const testStripe = async () => {
       try {
-        // Wait for window.Stripe to be available
+        // Wait for Stripe script to load
         let attempts = 0
-        while (!(window as any).Stripe && attempts < 100) {
+        while (!(window as any).Stripe && attempts < 50) {
           console.log(`⏳ Waiting for window.Stripe... attempt ${attempts + 1}`)
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await new Promise(resolve => setTimeout(resolve, 200))
           attempts++
         }
         
         if (!(window as any).Stripe) {
-          throw new Error('Stripe.js script failed to load after 10 seconds')
+          throw new Error('Stripe.js script failed to load')
         }
         
-        console.log('✅ window.Stripe available, creating Stripe instance...')
+        console.log('✅ window.Stripe available')
         
-        // Create Stripe instance
-        const stripeInstance = await loadStripe(STRIPE_PUBLISHABLE_KEY)
-        
-        if (!stripeInstance) {
+        // Test the promise resolution
+        const stripe = await stripePromise
+        if (!stripe) {
           throw new Error('Failed to create Stripe instance')
         }
         
         console.log('✅ Stripe instance created successfully')
-        console.log('🔍 Stripe version:', stripeInstance.version || 'Version not available')
+        console.log('🔍 Stripe version:', stripe.version || 'Version not available')
         
-        if (mounted) {
-          setStripe(stripeInstance)
-          console.log('✅ Stripe set in state, ready for Elements')
-        }
+        setStripeReady(true)
         
       } catch (error) {
         console.error('❌ Failed to initialize Stripe:', error)
-        if (mounted) {
-          setInitError(error instanceof Error ? error.message : 'Failed to load payment system')
-        }
-      } finally {
-        if (mounted) {
-          setStripeLoading(false)
-        }
+        setInitError(error instanceof Error ? error.message : 'Failed to load payment system')
       }
     }
 
-    initializeStripe()
-    
-    return () => {
-      mounted = false
-    }
+    testStripe()
   }, [])
 
-  if (stripeLoading) {
+  if (!stripeReady) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-3" />
         <div>
           <div className="text-gray-600 font-medium">Loading secure payment system...</div>
-          <div className="text-xs text-gray-500 mt-1">Initializing Stripe.js...</div>
+          <div className="text-xs text-gray-500 mt-1">
+            {initError ? `Error: ${initError}` : 'Initializing Stripe.js...'}
+          </div>
         </div>
       </div>
     )
   }
 
-  if (initError || !stripe) {
+  if (initError) {
     return (
       <div className="p-6 text-center">
         <div className="text-red-600 mb-4">
           <AlertCircle className="h-12 w-12 mx-auto mb-2" />
           <p className="font-medium">Payment system unavailable</p>
-          <p className="text-sm text-gray-600 mt-1">{initError || 'Failed to load Stripe'}</p>
+          <p className="text-sm text-gray-600 mt-1">{initError}</p>
         </div>
         <button
           onClick={onClose}
@@ -103,7 +96,7 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
     )
   }
 
-  console.log('🎯 Rendering Elements with Stripe instance')
+  console.log('🎯 Rendering Elements with Stripe promise')
 
   return (
     <div className="max-w-md mx-auto">
@@ -113,13 +106,13 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
           <span className="text-sm text-gray-600">Secure Payment</span>
         </div>
         <p className="text-2xl font-bold text-gray-900">
-          ${amount.toFixed(2)}
+          Investment Processing
         </p>
       </div>
 
-      {/* Elements wrapper with proper Stripe instance */}
+      {/* Elements wrapper with proper Stripe promise */}
       <Elements 
-        stripe={stripe}
+        stripe={stripePromise}
         options={{
           appearance: {
             theme: 'stripe',
