@@ -18,7 +18,7 @@ export function SupabaseTest() {
     // Test Supabase connection
     const testConnection = async () => {
       try {
-        const { data, error } = await supabase.from('users').select('count').limit(1)
+        const { data, error } = await supabaseClient.from('users').select('count').limit(1)
         if (error) {
           setConnectionStatus(`Error: ${error.message}`)
         } else {
