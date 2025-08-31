@@ -583,6 +583,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signOut = async () => {
+    console.log('🚪 Signing out...')
+    
+    try {
+      // Try Supabase signout if available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (supabaseUrl && supabaseKey) {
+        try {
+          const { error } = await supabaseClient.auth.signOut()
+          if (error) {
+            console.error('Supabase sign out error:', error)
+          }
+        } catch (supabaseError) {
+          console.log('⚠️ Supabase signout failed, using fallback')
+        }
+      }
+      
+      // Clear local storage
+      localStorage.removeItem('auth-user')
+      localStorage.removeItem('auth-account')
+      
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      
+      console.log('✅ Sign out successful')
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
+  }
+
   const value = {
     user,
     loading,
