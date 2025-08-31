@@ -12,7 +12,11 @@ import { Performance } from './Performance'
 import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { StripeDebugTest } from './StripeDebugTest'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+
+// Initialize Stripe at the top level
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
@@ -89,18 +93,16 @@ export function InvestmentPlatform() {
 
   // Default: show marketing site
   return (
-    <main className="min-h-screen bg-white">
-      {/* Enhanced Stripe Debug Test */}
-      <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 9999, background: 'white', border: '2px solid #3b82f6', padding: '10px', borderRadius: '8px', maxWidth: '400px', maxHeight: '80vh', overflow: 'auto' }}>
-        <StripeDebugTest />
-      </div>
-      <Header onNavigateToLogin={() => setAuthMode('login')} />
-      <Hero />
-      <About />
-      <Services />
-      <Performance />
-      <Contact />
-      <Footer />
-    </main>
+    <Elements stripe={stripePromise}>
+      <main className="min-h-screen bg-white">
+        <Header onNavigateToLogin={() => setAuthMode('login')} />
+        <Hero />
+        <About />
+        <Services />
+        <Performance />
+        <Contact />
+        <Footer />
+      </main>
+    </Elements>
   )
 }
