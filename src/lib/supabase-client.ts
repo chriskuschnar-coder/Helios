@@ -4,15 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔍 Supabase Environment Check:')
-console.log('URL:', supabaseUrl)
-console.log('Key Present:', supabaseAnonKey ? 'Yes ✅' : 'No ❌')
+console.log('🔍 Environment Variables Check:')
+console.log('VITE_SUPABASE_URL:', supabaseUrl || 'MISSING ❌')
+console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present ✅' : 'MISSING ❌')
 console.log('Current Origin:', window.location.origin)
-console.log('Current URL:', window.location.href)
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables')
-  throw new Error('Missing Supabase environment variables. Check your .env file.')
+  console.error('❌ CRITICAL: Missing environment variables!')
+  console.error('Expected: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
+  console.error('Check your .env file in the project root')
 }
 
 // Create Supabase client with minimal configuration for testing
