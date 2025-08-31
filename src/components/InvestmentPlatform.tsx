@@ -56,6 +56,12 @@ export function InvestmentPlatform() {
     return <SystemStatusCheck />
   }
 
+  // Show deployment check page
+  const isDeploymentCheck = window.location.search.includes('deployment=check')
+  if (isDeploymentCheck) {
+    return <DeploymentCheck />
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
