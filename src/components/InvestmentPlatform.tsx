@@ -17,22 +17,6 @@ import { SystemStatusCheck } from './SystemStatusCheck'
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
   const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
-  const [supabaseConfigured, setSupabaseConfigured] = useState(true)
-
-  // Check Supabase configuration
-  useEffect(() => {
-    const url = import.meta.env.VITE_SUPABASE_URL
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const isConfigured = !!(url && key && url !== 'https://your-project.supabase.co' && key !== 'your-anon-key')
-    setSupabaseConfigured(isConfigured)
-    
-    if (!isConfigured) {
-      console.log('⚠️ Supabase not configured:')
-      console.log('URL:', url || 'Missing')
-      console.log('Key:', key ? 'Present' : 'Missing')
-      console.log('Please click "Connect to Supabase" button')
-    }
-  }, [])
 
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
@@ -47,33 +31,12 @@ export function InvestmentPlatform() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        {!supabaseConfigured ? (
-          <div className="text-center max-w-md">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <div className="w-8 h-8 bg-red-600 rounded-full"></div>
-            </div>
-            <div className="text-red-900 text-lg font-medium mb-2">Supabase Not Connected</div>
-            <div className="text-red-700 text-sm mb-4">
-              Please click "Connect to Supabase" in the top right corner to set up the database connection.
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
-              <h4 className="font-medium text-red-900 mb-2">Required Steps:</h4>
-              <ol className="text-sm text-red-700 space-y-1">
-                <li>1. Click "Connect to Supabase" button</li>
-                <li>2. Create or select your Supabase project</li>
-                <li>3. The environment variables will be set automatically</li>
-                <li>4. Authentication and database will work properly</li>
-              </ol>
-            </div>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
-        ) : (
-          <div className="text-center">
-            <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-              <div className="w-8 h-8 bg-white rounded-full"></div>
-            </div>
-            <div className="text-navy-900 text-lg font-medium">Loading...</div>
-          </div>
-        )}
+          <div className="text-navy-900 text-lg font-medium">Loading...</div>
+        </div>
       </div>
     )
   }
