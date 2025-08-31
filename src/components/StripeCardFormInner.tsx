@@ -16,20 +16,39 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   // Single source of truth for investment amount
   const [investmentAmount, setInvestmentAmount] = useState(initialAmount)
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({
-    cardNumber: '',
-    cardExpiry: '',
-    cardCvc: ''
+  const [cardReady, setCardReady] = useState({
+    number: false,
+    expiry: false,
+    cvc: false
   })
-  const [complete, setComplete] = useState({
-    cardNumber: false,
-    cardExpiry: false,
-    cardCvc: false
+  const [cardErrors, setCardErrors] = useState({
+    number: '',
+    expiry: '',
+    cvc: ''
+  })
+  const [cardComplete, setCardComplete] = useState({
+    number: false,
+    expiry: false,
+    cvc: false
   })
 
   // Derived values from single state
   const processingFee = investmentAmount * 0.029 + 0.30
   const totalCharge = investmentAmount + processingFee
+
+  // Debug Stripe readiness
+  useEffect(() => {
+    console.log('🔍 StripeCardFormInner mounted')
+    console.log('Stripe instance:', stripe)
+    console.log('Elements instance:', elements)
+    console.log('window.Stripe:', !!(window as any).Stripe)
+    
+    if (stripe && elements) {
+      console.log('✅ Both Stripe and Elements are ready')
+    } else {
+      console.log('❌ Waiting for Stripe/Elements to be ready')
+    }
+  }, [stripe, elements])
 
   // Don't render until Stripe is fully ready
   if (!stripe || !elements) {
@@ -41,6 +60,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     )
   }
 
+  // Stripe Element options - clean and minimal
   const elementOptions = {
     style: {
       base: {
@@ -48,13 +68,9 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         color: '#1f2937',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         lineHeight: '1.5',
-        padding: '12px 0',
         '::placeholder': {
           color: '#9ca3af',
         },
-        ':-webkit-autofill': {
-          color: '#1f2937',
-        }
       },
       invalid: {
         color: '#ef4444',
@@ -65,16 +81,28 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         iconColor: '#059669'
       },
     },
-    disabled: false
   }
 
-  const handleElementChange = (elementType: string) => (event: any) => {
-    setErrors(prev => ({
+  const handleCardChange = (elementType: 'number' | 'expiry' | 'cvc') => (event: any) => {
+    console.log(`🔍 ${elementType} element changed:`, {
+      ready: event.ready,
+      complete: event.complete,
+      error: event.error?.message,
+      empty: event.empty,
+      brand: event.brand
+    })
+    
+    setCardReady(prev => ({
+      ...prev,
+      [elementType]: true
+    }))
+    
+    setCardErrors(prev => ({
       ...prev,
       [elementType]: event.error ? event.error.message : ''
     }))
     
-    setComplete(prev => ({
+    setCardComplete(prev => ({
       ...prev,
       [elementType]: event.complete
     }))
@@ -94,9 +122,17 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       return
     }
 
+    // Validate form completion
+    if (!cardComplete.number || !cardComplete.expiry || !cardComplete.cvc) {
+      onError('Please complete all card information')
+      return
+    }
+
     setLoading(true)
 
     try {
+      console.log('💳 Creating payment intent for amount:', totalCharge)
+      
       // Create payment intent
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
@@ -117,7 +153,9 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       }
 
       const { client_secret } = await response.json()
+      console.log('✅ Payment intent created, confirming payment...')
 
+      // Confirm payment
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
           card: cardNumberElement,
@@ -125,25 +163,30 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       })
 
       if (confirmError) {
+        console.log('❌ Payment confirmation failed:', confirmError)
         onError(confirmError.message || 'Payment failed')
       } else if (paymentIntent?.status === 'succeeded') {
+        console.log('✅ Payment succeeded:', paymentIntent)
         onSuccess({
           id: paymentIntent.id,
           amount: investmentAmount, // Original investment amount (not including fees)
           method: 'card',
-          status: 'completed'
+          status: 'completed',
+          total_charged: totalCharge
         })
+      } else {
+        onError('Payment was not completed')
       }
     } catch (error) {
       console.error('❌ Payment processing error:', error)
-      onError('Payment processing failed')
+      onError(error instanceof Error ? error.message : 'Payment processing failed')
     } finally {
       setLoading(false)
     }
   }
 
-  const isFormValid = complete.cardNumber && complete.cardExpiry && complete.cardCvc && 
-                     !errors.cardNumber && !errors.cardExpiry && !errors.cardCvc &&
+  const isFormValid = cardComplete.number && cardComplete.expiry && cardComplete.cvc && 
+                     !cardErrors.number && !cardErrors.expiry && !cardErrors.cvc &&
                      investmentAmount >= 100
 
   return (
@@ -180,63 +223,74 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Card Number */}
+        {/* Card Number - Dedicated container for Stripe iframe */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Card Number
           </label>
           <div 
-            style={{
-              border: `2px solid ${complete.cardNumber ? '#10b981' : errors.cardNumber ? '#ef4444' : '#d1d5db'}`,
-              borderRadius: '8px',
-              padding: '16px',
-              backgroundColor: 'white',
+            className={`border-2 rounded-lg p-4 bg-white min-h-[60px] flex items-center transition-colors ${
+              cardComplete.number ? 'border-green-500' : 
+              cardErrors.number ? 'border-red-500' : 
+              'border-gray-300 focus-within:border-blue-500'
+            }`}
+            style={{ 
               minHeight: '60px',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'border-color 0.2s ease'
+              position: 'relative',
+              zIndex: 1
             }}
           >
             <CardNumberElement 
               options={elementOptions}
-              onChange={handleElementChange('cardNumber')}
+              onChange={handleCardChange('number')}
+              onReady={() => {
+                console.log('✅ Card number element ready')
+                setCardReady(prev => ({ ...prev, number: true }))
+              }}
             />
           </div>
-          {errors.cardNumber && (
+          {cardErrors.number && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {errors.cardNumber}
+              {cardErrors.number}
             </div>
           )}
+          <p className="text-xs text-gray-500 mt-1">
+            Test card: 4242 4242 4242 4242
+          </p>
         </div>
 
-        {/* Expiry and CVC */}
+        {/* Expiry and CVC - Side by side */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Expiry Date
             </label>
             <div 
-              style={{
-                border: `2px solid ${complete.cardExpiry ? '#10b981' : errors.cardExpiry ? '#ef4444' : '#d1d5db'}`,
-                borderRadius: '8px',
-                padding: '16px',
-                backgroundColor: 'white',
+              className={`border-2 rounded-lg p-4 bg-white min-h-[60px] flex items-center transition-colors ${
+                cardComplete.expiry ? 'border-green-500' : 
+                cardErrors.expiry ? 'border-red-500' : 
+                'border-gray-300 focus-within:border-blue-500'
+              }`}
+              style={{ 
                 minHeight: '60px',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'border-color 0.2s ease'
+                position: 'relative',
+                zIndex: 1
               }}
             >
               <CardExpiryElement 
                 options={elementOptions}
-                onChange={handleElementChange('cardExpiry')}
+                onChange={handleCardChange('expiry')}
+                onReady={() => {
+                  console.log('✅ Card expiry element ready')
+                  setCardReady(prev => ({ ...prev, expiry: true }))
+                }}
               />
             </div>
-            {errors.cardExpiry && (
+            {cardErrors.expiry && (
               <div className="mt-2 text-sm text-red-600 flex items-center">
                 <AlertCircle className="h-4 w-4 mr-1" />
-                {errors.cardExpiry}
+                {cardErrors.expiry}
               </div>
             )}
           </div>
@@ -246,32 +300,36 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
               Security Code
             </label>
             <div 
-              style={{
-                border: `2px solid ${complete.cardCvc ? '#10b981' : errors.cardCvc ? '#ef4444' : '#d1d5db'}`,
-                borderRadius: '8px',
-                padding: '16px',
-                backgroundColor: 'white',
+              className={`border-2 rounded-lg p-4 bg-white min-h-[60px] flex items-center transition-colors ${
+                cardComplete.cvc ? 'border-green-500' : 
+                cardErrors.cvc ? 'border-red-500' : 
+                'border-gray-300 focus-within:border-blue-500'
+              }`}
+              style={{ 
                 minHeight: '60px',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'border-color 0.2s ease'
+                position: 'relative',
+                zIndex: 1
               }}
             >
               <CardCvcElement 
                 options={elementOptions}
-                onChange={handleElementChange('cardCvc')}
+                onChange={handleCardChange('cvc')}
+                onReady={() => {
+                  console.log('✅ Card CVC element ready')
+                  setCardReady(prev => ({ ...prev, cvc: true }))
+                }}
               />
             </div>
-            {errors.cardCvc && (
+            {cardErrors.cvc && (
               <div className="mt-2 text-sm text-red-600 flex items-center">
                 <AlertCircle className="h-4 w-4 mr-1" />
-                {errors.cardCvc}
+                {cardErrors.cvc}
               </div>
             )}
           </div>
         </div>
 
-        {/* Investment Summary - All values derived from investmentAmount */}
+        {/* Investment Summary */}
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-700">Investment Amount:</span>
@@ -286,6 +344,18 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
               <span className="font-medium text-gray-900">Total charge:</span>
               <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
             </div>
+          </div>
+        </div>
+
+        {/* Debug Status */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="text-xs text-blue-700">
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div>Card: {cardReady.number ? '✅' : '❌'} {cardComplete.number ? 'Complete' : 'Incomplete'}</div>
+              <div>Expiry: {cardReady.expiry ? '✅' : '❌'} {cardComplete.expiry ? 'Complete' : 'Incomplete'}</div>
+              <div>CVC: {cardReady.cvc ? '✅' : '❌'} {cardComplete.cvc ? 'Complete' : 'Incomplete'}</div>
+            </div>
+            <div>Stripe Ready: {stripe ? '✅' : '❌'} | Elements Ready: {elements ? '✅' : '❌'}</div>
           </div>
         </div>
 
