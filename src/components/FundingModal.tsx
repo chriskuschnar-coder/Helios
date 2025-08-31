@@ -478,14 +478,14 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             <div className="amount-input-group">
               <span className="currency">USD</span>
               <input 
-              <div key={selectedMethod}>
-                <StripeCardForm 
-                  amount={numericAmount} 
-                  onSuccess={handlePaymentSuccess} 
-                  onError={handlePaymentError} 
-                  onClose={() => setSelectedMethod(null)}
-                />
-              </div>
+                type="number"
+                value={amount}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                className="amount-input"
+                placeholder="Enter amount"
+                min="100"
+                step="100"
+              />
             </div>
             
             <div className="preset-amounts">
