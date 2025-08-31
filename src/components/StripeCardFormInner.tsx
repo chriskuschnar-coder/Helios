@@ -134,6 +134,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           status: 'completed'
         })
       }
+      }
     } catch (error) {
       console.error('❌ Payment processing error:', error)
       onError('Payment processing failed')

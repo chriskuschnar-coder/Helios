@@ -51,6 +51,7 @@ function StripeDebugInner() {
         color: '#1f2937',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         lineHeight: '1.5',
+        padding: '12px 0',
         '::placeholder': {
           color: '#9ca3af',
         },
