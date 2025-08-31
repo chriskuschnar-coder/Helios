@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { CreditCard, Lock, AlertCircle, Loader2, Shield, CheckCircle } from 'lucide-react'
+import { CreditCard, Lock, AlertCircle, Loader2, Shield } from 'lucide-react'
 
 interface StripeCardFormInnerProps {
   amount: number
@@ -17,28 +17,22 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   const [investmentAmount, setInvestmentAmount] = useState(initialAmount)
   const [loading, setLoading] = useState(false)
   
-  // Track each element's readiness separately
-  const [elementStates, setElementStates] = useState({
-    cardNumber: { ready: false, complete: false, error: null, focused: false },
-    cardExpiry: { ready: false, complete: false, error: null, focused: false },
-    cardCvc: { ready: false, complete: false, error: null, focused: false }
-  })
+  // Track each element's state separately
+  const [cardNumberReady, setCardNumberReady] = useState(false)
+  const [cardExpiryReady, setCardExpiryReady] = useState(false)
+  const [cardCvcReady, setCardCvcReady] = useState(false)
+  
+  const [cardNumberComplete, setCardNumberComplete] = useState(false)
+  const [cardExpiryComplete, setCardExpiryComplete] = useState(false)
+  const [cardCvcComplete, setCardCvcComplete] = useState(false)
+  
+  const [cardNumberError, setCardNumberError] = useState<string | null>(null)
+  const [cardExpiryError, setCardExpiryError] = useState<string | null>(null)
+  const [cardCvcError, setCardCvcError] = useState<string | null>(null)
 
   // Derived values from single state
   const processingFee = investmentAmount * 0.029 + 0.30
   const totalCharge = investmentAmount + processingFee
-
-  // Debug Stripe readiness
-  useEffect(() => {
-    console.log('🔍 StripeCardFormInner mounted')
-    console.log('Stripe instance:', stripe)
-    console.log('Elements instance:', elements)
-    console.log('window.Stripe:', !!(window as any).Stripe)
-    
-    if (stripe && elements) {
-      console.log('✅ Both Stripe and Elements are ready')
-    }
-  }, [stripe, elements])
 
   // Don't render until Stripe is fully ready
   if (!stripe || !elements) {
@@ -78,56 +72,51 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     },
   }
 
+  // Container style for proper iframe mounting
+  const containerStyle: React.CSSProperties = {
+    minHeight: 56,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '12px',
+    borderRadius: 8,
+    background: '#fff',
+    zIndex: 10,
+    position: 'relative',
+    pointerEvents: 'auto'
+  }
+
   // Element event handlers
-  const handleElementChange = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => (event: any) => {
-    console.log(`🔍 ${elementType} changed:`, {
-      complete: event.complete,
-      error: event.error?.message,
-      empty: event.empty,
-      brand: event.brand
-    })
-    
-    setElementStates(prev => ({
-      ...prev,
-      [elementType]: {
-        ...prev[elementType],
-        complete: event.complete,
-        error: event.error?.message || null
-      }
-    }))
+  const handleCardNumberChange = (event: any) => {
+    console.log('🔍 Card number changed:', { complete: event.complete, error: event.error?.message })
+    setCardNumberComplete(event.complete)
+    setCardNumberError(event.error?.message || null)
   }
 
-  const handleElementReady = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
-    console.log(`✅ ${elementType} is ready and mounted - users can now type!`)
-    setElementStates(prev => ({
-      ...prev,
-      [elementType]: {
-        ...prev[elementType],
-        ready: true
-      }
-    }))
+  const handleCardExpiryChange = (event: any) => {
+    console.log('🔍 Card expiry changed:', { complete: event.complete, error: event.error?.message })
+    setCardExpiryComplete(event.complete)
+    setCardExpiryError(event.error?.message || null)
   }
 
-  const handleElementFocus = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
-    console.log(`🔍 ${elementType} focused`)
-    setElementStates(prev => ({
-      ...prev,
-      [elementType]: {
-        ...prev[elementType],
-        focused: true
-      }
-    }))
+  const handleCardCvcChange = (event: any) => {
+    console.log('🔍 Card CVC changed:', { complete: event.complete, error: event.error?.message })
+    setCardCvcComplete(event.complete)
+    setCardCvcError(event.error?.message || null)
   }
 
-  const handleElementBlur = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
-    console.log(`🔍 ${elementType} blurred`)
-    setElementStates(prev => ({
-      ...prev,
-      [elementType]: {
-        ...prev[elementType],
-        focused: false
-      }
-    }))
+  const handleCardNumberReady = () => {
+    console.log('✅ Card number element ready and mounted - users can now type!')
+    setCardNumberReady(true)
+  }
+
+  const handleCardExpiryReady = () => {
+    console.log('✅ Card expiry element ready and mounted - users can now type!')
+    setCardExpiryReady(true)
+  }
+
+  const handleCardCvcReady = () => {
+    console.log('✅ Card CVC element ready and mounted - users can now type!')
+    setCardCvcReady(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,7 +133,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       return
     }
 
-    if (!elementStates.cardNumber.complete || !elementStates.cardExpiry.complete || !elementStates.cardCvc.complete) {
+    if (!cardNumberComplete || !cardExpiryComplete || !cardCvcComplete) {
       onError('Please complete all card information')
       return
     }
@@ -212,9 +201,9 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     setInvestmentAmount(newAmount)
   }
 
-  const allElementsReady = elementStates.cardNumber.ready && elementStates.cardExpiry.ready && elementStates.cardCvc.ready
-  const allElementsComplete = elementStates.cardNumber.complete && elementStates.cardExpiry.complete && elementStates.cardCvc.complete
-  const hasErrors = elementStates.cardNumber.error || elementStates.cardExpiry.error || elementStates.cardCvc.error
+  const allElementsReady = cardNumberReady && cardExpiryReady && cardCvcReady
+  const allElementsComplete = cardNumberComplete && cardExpiryComplete && cardCvcComplete
+  const hasErrors = cardNumberError || cardExpiryError || cardCvcError
   const isFormValid = allElementsReady && allElementsComplete && !hasErrors && investmentAmount >= 100
 
   return (
@@ -253,23 +242,21 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Card Number Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
             Card Number
-          </label>
+          </div>
           <div 
-            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
-              elementStates.cardNumber.complete ? 'border-green-500' : 
-              elementStates.cardNumber.error ? 'border-red-500' : 
-              elementStates.cardNumber.focused ? 'border-blue-500' :
+            className={`border-2 rounded-lg bg-white transition-colors ${
+              cardNumberComplete ? 'border-green-500' : 
+              cardNumberError ? 'border-red-500' : 
               'border-gray-300'
             }`}
+            style={containerStyle}
           >
             <CardNumberElement 
               options={elementOptions}
-              onChange={handleElementChange('cardNumber')}
-              onReady={handleElementReady('cardNumber')}
-              onFocus={handleElementFocus('cardNumber')}
-              onBlur={handleElementBlur('cardNumber')}
+              onChange={handleCardNumberChange}
+              onReady={handleCardNumberReady}
             />
           </div>
           <div className="flex items-center justify-between mt-1">
@@ -277,37 +264,34 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
               Test: 4242 4242 4242 4242
             </p>
             <div className="text-xs text-gray-500">
-              Ready: {elementStates.cardNumber.ready ? '✅' : '❌'} | 
-              Complete: {elementStates.cardNumber.complete ? '✅' : '❌'}
+              Ready: {cardNumberReady ? '✅' : '❌'} | Complete: {cardNumberComplete ? '✅' : '❌'}
             </div>
           </div>
-          {elementStates.cardNumber.error && (
+          {cardNumberError && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {elementStates.cardNumber.error}
+              {cardNumberError}
             </div>
           )}
         </div>
 
         {/* Card Expiry Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
             Expiry Date
-          </label>
+          </div>
           <div 
-            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
-              elementStates.cardExpiry.complete ? 'border-green-500' : 
-              elementStates.cardExpiry.error ? 'border-red-500' : 
-              elementStates.cardExpiry.focused ? 'border-blue-500' :
+            className={`border-2 rounded-lg bg-white transition-colors ${
+              cardExpiryComplete ? 'border-green-500' : 
+              cardExpiryError ? 'border-red-500' : 
               'border-gray-300'
             }`}
+            style={containerStyle}
           >
             <CardExpiryElement 
               options={elementOptions}
-              onChange={handleElementChange('cardExpiry')}
-              onReady={handleElementReady('cardExpiry')}
-              onFocus={handleElementFocus('cardExpiry')}
-              onBlur={handleElementBlur('cardExpiry')}
+              onChange={handleCardExpiryChange}
+              onReady={handleCardExpiryReady}
             />
           </div>
           <div className="flex items-center justify-between mt-1">
@@ -315,37 +299,34 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
               Test: 12/34
             </p>
             <div className="text-xs text-gray-500">
-              Ready: {elementStates.cardExpiry.ready ? '✅' : '❌'} | 
-              Complete: {elementStates.cardExpiry.complete ? '✅' : '❌'}
+              Ready: {cardExpiryReady ? '✅' : '❌'} | Complete: {cardExpiryComplete ? '✅' : '❌'}
             </div>
           </div>
-          {elementStates.cardExpiry.error && (
+          {cardExpiryError && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {elementStates.cardExpiry.error}
+              {cardExpiryError}
             </div>
           )}
         </div>
 
         {/* Card CVC Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
             Security Code (CVC)
-          </label>
+          </div>
           <div 
-            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
-              elementStates.cardCvc.complete ? 'border-green-500' : 
-              elementStates.cardCvc.error ? 'border-red-500' : 
-              elementStates.cardCvc.focused ? 'border-blue-500' :
+            className={`border-2 rounded-lg bg-white transition-colors ${
+              cardCvcComplete ? 'border-green-500' : 
+              cardCvcError ? 'border-red-500' : 
               'border-gray-300'
             }`}
+            style={containerStyle}
           >
             <CardCvcElement 
               options={elementOptions}
-              onChange={handleElementChange('cardCvc')}
-              onReady={handleElementReady('cardCvc')}
-              onFocus={handleElementFocus('cardCvc')}
-              onBlur={handleElementBlur('cardCvc')}
+              onChange={handleCardCvcChange}
+              onReady={handleCardCvcReady}
             />
           </div>
           <div className="flex items-center justify-between mt-1">
@@ -353,14 +334,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
               Test: 123
             </p>
             <div className="text-xs text-gray-500">
-              Ready: {elementStates.cardCvc.ready ? '✅' : '❌'} | 
-              Complete: {elementStates.cardCvc.complete ? '✅' : '❌'}
+              Ready: {cardCvcReady ? '✅' : '❌'} | Complete: {cardCvcComplete ? '✅' : '❌'}
             </div>
           </div>
-          {elementStates.cardCvc.error && (
+          {cardCvcError && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {elementStates.cardCvc.error}
+              {cardCvcError}
             </div>
           )}
         </div>
@@ -389,18 +369,18 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
             <div className="grid grid-cols-3 gap-4 mb-2">
               <div className="text-center">
                 <div className="font-medium">Card Number</div>
-                <div>Ready: {elementStates.cardNumber.ready ? '✅' : '❌'}</div>
-                <div>Complete: {elementStates.cardNumber.complete ? '✅' : '❌'}</div>
+                <div>Ready: {cardNumberReady ? '✅' : '❌'}</div>
+                <div>Complete: {cardNumberComplete ? '✅' : '❌'}</div>
               </div>
               <div className="text-center">
                 <div className="font-medium">Expiry</div>
-                <div>Ready: {elementStates.cardExpiry.ready ? '✅' : '❌'}</div>
-                <div>Complete: {elementStates.cardExpiry.complete ? '✅' : '❌'}</div>
+                <div>Ready: {cardExpiryReady ? '✅' : '❌'}</div>
+                <div>Complete: {cardExpiryComplete ? '✅' : '❌'}</div>
               </div>
               <div className="text-center">
                 <div className="font-medium">CVC</div>
-                <div>Ready: {elementStates.cardCvc.ready ? '✅' : '❌'}</div>
-                <div>Complete: {elementStates.cardCvc.complete ? '✅' : '❌'}</div>
+                <div>Ready: {cardCvcReady ? '✅' : '❌'}</div>
+                <div>Complete: {cardCvcComplete ? '✅' : '❌'}</div>
               </div>
             </div>
             <div className="text-center">

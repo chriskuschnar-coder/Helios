@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Elements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
+import { stripePromise } from '../lib/stripeSetup'
 import { StripeCardFormInner } from './StripeCardFormInner'
 import { Loader2, Shield, AlertCircle } from 'lucide-react'
-
-// Create Stripe promise - single instance with proper key
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
-
-console.log('🔍 Stripe Configuration:')
-console.log('Publishable Key:', STRIPE_PUBLISHABLE_KEY ? 'Loaded ✅' : 'Missing ❌')
-console.log('Key format:', STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_') ? 'Test key ✅' : 'Live key ✅')
-
-// Create the Stripe promise
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY)
 
 interface StripeCardFormProps {
   amount: number
