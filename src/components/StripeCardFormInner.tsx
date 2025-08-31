@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { CreditCard, Lock, AlertCircle, Loader2, Shield, CheckCircle } from 'lucide-react'
 
 interface StripeCardFormInnerProps {
@@ -16,21 +16,9 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   // Single source of truth for investment amount
   const [investmentAmount, setInvestmentAmount] = useState(initialAmount)
   const [loading, setLoading] = useState(false)
-  const [cardReady, setCardReady] = useState({
-    number: false,
-    expiry: false,
-    cvc: false
-  })
-  const [cardErrors, setCardErrors] = useState({
-    number: '',
-    expiry: '',
-    cvc: ''
-  })
-  const [cardComplete, setCardComplete] = useState({
-    number: false,
-    expiry: false,
-    cvc: false
-  })
+  const [cardReady, setCardReady] = useState(false)
+  const [cardComplete, setCardComplete] = useState(false)
+  const [cardError, setCardError] = useState('')
 
   // Derived values from single state
   const processingFee = investmentAmount * 0.029 + 0.30
@@ -46,19 +34,11 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     if (stripe && elements) {
       console.log('✅ Both Stripe and Elements are ready')
       
-      // Test if elements can be retrieved
+      // Test if CardElement can be retrieved
       setTimeout(() => {
-        const cardNumber = elements.getElement(CardNumberElement)
-        const cardExpiry = elements.getElement(CardExpiryElement)
-        const cardCvc = elements.getElement(CardCvcElement)
-        
-        console.log('🧪 Element retrieval test:')
-        console.log('CardNumber element:', cardNumber)
-        console.log('CardExpiry element:', cardExpiry)
-        console.log('CardCvc element:', cardCvc)
+        const cardElement = elements.getElement(CardElement)
+        console.log('🧪 CardElement retrieval test:', cardElement)
       }, 1000)
-    } else {
-      console.log('❌ Waiting for Stripe/Elements to be ready')
     }
   }, [stripe, elements])
 
@@ -77,15 +57,14 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     )
   }
 
-  // Stripe Element options - clean and minimal
-  const elementOptions = {
+  // CardElement options - optimized for interaction
+  const cardElementOptions = {
     style: {
       base: {
         fontSize: '16px',
         color: '#1f2937',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         lineHeight: '1.5',
-        padding: '12px 0',
         '::placeholder': {
           color: '#9ca3af',
         },
@@ -99,10 +78,11 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         iconColor: '#059669'
       },
     },
+    hidePostalCode: true,
   }
 
-  const handleCardChange = (elementType: 'number' | 'expiry' | 'cvc') => (event: any) => {
-    console.log(`🔍 ${elementType} element changed:`, {
+  const handleCardChange = (event: any) => {
+    console.log('🔍 CardElement changed:', {
       ready: event.ready,
       complete: event.complete,
       error: event.error?.message,
@@ -110,20 +90,21 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       brand: event.brand
     })
     
-    setCardReady(prev => ({
-      ...prev,
-      [elementType]: true
-    }))
-    
-    setCardErrors(prev => ({
-      ...prev,
-      [elementType]: event.error ? event.error.message : ''
-    }))
-    
-    setCardComplete(prev => ({
-      ...prev,
-      [elementType]: event.complete
-    }))
+    setCardError(event.error ? event.error.message : '')
+    setCardComplete(event.complete)
+  }
+
+  const handleCardReady = () => {
+    console.log('✅ CardElement is ready and mounted - users can now type!')
+    setCardReady(true)
+  }
+
+  const handleCardFocus = () => {
+    console.log('🔍 CardElement focused')
+  }
+
+  const handleCardBlur = () => {
+    console.log('🔍 CardElement blurred')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,14 +115,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       return
     }
 
-    const cardNumberElement = elements.getElement(CardNumberElement)
-    if (!cardNumberElement) {
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
       onError('Card information is required')
       return
     }
 
-    // Validate form completion
-    if (!cardComplete.number || !cardComplete.expiry || !cardComplete.cvc) {
+    if (!cardComplete) {
       onError('Please complete all card information')
       return
     }
@@ -176,7 +156,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       // Confirm payment
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
-          card: cardNumberElement,
+          card: cardElement,
         }
       })
 
@@ -203,9 +183,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     }
   }
 
-  const isFormValid = cardComplete.number && cardComplete.expiry && cardComplete.cvc && 
-                     !cardErrors.number && !cardErrors.expiry && !cardErrors.cvc &&
-                     investmentAmount >= 100
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAmount = Number(e.target.value) || 0
+    console.log('💰 Amount changed:', newAmount)
+    setInvestmentAmount(newAmount)
+  }
+
+  const isFormValid = cardReady && cardComplete && !cardError && investmentAmount >= 100
 
   return (
     <div className="space-y-6">
@@ -230,7 +214,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           <input
             type="number"
             value={investmentAmount}
-            onChange={(e) => setInvestmentAmount(Number(e.target.value) || 0)}
+            onChange={handleAmountChange}
             min="100"
             step="100"
             className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
@@ -241,118 +225,38 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Card Number - Dedicated container for Stripe iframe */}
+        {/* Single CardElement - handles all card info */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Card Number
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Card Information
           </label>
           <div 
             className={`border-2 rounded-lg p-4 bg-white transition-colors ${
-              cardComplete.number ? 'border-green-500' : 
-              cardErrors.number ? 'border-red-500' : 
+              cardComplete ? 'border-green-500' : 
+              cardError ? 'border-red-500' : 
               'border-gray-300 focus-within:border-blue-500'
             }`}
-            style={{ 
-              minHeight: '60px',
-              display: 'flex',
-              alignItems: 'center'
-            }}
+            style={{ minHeight: '60px' }}
           >
-            <div className="w-full">
-              <CardNumberElement 
-                options={elementOptions}
-                onChange={handleCardChange('number')}
-                onReady={() => {
-                  console.log('✅ Card number element ready and mounted')
-                  setCardReady(prev => ({ ...prev, number: true }))
-                }}
-                onFocus={() => console.log('🔍 Card number focused')}
-                onBlur={() => console.log('🔍 Card number blurred')}
-              />
-            </div>
+            <CardElement 
+              options={cardElementOptions}
+              onChange={handleCardChange}
+              onReady={handleCardReady}
+              onFocus={handleCardFocus}
+              onBlur={handleCardBlur}
+            />
           </div>
-          {cardErrors.number && (
+          
+          {cardError && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {cardErrors.number}
+              {cardError}
             </div>
           )}
-          <p className="text-xs text-gray-500 mt-1">
-            Test card: 4242 4242 4242 4242
+          
+          <p className="text-xs text-gray-500 mt-2">
+            Test card: 4242 4242 4242 4242 with any future date and any 3-digit CVC
           </p>
-        </div>
-
-        {/* Expiry and CVC - Side by side */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Expiry Date
-            </label>
-            <div 
-              className={`border-2 rounded-lg p-4 bg-white transition-colors ${
-                cardComplete.expiry ? 'border-green-500' : 
-                cardErrors.expiry ? 'border-red-500' : 
-                'border-gray-300 focus-within:border-blue-500'
-              }`}
-              style={{ 
-                minHeight: '60px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <div className="w-full">
-                <CardExpiryElement 
-                  options={elementOptions}
-                  onChange={handleCardChange('expiry')}
-                  onReady={() => {
-                    console.log('✅ Card expiry element ready and mounted')
-                    setCardReady(prev => ({ ...prev, expiry: true }))
-                  }}
-                />
-              </div>
-            </div>
-            {cardErrors.expiry && (
-              <div className="mt-2 text-sm text-red-600 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {cardErrors.expiry}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Security Code
-            </label>
-            <div 
-              className={`border-2 rounded-lg p-4 bg-white transition-colors ${
-                cardComplete.cvc ? 'border-green-500' : 
-                cardErrors.cvc ? 'border-red-500' : 
-                'border-gray-300 focus-within:border-blue-500'
-              }`}
-              style={{ 
-                minHeight: '60px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <div className="w-full">
-                <CardCvcElement 
-                  options={elementOptions}
-                  onChange={handleCardChange('cvc')}
-                  onReady={() => {
-                    console.log('✅ Card CVC element ready and mounted')
-                    setCardReady(prev => ({ ...prev, cvc: true }))
-                  }}
-                />
-              </div>
-            </div>
-            {cardErrors.cvc && (
-              <div className="mt-2 text-sm text-red-600 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {cardErrors.cvc}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Investment Summary */}
@@ -376,30 +280,16 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         {/* Debug Status Panel */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="text-xs text-blue-700">
-            <div className="grid grid-cols-3 gap-2 mb-2">
+            <div className="flex items-center justify-between mb-2">
+              <span>Card Element Status:</span>
               <div className="flex items-center">
-                {cardReady.number && cardComplete.number ? (
-                  <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
+                {cardReady ? (
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
                 ) : (
-                  <div className="h-3 w-3 border border-gray-400 rounded-full mr-1" />
+                  <div className="h-4 w-4 border border-gray-400 rounded-full mr-1" />
                 )}
-                Card: {cardReady.number ? 'Ready' : 'Not Ready'}
-              </div>
-              <div className="flex items-center">
-                {cardReady.expiry && cardComplete.expiry ? (
-                  <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
-                ) : (
-                  <div className="h-3 w-3 border border-gray-400 rounded-full mr-1" />
-                )}
-                Expiry: {cardReady.expiry ? 'Ready' : 'Not Ready'}
-              </div>
-              <div className="flex items-center">
-                {cardReady.cvc && cardComplete.cvc ? (
-                  <CheckCircle className="h-3 w-3 text-green-600 mr-1" />
-                ) : (
-                  <div className="h-3 w-3 border border-gray-400 rounded-full mr-1" />
-                )}
-                CVC: {cardReady.cvc ? 'Ready' : 'Not Ready'}
+                <span>Ready: {cardReady ? 'YES' : 'NO'}</span>
+                <span className="ml-3">Complete: {cardComplete ? 'YES' : 'NO'}</span>
               </div>
             </div>
             <div>Stripe: {stripe ? '✅' : '❌'} | Elements: {elements ? '✅' : '❌'} | Form Valid: {isFormValid ? '✅' : '❌'}</div>
