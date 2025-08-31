@@ -455,10 +455,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           return { error: { message: 'Invalid email or password' } }
         }
-      } else {
-        return { error: { message: 'Supabase not configured - please connect to Supabase' } }
-      }
-    }
+    } else {
+      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
