@@ -121,6 +121,9 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
           card: cardNumberElement,
+        }
+      })
+
       if (confirmError) {
         onError(confirmError.message || 'Payment failed')
       } else if (paymentIntent?.status === 'succeeded') {
@@ -129,6 +132,15 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           amount: investmentAmount, // Original investment amount (not including fees)
           method: 'card',
           status: 'completed'
+        })
+      }
+    } catch (error) {
+      console.error('❌ Payment processing error:', error)
+      onError('Payment processing failed')
+    } finally {
+      setLoading(false)
+    }
+  }
         })
       }
   }
