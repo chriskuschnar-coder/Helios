@@ -49,35 +49,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     )
   }
 
-  // Shared element options
-  const elementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#1f2937',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        lineHeight: '1.5',
-        '::placeholder': {
-          color: '#9ca3af',
-        },
-      },
-      invalid: {
-        color: '#ef4444',
-        iconColor: '#ef4444'
-      },
-      complete: {
-        color: '#059669',
-        iconColor: '#059669'
-      },
-    },
-  }
-
   // Container style for proper iframe mounting
-  const containerStyle: React.CSSProperties = {
+  const boxStyle: React.CSSProperties = {
     minHeight: 56,
     display: 'flex',
     alignItems: 'center',
     padding: '12px',
+    border: '2px solid #d1d5db',
     borderRadius: 8,
     background: '#fff',
     zIndex: 10,
@@ -221,7 +199,10 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
 
       {/* Investment Amount Input */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label 
+          className="block text-sm font-medium text-gray-700 mb-2"
+          style={{ pointerEvents: 'none' }}
+        >
           Investment Amount
         </label>
         <div className="relative">
@@ -242,19 +223,32 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Card Number Field */}
         <div>
-          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-2"
+            style={{ pointerEvents: 'none' }}
+          >
             Card Number
-          </div>
+          </label>
           <div 
-            className={`border-2 rounded-lg bg-white transition-colors ${
-              cardNumberComplete ? 'border-green-500' : 
-              cardNumberError ? 'border-red-500' : 
-              'border-gray-300'
-            }`}
-            style={containerStyle}
+            style={{
+              ...boxStyle,
+              borderColor: cardNumberComplete ? '#10b981' : cardNumberError ? '#ef4444' : '#d1d5db'
+            }}
           >
             <CardNumberElement 
-              options={elementOptions}
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#333',
+                    letterSpacing: '0.5px',
+                    '::placeholder': { color: '#999' }
+                  },
+                  invalid: { color: '#ff0000' }
+                },
+                placeholder: '4242 4242 4242 4242',
+                disabled: false
+              }}
               onChange={handleCardNumberChange}
               onReady={handleCardNumberReady}
             />
@@ -277,19 +271,29 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
 
         {/* Card Expiry Field */}
         <div>
-          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-2"
+            style={{ pointerEvents: 'none' }}
+          >
             Expiry Date
-          </div>
+          </label>
           <div 
-            className={`border-2 rounded-lg bg-white transition-colors ${
-              cardExpiryComplete ? 'border-green-500' : 
-              cardExpiryError ? 'border-red-500' : 
-              'border-gray-300'
-            }`}
-            style={containerStyle}
+            style={{
+              ...boxStyle,
+              borderColor: cardExpiryComplete ? '#10b981' : cardExpiryError ? '#ef4444' : '#d1d5db'
+            }}
           >
             <CardExpiryElement 
-              options={elementOptions}
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#333'
+                  },
+                  invalid: { color: '#ff0000' }
+                },
+                disabled: false
+              }}
               onChange={handleCardExpiryChange}
               onReady={handleCardExpiryReady}
             />
@@ -312,19 +316,29 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
 
         {/* Card CVC Field */}
         <div>
-          <div className="block text-sm font-medium text-gray-700 mb-2" style={{ pointerEvents: 'none' }}>
+          <label 
+            className="block text-sm font-medium text-gray-700 mb-2"
+            style={{ pointerEvents: 'none' }}
+          >
             Security Code (CVC)
-          </div>
+          </label>
           <div 
-            className={`border-2 rounded-lg bg-white transition-colors ${
-              cardCvcComplete ? 'border-green-500' : 
-              cardCvcError ? 'border-red-500' : 
-              'border-gray-300'
-            }`}
-            style={containerStyle}
+            style={{
+              ...boxStyle,
+              borderColor: cardCvcComplete ? '#10b981' : cardCvcError ? '#ef4444' : '#d1d5db'
+            }}
           >
             <CardCvcElement 
-              options={elementOptions}
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#333'
+                  },
+                  invalid: { color: '#ff0000' }
+                },
+                disabled: false
+              }}
               onChange={handleCardCvcChange}
               onReady={handleCardCvcReady}
             />
