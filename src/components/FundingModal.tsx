@@ -68,13 +68,19 @@ function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number,
     try {
       console.log('💳 Creating Stripe checkout session for investment:', amount)
       
-      // Create checkout session via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      // Create checkout session via Supabase Edge Function with proper error handling
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+      
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Supabase configuration missing. Please set up environment variables.')
+      }
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${anonKey}`
         },
         body: JSON.stringify({ 
           amount: amount,
@@ -84,8 +90,19 @@ function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number,
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create checkout session')
+        const errorText = await response.text()
+        console.error('Checkout session creation failed:', response.status, errorText)
+        
+        let errorMessage = 'Failed to create checkout session'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error?.message || errorMessage
+        } catch (e) {
+          // If response isn't JSON, use the text
+          errorMessage = errorText || errorMessage
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const { url } = await response.json()
@@ -96,7 +113,20 @@ function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number,
       
     } catch (error) {
       console.error('❌ Checkout creation error:', error)
-      onError(error instanceof Error ? error.message : 'Checkout failed')
+      
+      // Provide specific error messages
+      let errorMessage = 'Checkout failed'
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to payment system. Please check your internet connection and try again.'
+        } else if (error.message.includes('Supabase')) {
+          errorMessage = 'Payment system configuration error. Please contact support.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      onError(errorMessage)
       setLoading(false)
     }
   }

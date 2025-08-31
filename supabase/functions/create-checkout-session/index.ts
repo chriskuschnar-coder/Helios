@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   try {
     const { amount, user_id, user_email } = await req.json()
     
-    console.log('Creating dynamic checkout session for investment:', { amount, user_id, user_email })
+    console.log('🔄 Creating dynamic checkout session:', { amount, user_id, user_email })
     
     // Validate amount (minimum $100)
     if (!amount || amount < 100) {
@@ -23,13 +23,16 @@ Deno.serve(async (req) => {
     }
 
     // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_test_51S25DbFhEA0kH7xcFTmmlwmgxFUdKDnPpLu4vxCbT5xBOpT8SpnvbfKaR7a9e7oRGkqt1vdMD05nrvmVFnqIwqJl00UilCHTRD'
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeSecretKey) {
-      throw new Error('Stripe secret key not configured')
+      console.error('❌ STRIPE_SECRET_KEY environment variable not set')
+      throw new Error('Payment system not configured. Please contact support.')
     }
 
     // Get the origin for redirect URLs
-    const origin = req.headers.get('origin') || 'https://globalmarketsconsulting.com'
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://globalmarketsconsulting.com'
+    
+    console.log('🌐 Using origin for redirects:', origin)
 
     // Create dynamic Stripe checkout session
     const checkoutParams = new URLSearchParams({
