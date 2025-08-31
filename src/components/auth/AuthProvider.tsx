@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseProxy } from '../../lib/supabase-proxy'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -53,54 +53,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
-    console.log('🔄 AuthProvider initializing...')
+    console.log('🔄 AuthProvider initializing with Supabase...')
     
     const initializeAuth = async () => {
       try {
-        // Try to get current session from Supabase
-        try {
-          const { data: { session }, error } = await supabaseProxy.auth.getSession()
+        // Get current session from Supabase
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.error('Session error:', error)
+          setLoading(false)
+          return
+        }
+        
+        if (session?.user) {
+          console.log('✅ Found Supabase session for:', session.user.email)
           
-          if (error) {
-            throw new Error(error.message)
-          }
+          // Get user profile from users table
+          const { data: userData, error: userError } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
           
-          if (session?.user) {
-            console.log('✅ Found Supabase session for:', session.user.email)
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              full_name: session.user.user_metadata?.full_name
-            })
-            
-            // Load user account from Supabase
-            await loadUserAccount(session.user.id)
-            await loadUserSubscription(session.user.id)
+          if (userError) {
+            console.error('Error fetching user profile:', userError)
             setLoading(false)
             return
           }
-        } catch (supabaseError) {
-          console.log('⚠️ Supabase session check failed, checking localStorage')
-        }
-        
-        // Fallback: Check localStorage for existing session
-        const storedUser = localStorage.getItem('auth-user')
-        const storedAccount = localStorage.getItem('auth-account')
-        
-        if (storedUser) {
-          const userData = JSON.parse(storedUser)
-          setUser(userData)
-          console.log('✅ Found localStorage session for:', userData.email)
           
-          if (storedAccount) {
-            setAccount(JSON.parse(storedAccount))
-          } else {
-            // Load account from localStorage
-            const accountData = localStorage.getItem(`account-${userData.id}`)
-            if (accountData) {
-              setAccount(JSON.parse(accountData))
-            }
-          }
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            full_name: userData.full_name
+          })
+          
+          // Load user account and subscription
+          await loadUserAccount(session.user.id)
+          await loadUserSubscription(session.user.id)
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
@@ -112,17 +102,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseProxy.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          full_name: session.user.user_metadata?.full_name
-        })
-        await loadUserAccount(session.user.id)
-        await loadUserSubscription(session.user.id)
+        // Get user profile
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (!userError && userData) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            full_name: userData.full_name
+          })
+          await loadUserAccount(session.user.id)
+          await loadUserSubscription(session.user.id)
+        }
       } else {
         setUser(null)
         setAccount(null)
@@ -135,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabaseProxy
+      const { data, error } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
@@ -155,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserSubscription = async (userId: string) => {
     try {
-      const { data, error } = await supabaseProxy
+      const { data, error } = await supabaseClient
         .from('stripe_user_subscriptions')
         .select('*')
         .eq('customer_id', userId)
@@ -197,11 +196,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      // Get user's account
+      const { data: accountData, error: accountError } = await supabaseClient
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (accountError || !accountData) {
+        throw new Error('Account not found')
+      }
+
       // Create transaction record
-      const { data: transaction, error: transactionError } = await supabaseProxy
+      const { data: transaction, error: transactionError } = await supabaseClient
         .from('transactions')
         .insert({
           user_id: user.id,
+          account_id: accountData.id,
           type: 'deposit',
           method: method,
           amount: amount,
@@ -216,32 +227,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (transactionError) {
+        console.error('Transaction error:', transactionError)
         throw new Error('Failed to create transaction record')
       }
 
       // Update account balance
-      if (account) {
-        const { error: updateError } = await supabaseProxy
-          .from('accounts')
-          .update({
-            balance: account.balance + amount,
-            available_balance: account.available_balance + amount,
-            total_deposits: account.total_deposits + amount
-          })
-          .eq('id', account.id)
-
-        if (updateError) {
-          throw new Error('Failed to update account balance')
-        }
-
-        // Update local state
-        setAccount({
-          ...account,
-          balance: account.balance + amount,
-          available_balance: account.available_balance + amount,
-          total_deposits: account.total_deposits + amount
+      const { error: updateError } = await supabaseClient
+        .from('accounts')
+        .update({
+          balance: accountData.balance + amount,
+          available_balance: accountData.available_balance + amount,
+          total_deposits: accountData.total_deposits + amount
         })
+        .eq('id', accountData.id)
+
+      if (updateError) {
+        console.error('Update error:', updateError)
+        throw new Error('Failed to update account balance')
       }
+
+      // Update local state
+      setAccount({
+        ...accountData,
+        balance: accountData.balance + amount,
+        available_balance: accountData.available_balance + amount,
+        total_deposits: accountData.total_deposits + amount
+      })
 
       console.log('✅ Funding processed successfully')
       return {
@@ -259,96 +270,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      // Try Supabase auth first
-      try {
-        const { data, error } = await supabaseProxy.auth.signInWithPassword({
-          email,
-          password
-        })
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
 
-        if (error) {
-          throw new Error(error.message)
-        }
-
-        console.log('✅ Supabase sign in successful')
-        return { error: null }
-      } catch (supabaseError) {
-        console.log('⚠️ Supabase auth failed, using fallback:', supabaseError)
-        
-        // Fallback authentication for WebContainer
-        if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-          const demoUser = {
-            id: 'demo-user-id',
-            email: 'demo@globalmarket.com',
-            full_name: 'Demo User'
-          }
-          
-          // Store in localStorage for persistence
-          localStorage.setItem('auth-user', JSON.stringify(demoUser))
-          localStorage.setItem('auth-account', JSON.stringify({
-            id: 'demo-account-id',
-            balance: 7850,
-            available_balance: 7850,
-            total_deposits: 8000,
-            total_withdrawals: 150,
-            currency: 'USD',
-            status: 'active'
-          }))
-          
-          setUser(demoUser)
-          setAccount({
-            id: 'demo-account-id',
-            balance: 7850,
-            available_balance: 7850,
-            total_deposits: 8000,
-            total_withdrawals: 150,
-            currency: 'USD',
-            status: 'active'
-          })
-          
-          console.log('✅ Demo login successful')
-          return { error: null }
-        } else {
-          // Check for other stored users
-          const storedUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
-          const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password)
-          
-          if (foundUser) {
-            const userData = {
-              id: foundUser.id,
-              email: foundUser.email,
-              full_name: foundUser.full_name
-            }
-            
-            localStorage.setItem('auth-user', JSON.stringify(userData))
-            
-            // Load or create account
-            const accountKey = `account-${foundUser.id}`
-            let accountData = JSON.parse(localStorage.getItem(accountKey) || 'null')
-            
-            if (!accountData) {
-              accountData = {
-                id: `account-${foundUser.id}`,
-                balance: 0,
-                available_balance: 0,
-                total_deposits: 0,
-                total_withdrawals: 0,
-                currency: 'USD',
-                status: 'active'
-              }
-              localStorage.setItem(accountKey, JSON.stringify(accountData))
-            }
-            
-            setUser(userData)
-            setAccount(accountData)
-            
-            console.log('✅ Fallback login successful')
-            return { error: null }
-          } else {
-            return { error: { message: 'Invalid email or password' } }
-          }
-        }
+      if (error) {
+        console.log('❌ Sign in failed:', error.message)
+        return { error: { message: error.message } }
       }
+
+      console.log('✅ Sign in successful')
+      return { error: null }
     } catch (err) {
       console.error('❌ Sign in error:', err)
       return { error: { message: 'Connection error - please try again' } }
@@ -359,72 +292,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
-      // Try Supabase auth first
-      try {
-        const { data, error } = await supabaseProxy.auth.signUp({
-          email,
-          password,
-          options: {
-            data: metadata
-          }
-        })
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
 
-        if (error) {
-          throw new Error(error.message)
-        }
-
-        console.log('✅ Supabase sign up successful')
-        return { error: null }
-      } catch (supabaseError) {
-        console.log('⚠️ Supabase signup failed, using fallback:', supabaseError)
-        
-        // Fallback registration for WebContainer
-        const userId = 'user-' + Date.now()
-        const newUser = {
-          id: userId,
-          email,
-          password, // In production, this would be hashed
-          full_name: metadata?.full_name || '',
-          created_at: new Date().toISOString()
-        }
-        
-        // Store user
-        const existingUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
-        
-        // Check if email already exists
-        if (existingUsers.find((u: any) => u.email === email)) {
-          return { error: { message: 'Email already registered' } }
-        }
-        
-        existingUsers.push(newUser)
-        localStorage.setItem('registered-users', JSON.stringify(existingUsers))
-        
-        // Create account
-        const accountData = {
-          id: `account-${userId}`,
-          balance: 0,
-          available_balance: 0,
-          total_deposits: 0,
-          total_withdrawals: 0,
-          currency: 'USD',
-          status: 'active'
-        }
-        localStorage.setItem(`account-${userId}`, JSON.stringify(accountData))
-        
-        // Auto-login the new user
-        const userData = {
-          id: userId,
-          email,
-          full_name: metadata?.full_name || ''
-        }
-        
-        localStorage.setItem('auth-user', JSON.stringify(userData))
-        setUser(userData)
-        setAccount(accountData)
-        
-        console.log('✅ Fallback signup successful')
-        return { error: null }
+      if (error) {
+        console.log('❌ Sign up failed:', error.message)
+        return { error: { message: error.message } }
       }
+
+      console.log('✅ Sign up successful')
+      return { error: null }
     } catch (err) {
       console.error('❌ Sign up error:', err)
       return { error: { message: 'Connection error - please try again' } }
@@ -435,19 +317,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🚪 Signing out...')
     
     try {
-      // Try Supabase signout first
-      try {
-        const { error } = await supabaseProxy.auth.signOut()
-        if (error) {
-          console.error('Supabase sign out error:', error)
-        }
-      } catch (supabaseError) {
-        console.log('⚠️ Supabase signout failed, using fallback')
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
       }
-      
-      // Clear local storage
-      localStorage.removeItem('auth-user')
-      localStorage.removeItem('auth-account')
       
       setUser(null)
       setAccount(null)
