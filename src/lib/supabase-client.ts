@@ -4,10 +4,12 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔍 Environment Variables Check:')
-console.log('VITE_SUPABASE_URL:', supabaseUrl || 'MISSING ❌')
-console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present ✅' : 'MISSING ❌')
+console.log('🔍 DETAILED Environment Variables Check:')
+console.log('VITE_SUPABASE_URL:', supabaseUrl)
+console.log('VITE_SUPABASE_ANON_KEY length:', supabaseAnonKey?.length || 0)
+console.log('VITE_SUPABASE_ANON_KEY preview:', supabaseAnonKey?.substring(0, 50) + '...')
 console.log('Current Origin:', window.location.origin)
+console.log('All env vars:', import.meta.env)
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ CRITICAL: Missing environment variables!')
@@ -34,12 +36,16 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
 // Simple connection test
 export const testSupabaseConnection = async () => {
   try {
-    console.log('🔍 Testing Supabase connection...')
+    console.log('🔍 DETAILED Testing Supabase connection...')
     console.log('Target URL:', supabaseUrl)
+    console.log('Anon Key (first 50 chars):', supabaseAnonKey?.substring(0, 50))
     console.log('Origin:', window.location.origin)
     
     // Try a simple health check first
-    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+    const testUrl = `${supabaseUrl}/rest/v1/`
+    console.log('🌐 Fetching:', testUrl)
+    
+    const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
         'apikey': supabaseAnonKey,
@@ -48,6 +54,7 @@ export const testSupabaseConnection = async () => {
       }
     })
     
+    console.log('📡 Response received:', response.status, response.statusText)
     console.log('📡 Raw fetch response:', {
       status: response.status,
       statusText: response.statusText,
@@ -57,6 +64,11 @@ export const testSupabaseConnection = async () => {
     
     if (!response.ok) {
       console.error('❌ HTTP Error:', response.status, response.statusText)
+      const responseText = await response.text()
+      console.error('❌ Response body:', responseText)
+      if (response.status === 400) {
+        console.error('❌ This usually means invalid API key or CORS issue')
+      }
       return false
     }
     
