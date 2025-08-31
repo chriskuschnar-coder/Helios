@@ -16,11 +16,11 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
-  console.log('🔄 Proxy request:', req.method, req.url)
+  console.log('🔄 Proxy request:', req.method, req.url, 'Body:', req.body)
 
   try {
     // Simple test connection endpoint
-    if (req.url === '/test-connection' || req.url.includes('test-connection')) {
+    if (req.url === '/test-connection' || req.url.endsWith('test-connection')) {
       console.log('🔄 Testing Supabase connection...')
       const { data, error } = await supabase
         .from('users')
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       
       if (error) {
         console.error('❌ Supabase test failed:', error)
-        throw error
+        return res.status(500).json({ error: error.message, success: false })
       }
       
       console.log('✅ Supabase connection successful')
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     }
 
     // Auth signin endpoint
-    if (req.url === '/auth/signin' || req.url.includes('auth/signin')) {
+    if (req.url.endsWith('auth/signin')) {
       const { email, password } = req.body
       console.log('🔐 Auth signin request for:', email)
       
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       
       if (authError) {
         console.error('❌ Auth signin failed:', authError)
-        throw authError
+        return res.status(400).json({ error: authError.message, data: null })
       }
       
       console.log('✅ Auth signin successful')
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     }
 
     // Auth signup endpoint
-    if (req.url === '/auth/signup' || req.url.includes('auth/signup')) {
+    if (req.url.endsWith('auth/signup')) {
       const { email, password, metadata } = req.body
       console.log('📝 Auth signup request for:', email)
       
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
       
       if (signupError) {
         console.error('❌ Auth signup failed:', signupError)
-        throw signupError
+        return res.status(400).json({ error: signupError.message, data: null })
       }
       
       console.log('✅ Auth signup successful')
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     }
 
     // Users table query
-    if (req.url.includes('/users')) {
+    if (req.url.endsWith('/users')) {
       console.log('👥 Users query request')
       const { data, error } = await supabase
         .from('users')
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       
       if (error) {
         console.error('❌ Users query failed:', error)
-        throw error
+        return res.status(500).json({ error: error.message, data: null })
       }
       
       console.log('✅ Users query successful')
@@ -94,10 +94,21 @@ export default async function handler(req, res) {
 
     // Default fallback
     console.log('❓ Unknown endpoint:', req.url)
-    return res.status(404).json({ error: 'Endpoint not found: ' + req.url })
+    return res.status(404).json({ 
+      error: 'Endpoint not found: ' + req.url,
+      available_endpoints: [
+        '/test-connection',
+        '/auth/signin', 
+        '/auth/signup',
+        '/users'
+      ]
+    })
 
   } catch (error) {
     console.error('❌ Supabase proxy error:', error)
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ 
+      error: error.message,
+      type: 'proxy_error'
+    })
   }
 }

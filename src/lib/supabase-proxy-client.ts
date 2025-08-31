@@ -12,15 +12,24 @@ class SupabaseProxyClient {
       console.log('🔄 Making proxy request to:', url)
       
       const response = await fetch(url, {
-        method: 'GET',
+        method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...options.headers,
         },
         ...options
       })
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType?.includes('application/json')) {
+        const text = await response.text()
+        console.error('❌ Expected JSON but got:', text.substring(0, 200))
+        throw new Error('Server returned HTML instead of JSON - proxy route not found')
       }
 
       const result = await response.json()
