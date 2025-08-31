@@ -12,6 +12,7 @@ import { Performance } from './Performance'
 import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { StripeDebugTest } from './StripeDebugTest'
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
@@ -89,6 +90,10 @@ export function InvestmentPlatform() {
   // Default: show marketing site
   return (
     <main className="min-h-screen bg-white">
+      {/* Temporary Stripe Debug Test */}
+      <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 9999, background: 'white', border: '2px solid red', padding: '10px' }}>
+        <StripeDebugTest />
+      </div>
       <Header onNavigateToLogin={() => setAuthMode('login')} />
       <Hero />
       <About />
