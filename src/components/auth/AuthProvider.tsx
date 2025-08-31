@@ -191,7 +191,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     return { error: { message: 'Invalid credentials' } }
-    }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
@@ -243,7 +242,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     console.log('✅ New user created successfully')
     return { error: null }
-    }
   }
 
   const signOut = async () => {
