@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import { supabaseProxy } from '../../lib/supabase-proxy'
 
 interface User {
   id: string
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Try to get current session from Supabase
         try {
-          const { data: { session }, error } = await supabaseClient.auth.getSession()
+          const { data: { session }, error } = await supabaseProxy.auth.getSession()
           
           if (error) {
             throw new Error(error.message)
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabaseProxy.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseProxy
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserSubscription = async (userId: string) => {
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseProxy
         .from('stripe_user_subscriptions')
         .select('*')
         .eq('customer_id', userId)
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Create transaction record
-      const { data: transaction, error: transactionError } = await supabaseClient
+      const { data: transaction, error: transactionError } = await supabaseProxy
         .from('transactions')
         .insert({
           user_id: user.id,
@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Update account balance
       if (account) {
-        const { error: updateError } = await supabaseClient
+        const { error: updateError } = await supabaseProxy
           .from('accounts')
           .update({
             balance: account.balance + amount,
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Try Supabase auth first
       try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
+        const { data, error } = await supabaseProxy.auth.signInWithPassword({
           email,
           password
         })
@@ -361,7 +361,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Try Supabase auth first
       try {
-        const { data, error } = await supabaseClient.auth.signUp({
+        const { data, error } = await supabaseProxy.auth.signUp({
           email,
           password,
           options: {
@@ -437,7 +437,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Try Supabase signout first
       try {
-        const { error } = await supabaseClient.auth.signOut()
+        const { error } = await supabaseProxy.auth.signOut()
         if (error) {
           console.error('Supabase sign out error:', error)
         }
