@@ -14,6 +14,18 @@ const stripe = new Stripe('sk_test_51S25DbFhEA0kH7xcFTmmlwmgxFUdKDnPpLu4vxCbT5xB
 app.use(cors())
 app.use(express.json())
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Stripe API Server Running',
+    status: 'OK',
+    endpoints: [
+      'POST /api/create-payment-intent',
+      'GET /api/health'
+    ]
+  })
+})
+
 // Create payment intent endpoint
 app.post('/api/create-payment-intent', async (req, res) => {
   try {
