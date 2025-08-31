@@ -1,12 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables with fallbacks for debugging
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUwMzQ4NzEsImV4cCI6MjA0MDYxMDg3MX0.VYqnJhKOQBJhYOKNYGOJOQKNYGOJOQKNYGOJOQKNYGO'
+// Get environment variables - these should be set in .env file
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Check your .env file.')
+}
 
 console.log('🔍 Supabase Configuration Check:')
 console.log('URL:', supabaseUrl)
 console.log('Key Present:', supabaseAnonKey ? 'Yes ✅' : 'No ❌')
+console.log('Key Preview:', supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'None')
 console.log('Current Origin:', window.location.origin)
 
 // Ensure URL is HTTPS for WebContainer environments
