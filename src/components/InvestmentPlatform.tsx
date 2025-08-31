@@ -13,6 +13,7 @@ import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { SystemStatusCheck } from './SystemStatusCheck'
+import { SupabaseConnectionBanner } from './SupabaseConnectionBanner'
 import { supabaseClient } from '../lib/supabase-client'
 
 export function InvestmentPlatform() {
