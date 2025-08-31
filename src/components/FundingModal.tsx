@@ -610,12 +610,14 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         
         <div className="p-6">
           {selectedMethod === 'card' && (
-            <StripeCardForm 
-              amount={numericAmount} 
-              onSuccess={handlePaymentSuccess} 
-              onError={handlePaymentError} 
-              onClose={() => setSelectedMethod(null)}
-            />
+            <div key={selectedMethod}>
+              <StripeCardForm 
+                amount={numericAmount} 
+                onSuccess={handlePaymentSuccess} 
+                onError={handlePaymentError} 
+                onClose={() => setSelectedMethod(null)}
+              />
+            </div>
           )}
           
           {selectedMethod === 'wire' && (
