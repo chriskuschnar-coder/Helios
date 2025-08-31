@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Check for existing session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserData = async (userId: string) => {
     try {
       // Load user profile
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await supabaseClient
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ User data loaded:', userData.email)
         
         // Load account data
-        const { data: accountData, error: accountError } = await supabase
+        const { data: accountData, error: accountError } = await supabaseClient
           .from('accounts')
           .select('*')
           .eq('user_id', userId)
@@ -146,14 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadSubscription = async () => {
     try {
-      const { data: subscriptionData, error } = await supabase
+      const { data: subscriptionData, error } = await supabaseClient
         .from('stripe_user_subscriptions')
         .select('*')
-        .maybeSingle()
+        .limit(1)
       
-      if (subscriptionData && !error) {
-        setSubscription(subscriptionData)
-        console.log('✅ Subscription loaded:', subscriptionData.subscription_status)
+      if (subscriptionData && subscriptionData.length > 0 && !error) {
+        setSubscription(subscriptionData[0])
+        console.log('✅ Subscription loaded:', subscriptionData[0].subscription_status)
       } else if (error) {
         console.error('❌ Error loading subscription:', error)
       } else {
@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
     
     try {
-      const { data: accountData, error } = await supabase
+      const { data: accountData, error } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', user.id)
@@ -192,8 +192,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const processFunding = async (amount: number, method: string, description?: string) => {
     console.log('💰 Processing funding:', { amount, method, user: user?.email })
     
-    if (!user || !account) {
-      throw new Error('No authenticated user or account')
+    if (!user) {
+      throw new Error('No authenticated user')
     }
 
     if (amount < 100) {
@@ -201,69 +201,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
-      // Create transaction record
-      const { data: transaction, error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          account_id: account.id,
-          type: 'deposit',
-          method: method,
-          amount: amount,
-          status: 'completed',
-          description: description || `${method} deposit`,
-          metadata: {
-            processed_at: new Date().toISOString(),
-            platform: 'hedge_fund_web'
-          }
-        })
-        .select()
-        .single()
-
-      if (transactionError) {
-        console.error('❌ Transaction creation error:', transactionError)
-        throw new Error('Failed to create transaction record')
-      }
-
-      console.log('✅ Transaction created:', transaction.id)
-
-      // Update account balance
-      const newBalance = account.balance + amount
-      const newTotalDeposits = account.total_deposits + amount
+      // Use the robust funding processor
+      const result = await supabaseClient.processFunding(amount, method, description)
       
-      const { data: updatedAccount, error: updateError } = await supabase
-        .from('accounts')
-        .update({
-          balance: newBalance,
-          available_balance: newBalance,
-          total_deposits: newTotalDeposits,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', account.id)
-        .select()
-        .single()
-
-      if (updateError) {
-        console.error('❌ Account update error:', updateError)
-        throw new Error('Failed to update account balance')
-      }
-
-      // Update local state
-      setAccount(updatedAccount)
+      // Refresh account data to get updated balance
+      await refreshAccount()
       
-      console.log('✅ Funding processed successfully via Supabase')
-      console.log('💰 New balance:', updatedAccount.balance)
-      
-      return { 
-        success: true, 
-        data: { 
-          new_balance: updatedAccount.balance,
-          transaction_id: transaction.id
-        } 
-      }
+      return result
       
     } catch (error) {
-      console.error('❌ Supabase funding error:', error)
+      console.error('❌ Funding error:', error)
       throw error
     }
   }
@@ -272,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       })
@@ -300,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -334,7 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🚪 Signing out...')
     
     try {
-      const { error } = await supabase.auth.signOut()
+      const { error } = await supabaseClient.auth.signOut()
       
       if (error) {
         console.error('❌ Sign out error:', error)
