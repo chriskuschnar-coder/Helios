@@ -95,7 +95,7 @@ function BoltStripeForm({ amount, onSuccess, onError }: { amount: number, onSucc
       console.log('💳 Processing payment for amount:', amount)
       
       // Create payment intent via Supabase
-      const { data: paymentIntent, error: intentError } = await supabase
+      const { data: paymentIntent, error: intentError } = await supabaseClient
         .from('payments')
         .insert({
           user_id: user?.id || 'demo-user',
@@ -133,7 +133,7 @@ function BoltStripeForm({ amount, onSuccess, onError }: { amount: number, onSucc
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       // Update payment record
-      await supabase
+      await supabaseClient
         .from('payments')
         .update({
           status: 'completed',

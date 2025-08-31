@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { stripeProducts } from '../stripe-config'
+import { supabaseClient } from '../lib/supabase-client'
 import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield } from 'lucide-react'
 
 interface StripeCheckoutProps {
@@ -54,7 +55,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       console.log('💳 Creating Stripe checkout for amount:', amount)
       
       // Get the current session
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (!session) {
         throw new Error('No active session - please sign in again')

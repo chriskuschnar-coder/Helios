@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabaseClient } from '../lib/supabase-client'
 import { CheckCircle, XCircle, AlertTriangle, Database, Users, CreditCard } from 'lucide-react'
 
 interface TestResult {
@@ -49,7 +49,7 @@ export function SupabaseConnectionTest() {
     // Test 2: Database Connection
     try {
       console.log('🔍 Testing database connection...')
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('users')
         .select('count')
         .limit(1)
@@ -83,7 +83,7 @@ export function SupabaseConnectionTest() {
     // Test 3: Authentication System
     try {
       console.log('🔐 Testing authentication system...')
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (session) {
         testResults.push({
