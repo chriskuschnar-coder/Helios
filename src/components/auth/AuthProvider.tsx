@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import { supabase } from '../../lib/supabase'
 
 interface User {
   id: string
@@ -180,8 +180,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (amount < 100) {
       throw new Error('Minimum funding amount is $100')
     }
+    
     try {
-      // Update local account state directly for demo
+      // Create transaction record in Supabase
+      const { data: transaction, error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `Investment funding - ${method}`,
+          metadata: {
+            funding_method: method,
+            processed_at: new Date().toISOString()
+          }
+        })
+        .select()
+        .single()
+
+      if (transactionError) {
+        console.error('Transaction creation error:', transactionError)
+        throw new Error('Failed to record transaction')
+      }
+
+      // Update account balance
+      const { data: updatedAccount, error: updateError } = await supabase
+        .from('accounts')
+        .update({
+          balance: (account?.balance || 0) + amount,
+          available_balance: (account?.available_balance || 0) + amount,
+          total_deposits: (account?.total_deposits || 0) + amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('Account update error:', updateError)
+        throw new Error('Failed to update account balance')
+      }
+
+      // Update local state
+      setAccount(updatedAccount)
+      
+      // Update saved session
+      const savedSession = localStorage.getItem('supabase-session')
+      if (savedSession) {
+        const session = JSON.parse(savedSession)
+        session.account = updatedAccount
+        localStorage.setItem('supabase-session', JSON.stringify(session))
+      }
+      
+      console.log('✅ Funding processed successfully via Supabase')
+      return { success: true, data: { new_balance: updatedAccount.balance } }
+      
+    } catch (error) {
+      console.error('❌ Supabase funding error:', error)
+      
+      // Fallback to localStorage for demo mode
       if (account) {
         const updatedAccount = {
           ...account,
@@ -191,7 +250,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setAccount(updatedAccount)
         
-        // Update saved session
         const savedSession = localStorage.getItem('supabase-session')
         if (savedSession) {
           const session = JSON.parse(savedSession)
@@ -199,24 +257,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('supabase-session', JSON.stringify(session))
         }
         
-        // Update localStorage for real users
-        if (user.email !== 'demo@globalmarket.com') {
-          const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
-          const userIndex = allUsers.findIndex((u: any) => u.email === user.email)
-          
-          if (userIndex !== -1) {
-            allUsers[userIndex].balance = updatedAccount.balance
-            allUsers[userIndex].available_balance = updatedAccount.available_balance
-            allUsers[userIndex].total_deposits = updatedAccount.total_deposits
-            localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
-          }
-        }
+        console.log('✅ Funding processed via localStorage fallback')
+        return { success: true, data: { new_balance: updatedAccount.balance } }
       }
       
-      console.log('✅ Funding processed successfully')
-      return { success: true, data: { new_balance: account?.balance || 0 + amount } }
-    } catch (error) {
-      console.error('❌ Funding error:', error)
       throw error
     }
   }

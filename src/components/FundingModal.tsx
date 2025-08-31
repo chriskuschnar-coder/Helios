@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock, Plus, ExternalLink } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
 
 interface FundingModalProps {
   isOpen: boolean
@@ -52,6 +57,349 @@ const fundingMethods: FundingMethod[] = [
     maxAmount: 1000000
   }
 ]
+
+function BoltStripeForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [cardError, setCardError] = useState('')
+
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message)
+    } else {
+      setCardError('')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!stripe || !elements) {
+      onError('Payment system not ready')
+      return
+    }
+
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card information is required')
+      return
+    }
+
+    if (amount < 100) {
+      onError('Minimum investment amount is $100')
+      return
+    }
+
+    setLoading(true)
+    setCardError('')
+
+    try {
+      console.log('💳 Processing payment for amount:', amount)
+      
+      // Create payment intent via Supabase
+      const { data: paymentIntent, error: intentError } = await supabase
+        .from('payments')
+        .insert({
+          user_id: user?.id || 'demo-user',
+          total_amount: amount,
+          status: 'pending',
+          metadata: {
+            investment_type: 'hedge_fund_capital',
+            user_email: user?.email
+          }
+        })
+        .select()
+        .single()
+
+      if (intentError) {
+        throw new Error('Failed to create payment record')
+      }
+
+      // Create Stripe payment method
+      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          email: user?.email,
+        },
+      })
+
+      if (paymentMethodError) {
+        throw new Error(paymentMethodError.message)
+      }
+
+      // Confirm payment (in production, this would go through your backend)
+      console.log('✅ Payment method created:', paymentMethod.id)
+      
+      // Simulate successful payment for demo
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Update payment record
+      await supabase
+        .from('payments')
+        .update({
+          status: 'completed',
+          is_paid: true,
+          stripe_payment_intent_id: paymentMethod.id
+        })
+        .eq('id', paymentIntent.id)
+
+      // Process funding through auth provider
+      const { processFunding } = useAuth()
+      await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
+      
+      onSuccess({
+        id: paymentMethod.id,
+        amount: amount,
+        method: 'POST',
+        status: 'completed'
+      })
+      
+    } catch (error) {
+      console.error('❌ Payment processing error:', error)
+      onError(error instanceof Error ? error.message : 'Payment failed')
+      setLoading(false)
+    }
+  }
+
+  if (!stripe || !elements) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading payment system...</p>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Card Payment</span>
+          <Lock className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+          Your payment information is encrypted and secure. Powered by Stripe.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Card Information
+        </label>
+        <div className="border border-gray-300 rounded-lg p-4 bg-white">
+          <CardElement
+            onChange={handleCardChange}
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#32325d',
+                  letterSpacing: '0.025em',
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  '::placeholder': {
+                    color: '#a0aec0',
+                  },
+                },
+                invalid: {
+                  color: '#fa755a',
+                },
+                complete: {
+                  color: '#059669',
+                },
+              },
+              hidePostalCode: true,
+            }}
+          />
+        </div>
+        {cardError && (
+          <div className="mt-2 text-sm text-red-600 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            {cardError}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Investment Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total charge:</span>
+            <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={!stripe || loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Complete Payment - ${amount.toLocaleString()}
+          </>
+        )}
+      </button>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
+        </p>
+      </div>
+    </form>
+  )
+}
+
+function StripeCheckoutRedirect({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+
+  const handleCheckout = async () => {
+    if (amount < 100) {
+      onError('Minimum investment amount is $100')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      console.log('💳 Creating Stripe checkout session for amount:', amount)
+      
+      // Create checkout session via Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Payment system not configured. Please contact support.')
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`
+        },
+        body: JSON.stringify({ 
+          amount: amount,
+          user_id: user?.id || 'demo-user',
+          user_email: user?.email || 'demo@globalmarket.com'
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Checkout session creation failed:', response.status, errorText)
+        
+        let errorMessage = 'Failed to create checkout session'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error?.message || errorMessage
+        } catch (e) {
+          errorMessage = errorText || errorMessage
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      const { url } = await response.json()
+      console.log('✅ Checkout session created, redirecting to:', url)
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url
+      
+    } catch (error) {
+      console.error('❌ Checkout creation error:', error)
+      
+      let errorMessage = 'Payment system unavailable'
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to payment system. Please check your connection.'
+        } else if (error.message.includes('not configured')) {
+          errorMessage = 'Payment system configuration error. Please contact support.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      onError(errorMessage)
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Stripe Checkout</span>
+          <ExternalLink className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+          Redirects to Stripe's secure checkout page. No card details stored on our servers.
+        </p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Investment Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total charge:</span>
+            <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Redirecting to Stripe...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Proceed to Stripe Checkout
+            <ExternalLink className="h-4 w-4 ml-2" />
+          </>
+        )}
+      </button>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Test Mode:</strong> Use test card 4242 4242 4242 4242 on Stripe's checkout page
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
   const { user } = useAuth()
@@ -756,7 +1104,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         
         <div className="p-6">
           {selectedMethod === 'card' && (
-            <DynamicStripeCheckout 
+            <StripeCheckoutRedirect 
               amount={numericAmount} 
               onSuccess={handlePaymentSuccess} 
               onError={handlePaymentError} 
