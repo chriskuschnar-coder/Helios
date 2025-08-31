@@ -14,3 +14,23 @@
 .animate-scroll {
   animation: scroll 30s linear infinite;
 }
+
+/* Ticker tape styles for CSS fallback */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-scroll {
+  display: flex;
+  animation: ticker-scroll 30s linear infinite;
+  width: fit-content;
+}
+
+.ticker-container:hover .ticker-scroll {
+  animation-play-state: paused;
+}

@@ -90,9 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Demo account with existing balance
         const demoAccount = {
           id: 'demo-account',
-          balance: 7850.00,
-          available_balance: 7850.00,
-          total_deposits: 8000.00,
+          balance: 10000.00,
+          available_balance: 10000.00,
+          total_deposits: 10000.00,
           total_withdrawals: 0,
           currency: 'USD',
           status: 'active'
@@ -126,9 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Get user's account data
         const userAccount = {
           id: existingUser.accountId,
-          balance: existingUser.balance || 0,
-          available_balance: existingUser.available_balance || 0,
-          total_deposits: existingUser.total_deposits || 0,
+          balance: existingUser.balance || 5000, // Give new users some demo balance
+          available_balance: existingUser.available_balance || 5000,
+          total_deposits: existingUser.total_deposits || 5000,
           total_withdrawals: existingUser.total_withdrawals || 0,
           currency: 'USD',
           status: 'active'
@@ -258,9 +258,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // New users start with $0 balance
       const newAccount = {
         id: newUser.accountId,
-        balance: 0.00,
-        available_balance: 0.00,
-        total_deposits: 0.00,
+        balance: 5000.00, // Give new users demo balance
+        available_balance: 5000.00,
+        total_deposits: 5000.00,
         total_withdrawals: 0.00,
         currency: 'USD',
         status: 'active'

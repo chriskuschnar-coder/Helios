@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
 
     // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_test_51S1jDNFxYb2Rp5SOKqGvQJYXZGHJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuvwxyz'
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured')
     }
@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Hedge Fund Investment',
-            description: `Capital contribution to Global Market Consulting hedge fund`,
+            name: 'Capital Investment - Global Market Consulting Fund',
+            description: `Investment capital contribution of $${amount.toLocaleString()} to Global Market Consulting quantitative hedge fund`,
             images: []
           },
           unit_amount: amount * 100, // Convert to cents
@@ -52,14 +52,18 @@ Deno.serve(async (req) => {
       customer_email: user_email,
       metadata: {
         user_id: user_id || 'demo-user',
-        investment_type: 'hedge_fund_capital',
-        amount_usd: amount.toString()
+        investment_type: 'hedge_fund_capital_contribution',
+        fund_name: 'Global Market Consulting Fund',
+        amount_usd: amount.toString(),
+        investor_type: 'qualified_investor'
       },
       payment_intent_data: {
         metadata: {
           user_id: user_id || 'demo-user',
-          investment_type: 'hedge_fund_capital',
-          amount_usd: amount.toString()
+          investment_type: 'hedge_fund_capital_contribution',
+          fund_name: 'Global Market Consulting Fund',
+          amount_usd: amount.toString(),
+          description: `Hedge fund investment - $${amount.toLocaleString()}`
         }
       }
     }

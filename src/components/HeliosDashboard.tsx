@@ -1,379 +1,450 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Activity, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  BarChart3, 
-  Zap,
-  Plus,
-  AlertTriangle,
-  Target,
-  Clock
-} from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { CheckoutButton } from './CheckoutButton'
+import TickerTape from './TickerTape'
+import { TradingViewBTCChart } from './TradingViewBTCChart'
+import { PortfolioValueCard } from './PortfolioValueCard'
+import { FundingModal } from './FundingModal'
+import { EmptyPortfolioState } from './EmptyPortfolioState'
+import '../styles/funding.css'
+
+interface DashboardData {
+  account: {
+    balance: number
+    equity: number
+    margin: number
+    free_margin: number
+    profit: number
+    initial_balance: number
+  }
+  positions: Array<{
+    ticket: string
+    symbol: string
+    type: string
+    volume: number
+    price_open: number
+    price_current: number
+    profit: number
+    profit_pct: number
+    time: string
+    sl?: number
+    tp?: number
+  }>
+  metrics: {
+    win_rate: number
+    profit_factor: number
+    sharpe_ratio: number
+    max_drawdown: number
+    avg_win: number
+    avg_loss: number
+    sortino_ratio: number
+    calmar_ratio: number
+    information_ratio: number
+    total_trades: number
+  }
+  risk_metrics: {
+    var_daily: number
+    var_weekly: number
+    var_monthly: number
+    leverage: number
+    exposure_net: number
+    position_concentration: number
+  }
+  execution_metrics: {
+    avg_slippage: number
+    fill_rate: number
+    vwap_performance: number
+    execution_cost: number
+  }
+  active_signals: Array<{
+    time: string
+    symbol: string
+    type: string
+    strategy: string
+    confidence: number
+  }>
+  chart_data: {
+    timestamps: number[]
+    balance: number[]
+    equity: number[]
+  }
+}
 
 export function HeliosDashboard() {
   const { user, account, refreshAccount } = useAuth()
-  const [showFunding, setShowFunding] = useState(false)
-  const [fundingAmount, setFundingAmount] = useState(1000)
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [data, setData] = useState<DashboardData | null>(null)
 
-  // Update time every second
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const handleFundingSuccess = () => {
-    setShowFunding(false)
-    setFundingAmount(1000)
+  // Mock data that matches the Python version exactly
+  const mockData: DashboardData = {
+    account: {
+      balance: account?.balance || 106010.00,
+      equity: (account?.balance || 106010.00) + 5.177,
+      margin: 0,
+      free_margin: account?.balance || 106010.00,
+      profit: 50.40,
+      initial_balance: 10000.00
+    },
+    positions: [
+      {
+        ticket: 'BTC001',
+        symbol: 'BTCUSD',
+        type: 'BUY',
+        volume: 0.25,
+        price_open: 106000.00,
+        price_current: 106010.00,
+        profit: 2.50,
+        profit_pct: 0.0094,
+        time: '14:25:30',
+        sl: 105500.00,
+        tp: 107000.00
+      },
+      {
+        ticket: 'ETH002',
+        symbol: 'ETHUSD',
+        type: 'SELL',
+        volume: 2.5,
+        price_open: 3200.00,
+        price_current: 3192.00,
+        profit: 20.00,
+        profit_pct: 0.25,
+        time: '13:45:12'
+      }
+    ],
+    metrics: {
+      win_rate: 76.4,
+      profit_factor: 3.40,
+      sharpe_ratio: 2.84,
+      max_drawdown: 4.2,
+      avg_win: 285.50,
+      avg_loss: 142.30,
+      sortino_ratio: 3.12,
+      calmar_ratio: 2.89,
+      information_ratio: 1.67,
+      total_trades: 847
+    },
+    risk_metrics: {
+      var_daily: 1250.00,
+      var_weekly: 2800.00,
+      var_monthly: 5600.00,
+      leverage: 2.4,
+      exposure_net: 33000.00,
+      position_concentration: 15.8
+    },
+    execution_metrics: {
+      avg_slippage: 0.0012,
+      fill_rate: 98.5,
+      vwap_performance: 0.15,
+      execution_cost: 0.0025
+    },
+    active_signals: [
+      {
+        time: new Date().toLocaleTimeString(),
+        symbol: 'BTCUSDT',
+        type: 'BUY',
+        strategy: 'Trend Following',
+        confidence: 85
+      },
+      {
+        time: new Date().toLocaleTimeString(),
+        symbol: 'ETHUSD',
+        type: 'SELL',
+        strategy: 'Mean Reversion',
+        confidence: 72
+      }
+    ],
+    chart_data: {
+      timestamps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      balance: [100000, 101000, 102500, 103200, 104800, 105200, 106000, 105800, 106010, 106010],
+      equity: [100000, 101000, 102500, 103200, 104800, 105200, 106000, 105800, 106015, 106015]
+    }
   }
 
-  // Show empty state if no balance
-  if (!account || account.balance === 0) {
+  useEffect(() => {
+    setData(mockData)
+  }, [account])
+
+  const openFunding = (amount: number | null = null) => {
+    setPrefilledAmount(amount)
+    setShowFundingModal(true)
+  }
+
+  const handleFundingSuccess = () => {
+    setShowFundingModal(false)
+    setPrefilledAmount(null)
+    refreshAccount()
+  }
+
+  const handleProceedToPayment = (amount: number, method: string) => {
+    setShowFundingModal(false)
+    // Here you would integrate with your existing payment processor
+    console.log('Proceeding to payment:', { amount, method })
+  }
+
+  if (!data) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Activity className="h-12 w-12 text-gray-400" />
-            </div>
-            <h2 className="font-serif text-3xl font-bold text-white mb-4">
-              Helios Trading Platform
-            </h2>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">
-              Your trading account is ready. Add capital to start live trading with our quantitative algorithms.
-            </p>
-            <button
-              onClick={() => setShowFunding(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium inline-flex items-center text-lg"
-            >
-              <Plus className="h-6 w-6 mr-2" />
-              Fund Trading Account
-            </button>
-          </div>
-
-          {/* Simple Funding Modal */}
-          {showFunding && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-md w-full p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Trading Account</h3>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trading Capital
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={fundingAmount}
-                      onChange={(e) => setFundingAmount(Number(e.target.value))}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      min="100"
-                      step="100"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Minimum: $100 for live trading</p>
-                </div>
-
-                {fundingAmount >= 100 && (
-                  <CheckoutButton
-                    amount={fundingAmount}
-                    onSuccess={handleFundingSuccess}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium"
-                  >
-                    Proceed to Secure Checkout
-                  </CheckoutButton>
-                )}
-
-                <button
-                  onClick={() => setShowFunding(false)}
-                  className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-semibold mb-2">Loading HELIOS CAPITAL...</div>
+          <div className="text-sm text-gray-400">Initializing trading systems</div>
         </div>
       </div>
     )
   }
 
-  // Live trading data (mock)
-  const tradingData = {
-    accountBalance: account?.balance || 0,
-    availableMargin: (account?.balance || 0) * 4, // 4:1 leverage
-    dailyPnL: 2847.50,
-    dailyPnLPct: 3.63,
-    openPositions: 12,
-    totalTrades: 847,
-    winRate: 76.4,
-    currentDrawdown: -1.2
+  // Show empty state for users with no balance
+  if (!account || account.balance === 0) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-900">
+          {/* Helios Header */}
+          <header className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">HELIOS CAPITAL</h1>
+                <div className="text-xs text-gray-400 uppercase tracking-wider mt-1">
+                  Quantitative Trading System
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <EmptyPortfolioState onFundAccount={() => openFunding()} />
+        </div>
+        <FundingModal
+          isOpen={showFundingModal}
+          onClose={() => setShowFundingModal(false)}
+          prefilledAmount={prefilledAmount}
+          onProceedToPayment={handleProceedToPayment}
+        />
+      </>
+    )
   }
 
-  const positions = [
-    { symbol: 'SPY', side: 'LONG', size: 500, entry: 485.20, current: 487.85, pnl: 1325, pnlPct: 0.55 },
-    { symbol: 'QQQ', side: 'SHORT', size: -200, entry: 412.50, current: 410.15, pnl: 470, pnlPct: 0.57 },
-    { symbol: 'IWM', side: 'LONG', size: 300, entry: 218.75, current: 220.40, pnl: 495, pnlPct: 0.75 },
-    { symbol: 'TSLA', side: 'SHORT', size: -50, entry: 248.90, current: 246.20, pnl: 135, pnlPct: 1.08 },
-    { symbol: 'NVDA', side: 'LONG', size: 25, entry: 875.30, current: 892.15, pnl: 421, pnlPct: 1.92 }
-  ]
-
-  const recentTrades = [
-    { time: '14:32:15', symbol: 'AAPL', side: 'BUY', size: 100, price: 185.42, pnl: 0, status: 'FILLED' },
-    { time: '14:31:48', symbol: 'MSFT', side: 'SELL', size: 75, price: 412.88, pnl: 287, status: 'FILLED' },
-    { time: '14:31:22', symbol: 'GOOGL', side: 'BUY', size: 25, price: 142.15, pnl: 0, status: 'FILLED' },
-    { time: '14:30:55', symbol: 'AMZN', side: 'SELL', size: 50, price: 178.92, pnl: 445, status: 'FILLED' },
-    { time: '14:30:33', symbol: 'META', side: 'BUY', size: 40, price: 485.67, pnl: 0, status: 'FILLED' }
-  ]
+  // Calculate derived values
+  const dailyPnl = data.account.balance - data.account.initial_balance
+  const dailyPnlPct = (dailyPnl / data.account.initial_balance) * 100
+  const initialInvestment = 8000
+  const totalGrowth = data.account.balance - initialInvestment
+  const growthPct = (totalGrowth / initialInvestment) * 100
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm">Account Balance</div>
-            <div className="text-2xl font-bold text-white">${tradingData.accountBalance.toLocaleString()}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm">Available Margin</div>
-            <div className="text-2xl font-bold text-blue-400">${tradingData.availableMargin.toLocaleString()}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm">Daily P&L</div>
-            <div className="text-2xl font-bold text-green-400">+${tradingData.dailyPnL.toLocaleString()}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm">Daily %</div>
-            <div className="text-2xl font-bold text-green-400">+{tradingData.dailyPnLPct}%</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm">Open Positions</div>
-            <div className="text-2xl font-bold text-yellow-400">{tradingData.openPositions}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-sm flex items-center justify-between">
-              <span>Add Capital</span>
-              <Clock className="h-4 w-4" />
-            </div>
-            <button
-              onClick={() => setShowFunding(true)}
-              className="text-2xl font-bold text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              + Fund
-            </button>
-          </div>
-        </div>
-
-        {/* Trading Interface */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Positions */}
-          <div className="lg:col-span-2 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="p-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white flex items-center">
-                <Target className="h-5 w-5 mr-2 text-blue-400" />
-                Live Positions
-              </h3>
-            </div>
-            <div className="p-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-gray-400 border-b border-gray-700">
-                      <th className="text-left py-2">Symbol</th>
-                      <th className="text-center py-2">Side</th>
-                      <th className="text-right py-2">Size</th>
-                      <th className="text-right py-2">Entry</th>
-                      <th className="text-right py-2">Current</th>
-                      <th className="text-right py-2">P&L</th>
-                      <th className="text-right py-2">%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map((position, index) => (
-                      <tr key={index} className="border-b border-gray-700 hover:bg-gray-750">
-                        <td className="py-3 font-mono font-bold text-white">{position.symbol}</td>
-                        <td className="py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            position.side === 'LONG' 
-                              ? 'bg-green-900 text-green-300' 
-                              : 'bg-red-900 text-red-300'
-                          }`}>
-                            {position.side}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right font-mono text-gray-300">{Math.abs(position.size)}</td>
-                        <td className="py-3 text-right font-mono text-gray-300">${position.entry}</td>
-                        <td className="py-3 text-right font-mono text-white">${position.current}</td>
-                        <td className={`py-3 text-right font-mono font-bold ${
-                          position.pnl >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {position.pnl >= 0 ? '+' : ''}${position.pnl}
-                        </td>
-                        <td className={`py-3 text-right font-mono font-bold ${
-                          position.pnlPct >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {position.pnlPct >= 0 ? '+' : ''}{position.pnlPct}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Trading Stats & Recent Trades */}
-          <div className="space-y-6">
-            {/* Quick Stats */}
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-blue-400" />
-                Trading Stats
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Trades</span>
-                  <span className="text-white font-mono">{tradingData.totalTrades}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Win Rate</span>
-                  <span className="text-green-400 font-mono">{tradingData.winRate}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Max Drawdown</span>
-                  <span className="text-red-400 font-mono">{tradingData.currentDrawdown}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Leverage</span>
-                  <span className="text-yellow-400 font-mono">4:1</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Trades */}
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <Zap className="h-5 w-5 mr-2 text-yellow-400" />
-                Recent Trades
-              </h3>
-              <div className="space-y-2">
-                {recentTrades.map((trade, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-400 font-mono">{trade.time}</span>
-                      <span className="font-mono font-bold text-white">{trade.symbol}</span>
-                      <span className={`px-1 py-0.5 rounded text-xs ${
-                        trade.side === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                      }`}>
-                        {trade.side}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono text-white">${trade.price}</div>
-                      {trade.pnl > 0 && (
-                        <div className="text-green-400 font-mono text-xs">+${trade.pnl}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* System Status */}
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-              <h3 className="text-lg font-semibold text-white mb-4">System Status</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Market Data</span>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-sm">Live</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Trading Engine</span>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-sm">Active</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Risk Monitor</span>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-sm">Normal</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Server Time</span>
-                  <span className="text-white font-mono text-sm">
-                    {currentTime.toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Simple Funding Modal */}
-        {showFunding && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Trading Account</h3>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trading Capital
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={fundingAmount}
-                    onChange={(e) => setFundingAmount(Number(e.target.value))}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="100"
-                    max="10000000"
-                    step="100"
-                    placeholder="1000"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Minimum: $100 for live trading</p>
-              </div>
-
-              {fundingAmount >= 100 ? (
-                <CheckoutButton
-                  amount={fundingAmount}
-                  onSuccess={handleFundingSuccess}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium"
-                >
-                  Proceed to Secure Checkout
-                </CheckoutButton>
-              ) : (
-                <button
-                  disabled
-                  className="w-full bg-gray-400 text-white px-4 py-3 rounded-lg font-medium cursor-not-allowed"
-                >
-                  Enter amount $100 or more
-                </button>
-              )}
-
-              <button
-                onClick={() => setShowFunding(false)}
-                className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-gray-900">
+      {/* TradingView Ticker Tape */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <TickerTape />
       </div>
+      
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Account Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
+              Account Balance
+            </div>
+            <div className="text-2xl font-bold text-white font-mono">
+              ${data.account.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+            <div className={`text-sm mt-2 font-medium flex items-center gap-1 ${dailyPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {dailyPnl >= 0 ? '+' : ''}${Math.abs(dailyPnl).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ({dailyPnlPct >= 0 ? '+' : ''}{dailyPnlPct.toFixed(2)}%)
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
+              Account Equity
+            </div>
+            <div className="text-2xl font-bold text-white font-mono">
+              ${data.account.equity.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+            <div className={`text-sm mt-2 font-medium ${data.account.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {data.account.profit >= 0 ? '+' : ''}${Math.abs(data.account.profit).toFixed(2)} P&L
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
+              Free Margin
+            </div>
+            <div className="text-2xl font-bold text-white font-mono">
+              ${data.account.free_margin.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+            <div className="text-sm mt-2 text-gray-400">
+              Available for trading
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors">
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
+              Portfolio Return
+            </div>
+            <div className={`text-2xl font-bold font-mono ${totalGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {totalGrowth >= 0 ? '+' : ''}${Math.abs(totalGrowth).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+            <div className={`text-sm mt-2 font-medium ${totalGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {totalGrowth >= 0 ? '+' : ''}{growthPct.toFixed(2)}%
+            </div>
+          </div>
+        </div>
+        
+        {/* Performance Metrics */}
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
+          <div className="text-xs text-gray-400 uppercase tracking-wider mb-4 font-semibold">
+            Performance Metrics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Win Rate</span>
+              <div className="text-lg font-bold text-white font-mono">{data.metrics.win_rate.toFixed(1)}%</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Profit Factor</span>
+              <div className="text-lg font-bold text-white font-mono">{data.metrics.profit_factor.toFixed(2)}</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Sharpe Ratio</span>
+              <div className="text-lg font-bold text-white font-mono">{data.metrics.sharpe_ratio.toFixed(2)}</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Max Drawdown</span>
+              <div className="text-lg font-bold text-white font-mono">{data.metrics.max_drawdown.toFixed(1)}%</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Avg Win</span>
+              <div className="text-lg font-bold text-white font-mono">${data.metrics.avg_win.toFixed(0)}</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Avg Loss</span>
+              <div className="text-lg font-bold text-white font-mono">${data.metrics.avg_loss.toFixed(0)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live BTC Chart */}
+        <div className="mb-8">
+          <h3 className="text-white text-lg font-semibold mb-4">Bitcoin Live Chart</h3>
+          <TradingViewBTCChart />
+        </div>
+        
+        {/* Open Positions */}
+        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-700 bg-gray-900">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Open Positions</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-900">
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Ticket</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Symbol</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Volume</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Entry</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Current</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">P&L</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">P&L %</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.positions.length > 0 ? (
+                  data.positions.map((position, index) => (
+                    <tr key={index} className="border-t border-gray-700 hover:bg-gray-750">
+                      <td className="px-6 py-4 text-sm text-gray-300 font-mono">{position.ticket}</td>
+                      <td className="px-6 py-4 text-sm text-white font-semibold">{position.symbol}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          position.type === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                        }`}>
+                          {position.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-300 font-mono">{position.volume.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300 font-mono">${position.price_open.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm text-white font-mono">${position.price_current.toFixed(2)}</td>
+                      <td className={`px-6 py-4 text-sm font-mono font-semibold ${
+                        position.profit >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {position.profit >= 0 ? '+' : ''}${position.profit.toFixed(2)}
+                      </td>
+                      <td className={`px-6 py-4 text-sm font-mono font-semibold ${
+                        position.profit_pct >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {position.profit_pct >= 0 ? '+' : ''}{position.profit_pct.toFixed(2)}%
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-400 font-mono">{position.time}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                      No open positions
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        {/* Active Signals */}
+        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-700 bg-gray-900">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Active Trading Signals</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-900">
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Symbol</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Strategy</th>
+                  <th className="px-6 py-3 text-left text-xs text-gray-400 uppercase tracking-wider">Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.active_signals.length > 0 ? (
+                  data.active_signals.map((signal, index) => (
+                    <tr key={index} className="border-t border-gray-700 hover:bg-gray-750">
+                      <td className="px-6 py-4 text-sm text-gray-300 font-mono">{signal.time}</td>
+                      <td className="px-6 py-4 text-sm text-white font-semibold">{signal.symbol}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          signal.type === 'BUY' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                        }`}>
+                          {signal.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-300">{signal.strategy}</td>
+                      <td className={`px-6 py-4 text-sm font-mono font-semibold ${
+                        signal.confidence > 75 ? 'text-green-400' : signal.confidence > 50 ? 'text-gray-300' : 'text-red-400'
+                      }`}>
+                        {signal.confidence}%
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      No active signals
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => setShowFundingModal(false)}
+        prefilledAmount={prefilledAmount}
+        onProceedToPayment={handleProceedToPayment}
+      />
     </div>
   )
 }

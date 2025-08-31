@@ -1,188 +1,58 @@
-import React, { useState } from 'react'
-import { X, CreditCard, Ban as Bank, Building, Wallet, Lock, AlertCircle, CheckCircle, Copy, ExternalLink } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 import { StripeCardForm } from './StripeCardForm'
 
 interface FundingModalProps {
   isOpen: boolean
   onClose: () => void
-  amount: number
-  onSuccess: (result: any) => void
+  prefilledAmount?: number | null
+  onProceedToPayment: (amount: number, method: string) => void
 }
 
-interface PaymentMethod {
+interface FundingMethod {
   id: string
   name: string
-  description: string
   icon: React.ComponentType<any>
-  fees: string
-  timeframe: string
+  time: string
+  fee: string
+  description: string
   minAmount: number
   maxAmount: number
 }
 
-const paymentMethods: PaymentMethod[] = [
+const fundingMethods: FundingMethod[] = [
   {
     id: 'card',
     name: 'Debit/Credit Card',
-    description: 'Instant capital funding with any major card',
     icon: CreditCard,
-    fees: '2.9% + $0.30',
-    timeframe: 'Instant',
+    time: 'Instant',
+    fee: '2.9% + $0.30',
+    description: 'Instant funding with any major card',
     minAmount: 100,
     maxAmount: 50000
   },
   {
-    id: 'ach',
-    name: 'Bank Transfer (ACH)',
-    description: 'Direct bank account transfer',
-    icon: Bank,
-    fees: '$5 flat fee',
-    timeframe: '1-3 business days',
-    minAmount: 100,
-    maxAmount: 500000
-  },
-  {
     id: 'wire',
     name: 'Wire Transfer',
-    description: 'Large investment transfers',
     icon: Building,
-    fees: '$25 + bank fees',
-    timeframe: 'Same day',
+    time: 'Same day',
+    fee: '$25 + bank fees',
+    description: 'Large amount transfers',
     minAmount: 10000,
     maxAmount: 10000000
   },
   {
     id: 'crypto',
     name: 'Cryptocurrency',
-    description: 'Bitcoin, Ethereum, USDC, USDT',
     icon: Wallet,
-    fees: 'Network fees only',
-    timeframe: '10-60 minutes',
+    time: '10-60 minutes',
+    fee: 'Network fees only',
+    description: 'Bitcoin, Ethereum, USDC, USDT',
     minAmount: 100,
     maxAmount: 1000000
   }
 ]
-
-function ACHPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
-  const [bankDetails, setBankDetails] = useState({
-    accountNumber: '',
-    routingNumber: '',
-    accountType: 'checking',
-    accountHolderName: ''
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Simulate ACH processing
-    setTimeout(() => {
-      onSuccess({
-        id: 'ach_' + Math.random().toString(36).substr(2, 9),
-        amount,
-        method: 'ach',
-        status: 'pending',
-        estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()
-      })
-    }, 1000)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Bank className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">ACH Bank Transfer</span>
-        </div>
-        <p className="text-sm text-blue-700">
-          Capital will be debited from your bank account in 1-3 business days. 
-          Lower fees than card payments.
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Holder Name
-          </label>
-          <input
-            type="text"
-            value={bankDetails.accountHolderName}
-            onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Full name on account"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Type
-          </label>
-          <select
-            value={bankDetails.accountType}
-            onChange={(e) => setBankDetails({...bankDetails, accountType: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Routing Number
-        </label>
-        <input
-          type="text"
-          value={bankDetails.routingNumber}
-          onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="9-digit routing number"
-          pattern="[0-9]{9}"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Account Number
-        </label>
-        <input
-          type="text"
-          value={bankDetails.accountNumber}
-          onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Account number"
-          required
-        />
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Investment amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">ACH fee:</span>
-          <span className="text-gray-600 text-sm">$5.00</span>
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">Total debit:</span>
-            <span className="font-bold text-gray-900">${(amount + 5).toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-      >
-        Initiate ACH Transfer - ${amount.toLocaleString()}
-      </button>
-    </form>
-  )
-}
 
 function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
   const [copied, setCopied] = useState('')
@@ -384,10 +254,10 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
       <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
         <div className="flex items-center space-x-2 mb-2">
           <Wallet className="h-5 w-5 text-purple-600" />
-          <span className="font-medium text-purple-900">Cryptocurrency Investment</span>
+          <span className="font-medium text-purple-900">Cryptocurrency Payment</span>
         </div>
         <p className="text-sm text-purple-700">
-          Send cryptocurrency to our secure wallet. Capital is credited after network confirmation.
+          Send cryptocurrency to our secure wallet. Funds are credited after network confirmation.
         </p>
       </div>
 
@@ -470,7 +340,7 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
               <li>• Send exactly {cryptoAmount.toFixed(selectedCrypto === 'BTC' ? 8 : 6)} {selectedCrypto}</li>
               <li>• Use {selectedOption.network} network only</li>
               <li>• Double-check the address before sending</li>
-              <li>• Capital is credited after 3 network confirmations</li>
+              <li>• Funds are credited after 3 network confirmations</li>
             </ul>
           </div>
 
@@ -486,15 +356,39 @@ function CryptoPaymentForm({ amount, onSuccess }: { amount: number, onSuccess: (
   )
 }
 
-export function FundingModal({ isOpen, onClose, amount, onSuccess }: FundingModalProps) {
+export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
+  const { account, processFunding } = useAuth()
+  const [amount, setAmount] = useState('')
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (prefilledAmount) {
+      setAmount(prefilledAmount.toString())
+    }
+  }, [prefilledAmount])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
+  const handleAmountChange = (value: string) => {
+    const cleanValue = value.replace(/[^0-9.]/g, '')
+    setAmount(cleanValue)
+  }
 
   const handleMethodSelect = (methodId: string) => {
-    const method = paymentMethods.find(m => m.id === methodId)
-    if (method && amount >= method.minAmount && amount <= method.maxAmount) {
+    const method = fundingMethods.find(m => m.id === methodId)
+    const numericAmount = parseFloat(amount) || 0
+    if (method && numericAmount >= method.minAmount && numericAmount <= method.maxAmount) {
       setSelectedMethod(methodId)
     }
   }
@@ -502,98 +396,46 @@ export function FundingModal({ isOpen, onClose, amount, onSuccess }: FundingModa
   const handlePaymentSuccess = async (result: any) => {
     setProcessing(true)
     
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    onSuccess(result)
-    setProcessing(false)
+    try {
+      // Process funding through auth provider
+      await processFunding(parseFloat(amount), result.method, `Investment funding - ${result.method}`)
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      onClose()
+      setSelectedMethod(null)
+      setAmount('')
+    } catch (error) {
+      console.error('Funding processing error:', error)
+    } finally {
+      setProcessing(false)
+    }
   }
+
+  const handlePaymentError = (error: string) => {
+    console.error('Payment error:', error)
+    alert('Payment failed: ' + error)
+  }
+
+  if (!isOpen) return null
 
   if (processing) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-8 w-8 text-green-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Investment Processed</h3>
-          <p className="text-gray-600 mb-4">
-            Your capital contribution has been submitted successfully. 
-            Your account will be updated once the investment is confirmed.
-          </p>
-          <div className="animate-pulse text-sm text-gray-500">
-            Updating your account balance...
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!selectedMethod) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Add Investment Capital - ${amount.toLocaleString()}</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="p-6">
-            <p className="text-gray-600 mb-6">
-              Choose your preferred method to fund your hedge fund investment account.
+      <div className="funding-modal open">
+        <div className="modal-backdrop" />
+        <div className="modal-content">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Processed</h3>
+            <p className="text-gray-600 mb-4">
+              Your funding request has been submitted successfully. 
+              Your account will be updated once the payment is confirmed.
             </p>
-            
-            <div className="grid gap-4">
-              {paymentMethods.map((method) => {
-                const isAvailable = amount >= method.minAmount && amount <= method.maxAmount
-                const Icon = method.icon
-                
-                return (
-                  <button
-                    key={method.id}
-                    onClick={() => isAvailable && handleMethodSelect(method.id)}
-                    disabled={!isAvailable}
-                    className={`p-4 border rounded-lg text-left transition-colors ${
-                      isAvailable
-                        ? 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
-                        : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        isAvailable ? 'bg-blue-100' : 'bg-gray-200'
-                      }`}>
-                        <Icon className={`h-6 w-6 ${
-                          isAvailable ? 'text-blue-600' : 'text-gray-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">{method.name}</div>
-                        <div className="text-sm text-gray-600">{method.description}</div>
-                        <div className="flex items-center space-x-4 mt-1">
-                          <span className="text-xs text-gray-500">Fee: {method.fees}</span>
-                          <span className="text-xs text-gray-500">Time: {method.timeframe}</span>
-                        </div>
-                        {!isAvailable && (
-                          <div className="text-xs text-red-600 mt-1">
-                            Amount must be between ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                      {isAvailable && (
-                        <div className="text-blue-600">
-                          <ExternalLink className="h-5 w-5" />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                )
-              })}
+            <div className="animate-pulse text-sm text-gray-500">
+              Updating your account balance...
             </div>
           </div>
         </div>
@@ -601,56 +443,140 @@ export function FundingModal({ isOpen, onClose, amount, onSuccess }: FundingModa
     )
   }
 
-  // Show selected payment method form
-  const selectedMethodData = paymentMethods.find(m => m.id === selectedMethod)!
-  const SelectedIcon = selectedMethodData.icon
+  // Method selection screen
+  if (!selectedMethod) {
+    const numericAmount = parseFloat(amount) || 0
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Add Investment Capital</h3>
-            <button
-              onClick={() => setSelectedMethod(null)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
+    return (
+      <div className="funding-modal open">
+        <div className="modal-backdrop" onClick={onClose} />
+        <div className="modal-content">
+          <div className="modal-header">
+            <h2>Fund Your Portfolio</h2>
+            <button className="close-btn" onClick={onClose}>
               <X className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="flex items-center space-x-2 mt-2">
-            <SelectedIcon className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-gray-900">{selectedMethodData.name}</span>
+          <div className="funding-stats">
+            <div className="stat">
+              <span className="stat-label">Current Capital</span>
+              <span className="stat-value">${(account?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className="stat">
+              <span className="stat-label">Available Capital</span>
+              <span className="stat-value">${(account?.available_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className="stat">
+              <span className="stat-label">Investor Status</span>
+              <span className="stat-value premium">Qualified</span>
+            </div>
+          </div>
+          
+          <div className="amount-section">
+            <h3>Investment Amount</h3>
+            <div className="amount-input-group">
+              <span className="currency">USD</span>
+              <input 
+                type="text"
+                value={amount}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                placeholder="0.00"
+                className="amount-input"
+              />
+            </div>
+            
+            <div className="preset-amounts">
+              <button onClick={() => setAmount('5000')}>$5,000</button>
+              <button onClick={() => setAmount('10000')}>$10,000</button>
+              <button onClick={() => setAmount('25000')}>$25,000</button>
+              <button onClick={() => setAmount('50000')}>$50,000</button>
+              <button onClick={() => setAmount('100000')} className="premium">$100,000+</button>
+            </div>
+          </div>
+          
+          <div className="funding-methods">
+            <h3>Select Funding Method</h3>
+            <div className="method-grid">
+              {fundingMethods.map((method) => {
+                const isAvailable = numericAmount >= method.minAmount && numericAmount <= method.maxAmount
+                
+                return (
+                  <button 
+                    key={method.id}
+                    className={`method-card ${isAvailable ? '' : 'disabled'}`}
+                    onClick={() => isAvailable && handleMethodSelect(method.id)}
+                    disabled={!isAvailable}
+                  >
+                    <div className="method-icon">
+                      <method.icon className="h-6 w-6" />
+                    </div>
+                    <span className="method-name">{method.name}</span>
+                    <span className="method-time">{method.time}</span>
+                    <span className="method-fee">{method.fee}</span>
+                    {!isAvailable && numericAmount > 0 && (
+                      <div className="text-xs text-red-600 mt-1">
+                        ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          
+          <div className="compliance-note">
+            <Shield className="shield-icon" />
+            <p>
+              <strong>Qualified Investor Protection</strong><br/>
+              Your investment is processed through institutional-grade security protocols.
+              All capital transfers are encrypted and comply with SEC regulations.
+            </p>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  // Payment method form screen
+  const selectedMethodData = fundingMethods.find(m => m.id === selectedMethod)!
+  const numericAmount = parseFloat(amount)
+
+  return (
+    <div className="funding-modal open">
+      <div className="modal-backdrop" onClick={() => setSelectedMethod(null)} />
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>Add Investment Capital</h2>
+          <div className="flex items-center space-x-2">
+            <selectedMethodData.icon className="h-5 w-5 text-blue-600" />
+            <span>{selectedMethodData.name}</span>
+          </div>
+          <button className="close-btn" onClick={() => setSelectedMethod(null)}>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
         
-        <div className="p-6">
+        <div style={{ padding: '24px' }}>
           {selectedMethod === 'card' && (
             <StripeCardForm 
-              amount={amount} 
+              amount={numericAmount} 
               onSuccess={handlePaymentSuccess} 
-              onError={(error) => console.error('Card payment error:', error)} 
-            />
-          )}
-          
-          {selectedMethod === 'ach' && (
-            <ACHPaymentForm 
-              amount={amount} 
-              onSuccess={handlePaymentSuccess} 
+              onError={handlePaymentError} 
+              onClose={() => setSelectedMethod(null)}
             />
           )}
           
           {selectedMethod === 'wire' && (
             <WireTransferForm 
-              amount={amount} 
+              amount={numericAmount} 
               onSuccess={handlePaymentSuccess} 
             />
           )}
           
           {selectedMethod === 'crypto' && (
             <CryptoPaymentForm 
-              amount={amount} 
+              amount={numericAmount} 
               onSuccess={handlePaymentSuccess} 
             />
           )}
