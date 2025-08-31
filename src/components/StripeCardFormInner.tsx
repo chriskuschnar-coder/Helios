@@ -239,7 +239,7 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
       {/* Test card info */}
       <div style={{ 
         backgroundColor: '#fefce8', 
-        border: '1px solid '#fde047', 
+        border: '1px solid \'#fde047', 
         borderRadius: '8px', 
         padding: '12px' 
       }}>
