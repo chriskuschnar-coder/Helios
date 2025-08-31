@@ -49,19 +49,13 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
             <span className="font-medium text-blue-900">Initializing Secure Payment System</span>
           </div>
           <p className="text-sm text-blue-700">
-            Loading Stripe Elements... This may take a moment.
+            Loading Stripe Elements... Please wait.
           </p>
         </div>
         
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
+        <div className="text-center py-8">
+          <div className="text-gray-500">Connecting to payment servers...</div>
         </div>
-        
-        <p className="text-sm text-gray-500 text-center">
-          Connecting to secure payment servers...
-        </p>
       </div>
     )
   }
@@ -97,11 +91,6 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
       // Create token (frontend-only, no backend required)
       const { token, error: tokenError } = await stripe.createToken(cardElement, {
         name: 'Investment Account Funding',
-        address_line1: 'Investment Address',
-        address_city: 'Investment City',
-        address_state: 'Investment State',
-        address_zip: '12345',
-        address_country: 'US',
       })
       
       if (tokenError) {
@@ -122,8 +111,8 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
         method: 'card',
         status: 'completed',
         token: token,
-        last4: token.card.last4,
-        brand: token.card.brand
+        last4: token.card?.last4,
+        brand: token.card?.brand
       })
       
     } catch (err) {
@@ -152,14 +141,27 @@ export function StripeCardFormInner({ amount, onSuccess, onError, onClose }: Str
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Card Information
           </label>
-          <div className="border border-gray-300 rounded-lg p-4 bg-white min-h-[60px] flex items-center">
-            <div className="w-full">
+          
+          {/* CRITICAL: Fixed container with explicit styling */}
+          <div 
+            style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              padding: '16px',
+              backgroundColor: 'white',
+              minHeight: '60px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <div style={{ width: '100%' }}>
               <CardElement
                 onChange={handleCardChange}
                 options={CARD_ELEMENT_OPTIONS}
               />
             </div>
           </div>
+          
           <p className="text-xs text-gray-500 mt-2">
             Enter your card number, expiry date (MM/YY), and security code (CVC)
           </p>
