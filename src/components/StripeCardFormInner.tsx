@@ -140,13 +140,6 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     } finally {
       setLoading(false)
     }
-      }
-    } catch (error) {
-      console.error('❌ Payment processing error:', error)
-      onError('Payment processing failed')
-    } finally {
-      setLoading(false)
-    }
   }
 
   const isFormValid = complete.cardNumber && complete.cardExpiry && complete.cardCvc && 
