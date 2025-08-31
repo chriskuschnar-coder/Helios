@@ -548,7 +548,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       return { error: { message: 'Supabase not configured - please connect to Supabase' } }
     }
-  }
 
   const signOut = async () => {
     console.log('🚪 Signing out...')
