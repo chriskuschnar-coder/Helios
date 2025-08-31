@@ -250,8 +250,13 @@ function StripeDebugInner() {
                   display: 'flex',
                   alignItems: 'center',
                   transition: 'border-color 0.2s ease',
+                  position: 'relative',
+                  zIndex: 2147483000,
+                  pointerEvents: 'auto',
                   cursor: 'text'
                 }}
+                id="gmc-card-number"
+                data-gmc-card-number="true"
                 onClick={() => {
                   const element = elements.getElement(CardNumberElement)
                   if (element) {
@@ -290,8 +295,12 @@ function StripeDebugInner() {
                   display: 'flex',
                   alignItems: 'center',
                   transition: 'border-color 0.2s ease',
+                  position: 'relative',
+                  zIndex: 2147483000,
+                  pointerEvents: 'auto',
                   cursor: 'text'
                 }}
+                id="gmc-card-expiry"
                 onClick={() => {
                   const element = elements.getElement(CardExpiryElement)
                   if (element) {
@@ -330,8 +339,12 @@ function StripeDebugInner() {
                   display: 'flex',
                   alignItems: 'center',
                   transition: 'border-color 0.2s ease',
+                  position: 'relative',
+                  zIndex: 2147483000,
+                  pointerEvents: 'auto',
                   cursor: 'text'
                 }}
+                id="gmc-card-cvc"
                 onClick={() => {
                   const element = elements.getElement(CardCvcElement)
                   if (element) {
