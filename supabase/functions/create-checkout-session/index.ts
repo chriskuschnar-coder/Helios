@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   try {
     const { amount, user_id, user_email } = await req.json()
     
-    console.log('Creating checkout session for hedge fund investment:', { amount, user_id, user_email })
+    console.log('Creating dynamic checkout session for investment:', { amount, user_id, user_email })
     
     // Validate amount (minimum $100)
     if (!amount || amount < 100) {
@@ -31,42 +31,29 @@ Deno.serve(async (req) => {
     // Get the origin for redirect URLs
     const origin = req.headers.get('origin') || 'https://globalmarketsconsulting.com'
 
-    // Create Stripe checkout session for hedge fund investment
-    const checkoutData = {
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Capital Investment - Global Market Consulting Fund',
-            description: `Investment capital contribution of $${amount.toLocaleString()} to Global Market Consulting quantitative hedge fund`,
-            images: []
-          },
-          unit_amount: amount * 100, // Convert to cents
-        },
-        quantity: 1,
-      }],
-      success_url: `${origin}/funding-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/funding-cancelled`,
-      customer_email: user_email,
-      metadata: {
-        user_id: user_id || 'demo-user',
-        investment_type: 'hedge_fund_capital_contribution',
-        fund_name: 'Global Market Consulting Fund',
-        amount_usd: amount.toString(),
-        investor_type: 'qualified_investor'
-      },
-      payment_intent_data: {
-        metadata: {
-          user_id: user_id || 'demo-user',
-          investment_type: 'hedge_fund_capital_contribution',
-          fund_name: 'Global Market Consulting Fund',
-          amount_usd: amount.toString(),
-          description: `Hedge fund investment - $${amount.toLocaleString()}`
-        }
-      }
-    }
+    // Create dynamic Stripe checkout session
+    const checkoutParams = new URLSearchParams({
+      'payment_method_types[]': 'card',
+      'mode': 'payment',
+      'success_url': `${origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
+      'cancel_url': `${origin}/funding-cancelled`,
+      'customer_email': user_email || '',
+      'metadata[user_id]': user_id || 'demo-user',
+      'metadata[investment_type]': 'hedge_fund_capital_contribution',
+      'metadata[fund_name]': 'Global Market Consulting Fund',
+      'metadata[amount_usd]': amount.toString(),
+      'metadata[investor_type]': 'qualified_investor',
+      'line_items[0][price_data][currency]': 'usd',
+      'line_items[0][price_data][product_data][name]': 'Investment Capital - Global Market Consulting Fund',
+      'line_items[0][price_data][product_data][description]': `Capital contribution of $${amount.toLocaleString()} to Global Market Consulting quantitative hedge fund`,
+      'line_items[0][price_data][unit_amount]': (amount * 100).toString(), // Convert to cents
+      'line_items[0][quantity]': '1',
+      'payment_intent_data[metadata][user_id]': user_id || 'demo-user',
+      'payment_intent_data[metadata][investment_type]': 'hedge_fund_capital_contribution',
+      'payment_intent_data[metadata][fund_name]': 'Global Market Consulting Fund',
+      'payment_intent_data[metadata][amount_usd]': amount.toString(),
+      'payment_intent_data[description]': `Hedge fund investment - $${amount.toLocaleString()}`
+    })
 
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
@@ -74,7 +61,7 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${stripeSecretKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams(checkoutData as any).toString()
+      body: checkoutParams.toString()
     })
 
     if (!stripeResponse.ok) {
@@ -84,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     const session = await stripeResponse.json()
-    console.log('✅ Checkout session created successfully:', session.id)
+    console.log('✅ Dynamic checkout session created successfully:', session.id)
 
     // Create payment record in database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -101,7 +88,8 @@ Deno.serve(async (req) => {
       metadata: {
         stripe_session_id: session.id,
         investment_type: 'hedge_fund_capital',
-        checkout_url: session.url
+        checkout_url: session.url,
+        dynamic_amount: amount
       }
     }
 
@@ -126,7 +114,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       id: session.id,
-      url: session.url
+      url: session.url,
+      amount: amount
     }), {
       headers: {
         'Content-Type': 'application/json',
@@ -134,7 +123,7 @@ Deno.serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error('Checkout session creation error:', error)
+    console.error('Dynamic checkout session creation error:', error)
     
     return new Response(
       JSON.stringify({ 

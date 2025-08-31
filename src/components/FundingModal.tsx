@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock } from 'lucide-react'
+import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock, Plus, ExternalLink } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { StripeCardForm } from './StripeCardForm'
 
 interface FundingModalProps {
   isOpen: boolean
@@ -28,7 +27,7 @@ const fundingMethods: FundingMethod[] = [
     icon: CreditCard,
     time: 'Instant',
     fee: '2.9% + $0.30',
-    description: 'Instant funding with any major card',
+    description: 'Secure Stripe Checkout - redirects to Stripe',
     minAmount: 100,
     maxAmount: 50000
   },
@@ -53,6 +52,116 @@ const fundingMethods: FundingMethod[] = [
     maxAmount: 1000000
   }
 ]
+
+function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+
+  const handleCheckout = async () => {
+    if (amount < 100) {
+      onError('Minimum investment amount is $100')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      console.log('💳 Creating Stripe checkout session for investment:', amount)
+      
+      // Create checkout session via Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ 
+          amount: amount,
+          user_id: user?.id || 'demo-user',
+          user_email: user?.email || 'demo@globalmarket.com'
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create checkout session')
+      }
+
+      const { url } = await response.json()
+      console.log('✅ Checkout session created, redirecting to Stripe:', url)
+      
+      // Redirect to Stripe Checkout - Stripe handles everything
+      window.location.href = url
+      
+    } catch (error) {
+      console.error('❌ Checkout creation error:', error)
+      onError(error instanceof Error ? error.message : 'Checkout failed')
+      setLoading(false)
+    }
+  }
+
+  const processingFee = amount * 0.029 + 0.30
+  const totalCharge = amount + processingFee
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Secure Stripe Checkout</span>
+          <ExternalLink className="h-4 w-4 text-blue-600" />
+        </div>
+        <p className="text-sm text-blue-700">
+          You'll be redirected to Stripe's secure checkout page to complete your investment. 
+          No card details are stored on our servers.
+        </p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Investment Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total charge:</span>
+            <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Redirecting to Stripe...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Proceed to Secure Checkout
+            <ExternalLink className="h-4 w-4 ml-2" />
+          </>
+        )}
+      </button>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Test Mode:</strong> Use test card 4242 4242 4242 4242 on Stripe's checkout page
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
   const [copied, setCopied] = useState('')
@@ -448,7 +557,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Fund Your Portfolio</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Add Investment Capital</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -491,6 +600,13 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               <div className="flex gap-3 flex-wrap">
                 <button 
                   type="button"
+                  onClick={() => setAmount('1000')}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  $1,000
+                </button>
+                <button 
+                  type="button"
                   onClick={() => setAmount('5000')}
                   className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
                 >
@@ -513,22 +629,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 <button 
                   type="button"
                   onClick={() => setAmount('50000')}
-                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-colors"
                 >
                   $50,000
                 </button>
-                <button 
-                  type="button"
-                  onClick={() => setAmount('100000')}
-                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-colors"
-                >
-                  $100,000+
-                </button>
               </div>
+              
+              <p className="text-xs text-gray-500 mt-2">Minimum: $100 • Maximum varies by payment method</p>
             </div>
             
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Funding Method</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
               <div className="grid gap-4">
                 {fundingMethods.map((method) => {
                   const isAvailable = numericAmount >= method.minAmount && numericAmount <= method.maxAmount
@@ -565,6 +676,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                             </div>
                           )}
                         </div>
+                        {isAvailable && (
+                          <div className="text-blue-600">
+                            <ArrowRight className="h-5 w-5" />
+                          </div>
+                        )}
                       </div>
                     </button>
                   )
@@ -610,14 +726,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         
         <div className="p-6">
           {selectedMethod === 'card' && (
-            <div key={selectedMethod}>
-              <StripeCardForm 
-                amount={numericAmount} 
-                onSuccess={handlePaymentSuccess} 
-                onError={handlePaymentError} 
-                onClose={() => setSelectedMethod(null)}
-              />
-            </div>
+            <DynamicStripeCheckout 
+              amount={numericAmount} 
+              onSuccess={handlePaymentSuccess} 
+              onError={handlePaymentError} 
+            />
           )}
           
           {selectedMethod === 'wire' && (

@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
     const body = await req.text()
     
-    console.log('Received Stripe webhook')
+    console.log('Received Stripe webhook for dynamic investment processing')
     
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -40,11 +40,14 @@ Deno.serve(async (req) => {
         
         const userId = session.metadata?.user_id
         const amount = session.amount_total / 100 // Convert from cents
+        const investmentType = session.metadata?.investment_type
         
         if (!userId) {
           console.error('No user_id in session metadata')
           throw new Error('Missing user ID in session metadata')
         }
+
+        console.log(`💰 Processing investment: $${amount} for user ${userId}`)
 
         // Update payment record
         const paymentUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${session.id}`, {
@@ -85,11 +88,13 @@ Deno.serve(async (req) => {
             amount: amount,
             status: 'completed',
             external_id: session.id,
-            description: `Hedge fund investment - ${session.id}`,
+            description: `Investment capital contribution - $${amount.toLocaleString()}`,
             metadata: {
               stripe_session_id: session.id,
               stripe_payment_intent: session.payment_intent,
-              investment_type: 'hedge_fund_capital'
+              investment_type: investmentType || 'hedge_fund_capital',
+              dynamic_amount: amount,
+              fund_name: session.metadata?.fund_name || 'Global Market Consulting Fund'
             }
           })
         })
@@ -100,7 +105,7 @@ Deno.serve(async (req) => {
           console.log('✅ Transaction record created')
         }
 
-        // Get user's account
+        // Get user's account to update balance
         const accountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
           headers: {
             'apikey': supabaseServiceKey,
@@ -122,7 +127,7 @@ Deno.serve(async (req) => {
           throw new Error('Account not found')
         }
 
-        // Update account balance
+        // Update account balance with dynamic amount
         const newBalance = (account.balance || 0) + amount
         const newAvailableBalance = (account.available_balance || 0) + amount
         const newTotalDeposits = (account.total_deposits || 0) + amount
@@ -148,7 +153,7 @@ Deno.serve(async (req) => {
           throw new Error('Failed to update account balance')
         }
 
-        console.log(`✅ Investment processed successfully: $${amount} for user ${userId}`)
+        console.log(`✅ Dynamic investment processed successfully: $${amount} for user ${userId}`)
         console.log(`New balance: $${newBalance}`)
         break
 
@@ -172,13 +177,21 @@ Deno.serve(async (req) => {
         })
         break
 
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object
+        console.log('Payment intent succeeded:', paymentIntent.id)
+        
+        // Additional processing if needed
+        break
+
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
 
     return new Response(JSON.stringify({ 
       received: true,
-      event_type: event.type 
+      event_type: event.type,
+      processed: true
     }), {
       headers: {
         'Content-Type': 'application/json',
