@@ -12,7 +12,6 @@ import { Performance } from './Performance'
 import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
-import { SupabaseConnectionTest } from './SupabaseConnectionTest'
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
@@ -21,7 +20,6 @@ export function InvestmentPlatform() {
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
-  const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
 
   if (loading) {
     return (
@@ -46,10 +44,6 @@ export function InvestmentPlatform() {
     return <CancelPage />
   }
 
-  // Show test page
-  if (isTestPage) {
-    return <SupabaseConnectionTest />
-  }
 
   // If user is authenticated, show dashboard selector
   if (user) {

@@ -2,79 +2,89 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
-const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '', 
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
+
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
-    name: 'Bolt Integration',
+    name: 'Global Market Consulting',
     version: '1.0.0',
   },
 });
 
-// Helper function to create responses with CORS headers
-function corsResponse(body: string | object | null, status = 200) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
-  };
-
-  // For 204 No Content, don't include Content-Type or body
-  if (status === 204) {
-    return new Response(null, { status, headers });
-  }
-
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
-  });
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 Deno.serve(async (req) => {
   try {
+    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-      return corsResponse({}, 204);
+      return new Response(null, { 
+        status: 204,
+        headers: corsHeaders 
+      });
     }
 
     if (req.method !== 'POST') {
-      return corsResponse({ error: 'Method not allowed' }, 405);
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }), 
+        { 
+          status: 405,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    const { price_id, success_url, cancel_url, mode } = await req.json();
+    // Get request data
+    const { price_id, success_url, cancel_url, mode, amount } = await req.json();
 
-    const error = validateParameters(
-      { price_id, success_url, cancel_url, mode },
-      {
-        cancel_url: 'string',
-        price_id: 'string',
-        success_url: 'string',
-        mode: { values: ['payment', 'subscription'] },
-      },
-    );
-
-    if (error) {
-      return corsResponse({ error }, 400);
+    // Validate required parameters
+    if (!price_id || !success_url || !cancel_url || !mode) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
+    if (!['payment', 'subscription'].includes(mode)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid mode. Must be payment or subscription' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Get authenticated user
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user },
-      error: getUserError,
-    } = await supabase.auth.getUser(token);
+    
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser(token);
 
-    if (getUserError) {
-      return corsResponse({ error: 'Failed to authenticate user' }, 401);
+    if (getUserError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    if (!user) {
-      return corsResponse({ error: 'User not found' }, 404);
-    }
+    console.log('✅ Authenticated user:', user.email);
 
-    const { data: customer, error: getCustomerError } = await supabase
+    // Check if customer exists
+    let { data: customer, error: getCustomerError } = await supabase
       .from('stripe_customers')
       .select('customer_id')
       .eq('user_id', user.id)
@@ -82,146 +92,129 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (getCustomerError) {
-      console.error('Failed to fetch customer information from the database', getCustomerError);
-
-      return corsResponse({ error: 'Failed to fetch customer information' }, 500);
+      console.error('❌ Error fetching customer:', getCustomerError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch customer information' }), 
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    let customerId;
+    let customerId: string;
 
-    /**
-     * In case we don't have a mapping yet, the customer does not exist and we need to create one.
-     */
+    // Create customer if doesn't exist
     if (!customer || !customer.customer_id) {
+      console.log('🆕 Creating new Stripe customer for:', user.email);
+      
       const newCustomer = await stripe.customers.create({
         email: user.email,
         metadata: {
           userId: user.id,
+          platform: 'hedge_fund_web'
         },
       });
 
-      console.log(`Created new Stripe customer ${newCustomer.id} for user ${user.id}`);
+      console.log('✅ Created Stripe customer:', newCustomer.id);
 
-      const { error: createCustomerError } = await supabase.from('stripe_customers').insert({
-        user_id: user.id,
-        customer_id: newCustomer.id,
-      });
-
-      if (createCustomerError) {
-        console.error('Failed to save customer information in the database', createCustomerError);
-
-        // Try to clean up both the Stripe customer and subscription record
-        try {
-          await stripe.customers.del(newCustomer.id);
-          await supabase.from('stripe_subscriptions').delete().eq('customer_id', newCustomer.id);
-        } catch (deleteError) {
-          console.error('Failed to clean up after customer mapping error:', deleteError);
-        }
-
-        return corsResponse({ error: 'Failed to create customer mapping' }, 500);
-      }
-
-      if (mode === 'subscription') {
-        const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
+      // Save customer mapping
+      const { error: createCustomerError } = await supabase
+        .from('stripe_customers')
+        .insert({
+          user_id: user.id,
           customer_id: newCustomer.id,
-          status: 'not_started',
         });
 
-        if (createSubscriptionError) {
-          console.error('Failed to save subscription in the database', createSubscriptionError);
-
-          // Try to clean up the Stripe customer since we couldn't create the subscription
-          try {
-            await stripe.customers.del(newCustomer.id);
-          } catch (deleteError) {
-            console.error('Failed to delete Stripe customer after subscription creation error:', deleteError);
-          }
-
-          return corsResponse({ error: 'Unable to save the subscription in the database' }, 500);
+      if (createCustomerError) {
+        console.error('❌ Failed to save customer mapping:', createCustomerError);
+        
+        // Cleanup Stripe customer
+        try {
+          await stripe.customers.del(newCustomer.id);
+        } catch (deleteError) {
+          console.error('❌ Failed to cleanup Stripe customer:', deleteError);
         }
+
+        return new Response(
+          JSON.stringify({ error: 'Failed to create customer mapping' }), 
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       customerId = newCustomer.id;
-
-      console.log(`Successfully set up new customer ${customerId} with subscription record`);
     } else {
       customerId = customer.customer_id;
-
-      if (mode === 'subscription') {
-        // Verify subscription exists for existing customer
-        const { data: subscription, error: getSubscriptionError } = await supabase
-          .from('stripe_subscriptions')
-          .select('status')
-          .eq('customer_id', customerId)
-          .maybeSingle();
-
-        if (getSubscriptionError) {
-          console.error('Failed to fetch subscription information from the database', getSubscriptionError);
-
-          return corsResponse({ error: 'Failed to fetch subscription information' }, 500);
-        }
-
-        if (!subscription) {
-          // Create subscription record for existing customer if missing
-          const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
-            customer_id: customerId,
-            status: 'not_started',
-          });
-
-          if (createSubscriptionError) {
-            console.error('Failed to create subscription record for existing customer', createSubscriptionError);
-
-            return corsResponse({ error: 'Failed to create subscription record for existing customer' }, 500);
-          }
-        }
-      }
+      console.log('✅ Using existing customer:', customerId);
     }
 
-    // create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // Create checkout session
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ['card'],
-      line_items: [
+      mode: mode as 'payment' | 'subscription',
+      success_url,
+      cancel_url,
+      metadata: {
+        user_id: user.id,
+        user_email: user.email,
+        product_type: 'hedge_fund_investment'
+      }
+    };
+
+    if (mode === 'payment') {
+      // For one-time payments, create line item with custom amount
+      sessionConfig.line_items = [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Investment Amount',
+              description: 'Hedge fund investment contribution',
+              metadata: {
+                product_id: 'investment_amount'
+              }
+            },
+            unit_amount: amount || 10000, // Amount in cents
+          },
+          quantity: 1,
+        },
+      ];
+    } else {
+      // For subscriptions, use the price_id
+      sessionConfig.line_items = [
         {
           price: price_id,
           quantity: 1,
         },
-      ],
-      mode,
-      success_url,
-      cancel_url,
-    });
+      ];
+    }
 
-    console.log(`Created checkout session ${session.id} for customer ${customerId}`);
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    return corsResponse({ sessionId: session.id, url: session.url });
+    console.log('✅ Created checkout session:', session.id);
+
+    return new Response(
+      JSON.stringify({ 
+        sessionId: session.id, 
+        url: session.url 
+      }), 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+
   } catch (error: any) {
-    console.error(`Checkout error: ${error.message}`);
-    return corsResponse({ error: error.message }, 500);
+    console.error('❌ Checkout error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }), 
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
-
-type ExpectedType = 'string' | { values: string[] };
-type Expectations<T> = { [K in keyof T]: ExpectedType };
-
-function validateParameters<T extends Record<string, any>>(values: T, expected: Expectations<T>): string | undefined {
-  for (const parameter in values) {
-    const expectation = expected[parameter];
-    const value = values[parameter];
-
-    if (expectation === 'string') {
-      if (value == null) {
-        return `Missing required parameter ${parameter}`;
-      }
-      if (typeof value !== 'string') {
-        return `Expected parameter ${parameter} to be a string got ${JSON.stringify(value)}`;
-      }
-    } else {
-      if (!expectation.values.includes(value)) {
-        return `Expected parameter ${parameter} to be one of ${expectation.values.join(', ')}`;
-      }
-    }
-  }
-
-  return undefined;
-}

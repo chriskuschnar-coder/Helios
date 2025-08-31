@@ -53,64 +53,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
-    console.log('🔄 AuthProvider initializing with Supabase...')
+    console.log('🔄 AuthProvider initializing...')
     
-    // Check for existing Supabase session
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Check for existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError)
+          setLoading(false)
+          return
+        }
         
         if (session?.user) {
-          console.log('✅ Found Supabase session for:', session.user.email)
-          
-          // Get user data from our users table
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          if (userData && !userError) {
-            setUser({
-              id: userData.id,
-              email: userData.email,
-              full_name: userData.full_name
-            })
-            
-            // Get account data
-            const { data: accountData, error: accountError } = await supabase
-              .from('accounts')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single()
-            
-            if (accountData && !accountError) {
-              setAccount(accountData)
-              console.log('✅ Account loaded:', accountData.balance)
-            }
-
-            // Get subscription data
-            await loadSubscription()
-          }
+          console.log('✅ Found existing session for:', session.user.email)
+          await loadUserData(session.user.id)
         } else {
-          console.log('📱 No Supabase session found')
+          console.log('📱 No existing session found')
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error)
-        // Fall back to localStorage for demo
-        const savedSession = localStorage.getItem('hedge-fund-session')
-        if (savedSession) {
-          try {
-            const session = JSON.parse(savedSession)
-            if (session.user) {
-              setUser(session.user)
-              setAccount(session.account || null)
-              console.log('✅ Fallback to localStorage session')
-            }
-          } catch (e) {
-            localStorage.removeItem('hedge-fund-session')
-          }
-        }
       } finally {
         setLoading(false)
       }
@@ -123,36 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
-        // User signed in
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        
-        if (userData) {
-          setUser({
-            id: userData.id,
-            email: userData.email,
-            full_name: userData.full_name
-          })
-          
-          // Get account
-          const { data: accountData } = await supabase
-            .from('accounts')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single()
-          
-          if (accountData) {
-            setAccount(accountData)
-          }
-
-          // Load subscription
-          await loadSubscription()
-        }
+        console.log('✅ User signed in:', session.user.email)
+        await loadUserData(session.user.id)
       } else {
-        // User signed out
+        console.log('🚪 User signed out')
         setUser(null)
         setAccount(null)
         setSubscription(null)
@@ -161,6 +99,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const loadUserData = async (userId: string) => {
+    try {
+      // Load user profile
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (userError) {
+        console.error('❌ Error loading user data:', userError)
+        return
+      }
+      
+      if (userData) {
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          full_name: userData.full_name
+        })
+        console.log('✅ User data loaded:', userData.email)
+        
+        // Load account data
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+        
+        if (accountError) {
+          console.error('❌ Error loading account data:', accountError)
+        } else if (accountData) {
+          setAccount(accountData)
+          console.log('✅ Account data loaded - Balance:', accountData.balance)
+        }
+
+        // Load subscription data
+        await loadSubscription()
+      }
+    } catch (error) {
+      console.error('❌ Error in loadUserData:', error)
+    }
+  }
 
   const loadSubscription = async () => {
     try {
@@ -173,10 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscription(subscriptionData)
         console.log('✅ Subscription loaded:', subscriptionData.subscription_status)
       } else if (error) {
-        console.error('Error loading subscription:', error)
+        console.error('❌ Error loading subscription:', error)
+      } else {
+        console.log('📭 No subscription found')
       }
     } catch (error) {
-      console.error('Error loading subscription:', error)
+      console.error('❌ Error loading subscription:', error)
     }
   }
 
@@ -192,10 +176,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (accountData && !error) {
         setAccount(accountData)
-        console.log('✅ Account refreshed:', accountData.balance)
+        console.log('✅ Account refreshed - Balance:', accountData.balance)
+      } else {
+        console.error('❌ Error refreshing account:', error)
       }
     } catch (error) {
-      console.error('Error refreshing account:', error)
+      console.error('❌ Error refreshing account:', error)
     }
   }
 
@@ -204,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const processFunding = async (amount: number, method: string, description?: string) => {
-    console.log('💰 Processing funding via Supabase:', { amount, method, user: user?.email })
+    console.log('💰 Processing funding:', { amount, method, user: user?.email })
     
     if (!user || !account) {
       throw new Error('No authenticated user or account')
@@ -225,31 +211,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: method,
           amount: amount,
           status: 'completed',
-          description: description || `${method} deposit`
+          description: description || `${method} deposit`,
+          metadata: {
+            processed_at: new Date().toISOString(),
+            platform: 'hedge_fund_web'
+          }
         })
         .select()
         .single()
 
       if (transactionError) {
-        console.error('Transaction creation error:', transactionError)
+        console.error('❌ Transaction creation error:', transactionError)
         throw new Error('Failed to create transaction record')
       }
 
+      console.log('✅ Transaction created:', transaction.id)
+
       // Update account balance
       const newBalance = account.balance + amount
+      const newTotalDeposits = account.total_deposits + amount
+      
       const { data: updatedAccount, error: updateError } = await supabase
         .from('accounts')
         .update({
           balance: newBalance,
           available_balance: newBalance,
-          total_deposits: account.total_deposits + amount
+          total_deposits: newTotalDeposits,
+          updated_at: new Date().toISOString()
         })
         .eq('id', account.id)
         .select()
         .single()
 
       if (updateError) {
-        console.error('Account update error:', updateError)
+        console.error('❌ Account update error:', updateError)
         throw new Error('Failed to update account balance')
       }
 
@@ -257,36 +252,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccount(updatedAccount)
       
       console.log('✅ Funding processed successfully via Supabase')
-      return { success: true, data: { new_balance: newBalance } }
+      console.log('💰 New balance:', updatedAccount.balance)
+      
+      return { 
+        success: true, 
+        data: { 
+          new_balance: updatedAccount.balance,
+          transaction_id: transaction.id
+        } 
+      }
       
     } catch (error) {
       console.error('❌ Supabase funding error:', error)
-      
-      // Fallback to localStorage for demo
-      console.log('🔄 Falling back to localStorage...')
-      const updatedAccount = {
-        ...account,
-        balance: account.balance + amount,
-        available_balance: account.available_balance + amount,
-        total_deposits: account.total_deposits + amount
-      }
-      
-      setAccount(updatedAccount)
-      
-      // Update localStorage session
-      const savedSession = localStorage.getItem('hedge-fund-session')
-      if (savedSession) {
-        const session = JSON.parse(savedSession)
-        session.account = updatedAccount
-        localStorage.setItem('hedge-fund-session', JSON.stringify(session))
-      }
-      
-      return { success: true, data: { new_balance: updatedAccount.balance } }
+      throw error
     }
   }
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 Attempting Supabase sign in for:', email)
+    console.log('🔐 Attempting sign in for:', email)
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -295,40 +278,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (error) {
-        console.log('❌ Supabase sign in failed:', error.message)
-        
-        // Fallback to demo credentials
-        if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-          const demoUser = {
-            id: 'demo-user',
-            email: email,
-            full_name: 'Demo User'
-          }
-          
-          const demoAccount = {
-            id: 'demo-account',
-            balance: 7850.00,
-            available_balance: 7850.00,
-            total_deposits: 10000.00,
-            total_withdrawals: 2150.00,
-            currency: 'USD',
-            status: 'active'
-          }
-          
-          const demoSession = { user: demoUser, account: demoAccount }
-          localStorage.setItem('hedge-fund-session', JSON.stringify(demoSession))
-          setUser(demoUser)
-          setAccount(demoAccount)
-          
-          console.log('✅ Demo login successful (localStorage fallback)')
-          return { error: null }
-        }
-        
+        console.log('❌ Sign in failed:', error.message)
         return { error: { message: error.message } }
       }
       
-      console.log('✅ Supabase sign in successful')
-      return { error: null }
+      if (data.user) {
+        console.log('✅ Sign in successful for:', data.user.email)
+        // User data will be loaded by the auth state change listener
+        return { error: null }
+      }
+      
+      return { error: { message: 'Sign in failed' } }
       
     } catch (error) {
       console.error('❌ Sign in error:', error)
@@ -337,7 +297,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
-    console.log('📝 Attempting Supabase sign up for:', email)
+    console.log('📝 Attempting sign up for:', email)
     
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -352,12 +312,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (error) {
-        console.log('❌ Supabase sign up failed:', error.message)
+        console.log('❌ Sign up failed:', error.message)
         return { error: { message: error.message } }
       }
       
-      console.log('✅ Supabase sign up successful')
-      return { error: null }
+      if (data.user) {
+        console.log('✅ Sign up successful for:', data.user.email)
+        // Account will be auto-created by trigger
+        return { error: null }
+      }
+      
+      return { error: { message: 'Sign up failed' } }
       
     } catch (error) {
       console.error('❌ Sign up error:', error)
@@ -369,12 +334,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🚪 Signing out...')
     
     try {
-      await supabase.auth.signOut()
-      localStorage.removeItem('hedge-fund-session')
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
-      console.log('✅ Sign out successful')
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('❌ Sign out error:', error)
+      } else {
+        console.log('✅ Sign out successful')
+        setUser(null)
+        setAccount(null)
+        setSubscription(null)
+      }
     } catch (error) {
       console.error('❌ Sign out error:', error)
     }
