@@ -417,7 +417,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         console.log('✅ Demo login successful')
         return { error: null }
-    } else {
+      } else {
         // Check localStorage for registered users
         const storedUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
         const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password)
@@ -457,6 +457,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: { message: 'Invalid email or password' } }
         }
       }
+    }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
