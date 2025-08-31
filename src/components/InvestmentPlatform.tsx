@@ -21,11 +21,16 @@ export function InvestmentPlatform() {
 
   // Check Supabase configuration
   useEffect(() => {
-    const isConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
+    const url = import.meta.env.VITE_SUPABASE_URL
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const isConfigured = !!(url && key && url !== 'https://your-project.supabase.co' && key !== 'your-anon-key')
     setSupabaseConfigured(isConfigured)
     
     if (!isConfigured) {
-      console.log('⚠️ Supabase not configured - please connect to Supabase')
+      console.log('⚠️ Supabase not configured:')
+      console.log('URL:', url || 'Missing')
+      console.log('Key:', key ? 'Present' : 'Missing')
+      console.log('Please click "Connect to Supabase" button')
     }
   }, [])
 
