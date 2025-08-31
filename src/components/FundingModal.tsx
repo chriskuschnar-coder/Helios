@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, CreditCard, Bank, Building, Wallet, Lock, AlertCircle, CheckCircle, Copy, ExternalLink } from 'lucide-react'
+import { X, CreditCard, Ban as Bank, Building, Wallet, Lock, AlertCircle, CheckCircle, Copy, ExternalLink } from 'lucide-react'
 import { StripeCardForm } from './StripeCardForm'
 
 interface FundingModalProps {
