@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { CreditCard, Lock, AlertCircle, Loader2, Shield } from 'lucide-react'
 
@@ -28,11 +28,15 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   
   const [cardNumberError, setCardNumberError] = useState<string | null>(null)
   const [cardExpiryError, setCardExpiryError] = useState<string | null>(null)
-  const [cardCvcError, setCardCvcError] = useState<string | null>(null)
+  const [cardCvcError, setCvcError] = useState<string | null>(null)
 
   // Derived values from single state
   const processingFee = investmentAmount * 0.029 + 0.30
   const totalCharge = investmentAmount + processingFee
+
+  useEffect(() => {
+    console.log('🔍 StripeCardFormInner mounted with Stripe:', !!stripe, 'Elements:', !!elements)
+  }, [stripe, elements])
 
   // Don't render until Stripe is fully ready
   if (!stripe || !elements) {
@@ -49,18 +53,40 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     )
   }
 
-  // Container style for proper iframe mounting
-  const boxStyle: React.CSSProperties = {
-    minHeight: 56,
+  // Container style for proper iframe mounting - CRITICAL for Stripe Elements
+  const containerStyle: React.CSSProperties = {
+    minHeight: '60px',
     display: 'flex',
     alignItems: 'center',
     padding: '12px',
     border: '2px solid #d1d5db',
-    borderRadius: 8,
+    borderRadius: '8px',
     background: '#fff',
     zIndex: 10,
     position: 'relative',
     pointerEvents: 'auto'
+  }
+
+  // Element options - CRITICAL for proper mounting
+  const elementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#333',
+        letterSpacing: '0.5px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        '::placeholder': {
+          color: '#999',
+        },
+      },
+      invalid: {
+        color: '#ff0000'
+      },
+      complete: {
+        color: '#059669'
+      }
+    },
+    disabled: false // CRITICAL - ensure elements are interactive
   }
 
   // Element event handlers
@@ -79,7 +105,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   const handleCardCvcChange = (event: any) => {
     console.log('🔍 Card CVC changed:', { complete: event.complete, error: event.error?.message })
     setCardCvcComplete(event.complete)
-    setCardCvcError(event.error?.message || null)
+    setCvcError(event.error?.message || null)
   }
 
   const handleCardNumberReady = () => {
@@ -221,7 +247,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Card Number Field */}
+        {/* Card Number Field - CRITICAL: Proper container for Stripe iframe */}
         <div>
           <label 
             className="block text-sm font-medium text-gray-700 mb-2"
@@ -231,23 +257,14 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           </label>
           <div 
             style={{
-              ...boxStyle,
+              ...containerStyle,
               borderColor: cardNumberComplete ? '#10b981' : cardNumberError ? '#ef4444' : '#d1d5db'
             }}
           >
             <CardNumberElement 
               options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#333',
-                    letterSpacing: '0.5px',
-                    '::placeholder': { color: '#999' }
-                  },
-                  invalid: { color: '#ff0000' }
-                },
-                placeholder: '4242 4242 4242 4242',
-                disabled: false
+                ...elementOptions,
+                placeholder: '4242 4242 4242 4242'
               }}
               onChange={handleCardNumberChange}
               onReady={handleCardNumberReady}
@@ -269,7 +286,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           )}
         </div>
 
-        {/* Card Expiry Field */}
+        {/* Card Expiry Field - CRITICAL: Proper container for Stripe iframe */}
         <div>
           <label 
             className="block text-sm font-medium text-gray-700 mb-2"
@@ -279,21 +296,12 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           </label>
           <div 
             style={{
-              ...boxStyle,
+              ...containerStyle,
               borderColor: cardExpiryComplete ? '#10b981' : cardExpiryError ? '#ef4444' : '#d1d5db'
             }}
           >
             <CardExpiryElement 
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#333'
-                  },
-                  invalid: { color: '#ff0000' }
-                },
-                disabled: false
-              }}
+              options={elementOptions}
               onChange={handleCardExpiryChange}
               onReady={handleCardExpiryReady}
             />
@@ -314,7 +322,7 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           )}
         </div>
 
-        {/* Card CVC Field */}
+        {/* Card CVC Field - CRITICAL: Proper container for Stripe iframe */}
         <div>
           <label 
             className="block text-sm font-medium text-gray-700 mb-2"
@@ -324,21 +332,12 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
           </label>
           <div 
             style={{
-              ...boxStyle,
+              ...containerStyle,
               borderColor: cardCvcComplete ? '#10b981' : cardCvcError ? '#ef4444' : '#d1d5db'
             }}
           >
             <CardCvcElement 
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#333'
-                  },
-                  invalid: { color: '#ff0000' }
-                },
-                disabled: false
-              }}
+              options={elementOptions}
               onChange={handleCardCvcChange}
               onReady={handleCardCvcReady}
             />

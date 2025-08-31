@@ -559,6 +559,88 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
           </button>
         </div>
         
+              type="number"
+              value={amount}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              className="amount-input"
+              placeholder="Enter amount"
+              min="100"
+              step="100"
+            />
+          </div>
+          
+          <div className="preset-amounts">
+            <button onClick={() => setAmount('5000')}>$5,000</button>
+            <button onClick={() => setAmount('10000')}>$10,000</button>
+            <button onClick={() => setAmount('25000')}>$25,000</button>
+            <button onClick={() => setAmount('50000')}>$50,000</button>
+            <button onClick={() => setAmount('100000')} className="premium">$100,000+</button>
+          </div>
+        </div>
+        
+        <div className="funding-methods">
+          <h3>Select Funding Method</h3>
+          <div className="method-grid">
+            {fundingMethods.map((method) => {
+              const isAvailable = numericAmount >= method.minAmount && numericAmount <= method.maxAmount
+              
+              return (
+                <button 
+                  key={method.id}
+                  className={`method-card ${isAvailable ? '' : 'disabled'}`}
+                  onClick={() => isAvailable && handleMethodSelect(method.id)}
+                  disabled={!isAvailable}
+                >
+                  <div className="method-icon">
+                    <method.icon className="h-6 w-6" />
+                  </div>
+                  <span className="method-name">{method.name}</span>
+                  <span className="method-time">{method.time}</span>
+                  <span className="method-fee">{method.fee}</span>
+                  {!isAvailable && numericAmount > 0 && (
+                    <div className="text-xs text-red-600 mt-1">
+                      ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        
+        <div className="compliance-note">
+          <Shield className="shield-icon" />
+          <p>
+            <strong>Qualified Investor Protection</strong><br/>
+            Your investment is processed through institutional-grade security protocols.
+            All capital transfers are encrypted and comply with SEC regulations.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Payment method form screen
+const selectedMethodData = fundingMethods.find(m => m.id === selectedMethod)!
+const numericAmount = parseFloat(amount)
+
+return (
+  <div className="funding-modal open">
+    <div className="modal-backdrop" onClick={() => setSelectedMethod(null)} />
+    <div className="modal-content">
+      <div className="modal-header">
+        <h2>Add Investment Capital</h2>
+        <div className="flex items-center space-x-2">
+          <selectedMethodData.icon className="h-5 w-5 text-blue-600" />
+          <span>{selectedMethodData.name}</span>
+        </div>
+        <button className="close-btn" onClick={() => setSelectedMethod(null)}>
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      
+      <div style={{ padding: '24px' }}>
         <div style={{ padding: '24px' }}>
           {selectedMethod === 'card' && (
             <StripeCardForm 
