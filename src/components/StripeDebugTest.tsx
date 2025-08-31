@@ -66,11 +66,6 @@ function StripeDebugInner() {
       },
     },
     disabled: false,
-    placeholder: {
-      number: '1234 1234 1234 1234',
-      expiry: 'MM / YY',
-      cvc: 'CVC'
-    }
   }
 
   const handleCardChange = (elementType: string) => (event: any) => {
