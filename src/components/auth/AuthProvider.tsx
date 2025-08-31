@@ -74,6 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Supabase connection verified')
         setConnectionError(null)
         
+        // Additional connection verification
+        console.log('🔍 Testing auth endpoint...')
+        const { data: authTest, error: authError } = await supabaseClient.auth.getSession()
+        
+        if (authError) {
+          console.error('❌ Auth endpoint error:', authError)
+          setConnectionError(`Auth service unavailable: ${authError.message}. Domain may not be whitelisted in Supabase.`)
+          setLoading(false)
+          return
+        }
+        
+        console.log('✅ Auth endpoint working')
+        
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         

@@ -11,8 +11,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 console.log('🔍 Supabase Configuration Check:')
 console.log('URL:', supabaseUrl)
 console.log('Key Present:', supabaseAnonKey ? 'Yes ✅' : 'No ❌')
-console.log('Key Preview:', supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'None')
 console.log('Current Origin:', window.location.origin)
+console.log('Environment:', import.meta.env.MODE)
 
 // Ensure URL is HTTPS for WebContainer environments
 const httpsUrl = supabaseUrl.replace('http://', 'https://')
@@ -51,22 +51,30 @@ export const supabaseClient = createClient(httpsUrl, supabaseAnonKey, {
   global: {
     headers: {
       'apikey': supabaseAnonKey,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Client-Info': 'supabase-js-web'
     },
     fetch: (url, options = {}) => {
       // Enhanced fetch with better error handling
-      console.log('🌐 Making request to:', url)
+      console.log('🌐 Making request to:', url.split('?')[0])
       
       return fetch(url, {
         ...options,
         headers: {
           ...options.headers,
           'Origin': window.location.origin,
-          'Referer': window.location.href
+          'Referer': window.location.href,
+          'User-Agent': 'GlobalMarketConsulting/1.0'
         }
       }).catch(error => {
-        console.error('❌ Fetch error:', error)
-        throw new Error(`Network request failed: ${error.message}`)
+        console.error('❌ Network error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          url: url.split('?')[0],
+          origin: window.location.origin
+        })
+        throw new Error(`Connection failed: ${error.message}. Check CORS settings in Supabase.`)
       })
     }
   },
