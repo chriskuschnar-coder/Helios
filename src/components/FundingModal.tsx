@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock, Plus, ExternalLink } from 'lucide-react'
+import { X, Shield, CreditCard, Building, Wallet, CheckCircle, ArrowRight, Copy, AlertCircle, Lock, Plus } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH')
+import { StripePaymentForm } from './StripePaymentForm'
 
 interface FundingModalProps {
   isOpen: boolean
@@ -282,199 +278,24 @@ function StripeCheckoutRedirect({ amount, onSuccess, onError }: { amount: number
     try {
       console.log('💳 Creating Stripe checkout session for amount:', amount)
       
-      // Create checkout session via Supabase Edge Function
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      // For now, simulate the payment process since Stripe isn't fully configured
+      // In production, this would redirect to Stripe Checkout
       
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Payment system not configured. Please contact support.')
-      }
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`
-        },
-        body: JSON.stringify({ 
-          amount: amount,
-          user_id: user?.id || 'demo-user',
-          user_email: user?.email || 'demo@globalmarket.com'
-        })
+      // Simulate successful payment
+      onSuccess({
+        id: 'demo_payment_' + Date.now(),
+        amount: amount,
+        method: 'stripe_checkout',
+        status: 'completed',
+        message: 'Payment processed successfully (demo mode)'
       })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Checkout session creation failed:', response.status, errorText)
-        
-        let errorMessage = 'Failed to create checkout session'
-        try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error?.message || errorMessage
-        } catch (e) {
-          errorMessage = errorText || errorMessage
-        }
-        
-        throw new Error(errorMessage)
-      }
-
-      const { url } = await response.json()
-      console.log('✅ Checkout session created, redirecting to:', url)
-      
-      // Redirect to Stripe Checkout
-      window.location.href = url
       
     } catch (error) {
       console.error('❌ Checkout creation error:', error)
-      
-      let errorMessage = 'Payment system unavailable'
-      if (error instanceof Error) {
-        if (error.message.includes('fetch')) {
-          errorMessage = 'Unable to connect to payment system. Please check your connection.'
-        } else if (error.message.includes('not configured')) {
-          errorMessage = 'Payment system configuration error. Please contact support.'
-        } else {
-          errorMessage = error.message
-        }
-      }
-      
-      onError(errorMessage)
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Stripe Checkout</span>
-          <ExternalLink className="h-4 w-4 text-blue-600" />
-        </div>
-        <p className="text-sm text-blue-700">
-          Redirects to Stripe's secure checkout page. No card details stored on our servers.
-        </p>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Investment Amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-          <span className="text-gray-600 text-sm">${((amount * 0.029) + 0.30).toFixed(2)}</span>
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">Total charge:</span>
-            <span className="font-bold text-gray-900">${(amount + (amount * 0.029) + 0.30).toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={handleCheckout}
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-      >
-        {loading ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Redirecting to Stripe...
-          </>
-        ) : (
-          <>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Proceed to Stripe Checkout
-            <ExternalLink className="h-4 w-4 ml-2" />
-          </>
-        )}
-      </button>
-      
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-xs text-yellow-700">
-          <strong>Test Mode:</strong> Use test card 4242 4242 4242 4242 on Stripe's checkout page
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-
-  const handleCheckout = async () => {
-    if (amount < 100) {
-      onError('Minimum investment amount is $100')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      console.log('💳 Creating Stripe checkout session for investment:', amount)
-      
-      // Create checkout session via Supabase Edge Function with proper error handling
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
-      
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Supabase configuration missing. Please set up environment variables.')
-      }
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`
-        },
-        body: JSON.stringify({ 
-          amount: amount,
-          user_id: user?.id || 'demo-user',
-          user_email: user?.email || 'demo@globalmarket.com'
-        })
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Checkout session creation failed:', response.status, errorText)
-        
-        let errorMessage = 'Failed to create checkout session'
-        try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error?.message || errorMessage
-        } catch (e) {
-          // If response isn't JSON, use the text
-          errorMessage = errorText || errorMessage
-        }
-        
-        throw new Error(errorMessage)
-      }
-
-      const { url } = await response.json()
-      console.log('✅ Checkout session created, redirecting to Stripe:', url)
-      
-      // Redirect to Stripe Checkout - Stripe handles everything
-      window.location.href = url
-      
-    } catch (error) {
-      console.error('❌ Checkout creation error:', error)
-      
-      // Provide specific error messages
-      let errorMessage = 'Checkout failed'
-      if (error instanceof Error) {
-        if (error.message.includes('fetch')) {
-          errorMessage = 'Unable to connect to payment system. Please check your internet connection and try again.'
-        } else if (error.message.includes('Supabase')) {
-          errorMessage = 'Payment system configuration error. Please contact support.'
-        } else {
-          errorMessage = error.message
-        }
-      }
-      
-      onError(errorMessage)
+      onError('Payment system temporarily unavailable. Please try again later.')
       setLoading(false)
     }
   }
@@ -484,15 +305,14 @@ function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number,
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+      <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
         <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Stripe Checkout</span>
-          <ExternalLink className="h-4 w-4 text-blue-600" />
+          <Shield className="h-5 w-5 text-yellow-600" />
+          <span className="font-medium text-yellow-900">Demo Payment Mode</span>
+          <Lock className="h-4 w-4 text-yellow-600" />
         </div>
-        <p className="text-sm text-blue-700">
-          You'll be redirected to Stripe's secure checkout page to complete your investment. 
-          No card details are stored on our servers.
+        <p className="text-sm text-yellow-700">
+          This is a demo environment. In production, you would be redirected to Stripe's secure checkout page.
         </p>
       </div>
 
@@ -521,25 +341,25 @@ function DynamicStripeCheckout({ amount, onSuccess, onError }: { amount: number,
         {loading ? (
           <>
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Redirecting to Stripe...
+            Processing Demo Payment...
           </>
         ) : (
           <>
             <CreditCard className="h-4 w-4 mr-2" />
-            Proceed to Secure Checkout
-            <ExternalLink className="h-4 w-4 ml-2" />
+            Process Demo Payment - ${amount.toLocaleString()}
           </>
         )}
       </button>
       
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-xs text-yellow-700">
-          <strong>Test Mode:</strong> Use test card 4242 4242 4242 4242 on Stripe's checkout page
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-xs text-blue-700">
+          <strong>Demo Mode:</strong> Payment will be simulated. In production, this redirects to Stripe Checkout.
         </p>
       </div>
     </div>
   )
 }
+
 
 function WireTransferForm({ amount, onSuccess }: { amount: number, onSuccess: (result: any) => void }) {
   const [copied, setCopied] = useState('')
@@ -1104,7 +924,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         
         <div className="p-6">
           {selectedMethod === 'card' && (
-            <StripeCheckoutRedirect 
+            <StripePaymentForm 
               amount={numericAmount} 
               onSuccess={handlePaymentSuccess} 
               onError={handlePaymentError} 
