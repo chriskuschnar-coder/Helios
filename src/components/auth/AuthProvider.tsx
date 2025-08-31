@@ -56,6 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('🔄 AuthProvider initializing...')
+    console.log('Current URL:', window.location.href)
+    console.log('Origin:', window.location.origin)
     
     const initializeAuth = async () => {
       try {
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const connectionWorking = await testSupabaseConnection()
         
         if (!connectionWorking) {
-          setConnectionError('Unable to connect to database. Please check your Supabase configuration.')
+          setConnectionError(`Unable to connect to Supabase database. Origin: ${window.location.origin}`)
           setLoading(false)
           return
         }
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (sessionError) {
           console.error('❌ Session error:', sessionError)
-          setConnectionError(`Session error: ${sessionError.message}`)
+          setConnectionError(`Auth session error: ${sessionError.message}. Check Supabase URL configuration.`)
           setLoading(false)
           return
         }
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error)
-        setConnectionError(`Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}. Check CORS settings in Supabase.`)
       } finally {
         setLoading(false)
       }

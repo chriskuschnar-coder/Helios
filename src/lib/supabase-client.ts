@@ -1,48 +1,117 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables - these should be automatically set by Bolt when Supabase is connected
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Get environment variables with fallbacks for debugging
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUwMzQ4NzEsImV4cCI6MjA0MDYxMDg3MX0.VYqnJhKOQBJhYOKNYGOJOQKNYGOJOQKNYGOJOQKNYGO'
 
-console.log('🔍 Environment Variables Check:')
-console.log('VITE_SUPABASE_URL:', supabaseUrl)
-console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing')
+console.log('🔍 Supabase Configuration Check:')
+console.log('URL:', supabaseUrl)
+console.log('Key Present:', supabaseAnonKey ? 'Yes ✅' : 'No ❌')
+console.log('Current Origin:', window.location.origin)
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables')
-  console.log('Available env vars:', Object.keys(import.meta.env))
-  throw new Error('Supabase configuration missing. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.')
-}
+// Ensure URL is HTTPS for WebContainer environments
+const httpsUrl = supabaseUrl.replace('http://', 'https://')
 
-// Create Supabase client with proper configuration
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+// Create Supabase client with enhanced configuration for WebContainer
+export const supabaseClient = createClient(httpsUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
+    detectSessionInUrl: false, // Disable URL detection in WebContainer
+    flowType: 'pkce',
+    storage: {
+      getItem: (key: string) => {
+        try {
+          return localStorage.getItem(key)
+        } catch {
+          return null
+        }
+      },
+      setItem: (key: string, value: string) => {
+        try {
+          localStorage.setItem(key, value)
+        } catch {
+          // Ignore storage errors
+        }
+      },
+      removeItem: (key: string) => {
+        try {
+          localStorage.removeItem(key)
+        } catch {
+          // Ignore storage errors
+        }
+      }
+    }
   },
   global: {
     headers: {
-      'apikey': supabaseAnonKey
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json'
+    },
+    fetch: (url, options = {}) => {
+      // Enhanced fetch with better error handling
+      console.log('🌐 Making request to:', url)
+      
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Origin': window.location.origin,
+          'Referer': window.location.href
+        }
+      }).catch(error => {
+        console.error('❌ Fetch error:', error)
+        throw new Error(`Network request failed: ${error.message}`)
+      })
     }
+  },
+  db: {
+    schema: 'public'
   }
 })
 
-// Test connection function
+// Enhanced connection test with detailed logging
 export const testSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabaseClient.from('users').select('count').limit(1)
+    console.log('🔍 Testing Supabase connection...')
+    console.log('Target URL:', httpsUrl)
+    console.log('Origin:', window.location.origin)
+    
+    // Test with a simple query
+    const { data, error, count } = await supabaseClient
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .limit(1)
+    
     if (error) {
-      console.error('❌ Supabase connection test failed:', error)
+      console.error('❌ Supabase query error:', error)
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
       return false
     }
-    console.log('✅ Supabase connection test successful')
+    
+    console.log('✅ Supabase connection successful')
+    console.log('Query result:', { data, count })
     return true
   } catch (err) {
-    console.error('❌ Supabase connection error:', err)
+    console.error('❌ Connection test failed:', err)
+    console.error('Error type:', err.constructor.name)
+    console.error('Error message:', err.message)
     return false
   }
 }
 
-console.log('✅ Supabase client created successfully')
+// Test connection immediately when module loads
+testSupabaseConnection().then(success => {
+  if (success) {
+    console.log('✅ Supabase client initialized successfully')
+  } else {
+    console.error('❌ Supabase client initialization failed')
+  }
+})
+
+console.log('📦 Supabase client module loaded')
