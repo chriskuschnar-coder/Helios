@@ -455,10 +455,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           return { error: { message: 'Invalid email or password' } }
         }
-          } else {
+        } else {
+          return { error: { message: 'Invalid email or password' } }
+        }
+      }
+    } else {
       return { error: { message: 'Supabase not configured - please connect to Supabase' } }
     }
-      }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
@@ -543,12 +546,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('auth-user', JSON.stringify(userData))
       setUser(userData)
       setAccount(accountData)
-        } else {
-          return { error: { message: 'Invalid email or password' } }
-        }
-      } else {
-        return { error: { message: 'Supabase not configured - please connect to Supabase' } }
-      }
+      
+      console.log('✅ Fallback signup successful')
+      return { error: null }
+    } else {
+      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
     }
   }
 
