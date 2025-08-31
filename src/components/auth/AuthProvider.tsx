@@ -543,11 +543,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('auth-user', JSON.stringify(userData))
       setUser(userData)
       setAccount(accountData)
-      
-      console.log('✅ Fallback signup successful')
-      return { error: null }
-    } else {
-      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
+        } else {
+          return { error: { message: 'Invalid email or password' } }
+        }
+      } else {
+        return { error: { message: 'Supabase not configured - please connect to Supabase' } }
+      }
     }
   }
 
