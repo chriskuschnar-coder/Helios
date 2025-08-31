@@ -380,8 +380,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     }
   }, [isOpen])
 
-  const handleAmountChange = (value: string) => {
-    const cleanValue = value.replace(/[^0-9.]/g, '')
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cleanValue = e.target.value.replace(/[^0-9.]/g, '')
     setAmount(cleanValue)
   }
 
@@ -422,21 +422,18 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   if (processing) {
     return (
-      <div className="funding-modal open">
-        <div className="modal-backdrop" />
-        <div className="modal-content">
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Processed</h3>
-            <p className="text-gray-600 mb-4">
-              Your funding request has been submitted successfully. 
-              Your account will be updated once the payment is confirmed.
-            </p>
-            <div className="animate-pulse text-sm text-gray-500">
-              Updating your account balance...
-            </div>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Processed</h3>
+          <p className="text-gray-600 mb-4">
+            Your funding request has been submitted successfully. 
+            Your account will be updated once the payment is confirmed.
+          </p>
+          <div className="animate-pulse text-sm text-gray-500">
+            Updating your account balance...
           </div>
         </div>
       </div>
@@ -448,92 +445,143 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     const numericAmount = parseFloat(amount) || 0
 
     return (
-      <div className="funding-modal open">
-        <div className="modal-backdrop" onClick={onClose} />
-        <div className="modal-content">
-          <div className="modal-header">
-            <h2>Fund Your Portfolio</h2>
-            <button className="close-btn" onClick={onClose}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Fund Your Portfolio</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="funding-stats">
-            <div className="stat">
-              <span className="stat-label">Current Capital</span>
-              <span className="stat-value">${(account?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="stat">
-              <span className="stat-label">Available Capital</span>
-              <span className="stat-value">${(account?.available_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="stat">
-              <span className="stat-label">Investor Status</span>
-              <span className="stat-value premium">Qualified</span>
-            </div>
-          </div>
-          
-          <div className="amount-section">
-            <h3>Investment Amount</h3>
-            <div className="amount-input-group">
-              <span className="currency">USD</span>
-              <input 
-                type="number"
-                value={amount}
-                onChange={(e) => handleAmountChange(e.target.value)}
-                className="amount-input"
-                placeholder="Enter amount"
-                min="100"
-                step="100"
-              />
+          <div className="p-6">
+            <div className="grid grid-cols-3 gap-6 mb-8 p-6 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <span className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Current Capital</span>
+                <span className="text-lg font-bold text-gray-900">${(account?.balance || 0).toLocaleString()}</span>
+              </div>
+              <div className="text-center">
+                <span className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Available Capital</span>
+                <span className="text-lg font-bold text-gray-900">${(account?.available_balance || 0).toLocaleString()}</span>
+              </div>
+              <div className="text-center">
+                <span className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Investor Status</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent">Qualified</span>
+              </div>
             </div>
             
-            <div className="preset-amounts">
-              <button onClick={() => setAmount('5000')}>$5,000</button>
-              <button onClick={() => setAmount('10000')}>$10,000</button>
-              <button onClick={() => setAmount('25000')}>$25,000</button>
-              <button onClick={() => setAmount('50000')}>$50,000</button>
-              <button onClick={() => setAmount('100000')} className="premium">$100,000+</button>
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Amount</h3>
+              <div className="relative mb-4">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-lg">$</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  className="w-full pl-8 pr-4 py-4 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xl font-semibold"
+                  placeholder="Enter amount"
+                  min="100"
+                  step="100"
+                />
+              </div>
+              
+              <div className="flex gap-3 flex-wrap">
+                <button 
+                  type="button"
+                  onClick={() => setAmount('5000')}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  $5,000
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setAmount('10000')}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  $10,000
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setAmount('25000')}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  $25,000
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setAmount('50000')}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg bg-white text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  $50,000
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setAmount('100000')}
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-colors"
+                >
+                  $100,000+
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div className="funding-methods">
-            <h3>Select Funding Method</h3>
-            <div className="method-grid">
-              {fundingMethods.map((method) => {
-                const isAvailable = numericAmount >= method.minAmount && numericAmount <= method.maxAmount
-                
-                return (
-                  <button 
-                    key={method.id}
-                    className={`method-card ${isAvailable ? '' : 'disabled'}`}
-                    onClick={() => isAvailable && handleMethodSelect(method.id)}
-                    disabled={!isAvailable}
-                  >
-                    <div className="method-icon">
-                      <method.icon className="h-6 w-6" />
-                    </div>
-                    <span className="method-name">{method.name}</span>
-                    <span className="method-time">{method.time}</span>
-                    <span className="method-fee">{method.fee}</span>
-                    {!isAvailable && numericAmount > 0 && (
-                      <div className="text-xs text-red-600 mt-1">
-                        ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+            
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Funding Method</h3>
+              <div className="grid gap-4">
+                {fundingMethods.map((method) => {
+                  const isAvailable = numericAmount >= method.minAmount && numericAmount <= method.maxAmount
+                  
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => isAvailable && handleMethodSelect(method.id)}
+                      disabled={!isAvailable}
+                      className={`p-4 border rounded-lg text-left transition-colors ${
+                        isAvailable
+                          ? 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                          : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          isAvailable ? 'bg-blue-100' : 'bg-gray-200'
+                        }`}>
+                          <method.icon className={`h-6 w-6 ${
+                            isAvailable ? 'text-blue-600' : 'text-gray-400'
+                          }`} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{method.name}</div>
+                          <div className="text-sm text-gray-600">{method.description}</div>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <span className="text-xs text-gray-500">Fee: {method.fee}</span>
+                            <span className="text-xs text-gray-500">Time: {method.time}</span>
+                          </div>
+                          {!isAvailable && numericAmount > 0 && (
+                            <div className="text-xs text-red-600 mt-1">
+                              Amount must be between ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </button>
-                )
-              })}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-          
-          <div className="compliance-note">
-            <Shield className="shield-icon" />
-            <p>
-              <strong>Qualified Investor Protection</strong><br/>
-              Your investment is processed through institutional-grade security protocols.
-              All capital transfers are encrypted and comply with SEC regulations.
-            </p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 flex items-start space-x-3">
+              <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+              <div>
+                <p className="text-sm text-gray-700">
+                  <strong className="text-gray-900">Qualified Investor Protection</strong><br/>
+                  Your investment is processed through institutional-grade security protocols.
+                  All capital transfers are encrypted and comply with SEC regulations.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -545,21 +593,22 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const numericAmount = parseFloat(amount)
 
   return (
-    <div className="funding-modal open">
-      <div className="modal-backdrop" onClick={() => setSelectedMethod(null)} />
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>Add Investment Capital</h2>
-          <div className="flex items-center space-x-2">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
             <selectedMethodData.icon className="h-5 w-5 text-blue-600" />
-            <span>{selectedMethodData.name}</span>
+            <h3 className="text-lg font-semibold text-gray-900">{selectedMethodData.name}</h3>
           </div>
-          <button className="close-btn" onClick={() => setSelectedMethod(null)}>
+          <button
+            onClick={() => setSelectedMethod(null)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
         
-        <div style={{ padding: '24px' }}>
+        <div className="p-6">
           {selectedMethod === 'card' && (
             <StripeCardForm 
               amount={numericAmount} 
