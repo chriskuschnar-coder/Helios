@@ -17,39 +17,58 @@ interface StripeCardFormProps {
 export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCardFormProps) {
   const [stripe, setStripe] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [initError, setInitError] = useState<string | null>(null)
 
   useEffect(() => {
+    console.log('🔄 StripeCardForm: Starting Stripe initialization...')
+    
     const initializeStripe = async () => {
       try {
+        console.log('📡 Loading Stripe with key:', STRIPE_PUBLISHABLE_KEY.substring(0, 20) + '...')
+        
+        // Wait for Stripe to fully resolve
         const stripeInstance = await loadStripe(STRIPE_PUBLISHABLE_KEY)
+        
+        if (!stripeInstance) {
+          throw new Error('Failed to load Stripe - instance is null')
+        }
+        
+        console.log('✅ Stripe loaded successfully:', stripeInstance)
+        console.log('🔍 Stripe version:', stripeInstance.version || 'Unknown')
+        
+        // Additional delay to ensure Stripe is fully ready
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         setStripe(stripeInstance)
+        console.log('✅ Stripe set in state, ready to render Elements')
+        
       } catch (error) {
-        console.error('Failed to load Stripe:', error)
-        onError('Failed to initialize payment system')
+        console.error('❌ Failed to initialize Stripe:', error)
+        setInitError(error instanceof Error ? error.message : 'Failed to load payment system')
       } finally {
         setLoading(false)
       }
     }
 
     initializeStripe()
-  }, [onError])
+  }, [])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="ml-2 text-gray-600">Loading payment form...</span>
+        <span className="ml-2 text-gray-600">Loading secure payment system...</span>
       </div>
     )
   }
 
-  if (!stripe) {
+  if (initError || !stripe) {
     return (
       <div className="p-6 text-center">
         <div className="text-red-600 mb-4">
           <CreditCard className="h-12 w-12 mx-auto mb-2" />
           <p className="font-medium">Payment system unavailable</p>
-          <p className="text-sm text-gray-600 mt-1">Please try again later</p>
+          <p className="text-sm text-gray-600 mt-1">{initError || 'Failed to load Stripe'}</p>
         </div>
         <button
           onClick={onClose}
@@ -61,6 +80,8 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
     )
   }
 
+  console.log('🎯 Rendering Elements with resolved Stripe instance')
+
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-6 text-center">
@@ -69,10 +90,11 @@ export function StripeCardForm({ amount, onSuccess, onError, onClose }: StripeCa
           <span className="text-sm text-gray-600">Secure Payment</span>
         </div>
         <p className="text-2xl font-bold text-gray-900">
-          ${(amount / 100).toFixed(2)}
+          ${amount.toFixed(2)}
         </p>
       </div>
 
+      {/* Only render Elements after Stripe is fully resolved */}
       <Elements stripe={stripe}>
         <StripeCardFormInner
           amount={amount}
