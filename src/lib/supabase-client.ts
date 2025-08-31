@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 console.log('🔍 DETAILED Environment Variables Check:')
@@ -28,9 +28,16 @@ fetch(`${supabaseUrl}/rest/v1/`, {
   console.error('This confirms WebContainer is blocking external requests')
 })
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ CRITICAL: Missing environment variables!')
-  console.error('Expected: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
+console.log('🔍 Supabase Configuration Check:')
+console.log('URL:', supabaseUrl ? 'Configured ✅' : 'Missing ❌')
+console.log('Anon Key:', supabaseAnonKey ? 'Configured ✅' : 'Missing ❌')
+
+if (!supabaseUrl || supabaseUrl === 'https://your-project.supabase.co') {
+  console.error('❌ Supabase URL not configured')
+}
+
+if (!supabaseAnonKey || supabaseAnonKey === 'your-anon-key') {
+  console.error('❌ Supabase Anon Key not configured')
   console.error('Check your .env file in the project root')
 }
 
@@ -39,7 +46,7 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
     flowType: 'pkce'
   },
   global: {
@@ -50,7 +57,6 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Simple connection test
 export const testSupabaseConnection = async () => {
   try {
     console.log('🔍 DETAILED Testing Supabase connection...')
