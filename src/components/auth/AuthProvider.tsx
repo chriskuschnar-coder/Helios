@@ -347,41 +347,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting sign in for:', email)
     
-    try {
-      // Check if Supabase is available and not in WebContainer
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const isWebContainer = window.location.hostname.includes('webcontainer') || 
-                            window.location.hostname.includes('local-credentialless')
+    // Check if Supabase is available
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                          window.location.hostname.includes('local-credentialless')
+    
+    if (supabaseUrl && supabaseKey) {
+      console.log('🔄 Attempting Supabase authentication...')
       
-      if (supabaseUrl && supabaseKey && !isWebContainer) {
-        console.log('🔄 Attempting Supabase authentication...')
-        
-        try {
-          const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-          })
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        })
 
-          if (error) {
-            throw new Error(error.message)
-          }
+        if (error) {
+          throw new Error(error.message)
+        }
 
-          console.log('✅ Supabase sign in successful')
-          return { error: null }
-        } catch (supabaseError) {
-          console.log('⚠️ Supabase auth failed, using fallback:', supabaseError)
-        }
-      } else {
-        if (isWebContainer) {
-          console.log('🔧 WebContainer mode - using localStorage authentication')
-        } else {
-          console.log('⚠️ Supabase not configured, using localStorage only')
-        }
+        console.log('✅ Supabase sign in successful')
+        return { error: null }
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase auth failed, using localStorage fallback:', supabaseError)
       }
+    } else {
+      if (isWebContainer) {
+        console.log('🔧 WebContainer mode - using localStorage authentication')
+      } else {
+        console.log('⚠️ Supabase not configured, using localStorage only')
+      }
+    }
       
-      // Fallback authentication for WebContainer
-      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
         const demoUser = {
           id: 'demo-user-id',
           email: 'demo@globalmarket.com',
@@ -462,44 +459,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
-    try {
-      // Check if Supabase is available and not in WebContainer
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const isWebContainer = window.location.hostname.includes('webcontainer') || 
-                            window.location.hostname.includes('local-credentialless')
+    // Check if Supabase is available
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const isWebContainer = window.location.hostname.includes('webcontainer') || 
+                          window.location.hostname.includes('local-credentialless')
+    
+    if (supabaseUrl && supabaseKey) {
+      console.log('🔄 Attempting Supabase signup...')
       
-      if (supabaseUrl && supabaseKey && !isWebContainer) {
-        console.log('🔄 Attempting Supabase signup...')
-        
-        try {
-          const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-              data: metadata
-            }
-          })
-
-          if (error) {
-            throw new Error(error.message)
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: metadata
           }
+        })
 
-          console.log('✅ Supabase sign up successful')
-          return { error: null }
-        } catch (supabaseError) {
-          console.log('⚠️ Supabase signup failed, using localStorage fallback:', supabaseError)
+        if (error) {
+          throw new Error(error.message)
         }
-      } else {
-        if (isWebContainer) {
-          console.log('🔧 WebContainer mode - using localStorage for demo')
-        } else {
-          console.log('⚠️ Supabase not configured, using localStorage only')
-        }
+
+        console.log('✅ Supabase sign up successful')
+        return { error: null }
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase signup failed, using localStorage fallback:', supabaseError)
       }
+    } else {
+      if (isWebContainer) {
+        console.log('🔧 WebContainer mode - using localStorage for demo')
+      } else {
+        console.log('⚠️ Supabase not configured, using localStorage only')
+      }
+    }
       
-      // Fallback registration for WebContainer
-      const userId = 'user-' + Date.now()
       const newUser = {
         id: userId,
         email,
