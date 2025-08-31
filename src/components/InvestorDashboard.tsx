@@ -17,7 +17,6 @@ import { CheckoutButton } from './CheckoutButton'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { EmptyPortfolioState } from './EmptyPortfolioState'
 import { NavigationBar } from './NavigationBar'
 import { StripeCheckout } from './StripeCheckout'
 import { SubscriptionStatus } from './SubscriptionStatus'
@@ -152,20 +151,14 @@ export function InvestorDashboard() {
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
-          <>
-            {(!account || account.balance === 0) ? (
-              <EmptyPortfolioState onFundAccount={() => openFunding()} />
-            ) : (
-              <PortfolioValueCard 
-                onFundPortfolio={openFunding}
-                onWithdraw={() => console.log('Withdraw clicked')}
-              />
-            )}
-          </>
+          <PortfolioValueCard 
+            onFundPortfolio={openFunding}
+            onWithdraw={() => console.log('Withdraw clicked')}
+          />
         )}
 
         {/* Performance Summary Cards */}
-        {selectedTopTab === 'portfolio' && account && account.balance > 0 && (
+        {selectedTopTab === 'portfolio' && (
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-2">
@@ -208,7 +201,7 @@ export function InvestorDashboard() {
         )}
 
         {/* Portfolio Performance Chart */}
-        {selectedTopTab === 'portfolio' && account && account.balance > 0 && (
+        {selectedTopTab === 'portfolio' && (
           <PortfolioPerformanceChart 
             currentBalance={account?.balance || 0}
             className="mb-8"
@@ -298,7 +291,7 @@ export function InvestorDashboard() {
         )}
 
         {/* Navigation Tabs */}
-        {selectedTopTab === 'portfolio' && account && account.balance > 0 && (
+        {selectedTopTab === 'portfolio' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
