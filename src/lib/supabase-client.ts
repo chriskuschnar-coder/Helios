@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { supabaseProxyClient } from './supabase-proxy-client'
 
 // Get environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -16,9 +17,9 @@ const isWebContainer = typeof window !== 'undefined' && (
   window.location.hostname.includes('bolt.new')
 )
 
-console.log('🔧 Environment:', isWebContainer ? 'WebContainer (Edge Functions mode)' : 'Standard (Direct mode)')
+console.log('🔧 Environment:', isWebContainer ? 'WebContainer (Proxy mode)' : 'Standard (Direct mode)')
 
-// Create the client - export at top level, assign conditionally
+// Create the client instance
 let clientInstance: any
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -51,8 +52,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
       })
     })
   }
+} else if (isWebContainer) {
+  // Use proxy client for WebContainer environments
+  console.log('🔧 Using Supabase proxy client for WebContainer')
+  clientInstance = supabaseProxyClient
 } else {
-  // Create real Supabase client
+  // Create real Supabase client for standard environments
+  console.log('🔄 Creating direct Supabase client')
   clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
@@ -79,22 +85,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
     }
   })
 
-  // Test connection only if not in WebContainer
-  if (!isWebContainer) {
-    console.log('🔄 Testing direct Supabase connection...')
-    clientInstance.from('users').select('count').limit(1)
-      .then(() => console.log('✅ Direct Supabase connection successful'))
-      .catch((error: any) => {
-        console.error('❌ Direct Supabase connection failed:', error)
-        console.log('💡 This is normal in WebContainer - Edge Functions will handle API calls')
-      })
-  } else {
-    console.log('🔧 WebContainer detected - using Edge Functions for Supabase calls')
-    console.log('📱 For cross-device login, ensure Supabase is connected in Bolt interface')
-  }
-
-  console.log('✅ Supabase client initialized')
+  // Test direct connection
+  console.log('🔄 Testing direct Supabase connection...')
+  clientInstance.from('users').select('count').limit(1)
+    .then(() => console.log('✅ Direct Supabase connection successful'))
+    .catch((error: any) => {
+      console.error('❌ Direct Supabase connection failed:', error)
+    })
 }
+
+console.log('✅ Supabase client initialized')
 
 // Export the client at top level
 export const supabaseClient = clientInstance

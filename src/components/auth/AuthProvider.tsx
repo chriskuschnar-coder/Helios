@@ -66,12 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('🔍 Environment check:')
         console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing')
         console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing')
-        console.log('WebContainer:', isWebContainer ? 'Yes (localStorage mode)' : 'No (Supabase mode)')
+        console.log('WebContainer:', isWebContainer ? 'Yes (proxy mode)' : 'No (direct mode)')
         
         if (supabaseUrl && supabaseKey && !isWebContainer) {
           // Try to get current session from Supabase
           try {
-            console.log('🔄 Attempting Supabase session check...')
+            console.log('🔄 Attempting Supabase connection...')
             const { data: { session }, error } = await supabaseClient.auth.getSession()
             
             if (error) {
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (supabaseError) {
             console.log('⚠️ Supabase session check failed:', supabaseError)
-            console.log('Falling back to localStorage authentication')
+            console.log('🔄 Falling back to localStorage authentication')
           }
         } else {
           if (isWebContainer) {
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Fallback: Check localStorage for existing session
-        const storedUser = localStorage.getItem('auth-user')
+          console.log('🔧 WebContainer environment - using proxy + localStorage for demo')
         const storedAccount = localStorage.getItem('auth-account')
         
         if (storedUser) {
