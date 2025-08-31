@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { CreditCard, Lock, AlertCircle, Loader2, Shield, CheckCircle } from 'lucide-react'
 
 interface StripeCardFormInnerProps {
@@ -16,9 +16,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
   // Single source of truth for investment amount
   const [investmentAmount, setInvestmentAmount] = useState(initialAmount)
   const [loading, setLoading] = useState(false)
-  const [cardReady, setCardReady] = useState(false)
-  const [cardComplete, setCardComplete] = useState(false)
-  const [cardError, setCardError] = useState('')
+  
+  // Track each element's readiness separately
+  const [elementStates, setElementStates] = useState({
+    cardNumber: { ready: false, complete: false, error: null, focused: false },
+    cardExpiry: { ready: false, complete: false, error: null, focused: false },
+    cardCvc: { ready: false, complete: false, error: null, focused: false }
+  })
 
   // Derived values from single state
   const processingFee = investmentAmount * 0.029 + 0.30
@@ -33,12 +37,6 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     
     if (stripe && elements) {
       console.log('✅ Both Stripe and Elements are ready')
-      
-      // Test if CardElement can be retrieved
-      setTimeout(() => {
-        const cardElement = elements.getElement(CardElement)
-        console.log('🧪 CardElement retrieval test:', cardElement)
-      }, 1000)
     }
   }, [stripe, elements])
 
@@ -57,8 +55,8 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     )
   }
 
-  // CardElement options - optimized for interaction
-  const cardElementOptions = {
+  // Shared element options
+  const elementOptions = {
     style: {
       base: {
         fontSize: '16px',
@@ -78,33 +76,58 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         iconColor: '#059669'
       },
     },
-    hidePostalCode: true,
   }
 
-  const handleCardChange = (event: any) => {
-    console.log('🔍 CardElement changed:', {
-      ready: event.ready,
+  // Element event handlers
+  const handleElementChange = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => (event: any) => {
+    console.log(`🔍 ${elementType} changed:`, {
       complete: event.complete,
       error: event.error?.message,
       empty: event.empty,
       brand: event.brand
     })
     
-    setCardError(event.error ? event.error.message : '')
-    setCardComplete(event.complete)
+    setElementStates(prev => ({
+      ...prev,
+      [elementType]: {
+        ...prev[elementType],
+        complete: event.complete,
+        error: event.error?.message || null
+      }
+    }))
   }
 
-  const handleCardReady = () => {
-    console.log('✅ CardElement is ready and mounted - users can now type!')
-    setCardReady(true)
+  const handleElementReady = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
+    console.log(`✅ ${elementType} is ready and mounted - users can now type!`)
+    setElementStates(prev => ({
+      ...prev,
+      [elementType]: {
+        ...prev[elementType],
+        ready: true
+      }
+    }))
   }
 
-  const handleCardFocus = () => {
-    console.log('🔍 CardElement focused')
+  const handleElementFocus = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
+    console.log(`🔍 ${elementType} focused`)
+    setElementStates(prev => ({
+      ...prev,
+      [elementType]: {
+        ...prev[elementType],
+        focused: true
+      }
+    }))
   }
 
-  const handleCardBlur = () => {
-    console.log('🔍 CardElement blurred')
+  const handleElementBlur = (elementType: 'cardNumber' | 'cardExpiry' | 'cardCvc') => () => {
+    console.log(`🔍 ${elementType} blurred`)
+    setElementStates(prev => ({
+      ...prev,
+      [elementType]: {
+        ...prev[elementType],
+        focused: false
+      }
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,13 +138,13 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       return
     }
 
-    const cardElement = elements.getElement(CardElement)
-    if (!cardElement) {
+    const cardNumberElement = elements.getElement(CardNumberElement)
+    if (!cardNumberElement) {
       onError('Card information is required')
       return
     }
 
-    if (!cardComplete) {
+    if (!elementStates.cardNumber.complete || !elementStates.cardExpiry.complete || !elementStates.cardCvc.complete) {
       onError('Please complete all card information')
       return
     }
@@ -153,10 +176,10 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       const { client_secret } = await response.json()
       console.log('✅ Payment intent created, confirming payment...')
 
-      // Confirm payment
+      // Confirm payment using CardNumberElement
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
         payment_method: {
-          card: cardElement,
+          card: cardNumberElement,
         }
       })
 
@@ -189,7 +212,10 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
     setInvestmentAmount(newAmount)
   }
 
-  const isFormValid = cardReady && cardComplete && !cardError && investmentAmount >= 100
+  const allElementsReady = elementStates.cardNumber.ready && elementStates.cardExpiry.ready && elementStates.cardCvc.ready
+  const allElementsComplete = elementStates.cardNumber.complete && elementStates.cardExpiry.complete && elementStates.cardCvc.complete
+  const hasErrors = elementStates.cardNumber.error || elementStates.cardExpiry.error || elementStates.cardCvc.error
+  const isFormValid = allElementsReady && allElementsComplete && !hasErrors && investmentAmount >= 100
 
   return (
     <div className="space-y-6">
@@ -225,38 +251,118 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Single CardElement - handles all card info */}
+        {/* Card Number Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Card Information
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Card Number
           </label>
           <div 
-            className={`border-2 rounded-lg p-4 bg-white transition-colors ${
-              cardComplete ? 'border-green-500' : 
-              cardError ? 'border-red-500' : 
-              'border-gray-300 focus-within:border-blue-500'
+            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
+              elementStates.cardNumber.complete ? 'border-green-500' : 
+              elementStates.cardNumber.error ? 'border-red-500' : 
+              elementStates.cardNumber.focused ? 'border-blue-500' :
+              'border-gray-300'
             }`}
-            style={{ minHeight: '60px' }}
           >
-            <CardElement 
-              options={cardElementOptions}
-              onChange={handleCardChange}
-              onReady={handleCardReady}
-              onFocus={handleCardFocus}
-              onBlur={handleCardBlur}
+            <CardNumberElement 
+              options={elementOptions}
+              onChange={handleElementChange('cardNumber')}
+              onReady={handleElementReady('cardNumber')}
+              onFocus={handleElementFocus('cardNumber')}
+              onBlur={handleElementBlur('cardNumber')}
             />
           </div>
-          
-          {cardError && (
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500">
+              Test: 4242 4242 4242 4242
+            </p>
+            <div className="text-xs text-gray-500">
+              Ready: {elementStates.cardNumber.ready ? '✅' : '❌'} | 
+              Complete: {elementStates.cardNumber.complete ? '✅' : '❌'}
+            </div>
+          </div>
+          {elementStates.cardNumber.error && (
             <div className="mt-2 text-sm text-red-600 flex items-center">
               <AlertCircle className="h-4 w-4 mr-1" />
-              {cardError}
+              {elementStates.cardNumber.error}
             </div>
           )}
-          
-          <p className="text-xs text-gray-500 mt-2">
-            Test card: 4242 4242 4242 4242 with any future date and any 3-digit CVC
-          </p>
+        </div>
+
+        {/* Card Expiry Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Expiry Date
+          </label>
+          <div 
+            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
+              elementStates.cardExpiry.complete ? 'border-green-500' : 
+              elementStates.cardExpiry.error ? 'border-red-500' : 
+              elementStates.cardExpiry.focused ? 'border-blue-500' :
+              'border-gray-300'
+            }`}
+          >
+            <CardExpiryElement 
+              options={elementOptions}
+              onChange={handleElementChange('cardExpiry')}
+              onReady={handleElementReady('cardExpiry')}
+              onFocus={handleElementFocus('cardExpiry')}
+              onBlur={handleElementBlur('cardExpiry')}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500">
+              Test: 12/34
+            </p>
+            <div className="text-xs text-gray-500">
+              Ready: {elementStates.cardExpiry.ready ? '✅' : '❌'} | 
+              Complete: {elementStates.cardExpiry.complete ? '✅' : '❌'}
+            </div>
+          </div>
+          {elementStates.cardExpiry.error && (
+            <div className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {elementStates.cardExpiry.error}
+            </div>
+          )}
+        </div>
+
+        {/* Card CVC Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Security Code (CVC)
+          </label>
+          <div 
+            className={`border-2 rounded-lg p-4 bg-white transition-colors min-h-[60px] flex items-center ${
+              elementStates.cardCvc.complete ? 'border-green-500' : 
+              elementStates.cardCvc.error ? 'border-red-500' : 
+              elementStates.cardCvc.focused ? 'border-blue-500' :
+              'border-gray-300'
+            }`}
+          >
+            <CardCvcElement 
+              options={elementOptions}
+              onChange={handleElementChange('cardCvc')}
+              onReady={handleElementReady('cardCvc')}
+              onFocus={handleElementFocus('cardCvc')}
+              onBlur={handleElementBlur('cardCvc')}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500">
+              Test: 123
+            </p>
+            <div className="text-xs text-gray-500">
+              Ready: {elementStates.cardCvc.ready ? '✅' : '❌'} | 
+              Complete: {elementStates.cardCvc.complete ? '✅' : '❌'}
+            </div>
+          </div>
+          {elementStates.cardCvc.error && (
+            <div className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {elementStates.cardCvc.error}
+            </div>
+          )}
         </div>
 
         {/* Investment Summary */}
@@ -280,19 +386,26 @@ export function StripeCardFormInner({ amount: initialAmount, onSuccess, onError,
         {/* Debug Status Panel */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="text-xs text-blue-700">
-            <div className="flex items-center justify-between mb-2">
-              <span>Card Element Status:</span>
-              <div className="flex items-center">
-                {cardReady ? (
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
-                ) : (
-                  <div className="h-4 w-4 border border-gray-400 rounded-full mr-1" />
-                )}
-                <span>Ready: {cardReady ? 'YES' : 'NO'}</span>
-                <span className="ml-3">Complete: {cardComplete ? 'YES' : 'NO'}</span>
+            <div className="grid grid-cols-3 gap-4 mb-2">
+              <div className="text-center">
+                <div className="font-medium">Card Number</div>
+                <div>Ready: {elementStates.cardNumber.ready ? '✅' : '❌'}</div>
+                <div>Complete: {elementStates.cardNumber.complete ? '✅' : '❌'}</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium">Expiry</div>
+                <div>Ready: {elementStates.cardExpiry.ready ? '✅' : '❌'}</div>
+                <div>Complete: {elementStates.cardExpiry.complete ? '✅' : '❌'}</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium">CVC</div>
+                <div>Ready: {elementStates.cardCvc.ready ? '✅' : '❌'}</div>
+                <div>Complete: {elementStates.cardCvc.complete ? '✅' : '❌'}</div>
               </div>
             </div>
-            <div>Stripe: {stripe ? '✅' : '❌'} | Elements: {elements ? '✅' : '❌'} | Form Valid: {isFormValid ? '✅' : '❌'}</div>
+            <div className="text-center">
+              Stripe: {stripe ? '✅' : '❌'} | Elements: {elements ? '✅' : '❌'} | Form Valid: {isFormValid ? '✅' : '❌'}
+            </div>
           </div>
         </div>
 
