@@ -5,7 +5,7 @@ import { CreditCard, Lock, AlertCircle, CheckCircle, Shield, X, Loader2 } from '
 import { useAuth } from './auth/AuthProvider'
 
 // Use your actual Stripe keys - prioritize hardcoded working keys
-const stripePublishableKey = 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6'
+const stripePublishableKey = 'pk_test_51S25DbFhEA0kH7xcn7HrWHyUNUgJfFaYiYmnAMLhBZeWE1fU9TLhiKKh6bTvJz3LF68E9qAokVRBJMHLWkiPWUR000jCr1fLmH'
 
 console.log('🔍 Stripe Configuration:')
 console.log('Publishable Key:', stripePublishableKey ? 'Loaded ✅' : 'Missing ❌')
