@@ -13,10 +13,38 @@ import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { SystemStatusCheck } from './SystemStatusCheck'
+import { supabaseClient } from '../lib/supabase-client'
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
   const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null)
+
+  // Check Supabase connection on mount
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+          console.log('❌ Supabase environment variables missing')
+          setSupabaseConnected(false)
+          return
+        }
+        
+        // Test connection with a simple query
+        await supabaseClient.from('users').select('count').limit(1)
+        console.log('✅ Supabase connection verified')
+        setSupabaseConnected(true)
+      } catch (error) {
+        console.log('❌ Supabase connection failed:', error)
+        setSupabaseConnected(false)
+      }
+    }
+    
+    checkSupabaseConnection()
+  }, [])
 
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
@@ -36,6 +64,14 @@ export function InvestmentPlatform() {
             <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
           <div className="text-navy-900 text-lg font-medium">Loading...</div>
+          {supabaseConnected === false && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
+              <p className="text-sm text-yellow-700">
+                <strong>Note:</strong> Supabase not connected. Using localStorage for demo.
+                Click "Connect to Supabase" in the top right for cross-device login.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     )

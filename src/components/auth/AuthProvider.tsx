@@ -57,11 +57,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
+        // Check if Supabase is properly configured
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        
+        console.log('🔍 Environment check:')
+        console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing')
+        console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing')
+        
+        if (!supabaseUrl || !supabaseKey) {
+          console.log('⚠️ Supabase not configured, using localStorage only')
+          throw new Error('Supabase not configured')
+        }
+        
         // Try to get current session from Supabase
         try {
-          const { data: { session }, error } = await supabaseProxy.auth.getSession()
+          console.log('🔄 Attempting Supabase session check...')
+          const { data: { session }, error } = await supabaseClient.auth.getSession()
           
           if (error) {
+            console.log('⚠️ Supabase signup error:', error.message)
+            console.log('⚠️ Supabase session error:', error.message)
             throw new Error(error.message)
           }
           
@@ -78,9 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await loadUserSubscription(session.user.id)
             setLoading(false)
             return
+          } else {
+            console.log('📭 No active Supabase session found')
           }
         } catch (supabaseError) {
-          console.log('⚠️ Supabase session check failed, checking localStorage')
+          console.log('⚠️ Supabase session check failed:', supabaseError)
+          console.log('Falling back to localStorage authentication')
         }
         
         // Fallback: Check localStorage for existing session
@@ -112,7 +131,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseProxy.auth.onAuthStateChange(async (event, session) => {
+    let authSubscription: any = null
+    
+    // Only set up auth listener if Supabase is configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
@@ -128,48 +155,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccount(null)
         setSubscription(null)
       }
-    })
+        })
+        authSubscription = subscription
+      } catch (error) {
+        console.log('⚠️ Could not set up Supabase auth listener:', error)
+      }
+    }
 
-    return () => subscription.unsubscribe()
+    return () => {
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+      }
+    }
   }, [])
 
   const loadUserAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabaseProxy
+      console.log('🔄 Loading account for user:', userId)
+      const { data, error } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
         .single()
 
       if (error) {
-        console.error('Error loading account:', error)
+        console.log('⚠️ Supabase account load failed:', error.message)
+        // Try localStorage fallback
+        const accountData = localStorage.getItem(`account-${userId}`)
+        if (accountData) {
+          setAccount(JSON.parse(accountData))
+          console.log('✅ Account loaded from localStorage')
+        }
         return
       }
 
       setAccount(data)
       console.log('✅ Account loaded:', data)
     } catch (error) {
-      console.error('Account loading error:', error)
+      console.log('⚠️ Account loading error, using localStorage fallback:', error)
+      const accountData = localStorage.getItem(`account-${userId}`)
+      if (accountData) {
+        setAccount(JSON.parse(accountData))
+        console.log('✅ Account loaded from localStorage fallback')
+      }
     }
   }
 
   const loadUserSubscription = async (userId: string) => {
     try {
-      const { data, error } = await supabaseProxy
+      const { data, error } = await supabaseClient
         .from('stripe_user_subscriptions')
         .select('*')
         .eq('customer_id', userId)
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading subscription:', error)
+        console.log('⚠️ Subscription load failed:', error.message)
         return
       }
 
       setSubscription(data)
       console.log('✅ Subscription loaded:', data)
     } catch (error) {
-      console.error('Subscription loading error:', error)
+      console.log('⚠️ Subscription loading error:', error)
     }
   }
 
@@ -198,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Create transaction record
-      const { data: transaction, error: transactionError } = await supabaseProxy
+      const { data: transaction, error: transactionError } = await supabaseClient
         .from('transactions')
         .insert({
           user_id: user.id,
@@ -216,12 +264,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (transactionError) {
+        console.log('⚠️ Supabase transaction creation failed:', transactionError.message)
         throw new Error('Failed to create transaction record')
       }
 
       // Update account balance
       if (account) {
-        const { error: updateError } = await supabaseProxy
+        const { error: updateError } = await supabaseClient
           .from('accounts')
           .update({
             balance: account.balance + amount,
@@ -259,9 +308,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      // Try Supabase auth first
+      // Check if Supabase is available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (supabaseUrl && supabaseKey) {
+        console.log('🔄 Attempting Supabase authentication...')
+        
       try {
-        const { data, error } = await supabaseProxy.auth.signInWithPassword({
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
           email,
           password
         })
@@ -307,11 +362,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           
           console.log('✅ Demo login successful')
+            console.log('⚠️ Supabase auth error:', error.message)
           return { error: null }
         } else {
-          // Check for other stored users
+          console.log('⚠️ Supabase auth failed, using localStorage fallback:', supabaseError)
+        }
+      } else {
+        console.log('⚠️ Supabase not configured, using localStorage only')
+      }
           const storedUsers = JSON.parse(localStorage.getItem('registered-users') || '[]')
-          const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password)
+      // Fallback authentication for WebContainer
           
           if (foundUser) {
             const userData = {
@@ -359,9 +419,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
-      // Try Supabase auth first
+      // Check if Supabase is available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (supabaseUrl && supabaseKey) {
+        console.log('🔄 Attempting Supabase signup...')
+        
       try {
-        const { data, error } = await supabaseProxy.auth.signUp({
+          const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
           options: {
@@ -376,9 +442,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Supabase sign up successful')
         return { error: null }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase signup failed, using fallback:', supabaseError)
+          console.log('⚠️ Supabase signup failed, using localStorage fallback:', supabaseError)
+        }
+      } else {
+        console.log('⚠️ Supabase not configured, using localStorage only')
+      }
         
-        // Fallback registration for WebContainer
+      // Fallback registration for WebContainer
         const userId = 'user-' + Date.now()
         const newUser = {
           id: userId,
@@ -435,12 +505,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🚪 Signing out...')
     
     try {
-      // Try Supabase signout first
+      // Try Supabase signout if available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (supabaseUrl && supabaseKey) {
       try {
-        const { error } = await supabaseProxy.auth.signOut()
+          const { error } = await supabaseClient.auth.signOut()
         if (error) {
           console.error('Supabase sign out error:', error)
         }
+      }
       } catch (supabaseError) {
         console.log('⚠️ Supabase signout failed, using fallback')
       }
