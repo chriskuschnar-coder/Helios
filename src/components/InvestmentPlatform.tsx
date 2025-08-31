@@ -21,7 +21,7 @@ export function InvestmentPlatform() {
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
-  const isTestPage = window.location.pathname === '/test' || window.location.search.includes('test=true')
+  const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
 
   if (loading) {
     return (

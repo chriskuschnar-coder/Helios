@@ -20,10 +20,16 @@ export function SupabaseConnectionTest() {
   const runTests = async () => {
     const testResults: TestResult[] = []
 
+    console.log('🧪 Running Supabase connection tests...')
+
     // Test 1: Environment Variables
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+    console.log('Environment check:', { 
+      url: supabaseUrl ? 'Set' : 'Missing', 
+      key: supabaseKey ? 'Set' : 'Missing' 
+    })
     if (supabaseUrl && supabaseKey) {
       testResults.push({
         name: 'Environment Variables',
@@ -42,12 +48,14 @@ export function SupabaseConnectionTest() {
 
     // Test 2: Database Connection
     try {
+      console.log('🔍 Testing database connection...')
       const { data, error } = await supabase
         .from('users')
         .select('count')
         .limit(1)
 
       if (error) {
+        console.error('Database connection error:', error)
         testResults.push({
           name: 'Database Connection',
           status: 'error',
@@ -55,6 +63,7 @@ export function SupabaseConnectionTest() {
           details: error.message
         })
       } else {
+        console.log('✅ Database connection successful')
         testResults.push({
           name: 'Database Connection',
           status: 'success',
@@ -62,6 +71,7 @@ export function SupabaseConnectionTest() {
         })
       }
     } catch (err) {
+      console.error('Database connection exception:', err)
       testResults.push({
         name: 'Database Connection',
         status: 'error',
@@ -72,6 +82,7 @@ export function SupabaseConnectionTest() {
 
     // Test 3: Authentication System
     try {
+      console.log('🔐 Testing authentication system...')
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session) {
@@ -100,6 +111,7 @@ export function SupabaseConnectionTest() {
 
     // Test 4: Edge Functions
     try {
+      console.log('⚡ Testing edge functions...')
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'OPTIONS'
       })
@@ -129,6 +141,8 @@ export function SupabaseConnectionTest() {
 
     // Test 5: Stripe Configuration
     const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+    console.log('💳 Checking Stripe configuration...')
+    
     if (stripePublishableKey) {
       testResults.push({
         name: 'Stripe Configuration',
@@ -145,6 +159,7 @@ export function SupabaseConnectionTest() {
       })
     }
 
+    console.log('🧪 All tests completed:', testResults)
     setTests(testResults)
     setLoading(false)
   }
