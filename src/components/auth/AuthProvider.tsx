@@ -58,6 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔄 AuthProvider initializing...')
     console.log('Current URL:', window.location.href)
     console.log('Origin:', window.location.origin)
+    console.log('Environment check:')
+    console.log('- VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL)
+    console.log('- VITE_SUPABASE_ANON_KEY present:', !!import.meta.env.VITE_SUPABASE_ANON_KEY)
+    console.log('- Key length:', import.meta.env.VITE_SUPABASE_ANON_KEY?.length || 0)
     
     const initializeAuth = async () => {
       try {

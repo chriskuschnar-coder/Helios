@@ -9,7 +9,24 @@ console.log('VITE_SUPABASE_URL:', supabaseUrl)
 console.log('VITE_SUPABASE_ANON_KEY length:', supabaseAnonKey?.length || 0)
 console.log('VITE_SUPABASE_ANON_KEY preview:', supabaseAnonKey?.substring(0, 50) + '...')
 console.log('Current Origin:', window.location.origin)
-console.log('All env vars:', import.meta.env)
+
+// Test direct fetch to Supabase
+console.log('🌐 Testing direct fetch to Supabase...')
+fetch(`${supabaseUrl}/rest/v1/`, {
+  headers: { 
+    "apikey": supabaseAnonKey,
+    "Authorization": `Bearer ${supabaseAnonKey}`
+  }
+})
+.then(res => {
+  console.log('✅ Direct fetch successful:', res.status, res.statusText)
+  return res.text()
+})
+.then(text => console.log('📄 Response:', text.substring(0, 200)))
+.catch(err => {
+  console.error('❌ Direct fetch failed:', err)
+  console.error('This confirms WebContainer is blocking external requests')
+})
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ CRITICAL: Missing environment variables!')
