@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import { supabase } from '../../lib/supabase'
 
 interface User {
   id: string
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Get current session from Supabase
-        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Session error:', error)
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('✅ Found Supabase session for:', session.user.email)
           
           // Get user profile from users table
-          const { data: userData, error: userError } = await supabaseClient
+          const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
@@ -102,12 +102,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
         // Get user profile
-        const { data: userData, error: userError } = await supabaseClient
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserSubscription = async (userId: string) => {
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
         .eq('customer_id', userId)
@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Get user's account
-      const { data: accountData, error: accountError } = await supabaseClient
+      const { data: accountData, error: accountError } = await supabase
         .from('accounts')
         .select('*')
         .eq('user_id', user.id)
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Create transaction record
-      const { data: transaction, error: transactionError } = await supabaseClient
+      const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
@@ -232,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Update account balance
-      const { error: updateError } = await supabaseClient
+      const { error: updateError } = await supabase
         .from('accounts')
         .update({
           balance: accountData.balance + amount,
@@ -270,7 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🔐 Attempting sign in for:', email)
     
     try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
@@ -292,7 +292,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 Attempting sign up for:', email)
     
     try {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -317,7 +317,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('🚪 Signing out...')
     
     try {
-      const { error } = await supabaseClient.auth.signOut()
+      const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
       }
