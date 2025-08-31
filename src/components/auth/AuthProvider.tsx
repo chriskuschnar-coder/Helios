@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, testSupabaseConnection } from '../../lib/supabase'
 
 interface User {
   id: string
@@ -36,6 +36,7 @@ interface AuthContextType {
   loading: boolean
   account: Account | null
   subscription: Subscription | null
+  connectionError: string | null
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
@@ -51,59 +52,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
   useEffect(() => {
     console.log('🔄 AuthProvider initializing...')
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing')
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing')
     
     const initializeAuth = async () => {
       try {
-        // Check if Supabase is properly configured
-        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-          console.error('❌ Supabase environment variables not configured')
-          console.log('Please click "Connect to Supabase" in the top right corner')
+        // Test Supabase connection first
+        console.log('🔍 Testing Supabase connection...')
+        const connectionWorking = await testSupabaseConnection()
+        
+        if (!connectionWorking) {
+          setConnectionError('Unable to connect to database. Please check your Supabase configuration.')
           setLoading(false)
           return
         }
+
+        console.log('✅ Supabase connection verified')
+        setConnectionError(null)
         
-        // Get current session from Supabase
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // Get current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
-        if (error) {
-          console.error('❌ Session error:', error)
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError)
+          setConnectionError(`Session error: ${sessionError.message}`)
           setLoading(false)
           return
         }
         
         if (session?.user) {
-          console.log('✅ Found Supabase session for:', session.user.email)
-          
-          // Get user profile from users table
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          if (userError) {
-            console.error('Error fetching user profile:', userError)
-            setLoading(false)
-            return
-          }
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            full_name: userData.full_name
-          })
-          
-          // Load user account and subscription
-          await loadUserAccount(session.user.id)
-          await loadUserSubscription(session.user.id)
+          console.log('✅ Found existing session for:', session.user.email)
+          await loadUserData(session.user)
+        } else {
+          console.log('📭 No existing session found')
         }
       } catch (error) {
-        console.error('Auth initialization error:', error)
+        console.error('❌ Auth initialization error:', error)
+        setConnectionError(`Initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       } finally {
         setLoading(false)
       }
@@ -116,22 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔄 Auth state changed:', event)
       
       if (session?.user) {
-        // Get user profile
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        
-        if (!userError && userData) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            full_name: userData.full_name
-          })
-          await loadUserAccount(session.user.id)
-          await loadUserSubscription(session.user.id)
-        }
+        await loadUserData(session.user)
       } else {
         setUser(null)
         setAccount(null)
@@ -142,6 +114,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const loadUserData = async (authUser: any) => {
+    try {
+      // Get user profile from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+      
+      if (userError) {
+        console.error('❌ Error fetching user profile:', userError)
+        return
+      }
+      
+      setUser({
+        id: authUser.id,
+        email: authUser.email!,
+        full_name: userData?.full_name
+      })
+      
+      // Load user account and subscription
+      await loadUserAccount(authUser.id)
+      await loadUserSubscription(authUser.id)
+    } catch (error) {
+      console.error('❌ Error loading user data:', error)
+    }
+  }
+
   const loadUserAccount = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -151,14 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error loading account:', error)
+        console.error('❌ Error loading account:', error)
         return
       }
 
       setAccount(data)
       console.log('✅ Account loaded:', data)
     } catch (error) {
-      console.error('Account loading error:', error)
+      console.error('❌ Account loading error:', error)
     }
   }
 
@@ -171,14 +171,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading subscription:', error)
+        console.error('❌ Error loading subscription:', error)
         return
       }
 
       setSubscription(data)
       console.log('✅ Subscription loaded:', data)
     } catch (error) {
-      console.error('Subscription loading error:', error)
+      console.error('❌ Subscription loading error:', error)
     }
   }
 
@@ -237,7 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (transactionError) {
-        console.error('Transaction error:', transactionError)
+        console.error('❌ Transaction error:', transactionError)
         throw new Error('Failed to create transaction record')
       }
 
@@ -252,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', accountData.id)
 
       if (updateError) {
-        console.error('Update error:', updateError)
+        console.error('❌ Update error:', updateError)
         throw new Error('Failed to update account balance')
       }
 
@@ -329,7 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) {
-        console.error('Sign out error:', error)
+        console.error('❌ Sign out error:', error)
       }
       
       setUser(null)
@@ -338,7 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('✅ Sign out successful')
     } catch (err) {
-      console.error('Sign out error:', err)
+      console.error('❌ Sign out error:', err)
     }
   }
 
@@ -347,6 +347,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     account,
     subscription,
+    connectionError,
     refreshAccount,
     refreshSubscription,
     processFunding,
