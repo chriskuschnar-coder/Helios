@@ -549,6 +549,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'Supabase not configured - please connect to Supabase' } }
     }
   }
+  }
+
+  const signOut = async () => {
+    console.log('🚪 Signing out...')
+    
+    try {
+      // Try Supabase signout if available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (supabaseUrl && supabaseKey) {
+        try {
+          const { error } = await supabaseClient.auth.signOut()
+          if (error) {
+            console.error('Supabase sign out error:', error)
+          }
+        } catch (supabaseError) {
+          console.log('⚠️ Supabase signout failed, using fallback')
+        }
+      }
+      
+      // Clear local storage
+      localStorage.removeItem('auth-user')
+      localStorage.removeItem('auth-account')
+      
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      
+      console.log('✅ Sign out successful')
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
+  }
+
+  const value = {
+    user,
+    loading,
+    account,
+    subscription,
+    refreshAccount,
+    refreshSubscription,
+    processFunding,
+    signIn,
+    signUp,
+    signOut
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
 
   const signOut = async () => {
     console.log('🚪 Signing out...')
