@@ -175,6 +175,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 signIn called:', { email, password: '***' })
     
+    // Check if we have valid Supabase config
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn('⚠️ Missing Supabase config, using demo mode')
+      
+      // Demo mode fallback
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        console.log('✅ Demo login successful')
+        setUser({
+          id: 'demo-user-id',
+          email: 'demo@globalmarket.com',
+          full_name: 'Demo User'
+        })
+        setAccount({
+          id: 'demo-account-id',
+          balance: 7850,
+          available_balance: 7850,
+          total_deposits: 8000,
+          total_withdrawals: 150,
+          currency: 'USD',
+          status: 'active'
+        })
+        return { error: null }
+      } else {
+        return { error: { message: 'Demo mode: Use demo@globalmarket.com / demo123456' } }
+      }
+    }
+    
     try {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
@@ -200,7 +230,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'No user returned' } }
     } catch (err) {
       console.error('❌ Sign in failed:', err)
-      return { error: { message: 'Connection error' } }
+      
+      // Fallback to demo mode if Supabase fails
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        console.log('✅ Fallback demo login successful')
+        setUser({
+          id: 'demo-user-id',
+          email: 'demo@globalmarket.com',
+          full_name: 'Demo User'
+        })
+        setAccount({
+          id: 'demo-account-id',
+          balance: 7850,
+          available_balance: 7850,
+          total_deposits: 8000,
+          total_withdrawals: 150,
+          currency: 'USD',
+          status: 'active'
+        })
+        return { error: null }
+      }
+      
+      return { error: { message: 'Connection error - try demo credentials' } }
     }
   }
 
