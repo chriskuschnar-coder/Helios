@@ -1,397 +1,52 @@
-// Enhanced Supabase client that works in deployed environments
-// Uses Edge Functions to handle auth and database operations
+import { createClient } from '@supabase/supabase-js'
 
-interface SupabaseResponse<T = any> {
-  data: T | null
-  error: any
-  success: boolean
+// Get environment variables with detailed logging
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+console.log('🔍 SUPABASE CLIENT - Environment Check:')
+console.log('🔍 VITE_SUPABASE_URL:', supabaseUrl)
+console.log('🔍 VITE_SUPABASE_ANON_KEY present:', !!supabaseAnonKey)
+console.log('🔍 All env vars:', import.meta.env)
+
+// Check if we're missing environment variables
+const hasValidConfig = supabaseUrl && supabaseAnonKey && 
+  supabaseUrl.includes('supabase.co') && 
+  supabaseAnonKey.length > 100
+
+console.log('🔍 Has valid Supabase config:', hasValidConfig)
+
+if (!hasValidConfig) {
+  console.warn('⚠️ CRITICAL: Missing or invalid Supabase environment variables')
+  console.warn('⚠️ This will cause "Failed to fetch" errors')
+  console.warn('⚠️ URL:', supabaseUrl)
+  console.warn('⚠️ Key present:', !!supabaseAnonKey)
+  console.warn('⚠️ Key length:', supabaseAnonKey?.length || 0)
 }
 
-class DeployedSupabaseClient {
-  private edgeFunctionUrl: string
-  private anonKey: string
-  private session: any = null
-  private isWebContainer: boolean
-
-  constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-    
-    this.isWebContainer = window?.location?.hostname?.includes('webcontainer') || 
-                         window?.location?.hostname?.includes('stackblitz') ||
-                         window?.location?.hostname?.includes('bolt') || false
-    
-    if (!supabaseUrl || !anonKey) {
-      console.warn('Missing Supabase environment variables - using demo mode')
-      this.edgeFunctionUrl = ''
-      this.anonKey = ''
-      this.isWebContainer = true
-      return
-    }
-    
-    this.edgeFunctionUrl = `${supabaseUrl}/functions/v1/hedge-fund-api`
-    this.anonKey = anonKey
-    this.isWebContainer = window.location.hostname.includes('webcontainer') || 
-                         window.location.hostname.includes('stackblitz') ||
-                         window.location.hostname.includes('bolt')
-    
-    console.log('🔍 Supabase client initialized with Edge Function URL:', this.edgeFunctionUrl)
-    
-    // Try to restore session from localStorage
-    const savedSession = localStorage.getItem('supabase-session')
-    if (savedSession) {
-      try {
-        this.session = JSON.parse(savedSession)
-        console.log('📱 Restored session from localStorage')
-      } catch (e) {
-        console.log('❌ Invalid session in localStorage, clearing')
-        localStorage.removeItem('supabase-session')
-      }
+// Create the Supabase client with fallback values
+export const supabaseClient = createClient(
+  supabaseUrl || 'https://upevugqarcvxnekzddeh.supabase.co',
+  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
     }
   }
+)
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
-    // If in WebContainer or missing config, use demo mode
-    if (this.isWebContainer || !this.edgeFunctionUrl) {
-      return this.handleDemoMode(endpoint, options)
-    }
+console.log('✅ Supabase client created')
 
-    const url = `${this.edgeFunctionUrl}/${endpoint}`
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      'apikey': this.anonKey,
-      ...(this.session?.access_token && {
-        'Authorization': `Bearer ${this.session.access_token}`
-      }),
-      ...options.headers,
-    }
-
-    try {
-      console.log(`🔄 Making request to: ${url}`)
-      console.log('📋 Headers:', { ...headers, apikey: '[HIDDEN]', Authorization: this.session?.access_token ? '[TOKEN]' : 'None' })
-      
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      })
-
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`❌ HTTP Error ${response.status}:`, errorText)
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log(`✅ Response from ${endpoint}:`, result)
-      
-      return result
-    } catch (error) {
-      console.error(`❌ Request to ${endpoint} failed:`, error)
-      
-      // Provide more specific error information
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        return {
-          data: null,
-          error: { 
-            message: 'WebContainer network restriction - Edge Function cannot be reached',
-            details: error.message,
-            suggestion: 'This is expected in WebContainer. Download and run locally for full functionality.'
-          },
-          success: false
-        }
-      }
-      
-      return {
-        data: null,
-        error: { message: error.message || 'Unknown error' },
-        success: false
-      }
-    }
+// Test the connection immediately
+supabaseClient.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error('❌ Supabase connection test failed:', error)
+  } else {
+    console.log('✅ Supabase connection test successful')
   }
+}).catch(err => {
+  console.error('❌ Supabase connection test error:', err)
+})
 
-  private async handleDemoMode(endpoint: string, options: RequestInit = {}): Promise<SupabaseResponse> {
-    console.log('🎭 Using demo mode for:', endpoint)
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    if (endpoint === 'test-connection') {
-      return {
-        data: { message: 'Demo mode - connection simulated' },
-        error: null,
-        success: true
-      }
-    }
-    
-    if (endpoint === 'auth/signin') {
-      const body = JSON.parse(options.body as string || '{}')
-      const { email, password } = body
-      
-      // Demo credentials
-      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-        const demoSession = {
-          user: { id: 'demo-user', email: email },
-          access_token: 'demo-token'
-        }
-        this.session = demoSession
-        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
-        
-        return {
-          data: { user: demoSession.user, session: demoSession },
-          error: null,
-          success: true
-        }
-      } else {
-        return {
-          data: null,
-          error: { message: 'Invalid credentials. Use demo@globalmarket.com / demo123456' },
-          success: false
-        }
-      }
-    }
-    
-    if (endpoint === 'auth/signup') {
-      const body = JSON.parse(options.body as string || '{}')
-      const { email } = body
-      
-      const newUser = {
-        user: { id: 'new-user-' + Date.now(), email: email },
-        access_token: 'new-user-token'
-      }
-      this.session = newUser
-      localStorage.setItem('supabase-session', JSON.stringify(newUser))
-      
-      return {
-        data: { user: newUser.user, session: newUser },
-        error: null,
-        success: true
-      }
-    }
-    
-    if (endpoint === 'auth/signout') {
-      this.session = null
-      localStorage.removeItem('supabase-session')
-      return {
-        data: null,
-        error: null,
-        success: true
-      }
-    }
-    
-    // Default demo response
-    return {
-      data: { message: 'Demo mode active' },
-      error: null,
-      success: true
-    }
-  }
-
-  // Test connection
-  async testConnection(): Promise<SupabaseResponse> {
-    return this.makeRequest('test-connection')
-  }
-
-  // Auth methods
-  auth = {
-    signInWithPassword: async (credentials: { email: string; password: string }): Promise<SupabaseResponse> => {
-      console.log('🔐 Attempting sign in for:', credentials.email)
-      
-      const result = await this.makeRequest('auth/signin', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      })
-      
-      if (result.success && result.data?.session) {
-        this.session = result.data.session
-        localStorage.setItem('supabase-session', JSON.stringify(this.session))
-        console.log('✅ Sign in successful, session saved')
-      } else {
-        console.log('❌ Sign in failed:', result.error)
-      }
-      
-      return result
-    },
-
-    signUp: async (credentials: { email: string; password: string; options?: any }): Promise<SupabaseResponse> => {
-      console.log('📝 Attempting sign up for:', credentials.email)
-      
-      return this.makeRequest('auth/signup', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password,
-          metadata: credentials.options?.data,
-        }),
-      })
-    },
-
-    signOut: async (): Promise<SupabaseResponse> => {
-      console.log('🚪 Signing out...')
-      
-      const result = await this.makeRequest('auth/signout', {
-        method: 'POST',
-      })
-      
-      if (result.success) {
-        this.session = null
-        localStorage.removeItem('supabase-session')
-        console.log('✅ Sign out successful')
-      }
-      
-      return result
-    },
-
-    getSession: async () => {
-      return { 
-        data: { session: this.session }, 
-        error: null 
-      }
-    },
-
-    getUser: async () => {
-      if (!this.session) {
-        return { data: { user: null }, error: null }
-      }
-      
-      return { 
-        data: { user: this.session.user }, 
-        error: null 
-      }
-    },
-
-    onAuthStateChange: (callback: (event: string, session: any) => void) => {
-      // Simplified auth state management
-      return { 
-        data: { 
-          subscription: { 
-            unsubscribe: () => console.log('🔇 Auth listener unsubscribed') 
-          } 
-        } 
-      }
-    }
-  }
-
-  // Table operations
-  from(table: string) {
-    return {
-      select: (columns: string = '*') => ({
-        eq: (column: string, value: any) => ({
-          single: async (): Promise<SupabaseResponse> => {
-            return this.makeRequest(`${table}?${column}=eq.${value}&select=${columns}&single=true`)
-          },
-          limit: async (count: number): Promise<SupabaseResponse> => {
-            return this.makeRequest(`${table}?${column}=eq.${value}&select=${columns}&limit=${count}`)
-          }
-        }),
-        limit: async (count: number): Promise<SupabaseResponse> => {
-          return this.makeRequest(`${table}?select=${columns}&limit=${count}`)
-        },
-        order: (column: string, options: { ascending: boolean }) => ({
-          limit: async (count: number): Promise<SupabaseResponse> => {
-            const order = options.ascending ? 'asc' : 'desc'
-            return this.makeRequest(`${table}?select=${columns}&order=${column}.${order}&limit=${count}`)
-          }
-        })
-      })
-    }
-  }
-
-  // Insert operations
-  async insert(table: string, data: any): Promise<SupabaseResponse> {
-    return this.makeRequest(`${table}/insert`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  // Update operations
-  async update(table: string, data: any, conditions: any): Promise<SupabaseResponse> {
-    return this.makeRequest(`${table}/update`, {
-      method: 'PUT',
-      body: JSON.stringify({ data, conditions }),
-    })
-  }
-
-  // Funding operations
-  async processFunding(amount: number, method: string, description?: string): Promise<SupabaseResponse> {
-    console.log('💰 Processing funding in client:', { amount, method })
-    
-    // In demo mode, update localStorage directly
-    if (this.isWebContainer || !this.edgeFunctionUrl) {
-      try {
-        // Get current session
-        const savedSession = localStorage.getItem('supabase-session')
-        if (!savedSession) {
-          throw new Error('No active session')
-        }
-        
-        const session = JSON.parse(savedSession)
-        if (!session.user) {
-          throw new Error('No user in session')
-        }
-        
-        // Update user's account in localStorage
-        if (session.user.email === 'demo@globalmarket.com') {
-          // Demo user - just update session
-          session.account.balance += amount
-          session.account.available_balance += amount
-          session.account.total_deposits += amount
-        } else {
-          // Real user - update in users array
-          const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
-          const userIndex = allUsers.findIndex((u: any) => u.email === session.user.email)
-          
-          if (userIndex !== -1) {
-            allUsers[userIndex].balance += amount
-            allUsers[userIndex].available_balance += amount
-            allUsers[userIndex].total_deposits += amount
-            localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
-            
-            // Update session
-            session.account.balance += amount
-            session.account.available_balance += amount
-            session.account.total_deposits += amount
-          }
-        }
-        
-        // Save updated session
-        localStorage.setItem('supabase-session', JSON.stringify(session))
-        
-        console.log('✅ Funding processed successfully')
-        return {
-          data: { success: true, new_balance: session.account.balance },
-          error: null,
-          success: true
-        }
-      } catch (error) {
-        console.error('❌ Funding error:', error)
-        return {
-          data: null,
-          error: { message: error instanceof Error ? error.message : 'Unknown error' },
-          success: false
-        }
-      }
-    }
-    
-    // Production mode - use Edge Function
-    return this.makeRequest('funding/process', {
-      method: 'POST',
-      body: JSON.stringify({ amount, method, description }),
-    })
-  }
-
-  // Get user account
-  async getUserAccount(): Promise<SupabaseResponse> {
-    return this.makeRequest('accounts/user')
-  }
-
-  // Get user transactions
-  async getUserTransactions(limit: number = 10): Promise<SupabaseResponse> {
-    return this.makeRequest(`transactions/user?limit=${limit}`)
-  }
-}
-
-export const supabaseClient = new DeployedSupabaseClient()
+export default supabaseClient
