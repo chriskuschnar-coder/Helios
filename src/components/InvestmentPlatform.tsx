@@ -75,10 +75,16 @@ export function InvestmentPlatform() {
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
   const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
+  const isDebugPage = window.location.search.includes('debug=supabase')
 
   // Show system test page
   if (isTestPage) {
     return <SystemStatusCheck />
+  }
+
+  // Show Supabase debugger
+  if (isDebugPage) {
+    return <SupabaseDebugger />
   }
 
   // Show deployment check page
@@ -87,11 +93,6 @@ export function InvestmentPlatform() {
     return <DeploymentCheck />
   }
 
-  // Show Supabase debugger
-  const isDebugPage = window.location.search.includes('debug=supabase')
-  if (isDebugPage) {
-    return <SupabaseDebugger />
-  }
 
   if (loading) {
     return (
