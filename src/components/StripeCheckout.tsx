@@ -54,18 +54,10 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     try {
       console.log('💳 Starting Stripe checkout process for amount:', amount)
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      if (!supabaseUrl || !anonKey || !stripePublishableKey) {
-        console.error('Missing environment variables:', {
-          supabaseUrl: !!supabaseUrl,
-          anonKey: !!anonKey,
-          stripeKey: !!stripePublishableKey
-        })
-        throw new Error('Payment system not configured - please contact support')
-      }
+      console.log('🔍 Using Supabase URL:', supabaseUrl)
 
       // Get user session for authentication
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -90,10 +82,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           price_id: product.priceId,
           mode: product.mode,
           amount: amount * 100,
-          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/cancel`
+          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
+          cancel_url: `${window.location.origin}/funding-cancelled`
         })
       })
+
+      console.log('📡 Response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -102,13 +96,13 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       }
 
       const { url } = await response.json()
+      console.log('✅ Checkout URL received:', url)
       
       if (!url) {
         throw new Error('No checkout URL received')
       }
       
-      console.log('✅ Checkout session created, redirecting to:', url)
-      // Redirect to Stripe Checkout
+      console.log('🚀 Redirecting to Stripe checkout...')
       window.location.href = url
       
     } catch (error) {

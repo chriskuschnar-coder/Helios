@@ -56,12 +56,10 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
     try {
       console.log('💳 Redirecting to Stripe checkout for amount:', amount)
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Payment system not configured')
-      }
+      console.log('🔍 Using Supabase URL:', supabaseUrl)
 
       // Get authenticated session
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -70,6 +68,8 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
       if (!session) {
         throw new Error('Please sign in to continue')
       }
+
+      console.log('✅ User authenticated, creating checkout...')
 
       // Create checkout session
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
@@ -88,14 +88,19 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
         })
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Checkout creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
       const { url } = await response.json()
+      console.log('✅ Checkout URL received:', url)
       
       if (url) {
+        console.log('🚀 Redirecting to Stripe checkout...')
         window.location.href = url
       } else {
         throw new Error('No checkout URL received')
@@ -105,8 +110,6 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
       console.error('❌ Stripe checkout error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
       setLoading(false)
-    } finally {
-      // Don't reset loading if we're redirecting
     }
   }
 

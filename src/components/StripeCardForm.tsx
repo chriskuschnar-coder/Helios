@@ -54,14 +54,12 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
     setLoading(true)
 
     try {
-      console.log('💳 Redirecting to Stripe checkout for amount:', amount)
+      console.log('💳 Starting Stripe checkout for amount:', amount)
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Payment system not configured')
-      }
+      console.log('🔍 Using Supabase URL:', supabaseUrl)
 
       // Get user session for authentication
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -70,6 +68,8 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       if (!session) {
         throw new Error('Please sign in to continue')
       }
+
+      console.log('✅ User session found, creating checkout...')
 
       // Create Stripe checkout session
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
@@ -83,31 +83,33 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
           price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
           mode: 'payment',
           amount: amount * 100,
-          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-          cancel_url: `${window.location.origin}/cancel`
+          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
+          cancel_url: `${window.location.origin}/funding-cancelled`
         })
       })
 
+      console.log('📡 Checkout response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Checkout creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
       const { url } = await response.json()
+      console.log('✅ Checkout URL received:', url)
       
       if (!url) {
         throw new Error('No checkout URL received')
       }
       
-      // Always redirect to Stripe Checkout
+      console.log('🚀 Redirecting to Stripe checkout...')
       window.location.href = url
       
     } catch (error) {
       console.error('❌ Stripe checkout error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
       setLoading(false)
-    } finally {
-      // Don't set loading to false here since we're redirecting
     }
   }
 
