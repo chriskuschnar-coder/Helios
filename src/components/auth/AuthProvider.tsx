@@ -1,134 +1,283 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+
+interface User {
+  id: string
+  email: string
+  [key: string]: any
+}
+
+interface AuthError {
+  message: string
+  [key: string]: any
+}
 
 interface AuthContextType {
   user: User | null
-  session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, userData?: any) => Promise<any>
-  signIn: (email: string, password: string) => Promise<any>
+  account: any | null
+  refreshAccount: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<any>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const useAuth = () => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [account, setAccount] = useState<any | null>(null)
+
+  useEffect(() => {
+    console.log('🔄 AuthProvider initializing...')
+    
+    // Check for existing session in localStorage
+    const savedSession = localStorage.getItem('supabase-session')
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession)
+        console.log('📱 Found saved session:', session)
+        if (session.user) {
+          setUser(session.user)
+          setAccount(session.account || null)
+          console.log('✅ User restored from session:', session.user.email)
+        }
+      } catch (e) {
+        console.log('❌ Invalid session in localStorage, clearing')
+        localStorage.removeItem('hedge-fund-session')
+      }
+    }
+    
+    setLoading(false)
+    console.log('✅ AuthProvider initialized')
+  }, [])
+
+  const refreshAccount = async () => {
+    if (!user) return
+    
+    try {
+      // Get fresh account data
+      const accountResult = await supabaseClient.getUserAccount()
+      if (accountResult.success && accountResult.data) {
+        setAccount(accountResult.data)
+        
+        // Update saved session
+        const savedSession = localStorage.getItem('hedge-fund-session')
+        if (savedSession) {
+          const session = JSON.parse(savedSession)
+          session.account = accountResult.data
+          localStorage.setItem('hedge-fund-session', JSON.stringify(session))
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing account:', error)
+    }
+  }
+
+  const signIn = async (email: string, password: string) => {
+    console.log('🔐 Attempting sign in for:', email)
+    
+    try {
+      // Handle demo credentials
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        const demoUser = {
+          id: 'demo-user-' + Date.now(),
+          email: email,
+          full_name: 'Demo User'
+        }
+        
+        // Demo account with existing balance
+        const demoAccount = {
+          id: 'demo-account',
+          balance: 7850.00,
+          available_balance: 7850.00,
+          total_deposits: 8000.00,
+          total_withdrawals: 0,
+          currency: 'USD',
+          status: 'active'
+        }
+        
+        const demoSession = {
+          user: demoUser,
+          account: demoAccount,
+          access_token: 'demo-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        setUser(demoUser)
+        setAccount(demoAccount)
+        
+        console.log('✅ Demo login successful')
+        return { error: null }
+      }
+      
+      // Handle real user authentication
+      console.log('🔐 Attempting real user authentication...')
+      
+      // Check if user exists in localStorage (simulated database)
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email && u.password === password)
+      
+      if (existingUser) {
+        console.log('✅ Found existing user:', existingUser.email)
+        
+        // Get user's account data
+        const userAccount = {
+          id: existingUser.accountId,
+          balance: existingUser.balance || 0,
+          available_balance: existingUser.available_balance || 0,
+          total_deposits: existingUser.total_deposits || 0,
+          total_withdrawals: existingUser.total_withdrawals || 0,
+          currency: 'USD',
+          status: 'active'
+        }
+        
+        const userSession = {
+          user: { 
+            id: existingUser.id, 
+            email: existingUser.email, 
+            full_name: existingUser.full_name 
+          },
+          account: userAccount,
+          access_token: 'user-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(userSession))
+        setUser(userSession.user)
+        setAccount(userAccount)
+        
+        console.log('✅ Real user login successful')
+        return { error: null }
+      } else {
+        console.log('❌ Invalid credentials for real user')
+        return { 
+          error: { 
+            message: 'Invalid email or password. Please check your credentials.' 
+          } 
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Sign in error:', error)
+      return { 
+        error: { 
+          message: 'Authentication failed. Please try again.' 
+        } 
+      }
+    }
+  }
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    console.log('📝 Attempting sign up for:', email)
+    
+    try {
+      // Check if user already exists
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email)
+      
+      if (existingUser) {
+        return { 
+          error: { 
+            message: 'An account with this email already exists. Please sign in instead.' 
+          } 
+        }
+      }
+      
+      // Create new user
+      const newUser = {
+        id: 'user-' + Date.now(),
+        email: email,
+        password: password, // In production, this would be hashed
+        full_name: metadata?.full_name || 'New User',
+        accountId: 'account-' + Date.now(),
+        balance: 0.00,
+        available_balance: 0.00,
+        total_deposits: 0.00,
+        total_withdrawals: 0.00,
+        created_at: new Date().toISOString()
+      }
+      
+      // Save user to localStorage (simulated database)
+      allUsers.push(newUser)
+      localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+      
+      // New users start with $0 balance
+      const newAccount = {
+        id: newUser.accountId,
+        balance: 0.00,
+        available_balance: 0.00,
+        total_deposits: 0.00,
+        total_withdrawals: 0.00,
+        currency: 'USD',
+        status: 'active'
+      }
+      
+      const newSession = {
+        user: { 
+          id: newUser.id, 
+          email: newUser.email, 
+          full_name: newUser.full_name 
+        },
+        account: newAccount,
+        access_token: 'token-' + Date.now()
+      }
+      
+      // Save session
+      localStorage.setItem('supabase-session', JSON.stringify(newSession))
+      setUser(newSession.user)
+      setAccount(newAccount)
+      
+      console.log('✅ Sign up successful for:', email)
+      return { error: null }
+      
+    } catch (error) {
+      console.error('❌ Sign up error:', error)
+      return { 
+        error: { 
+          message: 'Account creation failed. Please try again.' 
+        } 
+      }
+    }
+  }
+
+  const signOut = async () => {
+    console.log('🚪 Signing out...')
+    
+    try {
+      // Clear session
+      localStorage.removeItem('supabase-session')
+      setUser(null)
+      setAccount(null)
+      
+      console.log('✅ Sign out successful')
+    } catch (error) {
+      console.error('❌ Sign out error:', error)
+    }
+  }
+
+  const value = {
+    user,
+    loading,
+    account,
+    refreshAccount,
+    signIn,
+    signUp,
+    signOut
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
-}
-
-interface AuthProviderProps {
-  children: React.ReactNode
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-
-      // Create user profile on sign up
-      if (event === 'SIGNED_UP' && session?.user) {
-        await createUserProfile(session.user)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const createUserProfile = async (user: User) => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || '',
-            created_at: new Date().toISOString(),
-          },
-        ])
-
-      if (error) throw error
-
-      // Create default trading account
-      const { error: accountError } = await supabase
-        .from('accounts')
-        .insert([
-          {
-            user_id: user.id,
-            account_type: 'trading',
-            balance: 0,
-            available_balance: 0,
-          },
-        ])
-
-      if (accountError) throw accountError
-    } catch (error) {
-      console.error('Error creating user profile:', error)
-    }
-  }
-
-  const signUp = async (email: string, password: string, userData?: any) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData,
-      },
-    })
-    return { data, error }
-  }
-
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { data, error }
-  }
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-  }
-
-  const resetPassword = async (email: string) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-    return { data, error }
-  }
-
-  const value = {
-    user,
-    session,
-    loading,
-    signUp,
-    signIn,
-    signOut,
-    resetPassword,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

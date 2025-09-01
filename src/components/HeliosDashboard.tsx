@@ -14,7 +14,9 @@ import {
   Filler,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
-import { PlaidLinkComponent } from './PlaidLinkComponent'
+import { useAuth } from './auth/AuthProvider'
+import { supabaseClient } from '../lib/supabase-client'
+import { PaymentProcessor } from './PaymentProcessor'
 
 ChartJS.register(
   CategoryScale,
@@ -27,7 +29,7 @@ ChartJS.register(
   Filler
 )
 
-interface DashboardData {
+export interface DashboardData {
   account: {
     balance: number
     equity: number
@@ -93,6 +95,7 @@ const marketData = [
 ]
 
 export function HeliosDashboard() {
+  const { user, account, refreshAccount } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState('1D')
   const [isLoading, setIsLoading] = useState(true)
@@ -100,42 +103,46 @@ export function HeliosDashboard() {
   const [fundingAmount, setFundingAmount] = useState('')
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bank')
   const [isProcessingFunding, setIsProcessingFunding] = useState(false)
-  const [connectedAccount, setConnectedAccount] = useState<any>(null)
   const [transferStatus, setTransferStatus] = useState<string | null>(null)
+  const [showPaymentProcessor, setShowPaymentProcessor] = useState(false)
+  const [fundingAmountForPayment, setFundingAmountForPayment] = useState(0)
 
-  // Mock data for demonstration
-  const mockData: DashboardData = {
+  // Generate data based on user's actual account
+  const generateUserData = (userAccount: any): DashboardData => ({
     account: {
-      balance: 7850.00,
-      equity: 7850.00,
+      balance: userAccount?.balance || 0,
+      equity: userAccount?.balance || 0,
       margin: 0,
-      free_margin: 7850.00,
+      free_margin: userAccount?.available_balance || 0,
       profit: 0,
-      initial_balance: 7700.00
+      initial_balance: userAccount?.total_deposits || 0
     },
     positions: [
-      {
-        ticket: '12345',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        volume: 0.1,
-        price_open: 43250.00,
-        price_current: 43420.00,
-        profit: 17.00,
-        profit_pct: 0.39,
-        time: '14:32:15'
-      },
-      {
-        ticket: '12346',
-        symbol: 'ETHUSD',
-        type: 'SELL',
-        volume: 1.5,
-        price_open: 2180.00,
-        price_current: 2175.00,
-        profit: 7.50,
-        profit_pct: 0.23,
-        time: '14:28:42'
-      }
+      // Only show positions if user has balance > 0
+      ...(userAccount?.balance > 0 ? [
+        {
+          ticket: '12345',
+          symbol: 'BTCUSD',
+          type: 'BUY' as const,
+          volume: 0.1,
+          price_open: 43250.00,
+          price_current: 43420.00,
+          profit: 17.00,
+          profit_pct: 0.39,
+          time: '14:32:15'
+        },
+        {
+          ticket: '12346',
+          symbol: 'ETHUSD',
+          type: 'SELL' as const,
+          volume: 1.5,
+          price_open: 2180.00,
+          price_current: 2175.00,
+          profit: 7.50,
+          profit_pct: 0.23,
+          time: '14:28:42'
+        }
+      ] : [])
     ],
     metrics: {
       win_rate: 68.5,
@@ -156,37 +163,40 @@ export function HeliosDashboard() {
       exposure_net: 1250.00
     },
     active_signals: [
-      {
-        time: '14:35:22',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        strategy: 'Trend Following',
-        confidence: 85
-      },
-      {
-        time: '14:33:18',
-        symbol: 'XAUUSD',
-        type: 'SELL',
-        strategy: 'Mean Reversion',
-        confidence: 72
-      }
+      // Only show signals if user has balance > 0
+      ...(userAccount?.balance > 0 ? [
+        {
+          time: '14:35:22',
+          symbol: 'BTCUSD',
+          type: 'BUY' as const,
+          strategy: 'Trend Following',
+          confidence: 85
+        },
+        {
+          time: '14:33:18',
+          symbol: 'XAUUSD',
+          type: 'SELL' as const,
+          strategy: 'Mean Reversion',
+          confidence: 72
+        }
+      ] : [])
     ],
     chart_data: {
       timestamps: Array.from({ length: 50 }, (_, i) => Date.now() - (50 - i) * 60000),
-      balance: Array.from({ length: 50 }, (_, i) => 7700 + Math.random() * 200 - 100),
-      equity: Array.from({ length: 50 }, (_, i) => 7700 + Math.random() * 200 - 100)
+      balance: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25),
+      equity: Array.from({ length: 50 }, (_, i) => (userAccount?.balance || 0) + Math.random() * 50 - 25)
     }
-  }
+  })
 
   useEffect(() => {
-    // Simulate loading and set mock data
+    // Generate data based on user's actual account
     const timer = setTimeout(() => {
-      setData(mockData)
+      setData(generateUserData(account))
       setIsLoading(false)
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [account])
 
   // Real-time updates simulation
   useEffect(() => {
@@ -196,7 +206,10 @@ export function HeliosDashboard() {
       setData(prevData => {
         if (!prevData) return prevData
 
-        // Simulate small price movements
+        // Only simulate movements if user has balance
+        if (prevData.account.balance === 0) return prevData
+
+        // Simulate small price movements for active accounts
         const updatedPositions = prevData.positions.map(pos => ({
           ...pos,
           price_current: pos.price_current + (Math.random() - 0.5) * 2,
@@ -231,59 +244,54 @@ export function HeliosDashboard() {
 
   const handleFunding = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsProcessingFunding(true)
-    setTransferStatus(null)
     
     const amount = parseFloat(fundingAmount)
     
+    if (amount < 100) {
+      setTransferStatus('Minimum funding amount is $100')
+      return
+    }
+    
+    // Show payment processor instead of direct funding
+    setFundingAmountForPayment(amount)
+    setShowPaymentProcessor(true)
+    setShowFundingModal(false)
+  }
+
+  const handlePaymentSuccess = async (paymentResult: any) => {
+    setIsProcessingFunding(true)
+    setShowPaymentProcessor(false)
+    setTransferStatus(null)
+    
     try {
-      if (selectedPaymentMethod === 'bank' && connectedAccount) {
-        // Use Plaid for bank transfer
-        const response = await fetch('/api/plaid/initiate-transfer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            access_token: connectedAccount.access_token,
-            account_id: connectedAccount.account_id,
-            amount: amount,
-            user_id: 'demo-user',
-          }),
-        })
-        
-        const result = await response.json()
-        
-        if (result.success) {
-          setTransferStatus('Transfer initiated successfully! Funds will be available in 1-3 business days.')
-        } else {
-          setTransferStatus('Transfer failed. Please try again.')
+      console.log('💰 Processing funding after payment:', paymentResult)
+      
+      // Process funding through Supabase
+      const result = await supabaseClient.processFunding(
+        paymentResult.amount, 
+        paymentResult.method, 
+        `Account funding via ${paymentResult.method} - ${paymentResult.id}`
+      )
+      
+      if (result.success) {
+        // Update local account state immediately for better UX
+        if (account) {
+          // This will trigger useEffect to regenerate dashboard data
+          await refreshAccount()
         }
+        
+        setTransferStatus(`Funds added successfully! Payment ID: ${paymentResult.id}`)
+        console.log('✅ Funding successful')
       } else {
-        // Simulate other payment methods
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        if (data && amount >= 100) {
-          setData(prevData => {
-            if (!prevData) return prevData
-            return {
-              ...prevData,
-              account: {
-                ...prevData.account,
-                balance: prevData.account.balance + amount,
-                equity: prevData.account.equity + amount,
-                free_margin: prevData.account.free_margin + amount
-              }
-            }
-          })
-          setTransferStatus('Funds added successfully!')
-        }
+        setTransferStatus(result.error?.message || 'Funding failed. Please try again.')
+        console.log('❌ Funding failed:', result.error)
       }
     } catch (error) {
       console.error('Funding error:', error)
       setTransferStatus('An error occurred. Please try again.')
     } finally {
       setIsProcessingFunding(false)
+      setShowFundingModal(true) // Show modal again to display status
       setTimeout(() => {
         setShowFundingModal(false)
         setFundingAmount('')
@@ -292,44 +300,10 @@ export function HeliosDashboard() {
     }
   }
 
-  const handlePlaidSuccess = async (publicToken: string, metadata: any) => {
-    try {
-      const response = await fetch('/api/plaid/exchange-public-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          public_token: publicToken,
-          user_id: 'demo-user',
-        }),
-      })
-      
-      const result = await response.json()
-      
-      if (result.success && result.accounts.length > 0) {
-        const account = result.accounts[0]
-        setConnectedAccount({
-          ...account,
-          access_token: result.access_token,
-        })
-        setTransferStatus(`Connected to ${account.name} ****${account.mask}`)
-      }
-    } catch (error) {
-      console.error('Error exchanging public token:', error)
-      setTransferStatus('Failed to connect bank account. Please try again.')
-    }
-  }
-
-  const handlePlaidExit = (err: any, metadata: any) => {
-    if (err) {
-      console.error('Plaid Link exit with error:', err)
-      if (err.error_code === 'USER_EXIT') {
-        setTransferStatus('Bank connection cancelled.')
-      } else {
-        setTransferStatus('Failed to connect bank account.')
-      }
-    }
+  const handlePaymentError = (error: string) => {
+    setShowPaymentProcessor(false)
+    setShowFundingModal(true)
+    setTransferStatus(`Payment failed: ${error}`)
   }
 
   // ✅ Loading state inside component function
@@ -350,9 +324,9 @@ export function HeliosDashboard() {
   if (!data) return null
 
   const dailyPnl = data.account.balance - data.account.initial_balance
-  const dailyPnlPct = (dailyPnl / data.account.initial_balance) * 100
-  const totalGrowth = data.account.balance - 8000 // Initial investment
-  const growthPct = (totalGrowth / 8000) * 100
+  const dailyPnlPct = data.account.initial_balance > 0 ? (dailyPnl / data.account.initial_balance) * 100 : 0
+  const totalGrowth = data.account.balance - data.account.initial_balance
+  const growthPct = data.account.initial_balance > 0 ? (totalGrowth / data.account.initial_balance) * 100 : 0
 
   // Chart configuration
   const chartOptions = {
@@ -778,66 +752,6 @@ export function HeliosDashboard() {
                   <p className="text-xs text-gray-400 mt-1">Minimum funding: $100</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Payment Method
-                  </label>
-                  <div className="space-y-3">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="bank"
-                        checked={selectedPaymentMethod === 'bank'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <Bank className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Bank Transfer (ACH)</div>
-                        <div className="text-xs text-gray-400">1-3 business days • No fees</div>
-                        {connectedAccount && selectedPaymentMethod === 'bank' && (
-                          <div className="text-xs text-green-400 mt-1">
-                            Connected: {connectedAccount.name} ****{connectedAccount.mask}
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="wire"
-                        checked={selectedPaymentMethod === 'wire'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <CreditCard className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Wire Transfer</div>
-                        <div className="text-xs text-gray-400">Same day • $25 fee</div>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="crypto"
-                        checked={selectedPaymentMethod === 'crypto'}
-                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                        className="text-blue-600"
-                      />
-                      <Wallet className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="text-white font-medium">Cryptocurrency</div>
-                        <div className="text-xs text-gray-400">Instant • USDC, USDT, BTC, ETH</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
                 {transferStatus && (
                   <div className={`p-3 rounded-lg text-sm ${
                     transferStatus.includes('success') || transferStatus.includes('Connected') 
@@ -850,20 +764,6 @@ export function HeliosDashboard() {
                   </div>
                 )}
 
-                {selectedPaymentMethod === 'bank' && !connectedAccount && (
-                  <PlaidLinkComponent
-                    onSuccess={handlePlaidSuccess}
-                    onExit={handlePlaidExit}
-                    amount={parseFloat(fundingAmount) || 0}
-                  />
-                )}
-
-                {selectedPaymentMethod === 'bank' && connectedAccount && (
-                  <div className="bg-gray-700 rounded-lg p-4 border border-gray-600">
-                    <span>Ready to transfer from connected account</span>
-                  </div>
-                )}
-
                 <div className="flex space-x-3">
                   <button
                     type="button"
@@ -872,19 +772,30 @@ export function HeliosDashboard() {
                   >
                     Cancel
                   </button>
-                  {(selectedPaymentMethod !== 'bank' || connectedAccount) && (
-                    <button
-                      type="submit"
-                      disabled={isProcessingFunding || (selectedPaymentMethod === 'bank' && !connectedAccount)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors"
-                    >
-                      {isProcessingFunding ? 'Processing...' : 'Add Funds'}
-                    </button>
-                  )}
+                  <button
+                    type="submit"
+                    disabled={isProcessingFunding}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    {isProcessingFunding ? 'Processing...' : 'Continue to Payment'}
+                  </button>
                 </div>
               </form>
             </div>
           </div>
+        )}
+
+        {/* Payment Processor Modal */}
+        {showPaymentProcessor && (
+          <PaymentProcessor
+            amount={fundingAmountForPayment}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+            onClose={() => {
+              setShowPaymentProcessor(false)
+              setShowFundingModal(true)
+            }}
+          />
         )}
       </div>
     </>
