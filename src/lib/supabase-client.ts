@@ -13,7 +13,7 @@ let clientInstance: any
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase environment variables')
-  console.log('📱 Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify environment variables')
+  console.log('📱 Please click "Connect to Supabase" button in Bolt')
   
   // Create a mock client for development
   clientInstance = {
@@ -42,13 +42,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
     })
   }
 } else {
-  // Create real Supabase client for production
-  console.log('🔄 Creating direct Supabase client')
+  // Create direct Supabase client (bypassing any WebContainer proxy)
+  console.log('🔄 Creating DIRECT Supabase client to:', supabaseUrl)
   clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    // Force direct connection, bypass any proxy
+    global: {
+      fetch: fetch.bind(globalThis)
+    },
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      flowType: 'pkce',
       storage: {
         getItem: (key: string) => {
           if (typeof window !== 'undefined') {
@@ -71,15 +76,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   })
 
   // Test connection
-  console.log('🔄 Testing Supabase connection...')
+  console.log('🔄 Testing DIRECT Supabase connection to:', supabaseUrl)
   clientInstance.from('users').select('count').limit(1)
-    .then(() => console.log('✅ Supabase connection successful'))
+    .then(() => console.log('✅ DIRECT Supabase connection successful'))
     .catch((error: any) => {
-      console.error('❌ Supabase connection failed:', error)
+      console.error('❌ DIRECT Supabase connection failed:', error)
+      console.log('🔍 Check if URL is correct:', supabaseUrl)
     })
 }
 
-console.log('✅ Supabase client initialized')
+console.log('✅ Supabase client initialized with DIRECT connection')
 
 // Export the client
 export const supabaseClient = clientInstance
