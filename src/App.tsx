@@ -1,21 +1,14 @@
-import React from 'react'
-import { AuthProvider } from './components/auth/AuthProvider'
-import { InvestmentPlatform } from './components/InvestmentPlatform'
+[build]
+  publish = "dist"
+  command = "npm run build"
 
-console.log("📦 App.tsx mounted")
+[build.environment]
+  NODE_VERSION = "18"
 
-console.log("📦 App.tsx mounted")
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
-function App() {
-  console.log("📦 App component rendering")
-  
-  console.log("📦 App component rendering")
-  
-  return (
-    <AuthProvider>
-      <InvestmentPlatform />
-    </AuthProvider>
-  )
-}
-
-export default App
+[functions]
+  directory = "netlify/functions"
