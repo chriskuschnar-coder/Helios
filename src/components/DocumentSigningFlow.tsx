@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { FileText, CheckCircle, ArrowRight, Shield, AlertCircle, PenTool } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { supabaseClient } from '../lib/supabase-client'
 
 interface DocumentSigningFlowProps {
   isOpen: boolean
@@ -177,21 +176,20 @@ By signing below, I confirm that I have read, understood, and agree to all terms
 
   if (!isOpen) return null
 
+  const handleReadComplete = () => {
+    setHasReadDocument(true)
+  }
+
   const handleSignDocument = async () => {
     if (!signature.trim()) {
       alert('Please provide your electronic signature')
       return
     }
 
-    if (!hasReadDocument) {
-      alert('Please confirm you have read the document')
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
-      // Save signed document to Supabase
+      // Save signed document to database
       const signedDocument = {
         user_id: user?.id,
         document_id: currentDocument.id,
@@ -203,18 +201,8 @@ By signing below, I confirm that I have read, understood, and agree to all terms
         user_agent: navigator.userAgent
       }
 
-      console.log('Saving signed document to Supabase:', signedDocument)
-
-      const { error } = await supabaseClient
-        .from('signed_documents')
-        .insert(signedDocument)
-
-      if (error) {
-        console.error('Error saving signed document:', error)
-        throw new Error('Failed to save document signature')
-      }
-
-      console.log('✅ Document signed and saved to Supabase')
+      // In production, this would save to Supabase
+      console.log('Saving signed document:', signedDocument)
 
       // Mark document as signed
       const updatedDocuments = [...documentStates]
@@ -253,13 +241,9 @@ By signing below, I confirm that I have read, understood, and agree to all terms
             <h2 className="text-2xl font-bold text-gray-900">
               Investment Documentation
             </h2>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Document {currentDocumentIndex + 1} of {documents.length}</div>
-              <div className="text-sm text-gray-600">{Math.round(progress)}% Complete</div>
-            </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-2xl"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               ×
             </button>
@@ -267,6 +251,10 @@ By signing below, I confirm that I have read, understood, and agree to all terms
           
           {/* Progress Bar */}
           <div className="mb-4">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
+              <span>{Math.round(progress)}% Complete</span>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-navy-600 h-2 rounded-full transition-all duration-300"
