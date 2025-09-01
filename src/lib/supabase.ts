@@ -1,3 +1,2 @@
-// Main Supabase export - use this throughout the app
+// Re-export the robust supabase client that handles WebContainer restrictions
 export { supabaseClient as supabase } from './supabase-client'
-export { testSupabaseConnection } from './supabase-client'
