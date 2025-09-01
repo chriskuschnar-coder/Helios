@@ -180,6 +180,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 signIn called:', { email, password: '***' })
     
+    // Handle demo user immediately without Supabase call
+    if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+      console.log('✅ Demo login detected - using local demo mode')
+      setUser({
+        id: 'demo-user-id',
+        email: 'demo@globalmarket.com',
+        full_name: 'Demo User'
+      })
+      setAccount({
+        id: 'demo-account-id',
+        balance: 7850,
+        available_balance: 7850,
+        total_deposits: 8000,
+        total_withdrawals: 150,
+        currency: 'USD',
+        status: 'active'
+      })
+      return { error: null }
+    }
+
     try {
       console.log('🔍 Attempting Supabase authentication...')
       const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -190,29 +210,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('❌ Supabase sign in error:', error.message)
 
-        // If it's invalid credentials and demo user, fall back to demo mode
-        if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-          console.log('✅ Demo login fallback (Supabase user not found)')
-          setUser({
-            id: 'demo-user-id',
-            email: 'demo@globalmarket.com',
-            full_name: 'Demo User'
-          })
-          setAccount({
-            id: 'demo-account-id',
-            balance: 7850,
-            available_balance: 7850,
-            total_deposits: 8000,
-            total_withdrawals: 150,
-            currency: 'USD',
-            status: 'active'
-          })
-          return { error: null }
-        }
-
         // If it's invalid credentials and not the demo user, show helpful message
         if (error.message.includes('Invalid login credentials')) {
-          return { error: { message: 'Invalid credentials. Try demo@globalmarket.com / demo123456' } }
+          return { error: { message: 'Invalid login credentials' } }
         }
         
         return { error: { message: error.message } }
@@ -232,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'No user returned' } }
     } catch (err) {
       console.error('❌ Sign in failed:', err)
-      return { error: { message: 'Connection error. Try demo@globalmarket.com / demo123456' } }
+      return { error: { message: 'Connection error' } }
     }
   }
 
