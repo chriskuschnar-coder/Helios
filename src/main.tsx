@@ -4,11 +4,18 @@ import { InvestmentPlatform } from './components/InvestmentPlatform';
 import { AuthProvider } from './components/auth/AuthProvider';
 import './index.css';
 
+// DEBUG: Check if main.tsx is loading
+console.log('🔍 main.tsx loading...')
+console.log('🔍 AuthProvider import:', !!AuthProvider)
+console.log('🔍 InvestmentPlatform import:', !!InvestmentPlatform)
+
 // Error boundary wrapper
 function App() {
+  console.log('🔍 App component rendering...')
   return (
     <StrictMode>
       <AuthProvider>
+        {console.log('🔍 AuthProvider wrapper rendering...')}
         <InvestmentPlatform />
       </AuthProvider>
     </StrictMode>

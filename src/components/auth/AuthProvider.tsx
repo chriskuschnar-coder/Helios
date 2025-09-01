@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+// import { supabaseClient } from '../../lib/supabase-client'
 
-// CRITICAL DEBUG: Check if supabaseClient is properly imported
-console.log('🔍 AuthProvider - supabaseClient imported:', !!supabaseClient)
-console.log('🔍 AuthProvider - supabaseClient type:', typeof supabaseClient)
-console.log('🔍 AuthProvider - supabaseClient.auth exists:', !!supabaseClient?.auth)
-console.log('🔍 AuthProvider - Full supabaseClient object:', supabaseClient)
+// BASIC TEST: Check if AuthProvider loads at all
+console.log('🔍 AuthProvider loaded - basic test')
+console.log('🔍 AuthProvider file executing')
+console.log('🔍 React imported:', !!React)
 
 interface User {
   id: string
