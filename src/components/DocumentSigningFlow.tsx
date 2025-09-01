@@ -10,6 +10,20 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [currentStep, setCurrentStep] = useState(1);
   const [signedDocuments, setSignedDocuments] = useState<Set<number>>(new Set());
   const [signatures, setSignatures] = useState<{ [key: number]: string }>({});
+  const [formData, setFormData] = useState({
+    capitalContribution: '',
+    fullName: '',
+    email: '',
+    phone: '',
+    mailingAddress: '',
+    taxId: '',
+    investorType: '',
+    accreditedStatus: [] as string[],
+    beneficialOwner1Name: '',
+    beneficialOwner1Percentage: '',
+    beneficialOwner2Name: '',
+    beneficialOwner2Percentage: ''
+  });
 
   const documents = [
     {
@@ -42,7 +56,46 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     setSignedDocuments(prev => new Set([...prev, currentDocument.id]));
   };
 
+  const handleFormChange = (field: string, value: string | string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const isDocument3FormValid = () => {
+    const required = [
+      'capitalContribution',
+      'fullName', 
+      'email',
+      'phone',
+      'mailingAddress',
+      'taxId',
+      'investorType'
+    ];
+    
+    // Check if all required fields are filled
+    const allRequiredFilled = required.every(field => 
+      formData[field as keyof typeof formData] && 
+      String(formData[field as keyof typeof formData]).trim() !== ''
+    );
+    
+    // Check if at least one accredited status is selected
+    const hasAccreditedStatus = formData.accreditedStatus.length > 0;
+    
+    // Check capital contribution is at least $50,000
+    const capitalAmount = parseFloat(formData.capitalContribution) || 0;
+    const validCapitalAmount = capitalAmount >= 50000;
+    
+    return allRequiredFilled && hasAccreditedStatus && validCapitalAmount;
+  };
   const handleNext = () => {
+    // For document 3, check if form is completely filled out
+    if (currentDocument.id === 3 && !isDocument3FormValid()) {
+      alert('Please complete all required fields before proceeding.');
+      return;
+    }
+    
     if (currentStep < documents.length) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -59,7 +112,13 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   };
 
   const isCurrentDocumentSigned = signedDocuments.has(currentDocument.id);
-  const allDocumentsSigned = documents.every(doc => signedDocuments.has(doc.id));
+  const canProceed = () => {
+    if (!isCurrentDocumentSigned) return false;
+    if (currentDocument.id === 3) {
+      return isDocument3FormValid();
+    }
+    return true;
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -713,118 +772,306 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       {currentDocument.id === 3 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
           <h4 className="font-semibold text-gray-900 mb-4">Complete Subscription Information</h4>
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Required:</strong> All fields below must be completed to proceed with your investment.
+            </p>
+          </div>
+          
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Capital Contribution Amount</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Capital Contribution Amount <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
                   min="50000"
                   step="1000"
+                  value={formData.capitalContribution}
+                  onChange={(e) => handleFormChange('capitalContribution', e.target.value)}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="50,000"
+                  required
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Minimum: $50,000</p>
+              {formData.capitalContribution && parseFloat(formData.capitalContribution) < 50000 && (
+                <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
+              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Legal Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Legal Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
+                value={formData.fullName}
+                onChange={(e) => handleFormChange('fullName', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your full legal name"
+                required
               />
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
+                value={formData.email}
+                onChange={(e) => handleFormChange('email', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="your.email@example.com"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
               <input
                 type="tel"
+                value={formData.phone}
+                onChange={(e) => handleFormChange('phone', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="(555) 123-4567"
+                required
               />
             </div>
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mailing Address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mailing Address <span className="text-red-500">*</span>
+            </label>
             <textarea
               rows={3}
+              value={formData.mailingAddress}
+              onChange={(e) => handleFormChange('mailingAddress', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter your complete mailing address"
+              required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID/SSN</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tax ID/SSN <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
+              value={formData.taxId}
+              onChange={(e) => handleFormChange('taxId', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="XXX-XX-XXXX or XX-XXXXXXX"
+              required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Investor Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Investor Type <span className="text-red-500">*</span>
+            </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="individual"
+                  checked={formData.investorType === 'individual'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 Individual
               </label>
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="corporation"
+                  checked={formData.investorType === 'corporation'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 Corporation
               </label>
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="partnership"
+                  checked={formData.investorType === 'partnership'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 Partnership
               </label>
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="trust"
+                  checked={formData.investorType === 'trust'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 Trust
               </label>
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="llc"
+                  checked={formData.investorType === 'llc'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 LLC
               </label>
               <label className="flex items-center text-sm">
-                <input type="radio" name="investorType" className="mr-2"/>
+                <input 
+                  type="radio" 
+                  name="investorType" 
+                  value="other"
+                  checked={formData.investorType === 'other'}
+                  onChange={(e) => handleFormChange('investorType', e.target.value)}
+                  className="mr-2"
+                />
                 Other
               </label>
             </div>
           </div>
           
+          {/* Beneficial Ownership (only show for entities) */}
+          {['corporation', 'partnership', 'trust', 'llc', 'other'].includes(formData.investorType) && (
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Beneficial Ownership (25% or more)
+              </label>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Owner Name</label>
+                    <input
+                      type="text"
+                      value={formData.beneficialOwner1Name}
+                      onChange={(e) => handleFormChange('beneficialOwner1Name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Ownership %</label>
+                    <input
+                      type="number"
+                      min="25"
+                      max="100"
+                      value={formData.beneficialOwner1Percentage}
+                      onChange={(e) => handleFormChange('beneficialOwner1Percentage', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="25"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Owner Name (if applicable)</label>
+                    <input
+                      type="text"
+                      value={formData.beneficialOwner2Name}
+                      onChange={(e) => handleFormChange('beneficialOwner2Name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Ownership %</label>
+                    <input
+                      type="number"
+                      min="25"
+                      max="100"
+                      value={formData.beneficialOwner2Percentage}
+                      onChange={(e) => handleFormChange('beneficialOwner2Percentage', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="25"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Accredited Investor Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Accredited Investor Status <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-gray-600 mb-3">Select at least one that applies to you:</p>
             <div className="space-y-2">
               <label className="flex items-start text-sm">
-                <input type="checkbox" className="mr-2 mt-1"/>
+                <input 
+                  type="checkbox" 
+                  checked={formData.accreditedStatus.includes('net_worth')}
+                  onChange={(e) => {
+                    const newStatus = e.target.checked 
+                      ? [...formData.accreditedStatus, 'net_worth']
+                      : formData.accreditedStatus.filter(s => s !== 'net_worth');
+                    handleFormChange('accreditedStatus', newStatus);
+                  }}
+                  className="mr-2 mt-1"
+                />
                 Net worth exceeding $1 million (excluding primary residence)
               </label>
               <label className="flex items-start text-sm">
-                <input type="checkbox" className="mr-2 mt-1"/>
+                <input 
+                  type="checkbox" 
+                  checked={formData.accreditedStatus.includes('income')}
+                  onChange={(e) => {
+                    const newStatus = e.target.checked 
+                      ? [...formData.accreditedStatus, 'income']
+                      : formData.accreditedStatus.filter(s => s !== 'income');
+                    handleFormChange('accreditedStatus', newStatus);
+                  }}
+                  className="mr-2 mt-1"
+                />
                 Annual income exceeding $200,000 ($300,000 joint) for past 2 years
               </label>
               <label className="flex items-start text-sm">
-                <input type="checkbox" className="mr-2 mt-1"/>
+                <input 
+                  type="checkbox" 
+                  checked={formData.accreditedStatus.includes('institutional')}
+                  onChange={(e) => {
+                    const newStatus = e.target.checked 
+                      ? [...formData.accreditedStatus, 'institutional']
+                      : formData.accreditedStatus.filter(s => s !== 'institutional');
+                    handleFormChange('accreditedStatus', newStatus);
+                  }}
+                  className="mr-2 mt-1"
+                />
                 Qualified institutional buyer
               </label>
               <label className="flex items-start text-sm">
-                <input type="checkbox" className="mr-2 mt-1"/>
+                <input 
+                  type="checkbox" 
+                  checked={formData.accreditedStatus.includes('other')}
+                  onChange={(e) => {
+                    const newStatus = e.target.checked 
+                      ? [...formData.accreditedStatus, 'other']
+                      : formData.accreditedStatus.filter(s => s !== 'other');
+                    handleFormChange('accreditedStatus', newStatus);
+                  }}
+                  className="mr-2 mt-1"
+                />
                 Other accredited investor category
               </label>
             </div>
+            {formData.accreditedStatus.length === 0 && (
+              <p className="text-xs text-red-500 mt-2">Please select at least one accredited investor qualification</p>
+            )}
           </div>
         </div>
       )}
@@ -835,7 +1082,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type your full name to sign
+              Type your full name to sign <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -843,7 +1090,11 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
               onChange={(e) => handleSignature(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Type your full name to sign"
+              required
             />
+            {!signatures[currentDocument.id] && (
+              <p className="text-xs text-red-500 mt-1">Signature is required to proceed</p>
+            )}
           </div>
           
           {isCurrentDocumentSigned && (
@@ -876,17 +1127,17 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
         <button
           onClick={handleNext}
-          disabled={!isCurrentDocumentSigned}
+          disabled={!canProceed()}
           className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
         >
           {currentStep === documents.length ? (
-            allDocumentsSigned ? (
+            canProceed() ? (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Sign & Continue
               </>
             ) : (
-              'Complete All Documents'
+              'Complete All Required Fields'
             )
           ) : (
             <>
@@ -896,6 +1147,25 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
           )}
         </button>
       </div>
+      
+      {/* Form Validation Summary for Document 3 */}
+      {currentDocument.id === 3 && !isDocument3FormValid() && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800 font-medium mb-2">Please complete the following:</p>
+          <ul className="text-xs text-red-700 space-y-1">
+            {!formData.capitalContribution && <li>• Capital contribution amount</li>}
+            {parseFloat(formData.capitalContribution) < 50000 && formData.capitalContribution && <li>• Capital contribution must be at least $50,000</li>}
+            {!formData.fullName && <li>• Full legal name</li>}
+            {!formData.email && <li>• Email address</li>}
+            {!formData.phone && <li>• Phone number</li>}
+            {!formData.mailingAddress && <li>• Mailing address</li>}
+            {!formData.taxId && <li>• Tax ID/SSN</li>}
+            {!formData.investorType && <li>• Investor type selection</li>}
+            {formData.accreditedStatus.length === 0 && <li>• At least one accredited investor qualification</li>}
+            {!signatures[currentDocument.id] && <li>• Digital signature</li>}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
