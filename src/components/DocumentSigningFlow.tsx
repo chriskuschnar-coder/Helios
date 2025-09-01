@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FileText, CheckCircle, ArrowRight, Shield, AlertCircle, PenTool, X } from 'lucide-react'
+import { FileText, CheckCircle, ArrowRight, Shield, AlertCircle, PenTool } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 import { supabaseClient } from '../lib/supabase-client'
 
@@ -199,7 +199,7 @@ By signing below, I confirm that I have read, understood, and agree to all terms
         document_type: currentDocument.type,
         signature: signature.trim(),
         signed_at: new Date().toISOString(),
-        ip_address: 'client_ip',
+        ip_address: 'client_ip', // Would be actual IP in production
         user_agent: navigator.userAgent
       }
 
@@ -253,18 +253,16 @@ By signing below, I confirm that I have read, understood, and agree to all terms
             <h2 className="text-2xl font-bold text-gray-900">
               Investment Documentation
             </h2>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-600">Document {currentDocumentIndex + 1} of {documents.length}</div>
-                <div className="text-sm text-gray-600">{Math.round(progress)}% Complete</div>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="h-6 w-6 text-gray-600" />
-              </button>
+            <div className="text-right">
+              <div className="text-sm text-gray-600">Document {currentDocumentIndex + 1} of {documents.length}</div>
+              <div className="text-sm text-gray-600">{Math.round(progress)}% Complete</div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-2xl"
+            >
+              ×
+            </button>
           </div>
           
           {/* Progress Bar */}
