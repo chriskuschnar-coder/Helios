@@ -69,7 +69,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
         
         setSuccess(true)
-        return
+        return;
       }
 
       // Get the current user session for authentication
