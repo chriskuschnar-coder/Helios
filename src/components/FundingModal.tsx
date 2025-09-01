@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins } from 'lucide-react';
+import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight } from 'lucide-react';
 import { StripeCardForm } from './StripeCardForm';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
