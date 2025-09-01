@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, FileText, PenTool, CheckCircle, AlertCircle, Download } from 'lucide-react'
+import { X, FileText, CheckCircle } from 'lucide-react'
 
 interface Document {
   id: string
@@ -20,8 +20,8 @@ export function DocumentSigningFlow({ isOpen, onClose, onComplete }: DocumentSig
   const [signature, setSignature] = useState('')
   const [documents, setDocuments] = useState<Document[]>([
     {
-      id: 'ppm',
-      title: 'Private Placement Memorandum (PPM)',
+      id: 'investment_agreement',
+      title: 'Investment Agreement',
       type: 'investment_agreement',
       content: `CONFIDENTIAL PRIVATE PLACEMENT MEMORANDUM
 Global Markets Consulting, LP A Delaware Limited Partnership  
@@ -167,171 +167,98 @@ By signing below, I acknowledge that I have read and understood this Private Pla
     }
   }
 
-  const handlePrevious = () => {
-    if (currentDocumentIndex > 0) {
-      setCurrentDocumentIndex(currentDocumentIndex - 1)
-    }
-  }
-
-  const handleNext = () => {
-    if (currentDocumentIndex < documents.length - 1) {
-      setCurrentDocumentIndex(currentDocumentIndex + 1)
-    }
+  const handleCancel = () => {
+    setSignature('')
+    onClose()
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-navy-50">
-          <div className="flex items-center space-x-3">
-            <FileText className="h-6 w-6 text-navy-600" />
-            <div>
-              <h2 className="text-xl font-bold text-navy-900">Investment Documents</h2>
-              <p className="text-sm text-navy-600">
-                Document {currentDocumentIndex + 1} of {documents.length}
-              </p>
+        {/* Header with Progress */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Global Market Consulting</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">Investor Portal</span>
+              <span className="text-gray-600">Trading</span>
+              <span className="text-gray-600">Research</span>
+              <span className="text-gray-600">Support</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          
+          <div className="mb-4">
+            <div className="text-sm text-gray-600 mb-2">Step {currentDocumentIndex + 1} of {documents.length}</div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentDocumentIndex + 1) / documents.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{currentDocument.title}</h2>
+              <div className="flex items-center space-x-2">
+                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                  Required
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Progress Bar */}
+        {/* Document Description */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Signing Progress</span>
-            <span className="text-sm text-gray-600">
-              {documents.filter(doc => doc.signed).length} of {documents.length} completed
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-navy-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(documents.filter(doc => doc.signed).length / documents.length) * 100}%` }}
-            />
-          </div>
+          <p className="text-gray-700">Terms and conditions for your investment</p>
         </div>
 
         {/* Document Content */}
-        <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: '60vh' }}>
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">{currentDocument.title}</h3>
-              {currentDocument.signed && (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="text-sm font-medium">Signed</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
-                {currentDocument.content}
-              </pre>
-            </div>
+        <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: '50vh' }}>
+          <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 min-h-[300px]">
+            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+              {currentDocument.content}
+            </pre>
           </div>
         </div>
 
         {/* Signature Section */}
-        {!currentDocument.signed && (
-          <div className="border-t border-gray-200 p-6 bg-gray-50">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Digital Signature
-              </label>
-              <div className="relative">
-                <PenTool className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={signature}
-                  onChange={(e) => setSignature(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
-                  placeholder="Type your full legal name"
-                  required
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                By typing your name, you are providing a legally binding electronic signature
-              </p>
-            </div>
+        <div className="border-t border-gray-200 p-6 bg-white">
+          <div className="mb-6">
+            <label className="block text-lg font-medium text-gray-900 mb-3">
+              Digital Signature
+            </label>
+            <input
+              type="text"
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              placeholder="Type your full name to sign"
+              required
+            />
+          </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-900">Legal Agreement</p>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    By signing this document, you are entering into a legally binding agreement. 
-                    Please ensure you have read and understood all terms before proceeding.
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleCancel}
+              className="flex items-center space-x-2 px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+              <span>Cancel</span>
+            </button>
 
             <button
               onClick={handleSignDocument}
               disabled={!signature.trim()}
-              className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+              className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors"
             >
-              <PenTool className="h-5 w-5 mr-2" />
-              Sign Document
+              <CheckCircle className="h-5 w-5" />
+              <span>Sign & Continue</span>
             </button>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="border-t border-gray-200 p-6 bg-white">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handlePrevious}
-              disabled={currentDocumentIndex === 0}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              ← Previous
-            </button>
-
-            <div className="flex space-x-2">
-              {documents.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentDocumentIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentDocumentIndex
-                      ? 'bg-navy-600'
-                      : documents[index].signed
-                      ? 'bg-green-600'
-                      : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {currentDocumentIndex < documents.length - 1 ? (
-              <button
-                onClick={handleNext}
-                className="px-4 py-2 text-navy-600 hover:text-navy-700 transition-colors"
-              >
-                Next →
-              </button>
-            ) : allDocumentsSigned ? (
-              <button
-                onClick={onComplete}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Complete
-              </button>
-            ) : (
-              <div className="px-4 py-2 text-gray-400">
-                Sign to continue
-              </div>
-            )}
           </div>
         </div>
       </div>
