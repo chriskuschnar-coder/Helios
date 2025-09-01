@@ -1,22 +1,20 @@
 import React, { useEffect, useState } from 'react'
-import { CheckCircle, ArrowRight, Home, DollarSign } from 'lucide-react'
+import { CheckCircle, ArrowRight, Home } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 export function FundingSuccessPage() {
   const { refreshAccount } = useAuth()
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [amount, setAmount] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [paymentDetails, setPaymentDetails] = useState<any>(null)
 
   useEffect(() => {
-    // Get session ID and amount from URL
+    // Get session ID from URL
     const urlParams = new URLSearchParams(window.location.search)
     const sessionIdFromUrl = urlParams.get('session_id')
-    const amountFromUrl = urlParams.get('amount')
     
     if (sessionIdFromUrl) {
       setSessionId(sessionIdFromUrl)
-      setAmount(amountFromUrl)
       
       // Refresh account data to show updated balance
       const refreshData = async () => {
@@ -51,11 +49,6 @@ export function FundingSuccessPage() {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Processing your investment...</h2>
           <p className="text-gray-600">Please wait while we update your account</p>
-          {amount && (
-            <p className="text-sm text-gray-500 mt-2">
-              Investment amount: ${parseFloat(amount).toLocaleString()}
-            </p>
-          )}
         </div>
       </div>
     )
@@ -72,30 +65,14 @@ export function FundingSuccessPage() {
           Investment Successful!
         </h1>
         
-        {amount && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <span className="font-medium text-green-900">Investment Amount</span>
-            </div>
-            <div className="text-2xl font-bold text-green-900">
-              ${parseFloat(amount).toLocaleString()}
-            </div>
-            <p className="text-sm text-green-700 mt-1">
-              Successfully added to your trading account
-            </p>
-          </div>
-        )}
-        
         <p className="text-gray-600 mb-6">
-          Your capital contribution has been processed successfully through Stripe. 
-          Your trading account has been updated and you can now access all platform features.
+          Your capital contribution has been processed successfully. Your trading account has been updated and you can now access all platform features.
         </p>
 
         {sessionId && (
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600 mb-2">
-              <strong>Transaction Reference:</strong>
+            <p className="text-sm text-gray-600">
+              <strong>Transaction ID:</strong>
             </p>
             <p className="font-mono text-xs text-gray-800 break-all">
               {sessionId}
@@ -113,7 +90,7 @@ export function FundingSuccessPage() {
           </button>
           
           <p className="text-xs text-gray-500">
-            You will receive a confirmation email from Stripe with your investment receipt.
+            You will receive a confirmation email shortly with your investment details.
           </p>
         </div>
       </div>

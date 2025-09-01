@@ -34,18 +34,3 @@
 .ticker-container:hover .ticker-scroll {
   animation-play-state: paused;
 }
-/* CRITICAL: Stripe Elements CSS for proper mounting and interaction */
-.StripeElement {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 10px 0 !important;
-}
-
-.StripeElement--focus {
-  outline: none !important;
-}
-
-/* Ensure the container divs have proper dimensions */
-[class*="Element"] {
-  min-height: 40px !important;
-}

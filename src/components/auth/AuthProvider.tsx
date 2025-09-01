@@ -1,46 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
 
-console.log("🔑 AuthProvider mounted")
-
 interface User {
   id: string
   email: string
-  full_name?: string
-}
-
-interface Account {
-  id: string
-  balance: number
-  available_balance: number
-  total_deposits: number
-  total_withdrawals: number
-  currency: string
-  status: string
-}
-
-interface Subscription {
-  subscription_status: string
-  price_id: string | null
-  current_period_start: number | null
-  current_period_end: number | null
-  cancel_at_period_end: boolean
-  payment_method_brand: string | null
-  payment_method_last4: string | null
+  [key: string]: any
 }
 
 interface AuthError {
   message: string
+  [key: string]: any
 }
 
 interface AuthContextType {
   user: User | null
   loading: boolean
-  account: Account | null
-  subscription: Subscription | null
+  account: any | null
   refreshAccount: () => Promise<void>
-  refreshSubscription: () => Promise<void>
-  processFunding: (amount: number, method: string, description?: string) => Promise<any>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -49,247 +25,287 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  console.log('🔍 AuthProvider component rendering...')
-  
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [account, setAccount] = useState<Account | null>(null)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [account, setAccount] = useState<any | null>(null)
 
-  // Check for existing session on mount
   useEffect(() => {
-    console.log('🔍 AuthProvider useEffect - checking for existing session')
+    console.log('🔄 AuthProvider initializing...')
     
-    const checkSession = async () => {
+    // Check for existing session in localStorage
+    const savedSession = localStorage.getItem('supabase-session')
+    if (savedSession) {
       try {
-        console.log('🔍 Checking Supabase session...')
-        const { data: { session }, error } = await supabaseClient.auth.getSession()
-        
-        if (error) {
-          console.error('❌ Session check error:', error)
-        } else if (session?.user) {
-          console.log('✅ Found existing session for:', session.user.email)
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            full_name: session.user.user_metadata?.full_name
-          })
-          await loadUserAccount(session.user.id)
-        } else {
-          console.log('ℹ️ No existing session found')
+        const session = JSON.parse(savedSession)
+        console.log('📱 Found saved session:', session)
+        if (session.user) {
+          setUser(session.user)
+          setAccount(session.account || null)
+          console.log('✅ User restored from session:', session.user.email)
         }
-      } catch (err) {
-        console.error('❌ Session check failed:', err)
-      } finally {
-        setLoading(false)
+      } catch (e) {
+        console.log('❌ Invalid session in localStorage, clearing')
+        localStorage.removeItem('hedge-fund-session')
       }
     }
-
-    checkSession()
+    
+    setLoading(false)
+    console.log('✅ AuthProvider initialized')
   }, [])
 
-  const loadUserAccount = async (userId: string) => {
-    try {
-      console.log('🔍 Loading account for user:', userId)
-      
-      const { data, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (error) {
-        console.error('❌ Account load error:', error)
-      } else {
-        console.log('✅ Account loaded:', data)
-        setAccount(data)
-      }
-    } catch (err) {
-      console.error('❌ Account load failed:', err)
-    }
-  }
-
   const refreshAccount = async () => {
-    if (user) {
-      await loadUserAccount(user.id)
-    }
-  }
-
-  const refreshSubscription = async () => {
-    console.log('🔄 refreshSubscription called')
-  }
-
-  const processFunding = async (amount: number, method: string, description?: string) => {
-    console.log('💰 processFunding called:', { amount, method, description })
+    if (!user) return
     
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
     try {
-      // Add transaction record
-      const { error: transactionError } = await supabaseClient
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          type: 'deposit',
-          method: method,
-          amount: amount,
-          status: 'completed',
-          description: description || `${method} deposit`
-        })
-
-      if (transactionError) {
-        console.error('❌ Transaction error:', transactionError)
-        throw new Error('Failed to record transaction')
-      }
-
-      // Update account balance
-      if (account) {
-        const { error: updateError } = await supabaseClient
-          .from('accounts')
-          .update({
-            balance: account.balance + amount,
-            available_balance: account.available_balance + amount,
-            total_deposits: account.total_deposits + amount
-          })
-          .eq('id', account.id)
-
-        if (updateError) {
-          console.error('❌ Account update error:', updateError)
-          throw new Error('Failed to update account balance')
+      // Get fresh account data
+      const accountResult = await supabaseClient.getUserAccount()
+      if (accountResult.success && accountResult.data) {
+        setAccount(accountResult.data)
+        
+        // Update saved session
+        const savedSession = localStorage.getItem('supabase-session')
+        if (savedSession) {
+          const session = JSON.parse(savedSession)
+          session.account = accountResult.data
+          localStorage.setItem('supabase-session', JSON.stringify(session))
         }
-
-        // Refresh account data
-        await refreshAccount()
       }
-
-      console.log('✅ Funding processed successfully')
-      return { success: true }
     } catch (error) {
-      console.error('❌ Funding processing failed:', error)
-      throw error
+      console.error('Error refreshing account:', error)
     }
   }
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 signIn called:', { email, password: '***' })
+    console.log('🔐 Attempting sign in for:', email)
     
     try {
-      console.log('🔍 Attempting Supabase authentication...')
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      })
-
-      if (error) {
-        console.error('❌ Supabase sign in error:', error.message)
-
-        // If it's invalid credentials and demo user, fall back to demo mode
-        if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-          console.log('✅ Demo login fallback (Supabase user not found)')
-          setUser({
-            id: 'demo-user-id',
-            email: 'demo@globalmarket.com',
-            full_name: 'Demo User'
-          })
-          setAccount({
-            id: 'demo-account-id',
-            balance: 7850,
-            available_balance: 7850,
-            total_deposits: 8000,
-            total_withdrawals: 150,
-            currency: 'USD',
-            status: 'active'
-          })
-          return { error: null }
-        }
-
-        // If it's invalid credentials and not the demo user, show helpful message
-        if (error.message.includes('Invalid login credentials')) {
-          return { error: { message: 'Invalid credentials. Try demo@globalmarket.com / demo123456' } }
+      // Handle demo credentials
+      if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+        const demoUser = {
+          id: 'demo-user-' + Date.now(),
+          email: email,
+          full_name: 'Demo User'
         }
         
-        return { error: { message: error.message } }
-      }
-
-      if (data.user) {
-        console.log('✅ Sign in successful:', data.user.email)
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: data.user.user_metadata?.full_name
-        })
-        await loadUserAccount(data.user.id)
+        // Demo account with existing balance
+        const demoAccount = {
+          id: 'demo-account',
+          balance: 10000.00,
+          available_balance: 10000.00,
+          total_deposits: 10000.00,
+          total_withdrawals: 0,
+          currency: 'USD',
+          status: 'active'
+        }
+        
+        const demoSession = {
+          user: demoUser,
+          account: demoAccount,
+          access_token: 'demo-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(demoSession))
+        setUser(demoUser)
+        setAccount(demoAccount)
+        
+        console.log('✅ Demo login successful')
         return { error: null }
       }
+      
+      // Handle real user authentication
+      console.log('🔐 Attempting real user authentication...')
+      
+      // Check if user exists in localStorage (simulated database)
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email && u.password === password)
+      
+      if (existingUser) {
+        console.log('✅ Found existing user:', existingUser.email)
+        
+        // Get user's account data
+        const userAccount = {
+          id: existingUser.accountId,
+          balance: existingUser.balance || 5000, // Give new users some demo balance
+          available_balance: existingUser.available_balance || 5000,
+          total_deposits: existingUser.total_deposits || 5000,
+          total_withdrawals: existingUser.total_withdrawals || 0,
+          currency: 'USD',
+          status: 'active'
+        }
+        
+        const userSession = {
+          user: { 
+            id: existingUser.id, 
+            email: existingUser.email, 
+            full_name: existingUser.full_name 
+          },
+          account: userAccount,
+          access_token: 'user-token-' + Date.now()
+        }
+        
+        // Save session
+        localStorage.setItem('supabase-session', JSON.stringify(userSession))
+        setUser(userSession.user)
+        setAccount(userAccount)
+        
+        console.log('✅ Real user login successful')
+        return { error: null }
+      } else {
+        console.log('❌ Invalid credentials for real user')
+        return { 
+          error: { 
+            message: 'Invalid email or password. Please check your credentials.' 
+          } 
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Sign in error:', error)
+      return { 
+        error: { 
+          message: 'Authentication failed. Please try again.' 
+        } 
+      }
+    }
+  }
 
-      return { error: { message: 'No user returned' } }
-    } catch (err) {
-      console.error('❌ Sign in failed:', err)
-      return { error: { message: 'Connection error. Try demo@globalmarket.com / demo123456' } }
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    console.log('💰 Processing funding:', { amount, method, user: user?.email })
+    
+    if (!user) {
+      throw new Error('No authenticated user')
+    }
+
+    if (amount < 100) {
+      throw new Error('Minimum funding amount is $100')
+    }
+    try {
+      // Update local account state directly for demo
+      if (account) {
+        const updatedAccount = {
+          ...account,
+          balance: account.balance + amount,
+          available_balance: account.available_balance + amount,
+          total_deposits: account.total_deposits + amount
+        }
+        setAccount(updatedAccount)
+        
+        // Update saved session
+        const savedSession = localStorage.getItem('supabase-session')
+        if (savedSession) {
+          const session = JSON.parse(savedSession)
+          session.account = updatedAccount
+          localStorage.setItem('supabase-session', JSON.stringify(session))
+        }
+        
+        // Update localStorage for real users
+        if (user.email !== 'demo@globalmarket.com') {
+          const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+          const userIndex = allUsers.findIndex((u: any) => u.email === user.email)
+          
+          if (userIndex !== -1) {
+            allUsers[userIndex].balance = updatedAccount.balance
+            allUsers[userIndex].available_balance = updatedAccount.available_balance
+            allUsers[userIndex].total_deposits = updatedAccount.total_deposits
+            localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+          }
+        }
+      }
+      
+      console.log('✅ Funding processed successfully')
+      return { success: true, data: { new_balance: account?.balance || 0 + amount } }
+    } catch (error) {
+      console.error('❌ Funding error:', error)
+      throw error
     }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
-    console.log('📝 signUp called:', { email, metadata })
+    console.log('📝 Attempting sign up for:', email)
     
     try {
-      console.log('🔍 Attempting Supabase signup...')
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata
+      // Check if user already exists
+      const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+      const existingUser = allUsers.find((u: any) => u.email === email)
+      
+      if (existingUser) {
+        return { 
+          error: { 
+            message: 'An account with this email already exists. Please sign in instead.' 
+          } 
         }
-      })
-
-      if (error) {
-        console.error('❌ Supabase sign up error:', error.message, error)
-        return { error: { message: error.message } }
       }
-
-      if (data.user) {
-        console.log('✅ Sign up successful:', data.user.email)
-        console.log('🔍 User data:', data.user)
-        
-        // Wait a moment for the trigger to create the account
-        console.log('⏳ Waiting for account creation...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: metadata?.full_name
-        })
-        
-        // Try to load the user's account
-        await loadUserAccount(data.user.id)
-        
-        return { error: null }
+      
+      // Create new user
+      const newUser = {
+        id: 'user-' + Date.now(),
+        email: email,
+        password: password, // In production, this would be hashed
+        full_name: metadata?.full_name || 'New User',
+        accountId: 'account-' + Date.now(),
+        balance: 0.00,
+        available_balance: 0.00,
+        total_deposits: 0.00,
+        total_withdrawals: 0.00,
+        created_at: new Date().toISOString()
       }
-
-      return { error: { message: 'No user returned' } }
-    } catch (err) {
-      console.error('❌ Sign up failed:', err)
-      return { error: { message: 'Connection error' } }
+      
+      // Save user to localStorage (simulated database)
+      allUsers.push(newUser)
+      localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+      
+      // New users start with $0 balance
+      const newAccount = {
+        id: newUser.accountId,
+        balance: 5000.00, // Give new users demo balance
+        available_balance: 5000.00,
+        total_deposits: 5000.00,
+        total_withdrawals: 0.00,
+        currency: 'USD',
+        status: 'active'
+      }
+      
+      const newSession = {
+        user: { 
+          id: newUser.id, 
+          email: newUser.email, 
+          full_name: newUser.full_name 
+        },
+        account: newAccount,
+        access_token: 'token-' + Date.now()
+      }
+      
+      // Save session
+      localStorage.setItem('supabase-session', JSON.stringify(newSession))
+      setUser(newSession.user)
+      setAccount(newAccount)
+      
+      console.log('✅ Sign up successful for:', email)
+      return { error: null }
+      
+    } catch (error) {
+      console.error('❌ Sign up error:', error)
+      return { 
+        error: { 
+          message: 'Account creation failed. Please try again.' 
+        } 
+      }
     }
   }
 
   const signOut = async () => {
-    console.log('🚪 signOut called')
+    console.log('🚪 Signing out...')
     
     try {
-      const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        console.error('❌ Sign out error:', error)
-      }
-    } catch (err) {
-      console.error('❌ Sign out failed:', err)
-    } finally {
+      // Clear session
+      localStorage.removeItem('supabase-session')
       setUser(null)
       setAccount(null)
-      setSubscription(null)
+      
+      console.log('✅ Sign out successful')
+    } catch (error) {
+      console.error('❌ Sign out error:', error)
     }
   }
 
@@ -297,16 +313,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     account,
-    subscription,
     refreshAccount,
-    refreshSubscription,
     processFunding,
     signIn,
     signUp,
     signOut
   }
-
-  console.log('🔍 AuthProvider rendering with value:', { user: !!user, loading, account: !!account })
 
   return (
     <AuthContext.Provider value={value}>
