@@ -907,7 +907,8 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                       </p>
                     </div>
                   </>
-                <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
+                  <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
+                </>
               )}
             </div>
             <div>
