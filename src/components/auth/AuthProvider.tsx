@@ -235,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('📝 signUp called:', { email, metadata })
     
     try {
+      console.log('🔍 Attempting Supabase signup...')
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -244,17 +245,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('❌ Supabase sign up error:', error)
+        console.error('❌ Supabase sign up error:', error.message, error)
         return { error: { message: error.message } }
       }
 
       if (data.user) {
         console.log('✅ Sign up successful:', data.user.email)
+        console.log('🔍 User data:', data.user)
+        
+        // Wait a moment for the trigger to create the account
+        console.log('⏳ Waiting for account creation...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
         setUser({
           id: data.user.id,
           email: data.user.email || '',
           full_name: metadata?.full_name
         })
+        
+        // Try to load the user's account
+        await loadUserAccount(data.user.id)
+        
         return { error: null }
       }
 
