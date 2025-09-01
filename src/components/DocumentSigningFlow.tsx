@@ -240,20 +240,6 @@ By signing below, I acknowledge that I have read and understood this Private Pla
               placeholder="Type your full name to sign"
               required
             />
-        {/* Digital Signature Section */}
-        <div className="border-t border-gray-200 p-6 bg-white">
-          <div className="mb-6">
-            <label className="block text-lg font-medium text-gray-900 mb-3">
-              Digital Signature
-            </label>
-            <input
-              type="text"
-              value={signature}
-              onChange={(e) => setSignature(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-              placeholder="Type your full name to sign"
-              required
-            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -277,7 +263,5 @@ By signing below, I acknowledge that I have read and understood this Private Pla
         </div>
       </div>
     </div>
-  )
-}
   )
 }
