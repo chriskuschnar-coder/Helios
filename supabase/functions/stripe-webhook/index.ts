@@ -14,40 +14,54 @@ Deno.serve(async (req) => {
 
   try {
     const signature = req.headers.get('stripe-signature')
-    const body = await req.text()
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || 'whsec_hffzsrLlxqmGIMYACHfhAtXvhD6eVddL'
     
-    console.log('Received Stripe webhook')
-    
-    // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    if (!signature) {
+      console.error('No Stripe signature found')
+      return new Response('No signature', { status: 400 })
+    }
 
-    // Parse webhook event
+    const body = await req.text()
+    console.log('Webhook received:', { signature: signature.substring(0, 20) + '...', bodyLength: body.length })
+
+    // Verify webhook signature (simplified for demo)
+    // In production, use proper Stripe webhook verification
+    
     let event
     try {
       event = JSON.parse(body)
       console.log('Webhook event type:', event.type)
-    } catch (e) {
+    } catch (err) {
       console.error('Invalid JSON in webhook body')
-      throw new Error('Invalid webhook payload')
+      return new Response('Invalid JSON', { status: 400 })
     }
 
-    // Process different event types
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('Processing checkout.session.completed')
         const session = event.data.object
-        console.log('Processing completed checkout session:', session.id)
         
+        // Get user_id from metadata
         const userId = session.metadata?.user_id
-        const amount = session.amount_total / 100 // Convert from cents
-        
         if (!userId) {
           console.error('No user_id in session metadata')
-          throw new Error('Missing user ID in session metadata')
+          break
         }
 
+        console.log('Processing payment for user:', userId)
+        console.log('Session details:', {
+          id: session.id,
+          amount_total: session.amount_total,
+          customer: session.customer,
+          payment_status: session.payment_status
+        })
+
         // Update payment record
-        const paymentUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${session.id}`, {
+        const updatePaymentResponse = await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${session.id}`, {
           method: 'PATCH',
           headers: {
             'apikey': supabaseServiceKey,
@@ -59,14 +73,71 @@ Deno.serve(async (req) => {
             status: 'completed',
             is_paid: true,
             stripe_payment_intent_id: session.payment_intent,
-            updated_at: new Date().toISOString()
+            metadata: {
+              ...session.metadata,
+              stripe_session_id: session.id,
+              stripe_customer_id: session.customer,
+              payment_status: session.payment_status,
+              amount_total: session.amount_total
+            }
           })
         })
 
-        if (!paymentUpdateResponse.ok) {
-          console.error('Error updating payment record')
+        if (!updatePaymentResponse.ok) {
+          console.error('Failed to update payment record')
         } else {
-          console.log('✅ Payment record updated successfully')
+          console.log('✅ Payment record updated')
+        }
+
+        // Get user's account
+        const accountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!accountResponse.ok) {
+          console.error('Failed to get user account')
+          break
+        }
+
+        const accounts = await accountResponse.json()
+        if (accounts.length === 0) {
+          console.error('No account found for user:', userId)
+          break
+        }
+
+        const account = accounts[0]
+        const investmentAmount = session.amount_total / 100 // Convert from cents to dollars
+
+        console.log('Updating account balance:', {
+          currentBalance: account.balance,
+          investmentAmount: investmentAmount,
+          newBalance: account.balance + investmentAmount
+        })
+
+        // Update account balance
+        const updateAccountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?id=eq.${account.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            balance: account.balance + investmentAmount,
+            available_balance: account.available_balance + investmentAmount,
+            total_deposits: account.total_deposits + investmentAmount
+          })
+        })
+
+        if (!updateAccountResponse.ok) {
+          console.error('Failed to update account balance')
+        } else {
+          console.log('✅ Account balance updated successfully')
         }
 
         // Create transaction record
@@ -80,106 +151,43 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             user_id: userId,
+            account_id: account.id,
             type: 'deposit',
             method: 'stripe',
-            amount: amount,
+            amount: investmentAmount,
             status: 'completed',
-            external_id: session.id,
-            description: `Hedge fund investment - ${session.id}`,
+            external_id: session.payment_intent,
+            reference_id: session.id,
+            description: `Stripe payment - $${investmentAmount.toLocaleString()}`,
             metadata: {
               stripe_session_id: session.id,
-              stripe_payment_intent: session.payment_intent,
-              investment_type: 'hedge_fund_capital'
+              stripe_customer_id: session.customer,
+              stripe_payment_intent: session.payment_intent
             }
           })
         })
 
         if (!transactionResponse.ok) {
-          console.error('Error creating transaction record')
+          console.error('Failed to create transaction record')
         } else {
           console.log('✅ Transaction record created')
         }
 
-        // Get user's account
-        const accountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!accountResponse.ok) {
-          console.error('Error fetching account')
-          throw new Error('Failed to fetch account')
-        }
-
-        const accounts = await accountResponse.json()
-        const account = accounts[0]
-
-        if (!account) {
-          console.error('No account found for user:', userId)
-          throw new Error('Account not found')
-        }
-
-        // Update account balance
-        const newBalance = (account.balance || 0) + amount
-        const newAvailableBalance = (account.available_balance || 0) + amount
-        const newTotalDeposits = (account.total_deposits || 0) + amount
-
-        const balanceUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            balance: newBalance,
-            available_balance: newAvailableBalance,
-            total_deposits: newTotalDeposits,
-            updated_at: new Date().toISOString()
-          })
-        })
-
-        if (!balanceUpdateResponse.ok) {
-          console.error('Error updating account balance')
-          throw new Error('Failed to update account balance')
-        }
-
-        console.log(`✅ Investment processed successfully: $${amount} for user ${userId}`)
-        console.log(`New balance: $${newBalance}`)
         break
 
-      case 'checkout.session.expired':
-        const expiredSession = event.data.object
-        console.log('Processing expired checkout session:', expiredSession.id)
-        
-        // Update payment record to expired
-        await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${expiredSession.id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            status: 'expired',
-            updated_at: new Date().toISOString()
-          })
-        })
+      case 'payment_intent.succeeded':
+        console.log('Payment intent succeeded:', event.data.object.id)
+        break
+
+      case 'customer.created':
+        console.log('Customer created:', event.data.object.id)
         break
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log('Unhandled event type:', event.type)
     }
 
-    return new Response(JSON.stringify({ 
-      received: true,
-      event_type: event.type 
-    }), {
+    return new Response(JSON.stringify({ received: true }), {
       headers: {
         'Content-Type': 'application/json',
         ...corsHeaders,
@@ -190,8 +198,7 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        received: false 
+        error: error.message
       }),
       {
         status: 400,
