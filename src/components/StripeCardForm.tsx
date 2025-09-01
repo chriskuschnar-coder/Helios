@@ -106,15 +106,6 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
               if (url) {
                 // Redirect to Stripe Checkout
                 window.location.href = url
-                return
-              }
-            }
-          }
-        } catch (error) {
-          console.log('🔄 Stripe checkout failed, falling back to local processing')
-        }
-      }
-      
       // Fall back to local processing
       console.log('🔄 Processing payment locally')
       await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
@@ -129,7 +120,8 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
     } catch (error) {
       console.error('❌ Payment processing error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
-    } finally {
+      // Always use Stripe checkout - no fallbacks to demo processing
+      setError(error instanceof Error ? error.message : 'Stripe checkout failed - please try again')
       setLoading(false)
     }
   }

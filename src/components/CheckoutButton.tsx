@@ -31,15 +31,48 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
     try {
       console.log('💰 Processing investment for amount:', amount)
       
-      // Process funding through auth provider
-      await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
+      // Always redirect to Stripe checkout - no shortcuts
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Payment system not configured')
+      }
+
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
       
-      // Call the funding success handler directly
-      if (onSuccess) {
-        onSuccess()
+      if (!session) {
+        throw new Error('Please sign in to continue')
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
+          mode: 'payment',
+          amount: amount * 100,
+          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
+          cancel_url: `${window.location.origin}/funding-cancelled`
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create checkout session')
+      }
+
+      const { url } = await response.json()
+      
+      if (url) {
+        window.location.href = url
+      } else {
+        throw new Error('No checkout URL received')
       }
       
     } catch (error) {
