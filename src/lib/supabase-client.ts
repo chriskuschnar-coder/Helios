@@ -16,4 +16,7 @@ export const supabaseClient = createClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
+    }
+  }
+)
 console.log('✅ Supabase client created')
