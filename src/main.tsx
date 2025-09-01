@@ -2,11 +2,29 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // IMMEDIATE DEBUG - Check what Vite is loading
-console.log('🔍 ENVIRONMENT VARIABLE DEBUG:')
+console.log('🔍 CRITICAL ENV DEBUG - MAIN.TSX:')
 console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL)
 console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY)
+console.log('VITE_STRIPE_PUBLISHABLE_KEY:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 console.log('All VITE_ variables:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+console.log('MODE:', import.meta.env.MODE)
+console.log('DEV:', import.meta.env.DEV)
 console.log('Raw import.meta.env:', import.meta.env)
+
+// Check if .env file exists by testing for any custom variables
+if (!import.meta.env.VITE_SUPABASE_URL) {
+  console.error('❌ VITE_SUPABASE_URL is undefined - .env file not loading!')
+  console.log('📁 Expected .env file location: /home/project/.env')
+  console.log('📝 Expected format: VITE_SUPABASE_URL=https://your-project.supabase.co')
+} else {
+  console.log('✅ VITE_SUPABASE_URL loaded successfully')
+}
+
+if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.error('❌ VITE_SUPABASE_ANON_KEY is undefined - .env file not loading!')
+} else {
+  console.log('✅ VITE_SUPABASE_ANON_KEY loaded successfully')
+}
 
 import { InvestmentPlatform } from './components/InvestmentPlatform';
 import { AuthProvider } from './components/auth/AuthProvider';
