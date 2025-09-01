@@ -56,6 +56,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         </p>
       </div>
 
+      <SupabaseConnectionBanner />
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
           <AlertCircle className="h-5 w-5 mr-2" />
@@ -147,14 +149,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       <div className="mt-8 p-4 bg-navy-50 rounded-lg">
         <h3 className="font-medium text-navy-900 mb-2">Demo Account</h3>
         <p className="text-sm text-navy-700 mb-2">
-          Try the platform with demo credentials (has existing balance):
+          For testing in Bolt editor only (single device):
         </p>
         <div className="text-sm font-mono bg-white p-2 rounded border">
           <div>Email: demo@globalmarket.com</div>
           <div>Password: demo123456</div>
         </div>
         <p className="text-xs text-navy-600 mt-2">
-          Or create a new account to start with $0 balance and test the funding system.
+          For cross-device login: Connect to Supabase using the button in top right of Bolt.
         </p>
       </div>
     </div>

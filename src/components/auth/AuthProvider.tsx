@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
+import { SupabaseConnectionBanner } from '../SupabaseConnectionBanner'
 
 interface User {
   id: string
@@ -57,18 +58,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
-        // Check if Supabase is properly configured and not in WebContainer
+        // Check if Supabase is properly configured
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-        const isWebContainer = window.location.hostname.includes('webcontainer') || 
-                              window.location.hostname.includes('local-credentialless')
+        const isProduction = window.location.hostname.includes('netlify') || 
+                            window.location.hostname.includes('globalmarketsconsulting.com') ||
+                            window.location.hostname !== 'localhost'
         
         console.log('🔍 Environment check:')
         console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing')
         console.log('Supabase Key:', supabaseKey ? 'Present' : 'Missing')
-        console.log('WebContainer:', isWebContainer ? 'Yes (proxy mode)' : 'No (direct mode)')
+        console.log('Environment:', isProduction ? 'Production (Supabase mode)' : 'Development (localStorage mode)')
+        console.log('Hostname:', window.location.hostname)
         
-        if (supabaseUrl && supabaseKey && !isWebContainer) {
+        if (supabaseUrl && supabaseKey) {
           // Try to get current session from Supabase
           try {
             console.log('🔄 Attempting Supabase connection...')
@@ -97,34 +100,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (supabaseError) {
             console.log('⚠️ Supabase session check failed:', supabaseError)
-            console.log('🔄 Falling back to localStorage authentication')
+            // Only fall back to localStorage in development
+            if (!isProduction) {
+              console.log('🔄 Falling back to localStorage authentication')
+            }
           }
         } else {
-          if (isWebContainer) {
-            console.log('🔧 WebContainer environment detected - using localStorage for demo')
-            console.log('📱 For cross-device login, click "Connect to Supabase" in Bolt interface')
-          } else {
-            console.log('⚠️ Supabase not configured, using localStorage only')
-          }
+          console.log('⚠️ Supabase not configured')
+          console.log('📱 Click "Connect to Supabase" in Bolt interface for cross-device login')
         }
         
-        // Fallback: Check localStorage for existing session
-          console.log('🔧 WebContainer environment - using proxy + localStorage for demo')
-        const storedUser = localStorage.getItem('auth-user')
-        const storedAccount = localStorage.getItem('auth-account')
-        
-        if (storedUser) {
-          const userData = JSON.parse(storedUser)
-          setUser(userData)
-          console.log('✅ Found localStorage session for:', userData.email)
+        // Fallback: Check localStorage for existing session (development only)
+        if (!isProduction) {
+          console.log('🔧 Development environment - using localStorage for demo')
+          const storedUser = localStorage.getItem('auth-user')
+          const storedAccount = localStorage.getItem('auth-account')
           
-          if (storedAccount) {
-            setAccount(JSON.parse(storedAccount))
-          } else {
-            // Load account from localStorage
-            const accountData = localStorage.getItem(`account-${userData.id}`)
-            if (accountData) {
-              setAccount(JSON.parse(accountData))
+          if (storedUser) {
+            const userData = JSON.parse(storedUser)
+            setUser(userData)
+            console.log('✅ Found localStorage session for:', userData.email)
+            
+            if (storedAccount) {
+              setAccount(JSON.parse(storedAccount))
+            } else {
+              // Load account from localStorage
+              const accountData = localStorage.getItem(`account-${userData.id}`)
+              if (accountData) {
+                setAccount(JSON.parse(accountData))
+              }
             }
           }
         }
@@ -348,11 +352,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting sign in for:', email)
     
-    // Check if Supabase is available
+    // Always try Supabase first if configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const isWebContainer = window.location.hostname.includes('webcontainer') || 
-                          window.location.hostname.includes('local-credentialless')
     
     if (supabaseUrl && supabaseKey) {
       console.log('🔄 Attempting Supabase authentication...')
@@ -370,18 +372,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Supabase sign in successful')
         return { error: null }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase auth failed, using localStorage fallback:', supabaseError)
-      }
-    } else {
-      if (isWebContainer) {
-        console.log('🔧 WebContainer mode - using localStorage authentication')
-      } else {
-        console.log('⚠️ Supabase not configured, using localStorage only')
+        console.log('⚠️ Supabase auth failed:', supabaseError)
+        return { error: { message: 'Authentication failed - please check your credentials' } }
       }
     }
     
-    try {
-      // Fallback: localStorage authentication
+    // Fallback: localStorage authentication (development only)
+    const isProduction = window.location.hostname.includes('netlify') || 
+                        window.location.hostname.includes('globalmarketsconsulting.com') ||
+                        window.location.hostname !== 'localhost'
+    
+    if (!isProduction) {
+      console.log('🔧 Development mode - using localStorage authentication')
+      
       if (email === 'demo@globalmarket.com' || email === 'demo') {
         const demoUser = {
           id: 'demo-user-id',
@@ -454,20 +457,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: { message: 'Invalid email or password' } }
         }
       }
-    } catch (err) {
-      console.error('❌ Sign in error:', err)
-      return { error: { message: 'Connection error - please try again' } }
     }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
-    // Check if Supabase is available
+    // Always try Supabase first if configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const isWebContainer = window.location.hostname.includes('webcontainer') || 
-                          window.location.hostname.includes('local-credentialless')
     
     if (supabaseUrl && supabaseKey) {
       console.log('🔄 Attempting Supabase signup...')
@@ -488,18 +486,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Supabase sign up successful')
         return { error: null }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase signup failed, using localStorage fallback:', supabaseError)
-      }
-    } else {
-      if (isWebContainer) {
-        console.log('🔧 WebContainer mode - using localStorage for demo')
-      } else {
-        console.log('⚠️ Supabase not configured, using localStorage only')
+        console.log('⚠️ Supabase signup failed:', supabaseError)
+        return { error: { message: 'Registration failed - please try again' } }
       }
     }
     
-    try {
-      // Fallback: localStorage signup
+    // Fallback: localStorage signup (development only)
+    const isProduction = window.location.hostname.includes('netlify') || 
+                        window.location.hostname.includes('globalmarketsconsulting.com') ||
+                        window.location.hostname !== 'localhost'
+    
+    if (!isProduction) {
+      console.log('🔧 Development mode - using localStorage signup')
+      
       const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       
       const newUser = {
@@ -546,9 +545,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('✅ Fallback signup successful')
       return { error: null }
-    } catch (err) {
-      console.error('❌ Sign up error:', err)
-      return { error: { message: 'Connection error - please try again' } }
+    } else {
+      return { error: { message: 'Supabase not configured - please connect to Supabase' } }
     }
   }
 

@@ -16,86 +16,99 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
-  console.log('🔄 Proxy request:', req.method, req.url, req.body)
-
-  const { method, body } = req
-  const { action, table, data, filters } = body || {}
+  console.log('🔄 Proxy request:', req.method, req.url, 'Body:', req.body)
 
   try {
-    switch (action) {
-      case 'test-connection':
-        const { data: testData, error: testError } = await supabase
-          .from('users')
-          .select('count')
-          .limit(1)
-        
-        if (testError) throw testError
-        return res.json({ success: true, message: 'Connection successful' })
-
-      case 'auth-signin':
-        const { email, password } = data
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-        
-        if (authError) throw authError
-        return res.json({ data: authData, error: null })
-
-      case 'auth-signup':
-        const { email: signupEmail, password: signupPassword, metadata } = data
-        const { data: signupData, error: signupError } = await supabase.auth.signUp({
-          email: signupEmail,
-          password: signupPassword,
-          options: { data: metadata }
-        })
-        
-        if (signupError) throw signupError
-        return res.json({ data: signupData, error: null })
-
-      case 'select':
-        let query = supabase.from(table).select(data.columns || '*')
-        
-        if (filters) {
-          Object.entries(filters).forEach(([key, value]) => {
-            if (key === 'eq') {
-              query = query.eq(value.column, value.value)
-            } else if (key === 'limit') {
-              query = query.limit(value)
-            }
-          })
-        }
-        
-        const { data: selectData, error: selectError } = data.single 
-          ? await query.single()
-          : await query
-        
-        if (selectError) throw selectError
-        return res.json({ data: selectData, error: null })
-
-      case 'insert':
-        const { data: insertData, error: insertError } = await supabase
-          .from(table)
-          .insert(data.values)
-          .select()
-        
-        if (insertError) throw insertError
-        return res.json({ data: insertData, error: null })
-
-      case 'update':
-        const { data: updateData, error: updateError } = await supabase
-          .from(table)
-          .update(data.values)
-          .eq(data.where.column, data.where.value)
-        
-        if (updateError) throw updateError
-        return res.json({ data: updateData, error: null })
-
-      default:
-        return res.status(400).json({ error: 'Invalid action' })
+    // Simple test connection endpoint
+    if (req.url === '/test-connection' || req.url.endsWith('test-connection')) {
+      console.log('🔄 Testing Supabase connection...')
+      const { data, error } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1)
+      
+      if (error) {
+        console.error('❌ Supabase test failed:', error)
+        return res.status(500).json({ error: error.message, success: false })
+      }
+      
+      console.log('✅ Supabase connection successful')
+      return res.json({ success: true, message: 'Connection successful', data })
     }
+
+    // Auth signin endpoint
+    if (req.url.endsWith('auth/signin')) {
+      const { email, password } = req.body
+      console.log('🔐 Auth signin request for:', email)
+      
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      
+      if (authError) {
+        console.error('❌ Auth signin failed:', authError)
+        return res.status(400).json({ error: authError.message, data: null })
+      }
+      
+      console.log('✅ Auth signin successful')
+      return res.json({ data: authData, error: null })
+    }
+
+    // Auth signup endpoint
+    if (req.url.endsWith('auth/signup')) {
+      const { email, password, metadata } = req.body
+      console.log('📝 Auth signup request for:', email)
+      
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: metadata }
+      })
+      
+      if (signupError) {
+        console.error('❌ Auth signup failed:', signupError)
+        return res.status(400).json({ error: signupError.message, data: null })
+      }
+      
+      console.log('✅ Auth signup successful')
+      return res.json({ data: signupData, error: null })
+    }
+
+    // Users table query
+    if (req.url.endsWith('/users')) {
+      console.log('👥 Users query request')
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .limit(10)
+      
+      if (error) {
+        console.error('❌ Users query failed:', error)
+        return res.status(500).json({ error: error.message, data: null })
+      }
+      
+      console.log('✅ Users query successful')
+      return res.json({ data, error: null })
+    }
+
+    // Default fallback
+    console.log('❓ Unknown endpoint:', req.url)
+    return res.status(404).json({ 
+      error: 'Endpoint not found: ' + req.url,
+      available_endpoints: [
+        '/test-connection',
+        '/auth/signin', 
+        '/auth/signup',
+        '/users'
+      ]
+    })
+
   } catch (error) {
-    console.error('Supabase proxy error:', error)
-    return res.status(500).json({ error: error.message })
+    console.error('❌ Supabase proxy error:', error)
+    return res.status(500).json({ 
+      error: error.message,
+      type: 'proxy_error'
+    })
   }
 }

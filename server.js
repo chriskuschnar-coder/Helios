@@ -13,9 +13,22 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(express.static('dist'))
 
-// API routes
-app.all('/api/supabase-proxy', supabaseProxy)
-app.all('/api/supabase-proxy/*', supabaseProxy)
+// API routes - handle all supabase proxy requests
+app.all('/api/supabase-proxy/*', (req, res) => {
+  // Remove the /api/supabase-proxy prefix and pass to handler
+  req.url = req.url.replace('/api/supabase-proxy', '')
+  if (!req.url) req.url = '/'
+  
+  console.log('🔄 Server routing to proxy:', req.url)
+  supabaseProxy(req, res)
+})
+
+// Also handle direct proxy requests without the /* 
+app.all('/api/supabase-proxy', (req, res) => {
+  req.url = '/'
+  console.log('🔄 Server routing to proxy root:', req.url)
+  supabaseProxy(req, res)
+})
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {
