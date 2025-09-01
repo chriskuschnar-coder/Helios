@@ -1,224 +1,220 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import Stripe from 'npm:stripe@17.7.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '', 
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
+
+const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
+const stripe = new Stripe(stripeSecret, {
+  appInfo: {
+    name: 'Global Market Consulting',
+    version: '1.0.0',
+  },
+});
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    })
-  }
-
   try {
-    const { price_id, mode, amount, success_url, cancel_url } = await req.json()
-    
-    console.log('Creating Stripe checkout session:', { price_id, mode, amount, success_url, cancel_url })
-    
-    // Get user from JWT token
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { 
+        status: 204,
+        headers: corsHeaders 
+      });
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    
-    // Verify JWT and get user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'apikey': supabaseServiceKey
-      }
-    })
-    
-    if (!userResponse.ok) {
-      throw new Error('Invalid user token')
-    }
-    
-    const user = await userResponse.json()
-    console.log('User authenticated:', user.email)
-
-    // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-    if (!stripeSecretKey) {
-      throw new Error('Stripe secret key not configured')
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }), 
+        { 
+          status: 405,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    // Check if customer exists in Stripe
-    let customerId = null
-    
-    // First check our database for existing Stripe customer
-    const customerResponse = await fetch(`${supabaseUrl}/rest/v1/stripe_customers?user_id=eq.${user.id}&select=customer_id`, {
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    
-    if (customerResponse.ok) {
-      const customers = await customerResponse.json()
-      if (customers.length > 0) {
-        customerId = customers[0].customer_id
-        console.log('Found existing Stripe customer:', customerId)
-      }
+    // Get request data
+    const { price_id, success_url, cancel_url, mode, amount } = await req.json();
+
+    // Validate required parameters
+    if (!price_id || !success_url || !cancel_url || !mode) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
+
+    if (!['payment', 'subscription'].includes(mode)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid mode. Must be payment or subscription' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization')!;
+    const token = authHeader.replace('Bearer ', '');
     
-    // If no customer exists, create one
-    if (!customerId) {
-      console.log('Creating new Stripe customer for user:', user.email)
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser(token);
+
+    if (getUserError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('✅ Authenticated user:', user.email);
+
+    // Check if customer exists
+    let { data: customer, error: getCustomerError } = await supabase
+      .from('stripe_customers')
+      .select('customer_id')
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (getCustomerError) {
+      console.error('❌ Error fetching customer:', getCustomerError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch customer information' }), 
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    let customerId: string;
+
+    // Create customer if doesn't exist
+    if (!customer || !customer.customer_id) {
+      console.log('🆕 Creating new Stripe customer for:', user.email);
       
-      const customerData = new URLSearchParams({
+      const newCustomer = await stripe.customers.create({
         email: user.email,
-        'metadata[user_id]': user.id,
-        'metadata[full_name]': user.user_metadata?.full_name || user.email,
-        name: user.user_metadata?.full_name || user.email
-      })
-      
-      const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${stripeSecretKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+        metadata: {
+          userId: user.id,
+          platform: 'hedge_fund_web'
         },
-        body: customerData.toString()
-      })
+      });
 
-      if (!stripeCustomerResponse.ok) {
-        const error = await stripeCustomerResponse.json()
-        console.error('Stripe customer creation error:', error)
-        throw new Error(error.error?.message || 'Failed to create customer')
-      }
+      console.log('✅ Created Stripe customer:', newCustomer.id);
 
-      const customer = await stripeCustomerResponse.json()
-      customerId = customer.id
-      console.log('✅ Stripe customer created:', customerId)
-
-      // Save customer to our database
-      const dbCustomerResponse = await fetch(`${supabaseUrl}/rest/v1/stripe_customers`, {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
+      // Save customer mapping
+      const { error: createCustomerError } = await supabase
+        .from('stripe_customers')
+        .insert({
           user_id: user.id,
-          customer_id: customerId
-        })
-      })
+          customer_id: newCustomer.id,
+        });
 
-      if (!dbCustomerResponse.ok) {
-        console.error('Failed to save customer to database')
-      } else {
-        console.log('✅ Customer saved to database')
+      if (createCustomerError) {
+        console.error('❌ Failed to save customer mapping:', createCustomerError);
+        
+        // Cleanup Stripe customer
+        try {
+          await stripe.customers.del(newCustomer.id);
+        } catch (deleteError) {
+          console.error('❌ Failed to cleanup Stripe customer:', deleteError);
+        }
+
+        return new Response(
+          JSON.stringify({ error: 'Failed to create customer mapping' }), 
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
+
+      customerId = newCustomer.id;
+    } else {
+      customerId = customer.customer_id;
+      console.log('✅ Using existing customer:', customerId);
     }
 
-    // Create Stripe checkout session
-    const sessionData = new URLSearchParams({
-      'payment_method_types[]': 'card',
-      mode: mode,
+    // Create checkout session
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
-      success_url: success_url,
-      cancel_url: cancel_url,
-      'metadata[user_id]': user.id,
-      'metadata[purpose]': 'hedge_fund_investment'
-    })
+      payment_method_types: ['card'],
+      mode: mode as 'payment' | 'subscription',
+      success_url,
+      cancel_url,
+      metadata: {
+        user_id: user.id,
+        user_email: user.email,
+        product_type: 'hedge_fund_investment'
+      }
+    };
 
     if (mode === 'payment') {
-      sessionData.append('line_items[0][price_data][currency]', 'usd')
-      sessionData.append('line_items[0][price_data][product_data][name]', 'Hedge Fund Investment')
-      sessionData.append('line_items[0][price_data][product_data][description]', `Investment in Global Market Consulting Fund`)
-      sessionData.append('line_items[0][price_data][unit_amount]', amount.toString())
-      sessionData.append('line_items[0][quantity]', '1')
+      // For one-time payments, create line item with custom amount
+      sessionConfig.line_items = [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Investment Amount',
+              description: 'Hedge fund investment contribution',
+              metadata: {
+                product_id: 'investment_amount'
+              }
+            },
+            unit_amount: amount || 10000, // Amount in cents
+          },
+          quantity: 1,
+        },
+      ];
     } else {
-      sessionData.append('line_items[0][price]', price_id)
-      sessionData.append('line_items[0][quantity]', '1')
+      // For subscriptions, use the price_id
+      sessionConfig.line_items = [
+        {
+          price: price_id,
+          quantity: 1,
+        },
+      ];
     }
 
-    const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${stripeSecretKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: sessionData.toString()
-    })
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    if (!stripeResponse.ok) {
-      const error = await stripeResponse.json()
-      console.error('Stripe session creation error:', error)
-      throw new Error(error.error?.message || 'Failed to create checkout session')
-    }
+    console.log('✅ Created checkout session:', session.id);
 
-    const session = await stripeResponse.json()
-    console.log('✅ Checkout session created:', session.id)
-
-    // Create payment record in database
-    const paymentRecord = {
-      user_id: user.id,
-      product_id: 'hedge_fund_investment',
-      quantity: 1,
-      total_amount: amount / 100, // Convert from cents to dollars
-      status: 'pending',
-      stripe_session_id: session.id,
-      metadata: {
-        stripe_session_id: session.id,
-        stripe_customer_id: customerId,
-        investment_type: 'hedge_fund_capital',
-        fund_name: 'Global Market Consulting Fund'
-      }
-    }
-
-    const dbResponse = await fetch(`${supabaseUrl}/rest/v1/payments`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(paymentRecord)
-    })
-
-    if (!dbResponse.ok) {
-      const dbError = await dbResponse.json()
-      console.error('Database error:', dbError)
-      console.warn('Payment record creation failed, but checkout session created successfully')
-    } else {
-      console.log('✅ Payment record created in database')
-    }
-
-    return new Response(JSON.stringify({
-      url: session.url,
-      session_id: session.id
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-    })
-  } catch (error) {
-    console.error('Checkout session creation error:', error)
-    
     return new Response(
       JSON.stringify({ 
-        error: error.message
-      }),
+        sessionId: session.id, 
+        url: session.url 
+      }), 
       {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    )
+    );
+
+  } catch (error: any) {
+    console.error('❌ Checkout error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }), 
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
-})
+});

@@ -57,30 +57,16 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       // Create Stripe checkout session via Supabase Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
       
-      if (!supabaseUrl || !anonKey || !stripePublishableKey) {
-        console.error('Missing environment variables:', {
-          supabaseUrl: !!supabaseUrl,
-          anonKey: !!anonKey,
-          stripeKey: !!stripePublishableKey
-        })
-        throw new Error('Payment system not configured - please contact support')
-      }
-
-      // Get the current user session for authentication
-      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
-      
-      if (sessionError || !session) {
-        console.error('❌ No valid session for Stripe checkout')
-        throw new Error('Authentication required - please sign in again')
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Supabase configuration missing')
       }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${anonKey}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
@@ -94,16 +80,6 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Stripe checkout error:', errorData)
-        
-        // If it's an auth error, fall back to local processing
-        if (response.status === 401 || response.status === 403) {
-          console.log('🔄 Falling back to local payment processing')
-          await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
-          setSuccess(true)
-          return
-        }
-        
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
@@ -121,11 +97,6 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       setError(error instanceof Error ? error.message : 'Checkout failed')
       setLoading(false)
     }
-  }
-
-  const onSuccess = (result: any) => {
-    setSuccess(true)
-    // You could add additional success handling here
   }
 
   if (success) {

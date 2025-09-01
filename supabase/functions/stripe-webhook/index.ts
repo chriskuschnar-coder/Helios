@@ -1,212 +1,246 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import Stripe from 'npm:stripe@17.7.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+
+const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
+const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
+const stripe = new Stripe(stripeSecret, {
+  appInfo: {
+    name: 'Global Market Consulting',
+    version: '1.0.0',
+  },
+});
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!, 
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    })
-  }
-
   try {
-    const signature = req.headers.get('stripe-signature')
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || 'whsec_hffzsrLlxqmGIMYACHfhAtXvhD6eVddL'
-    
+    // Handle OPTIONS request for CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 204 });
+    }
+
+    if (req.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    // Get the signature from the header
+    const signature = req.headers.get('stripe-signature');
+
     if (!signature) {
-      console.error('No Stripe signature found')
-      return new Response('No signature', { status: 400 })
+      return new Response('No signature found', { status: 400 });
     }
 
-    const body = await req.text()
-    console.log('Webhook received:', { signature: signature.substring(0, 20) + '...', bodyLength: body.length })
+    // Get the raw body
+    const body = await req.text();
 
-    // Verify webhook signature (simplified for demo)
-    // In production, use proper Stripe webhook verification
-    
-    let event
+    // Verify the webhook signature
+    let event: Stripe.Event;
+
     try {
-      event = JSON.parse(body)
-      console.log('Webhook event type:', event.type)
-    } catch (err) {
-      console.error('Invalid JSON in webhook body')
-      return new Response('Invalid JSON', { status: 400 })
+      event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
+    } catch (error: any) {
+      console.error(`❌ Webhook signature verification failed: ${error.message}`);
+      return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    console.log('✅ Webhook event received:', event.type);
 
-    // Handle different event types
-    switch (event.type) {
-      case 'checkout.session.completed':
-        console.log('Processing checkout.session.completed')
-        const session = event.data.object
+    // Process the event
+    EdgeRuntime.waitUntil(handleEvent(event));
+
+    return Response.json({ received: true });
+  } catch (error: any) {
+    console.error('❌ Error processing webhook:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
+
+async function handleEvent(event: Stripe.Event) {
+  try {
+    const stripeData = event?.data?.object ?? {};
+
+    if (!stripeData) {
+      console.log('⚠️ No data in webhook event');
+      return;
+    }
+
+    console.log('🔄 Processing event:', event.type);
+
+    // Handle checkout session completed (one-time payments)
+    if (event.type === 'checkout.session.completed') {
+      const session = stripeData as Stripe.Checkout.Session;
+      
+      if (session.mode === 'payment' && session.payment_status === 'paid') {
+        console.log('💰 Processing completed payment for session:', session.id);
         
-        // Get user_id from metadata
-        const userId = session.metadata?.user_id
-        if (!userId) {
-          console.error('No user_id in session metadata')
-          break
+        // Get user from customer
+        const { data: customerData, error: customerError } = await supabase
+          .from('stripe_customers')
+          .select('user_id')
+          .eq('customer_id', session.customer as string)
+          .single();
+
+        if (customerError || !customerData) {
+          console.error('❌ Customer not found:', customerError);
+          return;
         }
 
-        console.log('Processing payment for user:', userId)
-        console.log('Session details:', {
-          id: session.id,
-          amount_total: session.amount_total,
-          customer: session.customer,
-          payment_status: session.payment_status
-        })
-
-        // Update payment record
-        const updatePaymentResponse = await fetch(`${supabaseUrl}/rest/v1/payments?stripe_session_id=eq.${session.id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            status: 'completed',
-            is_paid: true,
-            stripe_payment_intent_id: session.payment_intent,
-            metadata: {
-              ...session.metadata,
-              stripe_session_id: session.id,
-              stripe_customer_id: session.customer,
-              payment_status: session.payment_status,
-              amount_total: session.amount_total
-            }
-          })
-        })
-
-        if (!updatePaymentResponse.ok) {
-          console.error('Failed to update payment record')
-        } else {
-          console.log('✅ Payment record updated')
-        }
-
-        // Get user's account
-        const accountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?user_id=eq.${userId}`, {
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!accountResponse.ok) {
-          console.error('Failed to get user account')
-          break
-        }
-
-        const accounts = await accountResponse.json()
-        if (accounts.length === 0) {
-          console.error('No account found for user:', userId)
-          break
-        }
-
-        const account = accounts[0]
-        const investmentAmount = session.amount_total / 100 // Convert from cents to dollars
-
-        console.log('Updating account balance:', {
-          currentBalance: account.balance,
-          investmentAmount: investmentAmount,
-          newBalance: account.balance + investmentAmount
-        })
-
-        // Update account balance
-        const updateAccountResponse = await fetch(`${supabaseUrl}/rest/v1/accounts?id=eq.${account.id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            balance: account.balance + investmentAmount,
-            available_balance: account.available_balance + investmentAmount,
-            total_deposits: account.total_deposits + investmentAmount
-          })
-        })
-
-        if (!updateAccountResponse.ok) {
-          console.error('Failed to update account balance')
-        } else {
-          console.log('✅ Account balance updated successfully')
-        }
+        // Calculate amount in dollars
+        const amountInDollars = (session.amount_total || 0) / 100;
 
         // Create transaction record
-        const transactionResponse = await fetch(`${supabaseUrl}/rest/v1/transactions`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            account_id: account.id,
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: customerData.user_id,
+            account_id: null, // Will be set by trigger
             type: 'deposit',
             method: 'stripe',
-            amount: investmentAmount,
+            amount: amountInDollars,
             status: 'completed',
-            external_id: session.payment_intent,
+            external_id: session.payment_intent as string,
             reference_id: session.id,
-            description: `Stripe payment - $${investmentAmount.toLocaleString()}`,
+            description: 'Stripe checkout payment',
             metadata: {
               stripe_session_id: session.id,
-              stripe_customer_id: session.customer,
-              stripe_payment_intent: session.payment_intent
+              stripe_payment_intent: session.payment_intent,
+              processed_via: 'webhook'
             }
-          })
-        })
+          });
 
-        if (!transactionResponse.ok) {
-          console.error('Failed to create transaction record')
-        } else {
-          console.log('✅ Transaction record created')
+        if (transactionError) {
+          console.error('❌ Error creating transaction:', transactionError);
+          return;
         }
 
-        break
+        // Update account balance
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', customerData.user_id)
+          .single();
 
-      case 'payment_intent.succeeded':
-        console.log('Payment intent succeeded:', event.data.object.id)
-        break
+        if (accountError || !accountData) {
+          console.error('❌ Account not found:', accountError);
+          return;
+        }
 
-      case 'customer.created':
-        console.log('Customer created:', event.data.object.id)
-        break
+        const { error: updateError } = await supabase
+          .from('accounts')
+          .update({
+            balance: accountData.balance + amountInDollars,
+            available_balance: accountData.available_balance + amountInDollars,
+            total_deposits: accountData.total_deposits + amountInDollars
+          })
+          .eq('id', accountData.id);
 
-      default:
-        console.log('Unhandled event type:', event.type)
+        if (updateError) {
+          console.error('❌ Error updating account balance:', updateError);
+          return;
+        }
+
+        // Record the order
+        const { error: orderError } = await supabase
+          .from('stripe_orders')
+          .insert({
+            checkout_session_id: session.id,
+            payment_intent_id: session.payment_intent as string,
+            customer_id: session.customer as string,
+            amount_subtotal: session.amount_subtotal || 0,
+            amount_total: session.amount_total || 0,
+            currency: session.currency || 'usd',
+            payment_status: session.payment_status || 'paid',
+            status: 'completed'
+          });
+
+        if (orderError) {
+          console.error('❌ Error recording order:', orderError);
+        }
+
+        console.log('✅ Payment processed successfully - Amount:', amountInDollars);
+      }
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-    })
+    // Handle subscription events
+    if (event.type === 'customer.subscription.created' || 
+        event.type === 'customer.subscription.updated' || 
+        event.type === 'customer.subscription.deleted') {
+      
+      const subscription = stripeData as Stripe.Subscription;
+      await syncSubscriptionFromStripe(subscription.customer as string);
+    }
+
   } catch (error) {
-    console.error('Webhook processing error:', error)
-    
-    return new Response(
-      JSON.stringify({ 
-        error: error.message
-      }),
-      {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    )
+    console.error('❌ Error handling webhook event:', error);
   }
-})
+}
+
+async function syncSubscriptionFromStripe(customerId: string) {
+  try {
+    console.log('🔄 Syncing subscription for customer:', customerId);
+    
+    // Fetch latest subscription data from Stripe
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 1,
+      status: 'all',
+      expand: ['data.default_payment_method'],
+    });
+
+    if (subscriptions.data.length === 0) {
+      console.log('📭 No subscriptions found for customer:', customerId);
+      
+      const { error: noSubError } = await supabase
+        .from('stripe_subscriptions')
+        .upsert({
+          customer_id: customerId,
+          status: 'not_started',
+        }, {
+          onConflict: 'customer_id',
+        });
+
+      if (noSubError) {
+        console.error('❌ Error updating subscription status:', noSubError);
+      }
+      return;
+    }
+
+    // Get the latest subscription
+    const subscription = subscriptions.data[0];
+
+    // Update subscription in database
+    const { error: subError } = await supabase
+      .from('stripe_subscriptions')
+      .upsert({
+        customer_id: customerId,
+        subscription_id: subscription.id,
+        price_id: subscription.items.data[0].price.id,
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        ...(subscription.default_payment_method && typeof subscription.default_payment_method !== 'string'
+          ? {
+              payment_method_brand: subscription.default_payment_method.card?.brand ?? null,
+              payment_method_last4: subscription.default_payment_method.card?.last4 ?? null,
+            }
+          : {}),
+        status: subscription.status,
+      }, {
+        onConflict: 'customer_id',
+      });
+
+    if (subError) {
+      console.error('❌ Error syncing subscription:', subError);
+      throw new Error('Failed to sync subscription in database');
+    }
+    
+    console.log('✅ Successfully synced subscription for customer:', customerId);
+  } catch (error) {
+    console.error(`❌ Failed to sync subscription for customer ${customerId}:`, error);
+    throw error;
+  }
+}
