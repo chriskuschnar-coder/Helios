@@ -15,7 +15,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Key present:', !!supabaseAnonKey)
 }
 
-// Create the Supabase client with proper syntax
+// Create the Supabase client with proper syntax - FIX THE SYNTAX ERROR HERE
 export const supabaseClient = createClient(
   supabaseUrl || 'https://upevugqarcvxnekzddeh.supabase.co',
   supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4',
