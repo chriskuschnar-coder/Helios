@@ -7,8 +7,6 @@ interface User {
   id: string
   email: string
   full_name?: string
-  documents_completed?: boolean
-  documents_completed_at?: string
 }
 
 interface Account {
@@ -40,12 +38,8 @@ interface AuthContextType {
   loading: boolean
   account: Account | null
   subscription: Subscription | null
-  signedDocuments: any[]
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
-  refreshUser: () => Promise<void>
-  saveSignedDocument: (documentData: any) => Promise<void>
-  markDocumentsComplete: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
@@ -61,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [signedDocuments, setSignedDocuments] = useState<any[]>([])
 
   // Check for existing session on mount
   useEffect(() => {
@@ -76,9 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('❌ Session check error:', error)
         } else if (session?.user) {
           console.log('✅ Found existing session for:', session.user.email)
-          await loadUserData(session.user.id)
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name
+          })
           await loadUserAccount(session.user.id)
-          await loadSignedDocuments(session.user.id)
         } else {
           console.log('ℹ️ No existing session found')
         }
@@ -91,37 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     checkSession()
   }, [])
-
-  const loadUserData = async (userId: string) => {
-    try {
-      console.log('🔍 Loading user data for:', userId)
-      
-      const { data, error } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('❌ User data load error:', error)
-        // Fallback to basic user data from auth
-        const { data: { user: authUser } } = await supabaseClient.auth.getUser()
-        if (authUser) {
-          setUser({
-            id: authUser.id,
-            email: authUser.email || '',
-            full_name: authUser.user_metadata?.full_name,
-            documents_completed: false
-          })
-        }
-      } else {
-        console.log('✅ User data loaded:', data)
-        setUser(data)
-      }
-    } catch (err) {
-      console.error('❌ User data load failed:', err)
-    }
-  }
 
   const loadUserAccount = async (userId: string) => {
     try {
@@ -144,108 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const loadSignedDocuments = async (userId: string) => {
-    try {
-      console.log('🔍 Loading signed documents for user:', userId)
-      
-      const { data, error } = await supabaseClient
-        .from('signed_documents')
-        .select('*')
-        .eq('user_id', userId)
-        .order('signed_at', { ascending: false })
-
-      if (error) {
-        console.error('❌ Signed documents load error:', error)
-      } else {
-        console.log('✅ Signed documents loaded:', data?.length || 0, 'documents')
-        setSignedDocuments(data || [])
-      }
-    } catch (err) {
-      console.error('❌ Signed documents load failed:', err)
-    }
-  }
-
   const refreshAccount = async () => {
     if (user) {
       await loadUserAccount(user.id)
     }
   }
 
-  const refreshUser = async () => {
-    if (user) {
-      await loadUserData(user.id)
-    }
-  }
-
   const refreshSubscription = async () => {
     console.log('🔄 refreshSubscription called')
-  }
-
-  const saveSignedDocument = async (documentData: any) => {
-    console.log('📄 saveSignedDocument called:', documentData)
-    
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
-    try {
-      const { error } = await supabaseClient
-        .from('signed_documents')
-        .insert({
-          user_id: user.id,
-          document_id: documentData.document_id,
-          document_title: documentData.document_title,
-          document_type: documentData.document_type,
-          signature: documentData.signature,
-          signed_at: new Date().toISOString(),
-          ip_address: documentData.ip_address,
-          user_agent: documentData.user_agent
-        })
-
-      if (error) {
-        console.error('❌ Document save error:', error)
-        throw new Error('Failed to save signed document')
-      }
-
-      console.log('✅ Document saved successfully')
-      
-      // Refresh signed documents
-      await loadSignedDocuments(user.id)
-    } catch (error) {
-      console.error('❌ Document saving failed:', error)
-      throw error
-    }
-  }
-
-  const markDocumentsComplete = async () => {
-    console.log('✅ markDocumentsComplete called')
-    
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
-    try {
-      const { error } = await supabaseClient
-        .from('users')
-        .update({
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('❌ Document completion update error:', error)
-        throw new Error('Failed to mark documents as complete')
-      }
-
-      console.log('✅ Documents marked as complete')
-      
-      // Refresh user data
-      await refreshUser()
-    } catch (error) {
-      console.error('❌ Document completion failed:', error)
-      throw error
-    }
   }
 
   const processFunding = async (amount: number, method: string, description?: string) => {
@@ -326,8 +197,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: 'demo-account-id',
             balance: 7850,
             available_balance: 7850,
-            total_deposits: 7850,
-            total_withdrawals: 0,
+            total_deposits: 8000,
+            total_withdrawals: 150,
             currency: 'USD',
             status: 'active'
           })
@@ -386,11 +257,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('⏳ Waiting for account creation...')
         await new Promise(resolve => setTimeout(resolve, 2000))
         
-        await loadUserData(data.user.id)
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: metadata?.full_name
+        })
         
         // Try to load the user's account
         await loadUserAccount(data.user.id)
-        await loadSignedDocuments(data.user.id)
         
         return { error: null }
       }
@@ -416,7 +290,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setAccount(null)
       setSubscription(null)
-      setSignedDocuments([])
     }
   }
 
@@ -425,12 +298,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     account,
     subscription,
-    signedDocuments,
     refreshAccount,
     refreshSubscription,
-    refreshUser,
-    saveSignedDocument,
-    markDocumentsComplete,
     processFunding,
     signIn,
     signUp,
