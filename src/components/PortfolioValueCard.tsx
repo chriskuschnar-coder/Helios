@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { TrendingUp, Plus, ArrowDownLeft, DollarSign } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { EmptyPortfolioState } from './EmptyPortfolioState'
 import { DocumentSigningFlow } from './DocumentSigningFlow'
 
 interface PortfolioValueCardProps {
@@ -17,6 +18,20 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const dailyChange = 1247.18
   const dailyChangePct = 5.28
   const isPositive = dailyChange >= 0
+
+  // Show empty state for accounts with $0 balance
+  if (balance === 0) {
+    return (
+      <>
+        <EmptyPortfolioState onFundPortfolio={handleFundPortfolio} />
+        <DocumentSigningFlow
+          isOpen={showDocumentSigning}
+          onClose={() => setShowDocumentSigning(false)}
+          onComplete={handleDocumentSigningComplete}
+        />
+      </>
+    )
+  }
 
   const handleFundPortfolio = (amount?: number) => {
     setPendingAmount(amount)

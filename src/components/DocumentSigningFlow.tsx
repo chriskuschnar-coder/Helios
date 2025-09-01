@@ -217,8 +217,8 @@ By signing below, I acknowledge that I have read and understood this Private Pla
           <p className="text-gray-700">Terms and conditions for your investment</p>
         </div>
 
-        {/* Document Content */}
-        <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: '50vh' }}>
+        {/* Document Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4" style={{ maxHeight: '40vh' }}>
           <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 min-h-[300px]">
             <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
               {currentDocument.content}
@@ -227,6 +227,20 @@ By signing below, I acknowledge that I have read and understood this Private Pla
         </div>
 
         {/* Signature Section */}
+        <div className="border-t border-gray-200 p-6 bg-white">
+          <div className="mb-6">
+            <label className="block text-lg font-medium text-gray-900 mb-3">
+              Digital Signature
+            </label>
+            <input
+              type="text"
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              placeholder="Type your full name to sign"
+              required
+            />
+        {/* Digital Signature Section */}
         <div className="border-t border-gray-200 p-6 bg-white">
           <div className="mb-6">
             <label className="block text-lg font-medium text-gray-900 mb-3">
