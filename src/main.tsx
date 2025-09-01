@@ -29,6 +29,7 @@ try {
     throw new Error('Root element not found')
   }
   
+  console.log('🔍 About to render React app...')
   createRoot(rootElement).render(<App />)
   console.log('✅ React app mounted successfully')
 } catch (error) {
