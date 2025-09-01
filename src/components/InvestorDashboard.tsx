@@ -23,7 +23,7 @@ import { SubscriptionStatus } from './SubscriptionStatus'
 import '../styles/funding.css'
 
 export function InvestorDashboard() {
-  const { user, account, subscription, signedDocuments, refreshAccount } = useAuth()
+  const { user, account, subscription, refreshAccount } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [selectedTopTab, setSelectedTopTab] = useState('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
@@ -52,19 +52,12 @@ export function InvestorDashboard() {
   ]
 
   const documents = [
-    // Static documents
-    { name: 'Monthly Performance Report - January 2025', date: '2025-01-31', type: 'Performance', static: true },
-    { name: 'Quarterly Investment Letter - Q4 2024', date: '2025-01-15', type: 'Letter', static: true },
-    { name: 'Annual Tax Statement - 2024', date: '2025-01-10', type: 'Tax', static: true },
-    // User's signed documents
-    ...signedDocuments.map(doc => ({
-      name: doc.document_title,
-      date: new Date(doc.signed_at).toLocaleDateString(),
-      type: 'Signed Document',
-      static: false,
-      signature: doc.signature,
-      signed_at: doc.signed_at
-    }))
+    { name: 'Monthly Performance Report - January 2025', date: '2025-01-31', type: 'Performance' },
+    { name: 'Quarterly Investment Letter - Q4 2024', date: '2025-01-15', type: 'Letter' },
+    { name: 'Annual Tax Statement - 2024', date: '2025-01-10', type: 'Tax' },
+    { name: 'Risk Disclosure Statement', date: '2024-12-01', type: 'Legal' },
+    { name: 'Investment Agreement Amendment', date: '2024-11-15', type: 'Legal' },
+    { name: 'Compliance Documentation', date: '2024-10-01', type: 'Compliance' }
   ]
 
   const tabs = [
@@ -426,35 +419,14 @@ export function InvestorDashboard() {
             {selectedTab === 'documents' && (
               <div className="space-y-6">
                 <h3 className="font-serif text-xl font-bold text-navy-900">Investment Documents</h3>
-                
-                {/* Document completion status */}
-                {user?.documents_completed && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-900">
-                        Onboarding Documents Complete
-                      </span>
-                    </div>
-                    <p className="text-sm text-green-700 mt-1">
-                      Completed on {new Date(user.documents_completed_at!).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
-                
                 <div className="grid md:grid-cols-2 gap-4">
                   {documents.map((doc, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="flex items-center space-x-3 flex-1">
-                        <FileText className={`h-5 w-5 ${doc.static ? 'text-gray-600' : 'text-green-600'}`} />
+                        <FileText className="h-5 w-5 text-gray-600" />
                         <div>
                           <div className="font-medium text-gray-900">{doc.name}</div>
-                          <div className="text-sm text-gray-600">
-                            {doc.type} • {doc.date}
-                            {!doc.static && (
-                              <span className="ml-2 text-green-600 font-medium">✓ Signed</span>
-                            )}
-                          </div>
+                          <div className="text-sm text-gray-600">{doc.type} • {doc.date}</div>
                         </div>
                       </div>
                       <button className="text-navy-600 hover:text-navy-700 font-medium text-sm px-3 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors">
