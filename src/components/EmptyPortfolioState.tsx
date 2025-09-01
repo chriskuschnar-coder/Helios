@@ -4,7 +4,7 @@ import { TrendingUp, Shield, Users, ArrowRight } from 'lucide-react'
 interface EmptyPortfolioStateProps {
   onFundPortfolio: () => void
   onStartOnboarding: () => void
-}
+  onStartOnboarding: () => void
 
 export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: EmptyPortfolioStateProps) {
   return (
@@ -46,7 +46,11 @@ export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: Empt
       
       <button 
         className="cta-onboarding-button" 
-        onClick={onStartOnboarding}
+      
+      <button className="cta-onboarding-button" onClick={onStartOnboarding}>
+        Begin Onboarding Documents
+      </button>
+      
       >
         Start Growing Your Portfolio
         <ArrowRight className="arrow-icon" />
@@ -58,5 +62,3 @@ export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: Empt
         <ArrowRight className="arrow-icon" />
       </button>
     </div>
-  )
-}

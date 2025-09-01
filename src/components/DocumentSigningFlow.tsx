@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, FileText, Check, ArrowRight } from 'lucide-react'
+import { X, FileText, Check } from 'lucide-react'
 
 interface DocumentSigningFlowProps {
   isOpen: boolean
@@ -10,119 +10,59 @@ interface DocumentSigningFlowProps {
 export function DocumentSigningFlow({ isOpen, onClose, onComplete }: DocumentSigningFlowProps) {
   const [signature, setSignature] = useState('')
   const [currentStep, setCurrentStep] = useState(1)
-  const [signedDocuments, setSignedDocuments] = useState<string[]>([])
-
+  
   if (!isOpen) return null
+
+  const handleSign = () => {
+    if (signature.trim()) {
+      // Move to next step or complete
+      if (currentStep < 3) {
+        setCurrentStep(currentStep + 1)
+        setSignature('')
+      } else {
+        onComplete()
+      }
+    }
+  }
 
   const documents = [
     {
-      id: 'investment_agreement',
       title: 'Investment Agreement',
       description: 'Terms and conditions for your investment',
-      content: `GLOBAL MARKET CONSULTING FUND LP
-PRIVATE PLACEMENT MEMORANDUM
+      content: `PRIVATE PLACEMENT MEMORANDUM
 
-CONFIDENTIAL
+GLOBAL MARKETS CONSULTING FUND I, LLC
 
-This Private Placement Memorandum ("PPM") contains confidential and proprietary information regarding Global Market Consulting Fund LP (the "Fund"). This document is being provided to a limited number of sophisticated investors for the sole purpose of evaluating a potential investment in the Fund.
+This Private Placement Memorandum ("PPM") contains important information about Global Markets Consulting Fund I, LLC (the "Fund"). This document is confidential and proprietary and is being provided to you solely for your consideration of a potential investment in the Fund.
 
 INVESTMENT OVERVIEW
+The Fund seeks to generate superior risk-adjusted returns through quantitative trading strategies across global financial markets. Our proprietary algorithms analyze market inefficiencies and execute trades with institutional precision.
 
-The Fund employs quantitative investment strategies designed to generate superior risk-adjusted returns through systematic exploitation of market inefficiencies. Our proprietary models process over 50,000 tick-level market events per second, utilizing advanced mathematical frameworks including:
-
-• Volume-Synchronized Probability of Informed Trading (VPIN) analysis
-• Hidden Markov Models for regime detection
-• Ornstein-Uhlenbeck process calibration for statistical arbitrage
-• Kyle's Lambda implementation for optimal execution
-
-FUND TERMS
-
-Minimum Investment: $250,000
-Management Fee: 2% annually
-Performance Fee: 20% of net profits
-Lock-up Period: 12 months
-Redemption Notice: 90 days
+MINIMUM INVESTMENT
+The minimum initial investment is $250,000 for accredited investors.
 
 RISK FACTORS
+Investment in the Fund involves substantial risk and is suitable only for sophisticated investors who can afford the loss of their entire investment.
 
-Investment in the Fund involves substantial risk and is suitable only for sophisticated investors who can afford to lose their entire investment. Past performance is not indicative of future results.
+FEES AND EXPENSES
+Management Fee: 2% annually
+Performance Fee: 20% of net profits
 
-By signing below, you acknowledge that you have read and understood this PPM and agree to the terms and conditions set forth herein.`
+By signing below, you acknowledge that you have read and understood this PPM and agree to the terms and conditions outlined herein.`
     },
     {
-      id: 'risk_disclosure',
-      title: 'Risk Disclosure Statement',
+      title: 'Risk Disclosure',
       description: 'Important risk information',
-      content: `RISK DISCLOSURE STATEMENT
-
-IMPORTANT: Please read this Risk Disclosure Statement carefully before investing.
-
-GENERAL RISKS
-• Loss of Capital: You may lose some or all of your investment
-• Market Risk: Market conditions can adversely affect performance
-• Liquidity Risk: Investments may not be easily converted to cash
-• Leverage Risk: Use of leverage can amplify losses
-
-QUANTITATIVE STRATEGY RISKS
-• Model Risk: Mathematical models may fail or perform poorly
-• Technology Risk: System failures could impact trading
-• Data Risk: Inaccurate or delayed data could affect decisions
-• Execution Risk: Trade execution may not occur as expected
-
-REGULATORY RISKS
-• Regulatory changes may impact fund operations
-• Tax implications may vary based on jurisdiction
-• Compliance requirements may affect strategy implementation
-
-By signing, you acknowledge understanding these risks.`
+      content: 'Risk disclosure content...'
     },
     {
-      id: 'accredited_investor',
-      title: 'Accredited Investor Certification',
-      description: 'Investor qualification verification',
-      content: `ACCREDITED INVESTOR CERTIFICATION
-
-I hereby certify that I am an "accredited investor" as defined in Rule 501(a) of Regulation D under the Securities Act of 1933, as amended.
-
-I meet one or more of the following criteria:
-• Individual with net worth exceeding $1,000,000
-• Individual with income exceeding $200,000 in each of the two most recent years
-• Entity with assets exceeding $5,000,000
-
-I understand that this investment is restricted to accredited investors only and that the securities have not been registered under the Securities Act.
-
-By signing, I certify the accuracy of this information.`
+      title: 'Accredited Investor Verification',
+      description: 'Verification of investor status',
+      content: 'Accredited investor verification content...'
     }
   ]
 
-  const currentDocument = documents[currentStep - 1]
-  const isLastDocument = currentStep === documents.length
-
-  const handleSign = () => {
-    if (!signature.trim()) {
-      alert('Please enter your full name to sign')
-      return
-    }
-
-    const documentId = currentDocument.id
-    setSignedDocuments(prev => [...prev, documentId])
-
-    if (isLastDocument) {
-      // All documents signed, complete the flow
-      onComplete()
-    } else {
-      // Move to next document
-      setCurrentStep(prev => prev + 1)
-      setSignature('')
-    }
-  }
-
-  const handleCancel = () => {
-    setCurrentStep(1)
-    setSignature('')
-    setSignedDocuments([])
-    onClose()
-  }
+  const currentDoc = documents[currentStep - 1]
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -130,16 +70,11 @@ By signing, I certify the accuracy of this information.`
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center space-x-4">
-            <div className="text-xl font-bold text-gray-900">Global Market Consulting</div>
-            <div className="flex space-x-6 text-sm text-gray-600">
-              <span>Portal</span>
-              <span>Trading</span>
-              <span>Research</span>
-              <span>Support</span>
-            </div>
+            <div className="text-xl font-bold text-navy-900">Global Markets Consulting</div>
+            <div className="text-sm text-gray-500">Investment Portal</div>
           </div>
           <button
-            onClick={handleCancel}
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="h-6 w-6" />
@@ -147,65 +82,57 @@ By signing, I certify the accuracy of this information.`
         </div>
 
         {/* Progress Bar */}
-        <div className="px-6 py-4 bg-white border-b border-gray-200">
+        <div className="px-6 py-4 bg-gray-50 border-b">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Step {currentStep} of {documents.length}
-            </span>
+            <span className="text-sm font-medium text-gray-700">Step {currentStep} of 3</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / documents.length) * 100}%` }}
+              style={{ width: `${(currentStep / 3) * 100}%` }}
             ></div>
           </div>
         </div>
 
         {/* Document Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FileText className="h-6 w-6 text-blue-600" />
-            </div>
+            <FileText className="h-8 w-8 text-blue-600" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                <span>{currentDocument.title}</span>
-                <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-                  Required
-                </span>
-              </h2>
-              <p className="text-gray-600">{currentDocument.description}</p>
+              <h2 className="text-xl font-bold text-gray-900">{currentDoc.title}</h2>
+              <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                Required
+              </span>
             </div>
           </div>
+          
+          <p className="text-gray-600 mb-6">{currentDoc.description}</p>
 
           {/* Document Content Area */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8 max-h-96 overflow-y-auto">
-            <div className="prose prose-sm max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
-                {currentDocument.content}
-              </pre>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 max-h-64 overflow-y-auto">
+            <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+              {currentDoc.content}
             </div>
           </div>
 
           {/* Digital Signature Section */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Digital Signature</h3>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Digital Signature</h3>
             <input
               type="text"
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
               placeholder="Type your full name to sign"
-              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
             />
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer Buttons */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
           <button
-            onClick={handleCancel}
-            className="flex items-center space-x-2 px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+            onClick={onClose}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <X className="h-4 w-4" />
             <span>Cancel</span>
@@ -214,10 +141,10 @@ By signing, I certify the accuracy of this information.`
           <button
             onClick={handleSign}
             disabled={!signature.trim()}
-            className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors"
+            className="flex items-center space-x-2 px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             <Check className="h-4 w-4" />
-            <span>{isLastDocument ? 'Complete & Continue' : 'Sign & Continue'}</span>
+            <span>Sign & Continue</span>
           </button>
         </div>
       </div>
