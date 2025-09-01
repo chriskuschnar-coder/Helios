@@ -20,64 +20,71 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
 
   // If balance is 0 or very low, show empty state
   if (balance < 1000) {
-    return (
-      <>
-        <EmptyPortfolioState onFundPortfolio={() => setShowDocumentSigning(true)} />
-        <DocumentSigningFlow
-          isOpen={showDocumentSigning}
-          onClose={() => setShowDocumentSigning(false)}
-          onComplete={() => {
-            setShowDocumentSigning(false)
-            onFundPortfolio()
-          }}
-        />
-      </>
-    )
+    return <EmptyPortfolioState onFundPortfolio={onFundPortfolio} />
+  }
+
+  const handleFundPortfolio = (amount?: number) => {
+    // Show document signing flow first
+    setShowDocumentSigning(true)
+  }
+
+  const handleDocumentSigningComplete = () => {
+    setShowDocumentSigning(false)
+    // After documents are signed, proceed to funding
+    onFundPortfolio()
   }
 
   return (
-    <div className="portfolio-value-card">
-      <div className="value-header">
-        <span className="label">Portfolio Value</span>
-        <div className="live-indicator">
-          <div className="live-dot"></div>
-          LIVE
+    <>
+      <div className="portfolio-value-card">
+        <div className="value-header">
+          <span className="label">Portfolio Value</span>
+          <div className="live-indicator">
+            <div className="live-dot"></div>
+            LIVE
+          </div>
+        </div>
+        
+        <div className="value-display">
+          <h2 className="current-value">
+            ${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </h2>
+          <div className={`value-change ${isPositive ? 'positive' : 'negative'}`}>
+            <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString()}</span>
+            <span className="percentage">({isPositive ? '+' : ''}{dailyChangePct}%)</span>
+          </div>
+        </div>
+        
+        <div className="actions-row">
+          <button className="fund-button primary" onClick={() => handleFundPortfolio()}>
+            <Plus className="icon" />
+            Add Capital
+          </button>
+          <button className="fund-button secondary" onClick={onWithdraw}>
+            <ArrowDownLeft className="icon" />
+            Withdraw
+          </button>
+        </div>
+        
+        <div className="quick-deposit-chips">
+          <span className="chip-label">Quick add:</span>
+          <button className="amount-chip" onClick={() => handleFundPortfolio(25000)}>
+            $25K
+          </button>
+          <button className="amount-chip" onClick={() => handleFundPortfolio(50000)}>
+            $50K
+          </button>
+          <button className="amount-chip premium" onClick={() => handleFundPortfolio(100000)}>
+            $100K
+          </button>
         </div>
       </div>
-      
-      <div className="value-display">
-        <h2 className="current-value">
-          ${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-        </h2>
-        <div className={`value-change ${isPositive ? 'positive' : 'negative'}`}>
-          <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString()}</span>
-          <span className="percentage">({isPositive ? '+' : ''}{dailyChangePct}%)</span>
-        </div>
-      </div>
-      
-      <div className="actions-row">
-        <button className="fund-button primary" onClick={() => onFundPortfolio()}>
-          <Plus className="icon" />
-          Add Capital
-        </button>
-        <button className="fund-button secondary" onClick={onWithdraw}>
-          <ArrowDownLeft className="icon" />
-          Withdraw
-        </button>
-      </div>
-      
-      <div className="quick-deposit-chips">
-        <span className="chip-label">Quick add:</span>
-        <button className="amount-chip" onClick={() => onFundPortfolio(25000)}>
-          $25K
-        </button>
-        <button className="amount-chip" onClick={() => onFundPortfolio(50000)}>
-          $50K
-        </button>
-        <button className="amount-chip premium" onClick={() => onFundPortfolio(100000)}>
-          $100K
-        </button>
-      </div>
-    </div>
+
+      <DocumentSigningFlow
+        isOpen={showDocumentSigning}
+        onClose={() => setShowDocumentSigning(false)}
+        onComplete={handleDocumentSigningComplete}
+      />
+    </>
   )
 }
