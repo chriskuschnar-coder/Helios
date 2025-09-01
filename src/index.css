@@ -14,38 +14,3 @@
 .animate-scroll {
   animation: scroll 30s linear infinite;
 }
-
-/* Ticker tape styles for CSS fallback */
-@keyframes ticker-scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.ticker-scroll {
-  display: flex;
-  animation: ticker-scroll 30s linear infinite;
-  width: fit-content;
-}
-
-.ticker-container:hover .ticker-scroll {
-  animation-play-state: paused;
-}
-/* CRITICAL: Stripe Elements CSS for proper mounting and interaction */
-.StripeElement {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 10px 0 !important;
-}
-
-.StripeElement--focus {
-  outline: none !important;
-}
-
-/* Ensure the container divs have proper dimensions */
-[class*="Element"] {
-  min-height: 40px !important;
-}

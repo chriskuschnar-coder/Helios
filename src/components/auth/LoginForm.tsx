@@ -20,21 +20,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setLoading(true)
     setError('')
 
-    console.log('🔐 Login form submitted with:', { email, password: '***' })
-
     try {
-      const result = await signIn(email, password)
-      
-      if (result.error) {
-        console.log('❌ Login failed:', result.error.message)
-        setError(result.error.message)
+      const { error } = await signIn(email, password)
+      if (error) {
+        setError(error.message)
       } else {
-        console.log('✅ Login successful, calling onSuccess')
         onSuccess?.()
       }
     } catch (err) {
-      console.error('❌ Login error:', err)
-      setError('Connection error - please try again')
+      setError('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
@@ -147,15 +141,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       <div className="mt-8 p-4 bg-navy-50 rounded-lg">
         <h3 className="font-medium text-navy-900 mb-2">Demo Account</h3>
         <p className="text-sm text-navy-700 mb-2">
-          For testing in Bolt editor only (single device):
+          Try the platform with demo credentials:
         </p>
         <div className="text-sm font-mono bg-white p-2 rounded border">
           <div>Email: demo@globalmarket.com</div>
           <div>Password: demo123456</div>
         </div>
-        <p className="text-xs text-navy-600 mt-2">
-          For cross-device login: Connect to Supabase using the button in top right of Bolt.
-        </p>
       </div>
     </div>
   )

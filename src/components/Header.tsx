@@ -13,9 +13,22 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
     { name: 'About', href: '#about' },
     { name: 'Strategies', href: '#services' },
     { name: 'Performance', href: '#performance' },
+    { name: 'Client Portal', href: '#portal', onClick: true },
     { name: 'Contact', href: '#contact' },
   ]
 
+  const handlePortalClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (onNavigateToLogin) {
+      onNavigateToLogin()
+    }
+  }
+
+  const handleNavClick = (item: any, e: React.MouseEvent) => {
+    if (item.onClick) {
+      handlePortalClick(e)
+    }
+  }
   return (
     <header className="fixed w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,20 +43,24 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-gray-700 hover:text-navy-600 font-medium transition-colors duration-200"
-              >
-                {item.name}
-              </a>
+              item.onClick ? (
+                <button
+                  key={item.name}
+                  onClick={(e) => handleNavClick(item, e)}
+                  className="text-gray-700 hover:text-navy-600 font-medium transition-colors duration-200"
+                >
+                  {item.name}
+                </button>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-navy-600 font-medium transition-colors duration-200"
+                >
+                  {item.name}
+                </a>
+              )
             ))}
-            <button
-              onClick={onNavigateToLogin}
-              className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
-            >
-              Client Portal
-            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -62,24 +79,28 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-100">
               {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="block px-3 py-2 text-gray-700 hover:text-navy-600 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
+                item.onClick ? (
+                  <button
+                    key={item.name}
+                    onClick={(e) => {
+                      handleNavClick(item, e)
+                      setIsMenuOpen(false)
+                    }}
+                    className="block px-3 py-2 text-gray-700 hover:text-navy-600 font-medium text-left w-full"
+                  >
+                    {item.name}
+                  </button>
+                ) : (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="block px-3 py-2 text-gray-700 hover:text-navy-600 font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                )
               ))}
-              <button
-                onClick={() => {
-                  onNavigateToLogin?.()
-                  setIsMenuOpen(false)
-                }}
-                className="block w-full text-left px-3 py-2 text-navy-600 hover:text-navy-700 font-medium"
-              >
-                Client Portal
-              </button>
             </div>
           </div>
         )}
