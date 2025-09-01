@@ -57,9 +57,15 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       // Create Stripe checkout session via Supabase Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
       
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Payment system configuration missing - please contact support')
+      if (!supabaseUrl || !anonKey || !stripePublishableKey) {
+        console.error('Missing environment variables:', {
+          supabaseUrl: !!supabaseUrl,
+          anonKey: !!anonKey,
+          stripeKey: !!stripePublishableKey
+        })
+        throw new Error('Payment system not configured - please contact support')
       }
 
       // Get the current user session for authentication
