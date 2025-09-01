@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import { CreditCard, Loader2, ExternalLink, Shield } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S1jDNFxYb2Rp5SOdBaVqGD29UBmOLc9Q3Amj5GBVXY74H1TS1Ygpi6lamYt1cFe2Ud4dBn4IPcVS8GkjybKVWJQ00h661Fiq6')
+import { StripeCardForm } from './StripeCardForm'
 
 interface CheckoutButtonProps {
   amount: number
@@ -67,7 +65,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
       <button
         onClick={handleCheckout}
         disabled={loading}
-        className={className || "bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"}
+        className={className || "w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center"}
       >
         {loading ? (
           <>
@@ -91,7 +89,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
       )}
       
       <p className="text-xs text-gray-500 mt-2 text-center">
-        Demo mode - In production: Secure payment processing by Stripe
+        Professional payment processing powered by Stripe
       </p>
     </div>
   )

@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
 
     // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_test_51S25DbFhEA0kH7xcFTmmlwmgxFUdKDnPpLu4vxCbT5xBOpT8SpnvbfKaR7a9e7oRGkqt1vdMD05nrvmVFnqIwqJl00UilCHTRD'
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured')
     }
@@ -40,8 +40,10 @@ Deno.serve(async (req) => {
         currency: currency,
         'automatic_payment_methods[enabled]': 'true',
         'metadata[user_id]': user_id || 'demo-user',
-        'metadata[purpose]': 'account_funding',
-        'metadata[platform]': 'hedge_fund_portal'
+        'metadata[purpose]': 'hedge_fund_investment',
+        'metadata[investment_type]': 'capital_contribution',
+        'metadata[fund_name]': 'Global Market Consulting Fund',
+        'description': `Hedge fund investment - $${(amount / 100).toLocaleString()}`
       }).toString()
     })
 
@@ -60,7 +62,7 @@ Deno.serve(async (req) => {
 
     const paymentRecord = {
       user_id: user_id || 'demo-user',
-      product_id: 'account_funding',
+      product_id: 'hedge_fund_investment',
       quantity: 1,
       total_amount: amount / 100, // Convert from cents to dollars
       status: 'pending',
@@ -68,7 +70,8 @@ Deno.serve(async (req) => {
       metadata: {
         stripe_payment_intent: paymentIntent.id,
         currency: currency,
-        created_via: 'payment_intent'
+        investment_type: 'hedge_fund_capital',
+        fund_name: 'Global Market Consulting Fund'
       }
     }
 

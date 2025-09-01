@@ -17,12 +17,13 @@ import { CheckoutButton } from './CheckoutButton'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { EmptyPortfolioState } from './EmptyPortfolioState'
 import { NavigationBar } from './NavigationBar'
+import { StripeCheckout } from './StripeCheckout'
+import { SubscriptionStatus } from './SubscriptionStatus'
 import '../styles/funding.css'
 
 export function InvestorDashboard() {
-  const { user, account, refreshAccount } = useAuth()
+  const { user, account, subscription, refreshAccount } = useAuth()
   const [selectedTab, setSelectedTab] = useState('overview')
   const [selectedTopTab, setSelectedTopTab] = useState('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
@@ -70,7 +71,8 @@ export function InvestorDashboard() {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: TrendingUp },
     { id: 'research', name: 'Research', icon: FileText },
-    { id: 'transactions', name: 'Transactions', icon: Activity }
+    { id: 'transactions', name: 'Transactions', icon: Activity },
+    { id: 'invest', name: 'Invest', icon: CreditCard }
   ]
 
   const openFunding = (amount: number | null = null) => {
@@ -87,23 +89,6 @@ export function InvestorDashboard() {
   const handleProceedToPayment = (amount: number, method: string) => {
     setShowFundingModal(false)
     console.log('Proceeding to payment:', { amount, method })
-  }
-
-  // Show empty state for users with no balance
-  if (!account || account.balance === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <EmptyPortfolioState onFundAccount={() => openFunding()} />
-        </div>
-        <FundingModal
-          isOpen={showFundingModal}
-          onClose={() => setShowFundingModal(false)}
-          prefilledAmount={prefilledAmount}
-          onProceedToPayment={handleProceedToPayment}
-        />
-      </div>
-    )
   }
 
   return (
@@ -130,6 +115,34 @@ export function InvestorDashboard() {
             </nav>
           </div>
         </div>
+
+        {/* Investment Tab Content */}
+        {selectedTopTab === 'invest' && (
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            <StripeCheckout className="h-fit" />
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-4">Investment Information</h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-700">Secure payment processing via Stripe</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-700">Instant account funding</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-700">Professional investment management</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-700">Real-time portfolio tracking</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
