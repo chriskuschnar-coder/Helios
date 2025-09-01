@@ -78,6 +78,7 @@ export function InvestmentPlatform() {
   const isCancelPage = window.location.pathname === '/cancel'
   const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
   const isDebugPage = window.location.search.includes('debug=supabase')
+  const isConnectionTest = window.location.search.includes('test=connection')
 
   // Show system test page
   if (isTestPage) {
@@ -86,6 +87,11 @@ export function InvestmentPlatform() {
 
   // Show Supabase debugger
   if (isDebugPage) {
+    return <SupabaseConnectionTest />
+  }
+
+  // Show connection test page
+  if (isConnectionTest) {
     return <SupabaseConnectionTest />
   }
 
