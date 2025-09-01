@@ -1,214 +1,270 @@
-import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import { AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react'
 
-const SupabaseDebugger = () => {
-  const [results, setResults] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
+export function SupabaseDebugger() {
+  const [results, setResults] = useState<any>({})
+  const [testing, setTesting] = useState(false)
 
-  const addResult = (test, status, message, details = null) => {
-    setResults(prev => [...prev, { test, status, message, details, timestamp: new Date().toISOString() }]);
-  };
+  const runTests = async () => {
+    setTesting(true)
+    const testResults: any = {}
 
-  const runDiagnostics = async () => {
-    setIsRunning(true);
-    setResults([]);
-
-    // Test 1: Check Environment Variables
-    addResult("Environment Variables", "info", "Checking environment variables...");
-    
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl) {
-      addResult("VITE_SUPABASE_URL", "error", "Missing VITE_SUPABASE_URL environment variable");
-    } else {
-      addResult("VITE_SUPABASE_URL", "success", `Loaded: ${supabaseUrl}`);
-    }
-    
-    if (!supabaseAnonKey) {
-      addResult("VITE_SUPABASE_ANON_KEY", "error", "Missing VITE_SUPABASE_ANON_KEY environment variable");
-    } else {
-      addResult("VITE_SUPABASE_ANON_KEY", "success", `Loaded: ${supabaseAnonKey.substring(0, 50)}...`);
-      
-      // Check if key looks valid (JWT format)
-      const jwtParts = supabaseAnonKey.split('.');
-      if (jwtParts.length === 3) {
-        addResult("JWT Format", "success", "Anon key has valid JWT structure (3 parts)");
-      } else {
-        addResult("JWT Format", "error", `Invalid JWT structure (${jwtParts.length} parts, should be 3)`);
-      }
-      
-      // Check for corruption
-      if (supabaseAnonKey.includes('QGhKOQ')) {
-        addResult("Key Corruption", "error", "Anon key appears to be corrupted (contains repeated characters)");
-      } else {
-        addResult("Key Corruption", "success", "Anon key appears clean");
-      }
+    // 1. Check environment variables
+    console.log('🔍 Step 1: Environment Variables')
+    testResults.env = {
+      url: import.meta.env.VITE_SUPABASE_URL || null,
+      key: import.meta.env.VITE_SUPABASE_ANON_KEY || null,
+      urlPresent: !!import.meta.env.VITE_SUPABASE_URL,
+      keyPresent: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+      origin: window.location.origin,
+      href: window.location.href
     }
 
-    // Test 2: Create Supabase Client
-    if (supabaseUrl && supabaseAnonKey) {
-      addResult("Client Creation", "info", "Creating Supabase client...");
+    // 2. Test raw fetch to Supabase
+    console.log('🔍 Step 2: Raw Fetch Test')
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY
       
-      let client;
-      try {
-        client = createClient(supabaseUrl, supabaseAnonKey);
-        addResult("Client Creation", "success", "Supabase client created successfully");
-      } catch (error) {
-        addResult("Client Creation", "error", `Failed to create client: ${error.message}`);
-        setIsRunning(false);
-        return;
-      }
-
-      // Test 3: Basic Connection Test
-      addResult("Connection Test", "info", "Testing basic connection...");
-      
-      try {
-        const { data, error } = await client.from('accounts').select('count').limit(1);
-        
-        if (error) {
-          addResult("Connection Test", "error", `Database query failed: ${error.message}`, error);
-        } else {
-          addResult("Connection Test", "success", "Successfully connected to database", data);
-        }
-      } catch (fetchError) {
-        addResult("Connection Test", "error", `Network error: ${fetchError.message}`, {
-          name: fetchError.name,
-          stack: fetchError.stack
-        });
-      }
-
-      // Test 4: Try Different Table
-      addResult("Alternative Table Test", "info", "Testing with 'users' table...");
-      
-      try {
-        const { data, error } = await client.from('users').select('count').limit(1);
-        
-        if (error) {
-          addResult("Alternative Table Test", "error", `Users table query failed: ${error.message}`, error);
-        } else {
-          addResult("Alternative Table Test", "success", "Users table accessible", data);
-        }
-      } catch (fetchError) {
-        addResult("Alternative Table Test", "error", `Network error on users table: ${fetchError.message}`);
-      }
-
-      // Test 5: Network Info
-      addResult("Network Info", "info", "Gathering network information...");
-      addResult("Current Origin", "info", `Running from: ${window.location.origin}`);
-      addResult("User Agent", "info", `Browser: ${navigator.userAgent.substring(0, 100)}...`);
-      
-      // Test 6: Manual Fetch Test
-      addResult("Manual Fetch Test", "info", "Testing direct fetch to Supabase...");
-      
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/accounts?select=count&limit=1`, {
+      if (!url || !key) {
+        testResults.rawFetch = { error: 'Missing environment variables' }
+      } else {
+        const response = await fetch(`${url}/rest/v1/`, {
           method: 'GET',
           headers: {
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
             'Content-Type': 'application/json'
           }
-        });
+        })
         
-        if (response.ok) {
-          const data = await response.json();
-          addResult("Manual Fetch Test", "success", "Direct fetch successful", data);
-        } else {
-          addResult("Manual Fetch Test", "error", `HTTP ${response.status}: ${response.statusText}`);
+        testResults.rawFetch = {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries()),
+          url: response.url
         }
-      } catch (fetchError) {
-        addResult("Manual Fetch Test", "error", `Fetch failed: ${fetchError.message}`, fetchError);
       }
+    } catch (error: any) {
+      testResults.rawFetch = { error: error.message, name: error.name }
     }
 
-    setIsRunning(false);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'success': return 'text-green-600 bg-green-50';
-      case 'error': return 'text-red-600 bg-red-50';
-      case 'info': return 'text-blue-600 bg-blue-50';
-      default: return 'text-gray-600 bg-gray-50';
+    // 3. Test Supabase client creation
+    console.log('🔍 Step 3: Supabase Client Test')
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (!url || !key) {
+        testResults.clientTest = { error: 'Cannot create client - missing credentials' }
+      } else {
+        const testClient = createClient(url, key)
+        
+        // Try a simple query
+        const { data, error } = await testClient
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .limit(1)
+        
+        testResults.clientTest = { data, error: error?.message || null, success: !error }
+      }
+    } catch (error: any) {
+      testResults.clientTest = { error: error.message, name: error.name }
     }
-  };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'success': return '✅';
-      case 'error': return '❌';
-      case 'info': return 'ℹ️';
-      default: return '🔍';
+    // 4. Test specific table access
+    console.log('🔍 Step 4: Table Access Test')
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      if (!url || !key) {
+        testResults.tableTest = { error: 'Cannot test tables - missing credentials' }
+      } else {
+        const testClient = createClient(url, key)
+        
+        // Test each table
+        const tables = ['users', 'accounts', 'transactions']
+        const tableResults: any = {}
+        
+        for (const table of tables) {
+          try {
+            const { data, error } = await testClient
+              .from(table)
+              .select('*', { count: 'exact', head: true })
+              .limit(1)
+            
+            tableResults[table] = { 
+              accessible: !error, 
+              error: error?.message || null,
+              count: data?.length || 0
+            }
+          } catch (err: any) {
+            tableResults[table] = { accessible: false, error: err.message }
+          }
+        }
+        
+        testResults.tableTest = tableResults
+      }
+    } catch (error: any) {
+      testResults.tableTest = { error: error.message }
     }
-  };
+
+    console.log('🔍 Complete test results:', testResults)
+    setResults(testResults)
+    setTesting(false)
+  }
+
+  useEffect(() => {
+    runTests()
+  }, [])
+
+  const getStatusIcon = (success: boolean | undefined) => {
+    if (success === undefined) return <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+    return success ? <CheckCircle className="h-5 w-5 text-green-600" /> : <AlertCircle className="h-5 w-5 text-red-600" />
+  }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Supabase Connection Debugger</h1>
-        <p className="text-gray-600">This tool will diagnose why your app shows "Supabase not configured"</p>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Supabase Connection Debugger</h1>
+              <p className="text-gray-600">Comprehensive connection testing and diagnostics</p>
+            </div>
+            <button
+              onClick={runTests}
+              disabled={testing}
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${testing ? 'animate-spin' : ''}`} />
+              <span>Retest</span>
+            </button>
+          </div>
 
-      <div className="mb-6">
-        <button
-          onClick={runDiagnostics}
-          disabled={isRunning}
-          className={`px-6 py-3 rounded-lg font-medium ${
-            isRunning 
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          {isRunning ? 'Running Diagnostics...' : 'Run Diagnostics'}
-        </button>
-      </div>
-
-      {results.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Diagnostic Results:</h2>
-          
-          {results.map((result, index) => (
-            <div key={index} className={`p-4 rounded-lg border-l-4 ${getStatusColor(result.status)}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{getStatusIcon(result.status)}</span>
-                  <div>
-                    <h3 className="font-medium">{result.test}</h3>
-                    <p className="text-sm mt-1">{result.message}</p>
-                    {result.details && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
-                          Show Details
-                        </summary>
-                        <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
-                          {JSON.stringify(result.details, null, 2)}
-                        </pre>
-                      </details>
-                    )}
+          <div className="space-y-6">
+            {/* Environment Variables */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                {getStatusIcon(results.env?.urlPresent && results.env?.keyPresent)}
+                <h3 className="text-lg font-semibold text-gray-900">Environment Variables</h3>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="font-medium text-gray-700 mb-2">VITE_SUPABASE_URL</div>
+                  <div className="bg-gray-50 p-3 rounded font-mono text-xs break-all">
+                    {results.env?.url || 'NOT SET'}
+                  </div>
+                  <div className={`mt-1 text-xs ${results.env?.urlPresent ? 'text-green-600' : 'text-red-600'}`}>
+                    {results.env?.urlPresent ? '✅ Present' : '❌ Missing'}
                   </div>
                 </div>
-                <span className="text-xs text-gray-400">
-                  {new Date(result.timestamp).toLocaleTimeString()}
-                </span>
+                
+                <div>
+                  <div className="font-medium text-gray-700 mb-2">VITE_SUPABASE_ANON_KEY</div>
+                  <div className="bg-gray-50 p-3 rounded font-mono text-xs">
+                    {results.env?.key ? `${results.env.key.substring(0, 20)}...` : 'NOT SET'}
+                  </div>
+                  <div className={`mt-1 text-xs ${results.env?.keyPresent ? 'text-green-600' : 'text-red-600'}`}>
+                    {results.env?.keyPresent ? '✅ Present' : '❌ Missing'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  <div><strong>Origin:</strong> {results.env?.origin}</div>
+                  <div><strong>Full URL:</strong> {results.env?.href}</div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {!isRunning && results.length > 0 && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-gray-900 mb-2">Summary:</h3>
-          <div className="text-sm text-gray-600">
-            <div>✅ Passed: {results.filter(r => r.status === 'success').length}</div>
-            <div>❌ Failed: {results.filter(r => r.status === 'error').length}</div>
-            <div>ℹ️ Info: {results.filter(r => r.status === 'info').length}</div>
+            {/* Raw Fetch Test */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                {getStatusIcon(results.rawFetch?.ok)}
+                <h3 className="text-lg font-semibold text-gray-900">Raw Fetch Test</h3>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded">
+                <pre className="text-xs overflow-x-auto">
+                  {JSON.stringify(results.rawFetch, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            {/* Supabase Client Test */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                {getStatusIcon(results.clientTest?.success)}
+                <h3 className="text-lg font-semibold text-gray-900">Supabase Client Test</h3>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded">
+                <pre className="text-xs overflow-x-auto">
+                  {JSON.stringify(results.clientTest, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            {/* Table Access Test */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                {getStatusIcon(results.tableTest && Object.values(results.tableTest).some((t: any) => t.accessible))}
+                <h3 className="text-lg font-semibold text-gray-900">Database Table Access</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {results.tableTest && typeof results.tableTest === 'object' && !results.tableTest.error ? (
+                  Object.entries(results.tableTest).map(([table, result]: [string, any]) => (
+                    <div key={table} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(result.accessible)}
+                        <span className="font-medium">{table}</span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {result.accessible ? '✅ Accessible' : `❌ ${result.error}`}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <pre className="text-xs overflow-x-auto">
+                      {JSON.stringify(results.tableTest, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Items */}
+          <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-medium text-blue-900 mb-3">🔧 Next Steps Based on Results:</h3>
+            <div className="text-sm text-blue-800 space-y-2">
+              {!results.env?.urlPresent && (
+                <div>❌ <strong>Missing VITE_SUPABASE_URL</strong> - Add to .env file</div>
+              )}
+              {!results.env?.keyPresent && (
+                <div>❌ <strong>Missing VITE_SUPABASE_ANON_KEY</strong> - Add to .env file</div>
+              )}
+              {results.rawFetch?.error && (
+                <div>❌ <strong>Network Error:</strong> {results.rawFetch.error}</div>
+              )}
+              {results.clientTest?.error && (
+                <div>❌ <strong>Client Error:</strong> {results.clientTest.error}</div>
+              )}
+              {results.env?.urlPresent && results.env?.keyPresent && results.rawFetch?.ok && results.clientTest?.success && (
+                <div>✅ <strong>All tests passed!</strong> Connection should work</div>
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
-  );
-};
-
-export default SupabaseDebugger;
+  )
+}

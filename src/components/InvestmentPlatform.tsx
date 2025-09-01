@@ -13,94 +13,52 @@ import { Contact } from './Contact'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { SystemStatusCheck } from './SystemStatusCheck'
-import { DeploymentCheck } from './DeploymentCheck'
-import { SupabaseConnectionTest } from './SupabaseConnectionTest'
-
-console.log("🏢 InvestmentPlatform component loaded")
-
-// Error Boundary Component
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error?: Error }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error }
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('React Error Boundary caught an error:', error, errorInfo)
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-red-600 text-2xl">⚠️</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-4">Something went wrong</h1>
-            <p className="text-gray-600 mb-4">
-              The application encountered an error. Please refresh the page or contact support.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Refresh Page
-            </button>
-            <details className="mt-4 text-left">
-              <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
-              <pre className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded overflow-auto">
-                {this.state.error?.message}
-              </pre>
-            </details>
-          </div>
-        </div>
-      )
-    }
-
-    return this.props.children
-  }
-}
 
 export function InvestmentPlatform() {
-  const { user, loading } = useAuth()
+  const { user, loading, connectionError } = useAuth()
   const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
 
   // Check for success/cancel pages
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
   const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
-  const isDebugPage = window.location.search.includes('debug=supabase')
-  const isConnectionTest = window.location.search.includes('test=connection')
 
   // Show system test page
   if (isTestPage) {
     return <SystemStatusCheck />
   }
 
-  // Show Supabase debugger
-  if (isDebugPage) {
-    return <SupabaseConnectionTest />
+  // Show connection error if Supabase isn't working
+  if (connectionError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="text-red-600 text-2xl">⚠️</div>
+          </div>
+          <h1 className="font-serif text-xl font-bold text-gray-900 mb-4">
+            Database Connection Error
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {connectionError}
+          </p>
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-900 mb-2">Debug Information</h3>
+            <div className="text-sm text-gray-600 space-y-1">
+              <div>URL: {import.meta.env.VITE_SUPABASE_URL || 'Not set'}</div>
+              <div>Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Not set'}</div>
+            </div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    )
   }
-
-  // Show connection test page
-  if (isConnectionTest) {
-    return <SupabaseConnectionTest />
-  }
-
-  // Show deployment check page
-  const isDeploymentCheck = window.location.search.includes('deployment=check')
-  if (isDeploymentCheck) {
-    return <DeploymentCheck />
-  }
-
 
   if (loading) {
     return (
@@ -110,6 +68,7 @@ export function InvestmentPlatform() {
             <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
           <div className="text-navy-900 text-lg font-medium">Loading...</div>
+          <div className="text-gray-600 text-sm mt-2">Connecting to database...</div>
         </div>
       </div>
     )
