@@ -24,16 +24,73 @@ export const supabaseClient = createClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
+      detectSessionInUrl: true,
+      onAuthStateChange: async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email)
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          const { data, error } = session
+          
+          try {
+            console.log('🔄 Creating user profile manually...')
+            const metadata = data.user.user_metadata || {}
+            
+            const { error: profileError } = await supabaseClient
+              .from('user_profiles')
+              .insert({
+                id: data.user.id,
+                email: data.user.email,
+                full_name: metadata?.full_name,
+                kyc_status: 'pending',
+                two_factor_enabled: false,
+                documents_completed: false
+              })
+            
+            if (profileError && !profileError.message.includes('duplicate key')) {
+              console.error('❌ Failed to create user profile:', profileError)
+            } else {
+              console.log('✅ User profile created or already exists')
+            }
+            
+            // Create account
+            console.log('🔄 Creating user account manually...')
+            
+            const { error: accountError } = await supabaseClient
+              .from('accounts')
+              .insert({
+                user_id: data.user.id,
+                account_type: 'trading',
+                balance: 0,
+                available_balance: 0,
+                total_deposits: 0,
+                total_withdrawals: 0,
+                currency: 'USD',
+                status: 'active'
+              })
+            
+            if (accountError && !accountError.message.includes('duplicate key')) {
+              console.error('❌ Failed to create user account:', accountError)
+            } else {
+              console.log('✅ User account created or already exists')
+            }
+            
+          } catch (manualError) {
+            console.error('❌ Manual user creation failed:', manualError)
+          }
+        }
+      },
       
       // Provide more helpful error messages
-      if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+      onError: (err) => {
+        if (err instanceof Error) {
+          if (err.message.includes('Failed to fetch')) {
+            return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+          }
+          return { error: { message: err.message } }
         }
-        return { error: { message: err.message } }
+        
+        return { error: { message: 'An unexpected error occurred. Please try again.' } }
       }
-      
-      return { error: { message: 'An unexpected error occurred. Please try again.' } }
     }
   }
 )
@@ -49,46 +106,6 @@ supabaseClient.auth.getSession().then(({ data, error }) => {
   }
 }).catch(err => {
   console.error('❌ Supabase connection test error:', err)
-              id: data.user.id,
-              email: data.user.email,
-              full_name: metadata?.full_name,
-              kyc_status: 'pending',
-              two_factor_enabled: false,
-              documents_completed: false
-            })
-          
-          if (profileError && !profileError.message.includes('duplicate key')) {
-            console.error('❌ Failed to create user profile:', profileError)
-          } else {
-            console.log('✅ User profile created or already exists')
-          }
-          
-          // Create account
-          console.log('🔄 Creating user account manually...')
-          
-          const { error: accountError } = await supabaseClient
-            .from('accounts')
-            .insert({
-              user_id: data.user.id,
-              account_type: 'trading',
-              balance: 0,
-              available_balance: 0,
-              total_deposits: 0,
-              total_withdrawals: 0,
-              currency: 'USD',
-              status: 'active'
-            })
-          
-          if (accountError && !accountError.message.includes('duplicate key')) {
-            console.error('❌ Failed to create user account:', accountError)
-          } else {
-            console.log('✅ User account created or already exists')
-          }
-          
-        } catch (manualError) {
-          console.error('❌ Manual user creation failed:', manualError)
-        }
-        
 })
 
 export default supabaseClient
