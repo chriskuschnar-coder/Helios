@@ -59,17 +59,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
       if (!supabaseUrl || !anonKey || supabaseUrl.includes('webcontainer')) {
-        // Fallback to direct Stripe integration for production
-        console.log('⚠️ Supabase not configured, using fallback payment processing')
-        
-        // Simulate successful payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Process funding through auth provider
-        await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
-        
-        setSuccess(true)
-        return;
+        throw new Error('Supabase configuration missing - please contact support')
       }
 
       // Get the current user session for authentication
@@ -77,7 +67,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       
       if (sessionError || !session) {
         console.error('❌ No valid session for Stripe checkout')
-        throw new Error('Please sign in again to continue')
+        throw new Error('Authentication required - please sign in again')
       }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {

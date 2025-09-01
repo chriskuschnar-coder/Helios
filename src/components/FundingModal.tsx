@@ -74,19 +74,7 @@ function StripeCheckoutRedirect({ amount, onSuccess, onError }: { amount: number
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
       if (!supabaseUrl || !anonKey) {
-        // Fallback for production deployment without Supabase config
-        console.log('⚠️ Using fallback payment processing')
-        
-        // Simulate payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        onSuccess({
-          id: 'payment_' + Date.now(),
-          amount: amount,
-          method: 'stripe',
-          status: 'completed'
-        })
-        return
+        throw new Error('Payment system not configured - please contact support')
       }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
