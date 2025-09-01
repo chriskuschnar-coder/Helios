@@ -384,6 +384,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 <button
                   onClick={handleBackToFunding}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  ← Back to Payment Methods
+                </button>
+              </div>
+              
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertCircle className="h-5 w-5 text-blue-600" />
@@ -393,7 +398,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   Please include the reference code in your wire transfer. Processing typically takes 1-2 business days.
                 </p>
               </div>
-                >
+
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center">
@@ -415,7 +420,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     </div>
                   </div>
                 </div>
-                  ← Back to Payment Methods
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
@@ -457,7 +462,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                       </div>
                     </div>
                   </div>
-                </button>
+
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-700">Account Name</label>
@@ -493,7 +498,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     </div>
                   </div>
                 </div>
-              </div>
+
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
                   <div className="flex items-center space-x-2 mb-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600" />
@@ -528,7 +533,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   ← Back to Payment Methods
                 </button>
               </div>
-              <div className="text-center mb-8">
+
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Building className="h-8 w-8 text-green-600" />
@@ -538,7 +543,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   Connect your bank account for ${investmentAmount} investment
                 </p>
               </div>
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+
               <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <Shield className="h-5 w-5 text-green-600" />
@@ -554,7 +559,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <li>• Supports 11,000+ financial institutions</li>
                 </ul>
               </div>
-                  <Zap className="h-8 w-8 text-blue-600" />
+
               <div className="space-y-4">
                 <button
                   onClick={() => {
@@ -566,7 +571,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <Building className="h-5 w-5 mr-2" />
                   Connect Bank Account Securely
                 </button>
-                </div>
+
                 <div className="text-center">
                   <p className="text-sm text-gray-500">
                     Powered by Plaid • Used by millions of users
@@ -584,7 +589,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   ← Back to Payment Methods
                 </button>
               </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Wire Transfer Instructions</h3>
+
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Coins className="h-8 w-8 text-orange-600" />
@@ -594,7 +599,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   Pay ${investmentAmount} with Bitcoin or Ethereum
                 </p>
               </div>
-                <p className="text-gray-600">
+
               <div className="grid md:grid-cols-2 gap-4 mb-6">
                 <div className="border-2 border-orange-500 bg-orange-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-orange-600 mb-2">₿</div>
@@ -614,7 +619,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   </div>
                 </div>
               </div>
-                  Complete your ${investmentAmount} investment via wire transfer
+
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                 <h4 className="font-medium text-orange-900 mb-3">Bitcoin Payment Address</h4>
                 <div className="bg-white border rounded-lg p-3 mb-3">
@@ -632,7 +637,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <strong>Important:</strong> Only send Bitcoin to this address. Sending other cryptocurrencies will result in permanent loss.
                 </div>
               </div>
-                </p>
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertCircle className="h-5 w-5 text-yellow-600" />
@@ -645,7 +650,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <li>• Contact support if payment doesn't appear within 2 hours</li>
                 </ul>
               </div>
-              </div>
+
               <button
                 onClick={() => {
                   // Mark as completed and close modal
