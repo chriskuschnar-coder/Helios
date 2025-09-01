@@ -387,19 +387,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       return { error: { message: 'No user returned' } }
-    }
-  } catch (err) {
-    console.error('❌ Sign up failed:', err)
-    
-    // Provide more helpful error messages
-    if (err instanceof Error) {
-      if (err.message.includes('Failed to fetch')) {
-        return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+    } catch (err) {
+      console.error('❌ Sign up failed:', err)
+      
+      // Provide more helpful error messages
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+        }
+        return { error: { message: err.message } }
       }
-      return { error: { message: err.message } }
+      
+      return { error: { message: 'An unknown error occurred during signup. Please try again.' } }
     }
-    
-    return { error: { message: 'An unknown error occurred during signup. Please try again.' } }
   }
 
   const signOut = async () => {
