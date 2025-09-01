@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -62,11 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccount(accountResult.data)
         
         // Update saved session
-        const savedSession = localStorage.getItem('hedge-fund-session')
+        const savedSession = localStorage.getItem('supabase-session')
         if (savedSession) {
           const session = JSON.parse(savedSession)
           session.account = accountResult.data
-          localStorage.setItem('hedge-fund-session', JSON.stringify(session))
+          localStorage.setItem('supabase-session', JSON.stringify(session))
         }
       }
     } catch (error) {
@@ -89,9 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Demo account with existing balance
         const demoAccount = {
           id: 'demo-account',
-          balance: 7850.00,
-          available_balance: 7850.00,
-          total_deposits: 8000.00,
+          balance: 10000.00,
+          available_balance: 10000.00,
+          total_deposits: 10000.00,
           total_withdrawals: 0,
           currency: 'USD',
           status: 'active'
@@ -125,9 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Get user's account data
         const userAccount = {
           id: existingUser.accountId,
-          balance: existingUser.balance || 0,
-          available_balance: existingUser.available_balance || 0,
-          total_deposits: existingUser.total_deposits || 0,
+          balance: existingUser.balance || 5000, // Give new users some demo balance
+          available_balance: existingUser.available_balance || 5000,
+          total_deposits: existingUser.total_deposits || 5000,
           total_withdrawals: existingUser.total_withdrawals || 0,
           currency: 'USD',
           status: 'active'
@@ -169,6 +170,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    console.log('💰 Processing funding:', { amount, method, user: user?.email })
+    
+    if (!user) {
+      throw new Error('No authenticated user')
+    }
+
+    if (amount < 100) {
+      throw new Error('Minimum funding amount is $100')
+    }
+    try {
+      // Update local account state directly for demo
+      if (account) {
+        const updatedAccount = {
+          ...account,
+          balance: account.balance + amount,
+          available_balance: account.available_balance + amount,
+          total_deposits: account.total_deposits + amount
+        }
+        setAccount(updatedAccount)
+        
+        // Update saved session
+        const savedSession = localStorage.getItem('supabase-session')
+        if (savedSession) {
+          const session = JSON.parse(savedSession)
+          session.account = updatedAccount
+          localStorage.setItem('supabase-session', JSON.stringify(session))
+        }
+        
+        // Update localStorage for real users
+        if (user.email !== 'demo@globalmarket.com') {
+          const allUsers = JSON.parse(localStorage.getItem('hedge-fund-users') || '[]')
+          const userIndex = allUsers.findIndex((u: any) => u.email === user.email)
+          
+          if (userIndex !== -1) {
+            allUsers[userIndex].balance = updatedAccount.balance
+            allUsers[userIndex].available_balance = updatedAccount.available_balance
+            allUsers[userIndex].total_deposits = updatedAccount.total_deposits
+            localStorage.setItem('hedge-fund-users', JSON.stringify(allUsers))
+          }
+        }
+      }
+      
+      console.log('✅ Funding processed successfully')
+      return { success: true, data: { new_balance: account?.balance || 0 + amount } }
+    } catch (error) {
+      console.error('❌ Funding error:', error)
+      throw error
+    }
+  }
+
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 Attempting sign up for:', email)
     
@@ -206,9 +258,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // New users start with $0 balance
       const newAccount = {
         id: newUser.accountId,
-        balance: 0.00,
-        available_balance: 0.00,
-        total_deposits: 0.00,
+        balance: 5000.00, // Give new users demo balance
+        available_balance: 5000.00,
+        total_deposits: 5000.00,
         total_withdrawals: 0.00,
         currency: 'USD',
         status: 'active'
@@ -262,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     account,
     refreshAccount,
+    processFunding,
     signIn,
     signUp,
     signOut

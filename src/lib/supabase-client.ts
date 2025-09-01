@@ -370,7 +370,7 @@ class DeployedSupabaseClient {
         console.error('❌ Funding error:', error)
         return {
           data: null,
-          error: { message: error.message },
+          error: { message: error instanceof Error ? error.message : 'Unknown error' },
           success: false
         }
       }
