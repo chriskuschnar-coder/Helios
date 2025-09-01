@@ -3,10 +3,10 @@ import { TrendingUp, Shield, Users, ArrowRight } from 'lucide-react'
 
 interface EmptyPortfolioStateProps {
   onFundPortfolio: () => void
-}
   onStartOnboarding: () => void
+}
 
-export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProps) {
+export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: EmptyPortfolioStateProps) {
   return (
     <div className="empty-portfolio-state">
       <div className="illustration">
@@ -43,7 +43,15 @@ export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProp
           <span>Institutional Grade</span>
         </div>
       </div>
+      
+      <button 
+        className="cta-onboarding-button" 
         onClick={onStartOnboarding}
+      >
+        Start Growing Your Portfolio
+        <ArrowRight className="arrow-icon" />
+      </button>
+      
       <button className="cta-fund-button" onClick={onFundPortfolio}>
         Fund Portfolio
         <span className="min-amount">$250K minimum</span>
@@ -51,6 +59,4 @@ export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProp
       </button>
     </div>
   )
-}
-export function EmptyPortfolioState({ onFundAccount, onAmountSelect, onStartOnboarding }: EmptyPortfolioStateProps) {
 }
