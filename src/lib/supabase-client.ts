@@ -7,7 +7,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 console.log('🔍 SUPABASE CLIENT - Environment Check:')
 console.log('🔍 VITE_SUPABASE_URL:', supabaseUrl)
 console.log('🔍 VITE_SUPABASE_ANON_KEY present:', !!supabaseAnonKey)
-console.log('🔍 Key length:', supabaseAnonKey?.length || 0)
+console.log('🔍 All env vars:', import.meta.env)
 
 // Check if we're missing environment variables
 const hasValidConfig = supabaseUrl && supabaseAnonKey && 
@@ -15,6 +15,14 @@ const hasValidConfig = supabaseUrl && supabaseAnonKey &&
   supabaseAnonKey.length > 100
 
 console.log('🔍 Has valid Supabase config:', hasValidConfig)
+
+if (!hasValidConfig) {
+  console.warn('⚠️ CRITICAL: Missing or invalid Supabase environment variables')
+  console.warn('⚠️ This will cause "Failed to fetch" errors')
+  console.warn('⚠️ URL:', supabaseUrl)
+  console.warn('⚠️ Key present:', !!supabaseAnonKey)
+  console.warn('⚠️ Key length:', supabaseAnonKey?.length || 0)
+}
 
 // Create the Supabase client with fallback values
 export const supabaseClient = createClient(
@@ -24,7 +32,6 @@ export const supabaseClient = createClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false
     }
   }
 )
