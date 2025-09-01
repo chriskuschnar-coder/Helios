@@ -316,18 +316,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('❌ Supabase sign up error:', error.message, error)
-        
-        // Provide more specific error messages
-        if (error.message.includes('User already registered')) {
-          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
-        }
-        if (error.message.includes('Invalid email')) {
-          return { error: { message: 'Please enter a valid email address.' } }
-        }
-        if (error.message.includes('Password')) {
-          return { error: { message: 'Password must be at least 6 characters long.' } }
-        }
-        
         return { error: { message: error.message } }
       }
 
@@ -335,56 +323,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Sign up successful:', data.user.email)
         console.log('🔍 User data:', data.user)
         
-        // Try to manually create user record if triggers fail
-        try {
-          console.log('🔍 Manually creating user record...')
-          const { error: userInsertError } = await supabaseClient
-            .from('users')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: metadata?.full_name || data.user.email,
-              documents_completed: false
-            })
-            .select()
-          
-          if (userInsertError && !userInsertError.message.includes('duplicate key')) {
-            console.error('❌ User record creation failed:', userInsertError)
-          } else {
-            console.log('✅ User record created or already exists')
-          }
-        } catch (userError) {
-          console.error('❌ Manual user creation failed:', userError)
-        }
-
-        // Try to manually create account if triggers fail
-        try {
-          console.log('🔍 Manually creating account record...')
-          const { error: accountInsertError } = await supabaseClient
-            .from('accounts')
-            .insert({
-              user_id: data.user.id,
-              account_type: 'trading',
-              balance: 0.00,
-              available_balance: 0.00,
-              total_deposits: 0.00,
-              total_withdrawals: 0.00,
-              currency: 'USD',
-              status: 'active'
-            })
-            .select()
-          
-          if (accountInsertError && !accountInsertError.message.includes('duplicate key')) {
-            console.error('❌ Account creation failed:', accountInsertError)
-          } else {
-            console.log('✅ Account created or already exists')
-          }
-        } catch (accountError) {
-          console.error('❌ Manual account creation failed:', accountError)
-        }
-        
-        // Wait a moment for everything to settle
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Wait a moment for the trigger to create the account
+        console.log('⏳ Waiting for account creation...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
         setUser({
           id: data.user.id,
@@ -402,7 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'No user returned' } }
     } catch (err) {
       console.error('❌ Sign up failed:', err)
-      return { error: { message: 'Database error saving new user. Please try again or contact support.' } }
+      return { error: { message: 'Connection error' } }
     }
   }
 
