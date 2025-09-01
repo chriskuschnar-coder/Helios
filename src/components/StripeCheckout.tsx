@@ -58,8 +58,8 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
-      if (!supabaseUrl || !anonKey || supabaseUrl.includes('webcontainer')) {
-        throw new Error('Supabase configuration missing - please contact support')
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Payment system configuration missing - please contact support')
       }
 
       // Get the current user session for authentication

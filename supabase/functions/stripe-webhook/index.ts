@@ -166,12 +166,19 @@ async function handleEvent(event: Stripe.Event) {
     }
 
     // Handle subscription events
-    if (event.type === 'customer.subscription.created' || 
-        event.type === 'customer.subscription.updated' || 
-        event.type === 'customer.subscription.deleted') {
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = stripeData as Stripe.PaymentIntent;
+      console.log('💰 Payment intent succeeded:', paymentIntent.id);
       
-      const subscription = stripeData as Stripe.Subscription;
-      await syncSubscriptionFromStripe(subscription.customer as string);
+      // Additional confirmation logging
+      console.log('✅ Payment confirmed via payment_intent.succeeded webhook');
+    }
+    
+    if (event.type === 'payment_intent.payment_failed') {
+      const paymentIntent = stripeData as Stripe.PaymentIntent;
+      console.log('❌ Payment failed:', paymentIntent.id);
+      
+      // Could add failure handling here if needed
     }
 
   } catch (error) {
