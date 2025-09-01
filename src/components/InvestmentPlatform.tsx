@@ -14,6 +14,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { SystemStatusCheck } from './SystemStatusCheck'
 import { DeploymentCheck } from './DeploymentCheck'
+import { SupabaseConnectionTest } from './SupabaseConnectionTest'
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -74,10 +75,16 @@ export function InvestmentPlatform() {
   const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
   const isCancelPage = window.location.pathname === '/cancel'
   const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
+  const isDebugPage = window.location.search.includes('debug=supabase')
 
   // Show system test page
   if (isTestPage) {
     return <SystemStatusCheck />
+  }
+
+  // Show Supabase debugger
+  if (isDebugPage) {
+    return <SupabaseConnectionTest />
   }
 
   // Show deployment check page
@@ -85,6 +92,7 @@ export function InvestmentPlatform() {
   if (isDeploymentCheck) {
     return <DeploymentCheck />
   }
+
 
   if (loading) {
     return (
