@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
 
+// Debug: Check if supabaseClient is properly imported
+console.log('🔍 AuthProvider - supabaseClient:', supabaseClient)
+
 interface User {
   id: string
   email: string

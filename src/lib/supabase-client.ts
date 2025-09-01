@@ -8,6 +8,11 @@ console.log('🔍 Environment Variables:')
 console.log('VITE_SUPABASE_URL:', supabaseUrl)
 console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing')
 
+// Validate we have the required values
+if (!supabaseUrl && !supabaseAnonKey) {
+  console.warn('⚠️ No Supabase environment variables found, using fallback values')
+}
+
 // Create the Supabase client
 export const supabaseClient = createClient(
   supabaseUrl || 'https://upevugqarcvxnekzddeh.supabase.co',
@@ -19,4 +24,7 @@ export const supabaseClient = createClient(
     }
   }
 )
-console.log('✅ Supabase client created')
+console.log('✅ Supabase client created:', !!supabaseClient)
+
+// Also export as default for easier importing
+export default supabaseClient
