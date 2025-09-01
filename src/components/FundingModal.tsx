@@ -1,5 +1,4 @@
-import { X, TrendingUp, Shield, Award, FileText } from 'lucide-react';
-import { X, CreditCard, Building, Zap } from 'lucide-react';
+import { X, TrendingUp, Shield, Award, FileText, CreditCard, Building, Zap } from 'lucide-react';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
 import DocumentSigningFlow from './DocumentSigningFlow';
 import { OnboardingCompletePage } from './OnboardingCompletePage';
