@@ -16,10 +16,4 @@ export const supabaseClient = createClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce'
-    }
-  }
-)
-
 console.log('✅ Supabase client created')
