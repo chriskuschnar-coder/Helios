@@ -1,81 +1,180 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
-import { Header } from './Header'
+import { SuccessPage } from './SuccessPage'
+import { CancelPage } from './CancelPage'
 import { Hero } from './Hero'
 import { About } from './About'
 import { Services } from './Services'
 import { Performance } from './Performance'
 import { Contact } from './Contact'
+import { Header } from './Header'
 import { Footer } from './Footer'
+import { SystemStatusCheck } from './SystemStatusCheck'
+import { DeploymentCheck } from './DeploymentCheck'
+import { SupabaseConnectionTest } from './SupabaseConnectionTest'
+
+console.log("🏢 InvestmentPlatform component loaded")
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('React Error Boundary caught an error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-red-600 text-2xl">⚠️</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-4">Something went wrong</h1>
+            <p className="text-gray-600 mb-4">
+              The application encountered an error. Please refresh the page or contact support.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Refresh Page
+            </button>
+            <details className="mt-4 text-left">
+              <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
+              <pre className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded overflow-auto">
+                {this.state.error?.message}
+              </pre>
+            </details>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 export function InvestmentPlatform() {
   const { user, loading } = useAuth()
-  const [showAuth, setShowAuth] = useState(false)
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
 
-  console.log('🔍 InvestmentPlatform rendering:', { user: !!user, loading, showAuth })
+  // Check for success/cancel pages
+  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
+  const isCancelPage = window.location.pathname === '/cancel'
+  const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
+  const isDebugPage = window.location.search.includes('debug=supabase')
+  const isConnectionTest = window.location.search.includes('test=connection')
+
+  // Show system test page
+  if (isTestPage) {
+    return <SystemStatusCheck />
+  }
+
+  // Show Supabase debugger
+  if (isDebugPage) {
+    return <SupabaseConnectionTest />
+  }
+
+  // Show connection test page
+  if (isConnectionTest) {
+    return <SupabaseConnectionTest />
+  }
+
+  // Show deployment check page
+  const isDeploymentCheck = window.location.search.includes('deployment=check')
+  if (isDeploymentCheck) {
+    return <DeploymentCheck />
+  }
+
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading platform...</p>
+          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <div className="w-8 h-8 bg-white rounded-full"></div>
+          </div>
+          <div className="text-navy-900 text-lg font-medium">Loading...</div>
         </div>
       </div>
     )
   }
 
-  // If user is authenticated, show dashboard
+  // Show success page
+  if (isSuccessPage) {
+    return <SuccessPage />
+  }
+
+  // Show cancel page
+  if (isCancelPage) {
+    return <CancelPage />
+  }
+
+  // If user is authenticated, show dashboard selector
   if (user) {
-    console.log('✅ User authenticated, showing dashboard')
     return <DashboardSelector />
   }
 
   // If showing auth forms
-  if (showAuth) {
-    console.log('🔐 Showing auth form:', authMode)
+  if (authMode === 'login') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        {authMode === 'login' ? (
-          <LoginForm
-            onSuccess={() => {
-              console.log('✅ Login successful')
-              setShowAuth(false)
-            }}
-            onSwitchToSignup={() => setAuthMode('signup')}
-          />
-        ) : (
-          <SignupForm
-            onSuccess={() => {
-              console.log('✅ Signup successful')
-              setShowAuth(false)
-            }}
-            onSwitchToLogin={() => setAuthMode('login')}
-          />
-        )}
+      <div className="min-h-screen bg-gradient-to-br from-navy-50 to-white flex items-center justify-center p-4">
+        <LoginForm
+          onSuccess={() => setAuthMode(null)}
+          onSwitchToSignup={() => setAuthMode('signup')}
+        />
+        <button
+          onClick={() => setAuthMode(null)}
+          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
+        >
+          ← Back to Home
+        </button>
       </div>
     )
   }
 
-  // Show marketing site
-  console.log('🌐 Showing marketing site')
+  if (authMode === 'signup') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-navy-50 to-white flex items-center justify-center p-4">
+        <SignupForm
+          onSuccess={() => setAuthMode(null)}
+          onSwitchToLogin={() => setAuthMode('login')}
+        />
+        <button
+          onClick={() => setAuthMode(null)}
+          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
+        >
+          ← Back to Home
+        </button>
+      </div>
+    )
+  }
+
+  // Default: show marketing site
   return (
-    <div className="min-h-screen bg-white">
-      <Header onNavigateToLogin={() => {
-        console.log('🔐 Navigate to login clicked')
-        setAuthMode('login')
-        setShowAuth(true)
-      }} />
+    <main className="min-h-screen bg-white">
+      <Header onNavigateToLogin={() => setAuthMode('login')} />
       <Hero />
       <About />
       <Services />
       <Performance />
       <Contact />
       <Footer />
-    </div>
+    </main>
   )
 }

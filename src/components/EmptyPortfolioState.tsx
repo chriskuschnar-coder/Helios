@@ -1,11 +1,11 @@
 import React from 'react'
-import { TrendingUp, Shield, Award, Users, FileText, ArrowRight } from 'lucide-react'
+import { TrendingUp, ArrowRight, Shield, Users, Award, Plus } from 'lucide-react'
 
 interface EmptyPortfolioStateProps {
-  onStartOnboarding: () => void
+  onFundAccount: () => void
 }
 
-export function EmptyPortfolioState({ onStartOnboarding }: EmptyPortfolioStateProps) {
+export function EmptyPortfolioState({ onFundAccount }: EmptyPortfolioStateProps) {
   return (
     <div className="empty-portfolio-state">
       <div className="illustration">
@@ -22,39 +22,38 @@ export function EmptyPortfolioState({ onStartOnboarding }: EmptyPortfolioStatePr
       <div className="content">
         <h2>Start Building Your Portfolio</h2>
         <p>
-          Welcome to Global Market Consulting's institutional investment platform. 
-          Complete your onboarding documentation to begin accessing our quantitative 
-          strategies and start building your investment portfolio.
+          Fund your account to begin trading and investing with our 
+          quantitative strategies and institutional-grade execution.
         </p>
-      </div>
-      
-      <div className="trust-indicators">
-        <div className="trust-item">
-          <Shield className="h-5 w-5 text-navy-600" />
-          <span>SIPC Protected</span>
+        
+        <div className="trust-indicators">
+          <div className="trust-item">
+            <Shield className="h-5 w-5 text-navy-600" />
+            <span>SIPC Protected</span>
+          </div>
+          <div className="trust-item">
+            <Users className="h-5 w-5 text-navy-600" />
+            <span>Institutional Grade</span>
+          </div>
+          <div className="trust-item">
+            <Award className="h-5 w-5 text-navy-600" />
+            <span>SEC Registered</span>
+          </div>
         </div>
-        <div className="trust-item">
-          <Award className="h-5 w-5 text-navy-600" />
-          <span>SEC Registered</span>
+        
+        <button className="cta-fund-button" onClick={onFundAccount}>
+          <Plus className="h-5 w-5" />
+          Fund Your Account
+          <span className="min-amount">Minimum $100</span>
+          <ArrowRight className="arrow-icon" />
+        </button>
+        
+        <div className="quick-start-amounts">
+          <span className="quick-label">Popular amounts:</span>
+          <button onClick={() => onFundAccount()} className="quick-amount">$1,000</button>
+          <button onClick={() => onFundAccount()} className="quick-amount">$5,000</button>
+          <button onClick={() => onFundAccount()} className="quick-amount premium">$10,000</button>
         </div>
-        <div className="trust-item">
-          <Users className="h-5 w-5 text-navy-600" />
-          <span>Institutional Grade</span>
-        </div>
-      </div>
-      
-      <button className="cta-fund-button" onClick={onStartOnboarding}>
-        <FileText className="h-5 w-5" />
-        Complete Onboarding Documents
-        <span className="min-amount">3 Required Documents</span>
-        <ArrowRight className="arrow-icon h-4 w-4" />
-      </button>
-      
-      <div className="quick-start-amounts">
-        <span className="quick-label">After onboarding, fund with:</span>
-        <button className="quick-amount">$1,000</button>
-        <button className="quick-amount">$5,000</button>
-        <button className="quick-amount premium">$10,000</button>
       </div>
     </div>
   )
