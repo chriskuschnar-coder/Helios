@@ -906,9 +906,8 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                         <strong>IMPORTANT NOTICE:</strong> This investment has not been registered under federal or state securities laws and involves substantial risk. Consult your legal, tax, and financial advisors before investing.
                       </p>
                     </div>
+                    <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
                   </>
-                  <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
-                </>
               )}
             </div>
             <div>
