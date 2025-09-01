@@ -7,6 +7,8 @@ interface User {
   id: string
   email: string
   full_name?: string
+  documents_completed?: boolean
+  documents_completed_at?: string
 }
 
 interface Account {
@@ -41,6 +43,7 @@ interface AuthContextType {
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
+  markDocumentsCompleted: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -92,17 +95,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔍 Loading account for user:', userId)
       
-      const { data, error } = await supabaseClient
+      const { data: accountData, error: accountError } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
         .single()
 
-      if (error) {
-        console.error('❌ Account load error:', error)
+      if (accountError) {
+        console.error('❌ Account load error:', accountError)
       } else {
-        console.log('✅ Account loaded:', data)
-        setAccount(data)
+        console.log('✅ Account loaded:', accountData)
+        setAccount(accountData)
+      }
+
+      // Also load user profile data to check document completion
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('documents_completed, documents_completed_at')
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        console.error('❌ User profile load error:', userError)
+      } else if (userData) {
+        console.log('✅ User profile loaded:', userData)
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: userData.documents_completed,
+          documents_completed_at: userData.documents_completed_at
+        } : null)
       }
     } catch (err) {
       console.error('❌ Account load failed:', err)
@@ -177,6 +198,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const markDocumentsCompleted = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabaseClient
+        .from('users')
+        .update({
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('❌ Failed to mark documents completed:', error)
+      } else {
+        console.log('✅ Documents marked as completed')
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        } : null)
+      }
+    } catch (err) {
+      console.error('❌ Error marking documents completed:', err)
+    }
+  }
+
   const signIn = async (email: string, password: string) => {
     console.log('🔐 signIn called:', { email, password: '***' })
     
@@ -186,7 +234,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         id: 'demo-user-id',
         email: 'demo@globalmarket.com',
-        full_name: 'Demo User'
+        full_name: 'Demo User',
+        documents_completed: true,
+        documents_completed_at: '2024-01-01T00:00:00Z'
       })
       setAccount({
         id: 'demo-account-id',
@@ -223,7 +273,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: data.user.id,
           email: data.user.email || '',
-          full_name: data.user.user_metadata?.full_name
+          full_name: data.user.user_metadata?.full_name,
+          documents_completed: false
         })
         await loadUserAccount(data.user.id)
         return { error: null }
@@ -265,7 +316,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: data.user.id,
           email: data.user.email || '',
-          full_name: metadata?.full_name
+          full_name: metadata?.full_name,
+          documents_completed: false
         })
         
         // Try to load the user's account
@@ -306,6 +358,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshAccount,
     refreshSubscription,
     processFunding,
+    markDocumentsCompleted,
     signIn,
     signUp,
     signOut

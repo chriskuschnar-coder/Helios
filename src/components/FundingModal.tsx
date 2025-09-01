@@ -14,7 +14,7 @@ interface FundingModalProps {
 }
 
 export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
-  const { account } = useAuth();
+  const { account, user, markDocumentsCompleted } = useAuth();
   const [amount, setAmount] = useState(prefilledAmount || 1000);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
@@ -38,8 +38,16 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleProceedToPayment = () => {
-    setShowEmptyState(false);
-    setShowDocumentSigning(true);
+    // Check if user has already completed documents
+    if (user?.documents_completed) {
+      // Skip documents, go straight to funding page
+      setShowEmptyState(false);
+      setShowFundingPage(true);
+    } else {
+      // First time investor - show document signing
+      setShowEmptyState(false);
+      setShowDocumentSigning(true);
+    }
   };
 
   const handleBack = () => {
@@ -59,6 +67,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleDocumentComplete = () => {
+    // Mark documents as completed in database
+    markDocumentsCompleted();
     setShowDocumentSigning(false);
     setShowCongratulations(true);
   };
@@ -219,7 +229,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   onClick={handleBack}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
-                  ← Back to Portfolio Setup
+                  {user?.documents_completed ? '← Back to Portfolio' : '← Back to Portfolio Setup'}
                 </button>
               </div>
 

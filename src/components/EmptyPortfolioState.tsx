@@ -1,5 +1,6 @@
 import React from 'react'
 import { TrendingUp, ArrowRight, Shield, Award, CheckCircle } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 
 interface EmptyPortfolioStateProps {
   onFundAccount: () => void
@@ -7,6 +8,11 @@ interface EmptyPortfolioStateProps {
 }
 
 export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPortfolioStateProps) {
+  const { user } = useAuth()
+
+  // If user has completed documents, show different messaging
+  const hasCompletedDocuments = user?.documents_completed
+
   return (
     <div className="text-center py-12">
       <div className="mb-8">
@@ -14,11 +20,13 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
           <TrendingUp className="w-12 h-12 text-navy-600" />
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
-          Start Building Your Portfolio
+          {hasCompletedDocuments ? 'Add Capital to Your Portfolio' : 'Start Building Your Portfolio'}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto mb-8">
-          Begin your investment journey with our quantitative strategies. 
-          Complete the onboarding process to access institutional-grade portfolio management.
+          {hasCompletedDocuments 
+            ? 'Add additional capital to your existing investment account. Your onboarding is complete and you can invest immediately.'
+            : 'Begin your investment journey with our quantitative strategies. Complete the onboarding process to access institutional-grade portfolio management.'
+          }
         </p>
       </div>
 
@@ -41,7 +49,7 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
         onClick={onFundAccount}
         className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
       >
-        Complete Onboarding Documents
+        {hasCompletedDocuments ? 'Add Investment Capital' : 'Complete Onboarding Documents'}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>
