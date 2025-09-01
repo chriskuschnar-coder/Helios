@@ -95,15 +95,6 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       if (!response.ok) {
         const errorData = await response.json()
         console.error('❌ Stripe checkout error:', errorData)
-        
-        // If it's an auth error, fall back to local processing
-        if (response.status === 401 || response.status === 403) {
-          console.log('🔄 Falling back to local payment processing')
-          await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
-          setSuccess(true)
-          return
-        }
-        
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
