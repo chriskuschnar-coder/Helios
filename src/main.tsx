@@ -1,5 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+
+// IMMEDIATE DEBUG - Check what Vite is loading
+console.log('🔍 ENVIRONMENT VARIABLE DEBUG:')
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL)
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY)
+console.log('All VITE_ variables:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+console.log('Raw import.meta.env:', import.meta.env)
+
 import { InvestmentPlatform } from './components/InvestmentPlatform';
 import { AuthProvider } from './components/auth/AuthProvider';
 import './index.css';
