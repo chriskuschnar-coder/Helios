@@ -1,5 +1,6 @@
 import React from 'react'
 import { TrendingUp, ArrowRight, Shield, Award, CheckCircle } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 
 interface EmptyPortfolioStateProps {
   onFundAccount: () => void
