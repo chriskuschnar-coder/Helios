@@ -16,6 +16,47 @@ export function CongratulationsPage({ onContinueToPayment }: CongratulationsPage
 
   return (
     <div className="relative bg-white min-h-screen overflow-hidden">
+      {/* Floating Balloons */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 text-4xl animate-bounce" style={{ animationDelay: '0s', animationDuration: '3s' }}>🎈</div>
+        <div className="absolute top-32 right-16 text-3xl animate-bounce" style={{ animationDelay: '1s', animationDuration: '4s' }}>🎉</div>
+        <div className="absolute top-16 right-32 text-2xl animate-bounce" style={{ animationDelay: '2s', animationDuration: '3.5s' }}>🎊</div>
+        <div className="absolute bottom-32 left-20 text-3xl animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '4.5s' }}>🎈</div>
+        <div className="absolute bottom-20 right-20 text-2xl animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '3s' }}>🎉</div>
+        <div className="absolute top-1/2 left-8 text-2xl animate-bounce" style={{ animationDelay: '2.5s', animationDuration: '4s' }}>🎊</div>
+        <div className="absolute top-1/3 right-8 text-3xl animate-bounce" style={{ animationDelay: '0.8s', animationDuration: '3.8s' }}>🎈</div>
+      </div>
+
+      {/* Confetti Animation */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 opacity-70"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)],
+              animation: `confetti ${3 + Math.random() * 2}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`
+            }}
+          />
+        ))}
+      </div>
+
+      <style jsx>{`
+        @keyframes confetti {
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translateY(-20px) rotate(180deg);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
         <div className="max-w-2xl w-full text-center">
           {/* Main Success Icon */}
