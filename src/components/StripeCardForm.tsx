@@ -74,57 +74,50 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
     try {
       console.log('💳 Processing payment for amount:', amount)
       
-      // Try Stripe checkout first, fall back to local processing
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
-      if (supabaseUrl && anonKey) {
-        try {
-          // Try to use Stripe checkout via edge function
-          const { supabaseClient } = await import('../lib/supabase-client')
-          const { data: { session } } = await supabaseClient.auth.getSession()
-          
-          if (session) {
-            const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
-                'apikey': anonKey
-              },
-              body: JSON.stringify({
-                price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
-                mode: 'payment',
-                amount: amount * 100, // Convert to cents
-                success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-                cancel_url: `${window.location.origin}/cancel`
-              })
-            })
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Payment system not configured')
+      }
 
-            if (response.ok) {
-              const { url } = await response.json()
-              if (url) {
-                // Redirect to Stripe Checkout
-                window.location.href = url
-                return
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Stripe checkout error:', error)
-        }
+      // Always use Stripe checkout - no fallbacks
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Please sign in to continue')
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
+          mode: 'payment',
+          amount: amount * 100, // Convert to cents
+          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
+          cancel_url: `${window.location.origin}/cancel`
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create checkout session')
+      }
+
+      const { url } = await response.json()
+      
+      if (!url) {
+        throw new Error('No checkout URL received')
       }
       
-      // Fall back to local processing
-      console.log('🔄 Processing payment locally')
-      await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
-      
-      onSuccess({
-        id: 'payment_' + Date.now(),
-        amount: amount,
-        method: 'stripe',
-        status: 'completed'
-      })
+      // Always redirect to Stripe Checkout
+      window.location.href = url
       
     } catch (error) {
       console.error('❌ Payment processing error:', error)

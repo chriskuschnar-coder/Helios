@@ -31,7 +31,6 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
     try {
       console.log('💰 Processing investment for amount:', amount)
       
-      // Always redirect to Stripe checkout - no shortcuts
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
@@ -39,6 +38,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
         throw new Error('Payment system not configured')
       }
 
+      // Always use Stripe checkout - no shortcuts or fallbacks
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
@@ -69,11 +69,12 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
 
       const { url } = await response.json()
       
-      if (url) {
-        window.location.href = url
-      } else {
+      if (!url) {
         throw new Error('No checkout URL received')
       }
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url
       
     } catch (error) {
       console.error('❌ Investment processing error:', error)

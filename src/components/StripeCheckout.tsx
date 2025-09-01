@@ -54,7 +54,6 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     try {
       console.log('💳 Creating Stripe checkout session for amount:', amount)
       
-      // Create Stripe checkout session via Supabase Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
@@ -68,7 +67,8 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         throw new Error('Payment system not configured - please contact support')
       }
 
-      // Get the current user session for authentication
+      // Always use Stripe checkout via Supabase Edge Function
+      const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
       
       if (sessionError || !session) {
@@ -100,12 +100,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       const { url } = await response.json()
       
-      if (url) {
-        // Redirect to Stripe Checkout
-        window.location.href = url
-      } else {
+      if (!url) {
         throw new Error('No checkout URL received')
       }
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url
       
     } catch (error) {
       console.error('❌ Checkout creation error:', error)
