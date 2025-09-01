@@ -442,19 +442,392 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
           )}
           
           {currentDocument.id === 3 && (
-            <div className="mt-6 space-y-4">
-              <h4 className="font-semibold text-gray-900">Accredited Investor Requirements:</h4>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Individual net worth exceeding $1 million</li>
-                <li>Annual income exceeding $200,000 (or $300,000 joint)</li>
-                <li>Qualified institutional buyer status</li>
-                <li>Investment advisor with $100M+ assets under management</li>
-                <li>Other SEC-defined accredited investor categories</li>
-              </ul>
+            <div className="space-y-6 text-sm leading-relaxed">
+              <div className="text-center border-b border-gray-200 pb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">SUBSCRIPTION AGREEMENT</h3>
+                <h4 className="text-lg font-semibold text-gray-800">GLOBAL MARKETS CONSULTING, LP</h4>
+                <p className="text-gray-600">A Delaware Limited Partnership</p>
+                <p className="text-gray-600 mt-2">CONFIDENTIAL – FOR QUALIFIED INVESTORS ONLY</p>
+                <p className="text-gray-600">Date: _______________</p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800 text-xs">
+                  <strong>TO:</strong> Global Markets Consulting, LLC, as General Partner of Global Markets Consulting, LP<br/>
+                  <strong>FROM:</strong> The undersigned prospective Limited Partner ("Subscriber")
+                </p>
+                <p className="text-blue-800 text-xs mt-2">
+                  The undersigned hereby subscribes for a limited partnership interest in Global Markets Consulting, LP (the "Partnership" or "Fund") subject to the terms and conditions set forth below and in the Limited Partnership Agreement.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 1 – SUBSCRIPTION DETAILS</h4>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <strong>1.1 Capital Commitment:</strong> The Subscriber hereby subscribes for Partnership interests in the amount of:
+                    <div className="mt-2 p-3 bg-gray-50 rounded border">
+                      Capital Contribution: $__________________<br/>
+                      Minimum Investment: $50,000 (subject to General Partner discretion for lesser amounts)
+                    </div>
+                  </div>
+                  <div>
+                    <strong>1.2 Payment Instructions:</strong> Payment shall be made by wire transfer according to instructions provided by the General Partner. Investment will not be effective until funds are received and cleared.
+                  </div>
+                  <div>
+                    <strong>1.3 Acceptance:</strong> This subscription is subject to acceptance by the General Partner in its sole discretion. The General Partner reserves the right to reject any subscription for any reason. Admission shall be effective as of the date designated by the General Partner.
+                  </div>
+                  <div>
+                    <strong>1.4 Effective Date of Interest:</strong> Subscriber acknowledges that Interests shall be deemed issued, and all rights and obligations shall commence, only after clearance of funds and execution of this Agreement by the General Partner.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 2 – INVESTOR INFORMATION</h4>
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <strong>2.1 Subscriber Details:</strong>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center">
+                        <span className="w-32 text-gray-600">Name/Entity Name:</span>
+                        <div className="flex-1 border-b border-gray-300 ml-2">_________________________________________________</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-32 text-gray-600">Mailing Address:</span>
+                        <div className="flex-1 border-b border-gray-300 ml-2">_________________________________________________</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-32 text-gray-600">Email Address:</span>
+                        <div className="flex-1 border-b border-gray-300 ml-2">_________________________________________________</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-32 text-gray-600">Phone Number:</span>
+                        <div className="flex-1 border-b border-gray-300 ml-2">_________________________________________________</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-32 text-gray-600">Tax ID/SSN:</span>
+                        <div className="flex-1 border-b border-gray-300 ml-2">_________________________________________________</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <strong>2.2 Type of Investor:</strong>
+                    <div className="mt-2 flex flex-wrap gap-4">
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> Individual</label>
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> Corporation</label>
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> Partnership</label>
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> Trust</label>
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> LLC</label>
+                      <label className="flex items-center"><input type="checkbox" className="mr-1"/> Other: ___________________</label>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <strong>2.3 Beneficial Ownership (if entity):</strong>
+                    <p className="text-gray-600 mb-2">If Subscriber is an entity, list all persons owning 25% or more:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-4">
+                        <span>Name:</span>
+                        <div className="border-b border-gray-300 flex-1">_________________________</div>
+                        <span>Ownership %:</span>
+                        <div className="border-b border-gray-300 w-20">_________</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span>Name:</span>
+                        <div className="border-b border-gray-300 flex-1">_________________________</div>
+                        <span>Ownership %:</span>
+                        <div className="border-b border-gray-300 w-20">_________</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <strong>2.4 Tax Documentation:</strong> Subscriber agrees to provide a valid IRS Form W-9 (U.S. investors) or IRS Form W-8BEN (non-U.S. investors) and update such forms as required.
+                  </div>
+                  
+                  <div>
+                    <strong>2.5 Notices and Communications:</strong> Subscriber consents to receive all notices, reports, statements, and communications electronically (via email or secure portal), unless otherwise required by law.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 3 – INVESTOR QUALIFICATION</h4>
+                <p className="text-xs text-gray-700 mb-3">
+                  The Subscriber qualifies for this investment under Rule 506(b) by meeting ONE of the following criteria:
+                </p>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <strong>3.1 Accredited Investor Certification (Rule 501(a)):</strong>
+                    <div className="mt-2 space-y-1">
+                      <label className="flex items-start"><input type="checkbox" className="mr-2 mt-1"/> Individual net worth exceeding $1 million (excluding primary residence)</label>
+                      <label className="flex items-start"><input type="checkbox" className="mr-2 mt-1"/> Annual income exceeding $200,000 ($300,000 joint) for past 2 years</label>
+                      <label className="flex items-start"><input type="checkbox" className="mr-2 mt-1"/> Qualified institutional buyer</label>
+                      <label className="flex items-start"><input type="checkbox" className="mr-2 mt-1"/> Investment advisor with $100M+ assets under management</label>
+                      <label className="flex items-start"><input type="checkbox" className="mr-2 mt-1"/> Other SEC-defined accredited investor category</label>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <strong>3.2 Sophisticated Non-Accredited Investor Certification:</strong>
+                    <div className="mt-2">
+                      <label className="flex items-start">
+                        <input type="checkbox" className="mr-2 mt-1"/>
+                        I do not meet accredited investor standards above, BUT I have sufficient knowledge and experience in financial and business matters to evaluate the merits and risks of this investment.
+                      </label>
+                      <div className="mt-3 space-y-2 ml-6">
+                        <div>
+                          <span className="text-gray-600">Investment Experience:</span>
+                          <div className="border-b border-gray-300 mt-1">_________________________________________________</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Financial Background:</span>
+                          <div className="border-b border-gray-300 mt-1">_________________________________________________</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Professional Qualifications:</span>
+                          <div className="border-b border-gray-300 mt-1">_________________________________________________</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 4 – REPRESENTATIONS, WARRANTIES, AND ACKNOWLEDGMENTS</h4>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <strong>4.1 Financial Capability:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>Subscriber has adequate means to bear the economic risk of this investment</li>
+                      <li>Subscriber can afford to lose the entire investment without material adverse effect</li>
+                      <li>This investment does not represent more than 20% of Subscriber's net worth or investable assets</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <strong>4.2 Investment Experience and Sophistication:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>Subscriber has sufficient knowledge and experience in financial matters to evaluate risks</li>
+                      <li>Subscriber understands the speculative nature of the Fund's strategy</li>
+                      <li>Subscriber has consulted with professional advisors as deemed necessary</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <strong>4.3 Investment Purpose:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>Investment is for Subscriber's own account for investment purposes only</li>
+                      <li>No present intention to resell, distribute, or otherwise dispose of the Interests</li>
+                      <li>Interests not acquired with a view to distribution</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <strong>4.4 Access to Information:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>Subscriber has received and carefully reviewed the PPM and LPA</li>
+                      <li>Subscriber has had the opportunity to ask questions and receive answers</li>
+                      <li>All information provided by Subscriber is true and accurate</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <strong>4.6 Risk Acknowledgment:</strong>
+                    <div className="bg-red-50 border border-red-200 rounded p-3 mt-2">
+                      <p className="text-red-800 font-medium mb-2">Subscriber acknowledges:</p>
+                      <ul className="list-disc list-inside space-y-1 text-red-700">
+                        <li><strong>INVESTMENT INVOLVES SUBSTANTIAL RISK OF LOSS</strong></li>
+                        <li>Past performance does not guarantee future results</li>
+                        <li>No assurance can be given that objectives will be achieved</li>
+                        <li>The Fund may use leverage, derivatives, and complex trading strategies</li>
+                        <li>Market volatility may result in significant losses</li>
+                        <li>Limited liquidity and long lock-up periods apply</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 5 – LOCK-UP AND REDEMPTION ACKNOWLEDGMENT</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>6.1 Lock-up Period:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>No redemptions for 12 months following initial contribution</li>
+                      <li>After lock-up, quarterly redemptions with 90-day notice</li>
+                      <li>GP may suspend redemptions during market stress</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>6.2 Redemption Procedures:</strong>
+                    <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                      <li>Requests must be in writing and are irrevocable once submitted</li>
+                      <li>Redemptions processed at NAV as determined by GP</li>
+                      <li>2% redemption fee applies within 24 months of investment</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">SECTION 6 – EXECUTION</h4>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="grid md:grid-cols-2 gap-6 text-xs">
+                    <div>
+                      <p className="font-medium text-gray-900 mb-3">SUBSCRIBER SIGNATURE:</p>
+                      <div className="space-y-2">
+                        <div>Print Name: _________________________________</div>
+                        <div>Signature: _________________________________</div>
+                        <div>Date: _____________________</div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 mb-3">ACCEPTANCE BY GENERAL PARTNER:</p>
+                      <p className="mb-2">Global Markets Consulting, LLC</p>
+                      <div className="space-y-1">
+                        <div>By: Christopher Guccio, Managing Member</div>
+                        <div>By: Daniel Usmanov, Managing Member</div>
+                        <div>Date: _____________________</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800 font-bold text-xs">
+                  IMPORTANT NOTICE: This investment has not been registered under federal or state securities laws and involves substantial risk. Consult your legal, tax, and financial advisors before investing.
+                </p>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Interactive Form Fields for Document 3 (Subscription Agreement) */}
+      {currentDocument.id === 3 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h4 className="font-semibold text-gray-900 mb-4">Complete Subscription Information</h4>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capital Contribution Amount</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  type="number"
+                  min="50000"
+                  step="1000"
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="50,000"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Minimum: $50,000</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Legal Name</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your full legal name"
+              />
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="your.email@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="(555) 123-4567"
+              />
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mailing Address</label>
+            <textarea
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter your complete mailing address"
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID/SSN</label>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="XXX-XX-XXXX or XX-XXXXXXX"
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Investor Type</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                Individual
+              </label>
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                Corporation
+              </label>
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                Partnership
+              </label>
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                Trust
+              </label>
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                LLC
+              </label>
+              <label className="flex items-center text-sm">
+                <input type="radio" name="investorType" className="mr-2"/>
+                Other
+              </label>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Accredited Investor Status</label>
+            <div className="space-y-2">
+              <label className="flex items-start text-sm">
+                <input type="checkbox" className="mr-2 mt-1"/>
+                Net worth exceeding $1 million (excluding primary residence)
+              </label>
+              <label className="flex items-start text-sm">
+                <input type="checkbox" className="mr-2 mt-1"/>
+                Annual income exceeding $200,000 ($300,000 joint) for past 2 years
+              </label>
+              <label className="flex items-start text-sm">
+                <input type="checkbox" className="mr-2 mt-1"/>
+                Qualified institutional buyer
+              </label>
+              <label className="flex items-start text-sm">
+                <input type="checkbox" className="mr-2 mt-1"/>
+                Other accredited investor category
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Digital Signature Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
