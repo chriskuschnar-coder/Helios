@@ -1,48 +1,52 @@
 import React from 'react'
-import { TrendingUp, ArrowRight, Shield, Award, CheckCircle } from 'lucide-react'
+import { TrendingUp, Shield, Users, ArrowRight } from 'lucide-react'
 
 interface EmptyPortfolioStateProps {
-  onFundAccount: () => void
-  onAmountSelect: (amount: number) => void
+  onFundPortfolio: () => void
 }
 
-export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPortfolioStateProps) {
+export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProps) {
   return (
-    <div className="text-center py-12">
-      <div className="mb-8">
-        <div className="w-24 h-24 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <TrendingUp className="w-12 h-12 text-navy-600" />
+    <div className="empty-portfolio-state">
+      <div className="illustration">
+        <div className="chart-illustration">
+          <TrendingUp className="h-16 w-16 text-navy-600" />
+          <div className="chart-lines">
+            <div className="line line-1"></div>
+            <div className="line line-2"></div>
+            <div className="line line-3"></div>
+          </div>
         </div>
-        <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
-          Start Building Your Portfolio
-        </h3>
-        <p className="text-gray-600 max-w-md mx-auto mb-8">
-          Begin your investment journey with our quantitative strategies. 
-          Complete the onboarding process to access institutional-grade portfolio management.
+      </div>
+      
+      <div className="content">
+        <h2>Start Building Your Portfolio</h2>
+        <p>
+          Welcome to Global Market Consulting's quantitative investment platform. 
+          Complete your onboarding to begin accessing our institutional-grade 
+          trading strategies and portfolio management tools.
         </p>
       </div>
-
-      <div className="space-y-4 mb-8">
-        <div className="flex items-center gap-3 text-sm text-gray-600 justify-center">
-          <Shield className="w-4 h-4 text-green-600" />
-          <span>SIPC Protected up to $500,000</span>
+      
+      <div className="trust-indicators">
+        <div className="trust-item">
+          <Shield className="h-4 w-4 text-green-600" />
+          <span>SEC Compliant</span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-600 justify-center">
-          <Award className="w-4 h-4 text-green-600" />
-          <span>SEC Registered Investment Advisor</span>
+        <div className="trust-item">
+          <Users className="h-4 w-4 text-blue-600" />
+          <span>Accredited Investors</span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-600 justify-center">
-          <CheckCircle className="w-4 h-4 text-green-600" />
-          <span>Institutional-Grade Risk Management</span>
+        <div className="trust-item">
+          <TrendingUp className="h-4 w-4 text-gold-600" />
+          <span>Institutional Grade</span>
         </div>
       </div>
-
-      <button
-        onClick={onFundAccount}
-        className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
-      >
+      
+      <button className="cta-fund-button" onClick={onFundPortfolio}>
         Complete Onboarding Documents
-        <ArrowRight className="w-5 h-5" />
+        <span className="min-amount">Required for access</span>
+        <ArrowRight className="arrow-icon" />
       </button>
     </div>
   )

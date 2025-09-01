@@ -1,69 +1,34 @@
-import { X, TrendingUp, Shield, Award, FileText, CreditCard, Building, Zap } from 'lucide-react';
-import DocumentSigningFlow from './DocumentSigningFlow';
-import { OnboardingCompletePage } from './OnboardingCompletePage';
-import { useState } from 'react';
+import React, { useState } from 'react'
+import { X, CreditCard, Building, Zap } from 'lucide-react'
 
 interface FundingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  prefilledAmount?: number | null;
-  onProceedToPayment: (amount: number, method: string) => void;
+  isOpen: boolean
+  onClose: () => void
+  prefilledAmount?: number | null
+  onProceedToPayment: (amount: number, method: string) => void
 }
 
 export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
-  const [amount, setAmount] = useState(prefilledAmount?.toString() || '');
-  const [selectedMethod, setSelectedMethod] = useState('stripe');
+  const [amount, setAmount] = useState(prefilledAmount?.toString() || '')
+  const [selectedMethod, setSelectedMethod] = useState('stripe')
 
-  const [showDocumentSigning, setShowDocumentSigning] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'empty' | 'documents' | 'complete' | 'payment'>('empty');
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [showEmptyState, setShowEmptyState] = useState(true);
-  
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numAmount = parseFloat(amount);
+    e.preventDefault()
+    const numAmount = parseFloat(amount)
     if (numAmount > 0) {
-      onProceedToPayment(numAmount, selectedMethod);
+      onProceedToPayment(numAmount, selectedMethod)
     }
-  };
-  const handleStartOnboarding = () => {
-    setCurrentStep('documents');
-  };
+  }
 
-  const handleOnboardingComplete = () => {
-    setCurrentStep('complete');
-  };
-
-  const handleStartFunding = () => {
-    setCurrentStep('payment');
-  };
-
-  const handleBackToComplete = () => {
-    setCurrentStep('complete');
-    if (showEmptyState) {
-      setShowEmptyState(true);
-    } else if (showDocumentSigning) {
-      setShowDocumentSigning(false);
-      setShowEmptyState(true);
-    }
-  };
-  
-  const quickAmounts = [10000, 25000, 50000, 100000];
+  const quickAmounts = [10000, 25000, 50000, 100000]
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            {showEmptyState ? 'Fund Your Account' : 
-             showDocumentSigning ? 'Investment Documentation' :
-            (currentStep === 'empty' ? 'Investment Onboarding' : 
-             currentStep === 'documents' ? 'Document Execution' :
-             currentStep === 'complete' ? 'Onboarding Complete' :
-             'Capital Transfer')}
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Fund Your Account</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -73,8 +38,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {currentStep === 'empty' && (
-            <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Investment Amount
             </label>
@@ -89,42 +53,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 min="1000"
                 step="1000"
                 required
-                onError={(error) => {
-                  console.error('Payment error:', error);
-                }}
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">Minimum investment: $1,000</p>
           </div>
-          )}
 
-          {currentStep === 'empty' && (
-            <div>
-              <button
-                type="button"
-                onClick={handleStartOnboarding}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Quick Select
-              </button>
-            </div>
-          )}
-          
-          {currentStep === 'documents' && (
-            <DocumentSigningFlow
-              onComplete={handleOnboardingComplete}
-              onClose={onClose}
-            />
-          )}
-          
-          {currentStep === 'complete' && (
-            <OnboardingCompletePage
-              onFundAccount={handleStartFunding}
-            />
-          )}
-          
-          {currentStep === 'payment' && (
-            <div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Quick Select
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {quickAmounts.map((quickAmount) => (
                 <button
@@ -137,17 +74,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={handleBackToComplete}
-              className="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              ← Back to Onboarding Complete
-            </button>
-            </div>
-          )}
+          </div>
 
-          {currentStep === 'payment' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Payment Method
@@ -186,9 +114,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </label>
             </div>
           </div>
-          )}
 
-          {currentStep === 'payment' && (
           <button
             type="submit"
             disabled={!amount || parseFloat(amount) < 1000}
@@ -196,21 +122,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
           >
             Continue to Payment
           </button>
-          )}
         </form>
       </div>
-      
-      {/* Nested Document Signing Modal */}
-      {showDocumentSigning && (
-        <DocumentSigningFlow
-          isOpen={showDocumentSigning}
-          onClose={() => {
-            setShowDocumentSigning(false);
-            setShowEmptyState(true);
-          }}
-          onComplete={handleOnboardingComplete}
-        />
-      )}
     </div>
-  );
+  )
 }
