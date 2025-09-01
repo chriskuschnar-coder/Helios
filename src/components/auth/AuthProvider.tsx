@@ -1,45 +1,84 @@
-import { createClient } from '@supabase/supabase-js'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { User, Session, AuthError } from '@supabase/supabase-js'
+import { supabaseClient } from '../lib/supabase-client'
 
-// Get environment variables with detailed logging
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+interface AuthContextType {
+  user: User | null
+  session: Session | null
+  loading: boolean
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<void>
+}
 
-console.log('🔍 SUPABASE CLIENT - Environment Check:')
-console.log('🔍 VITE_SUPABASE_URL:', supabaseUrl)
-console.log('🔍 VITE_SUPABASE_ANON_KEY present:', !!supabaseAnonKey)
-console.log('🔍 Key length:', supabaseAnonKey?.length || 0)
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Check if we're missing environment variables
-const hasValidConfig = supabaseUrl && supabaseAnonKey && 
-  supabaseUrl.includes('supabase.co') && 
-  supabaseAnonKey.length > 100
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
 
-console.log('🔍 Has valid Supabase config:', hasValidConfig)
+interface AuthProviderProps {
+  children: React.ReactNode
+}
 
-// Create the Supabase client with fallback values
-export const supabaseClient = createClient(
-  supabaseUrl || 'https://upevugqarcvxnekzddeh.supabase.co',
-  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4',
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      onAuthStateChange: async (event, session) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    console.log('🔄 AuthProvider useEffect - checking for existing session')
+    
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        console.log('🔍 Checking Supabase session...')
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Error getting session:', error)
+        } else {
+          console.log('✅ Supabase connection test successful')
+          if (session) {
+            console.log('✅ Found existing session for:', session.user.email)
+            setSession(session)
+            setUser(session.user)
+          } else {
+            console.log('ℹ️ No existing session found')
+          }
+        }
+      } catch (err) {
+        console.error('❌ Session check error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getInitialSession()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
         console.log('🔄 Auth state changed:', event, session?.user?.email)
         
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+
         if (event === 'SIGNED_IN' && session?.user) {
-          const { data, error } = session
-          
           try {
             console.log('🔄 Creating user profile manually...')
-            const metadata = data.user.user_metadata || {}
+            const metadata = session.user.user_metadata || {}
             
             const { error: profileError } = await supabaseClient
-              .from('user_profiles')
+              .from('users')
               .insert({
-                id: data.user.id,
-                email: data.user.email,
+                id: session.user.id,
+                email: session.user.email,
                 full_name: metadata?.full_name,
                 kyc_status: 'pending',
                 two_factor_enabled: false,
@@ -58,7 +97,7 @@ export const supabaseClient = createClient(
             const { error: accountError } = await supabaseClient
               .from('accounts')
               .insert({
-                user_id: data.user.id,
+                user_id: session.user.id,
                 account_type: 'trading',
                 balance: 0,
                 available_balance: 0,
@@ -78,34 +117,101 @@ export const supabaseClient = createClient(
             console.error('❌ Manual user creation failed:', manualError)
           }
         }
-      },
-      
-      // Provide more helpful error messages
-      onError: (err) => {
-        if (err instanceof Error) {
-          if (err.message.includes('Failed to fetch')) {
-            return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
-          }
-          return { error: { message: err.message } }
-        }
-        
-        return { error: { message: 'An unexpected error occurred. Please try again.' } }
       }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signIn = async (email: string, password: string) => {
+    console.log('🔐 signIn called with:', { email, password: '***' })
+    setLoading(true)
+    
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        console.log('❌ Sign in failed:', error.message)
+        return { error }
+      }
+      
+      console.log('✅ Sign in successful:', data.user?.email)
+      return { error: null }
+    } catch (err) {
+      console.error('❌ Sign in error:', err)
+      return { 
+        error: { 
+          message: 'Connection error - please try again',
+          name: 'ConnectionError'
+        } as AuthError 
+      }
+    } finally {
+      setLoading(false)
     }
   }
-)
 
-console.log('✅ Supabase client created')
-
-// Test the connection immediately
-supabaseClient.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    console.error('❌ Supabase connection test failed:', error)
-  } else {
-    console.log('✅ Supabase connection test successful')
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    console.log('📝 signUp called:', { email, metadata })
+    setLoading(true)
+    
+    try {
+      console.log('🔄 Attempting Supabase signup...')
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+      
+      if (error) {
+        console.error('❌ Supabase sign up error:', error)
+        return { error }
+      }
+      
+      console.log('✅ Supabase signup successful:', data.user?.email)
+      return { error: null }
+    } catch (err) {
+      console.error('❌ Sign up error:', err)
+      return { 
+        error: { 
+          message: 'Database error saving new user',
+          name: 'DatabaseError'
+        } as AuthError 
+      }
+    } finally {
+      setLoading(false)
+    }
   }
-}).catch(err => {
-  console.error('❌ Supabase connection test error:', err)
-})
 
-export default supabaseClient
+  const signOut = async () => {
+    setLoading(true)
+    try {
+      await supabaseClient.auth.signOut()
+    } catch (err) {
+      console.error('❌ Sign out error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const value: AuthContextType = {
+    user,
+    session,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export default AuthProvider
