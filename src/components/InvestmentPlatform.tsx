@@ -1,180 +1,461 @@
-import React, { useState, useEffect } from 'react'
-import { useAuth } from './auth/AuthProvider'
-import { LoginForm } from './auth/LoginForm'
-import { SignupForm } from './auth/SignupForm'
-import { DashboardSelector } from './DashboardSelector'
-import { SuccessPage } from './SuccessPage'
-import { CancelPage } from './CancelPage'
-import { Hero } from './Hero'
-import { About } from './About'
-import { Services } from './Services'
-import { Performance } from './Performance'
-import { Contact } from './Contact'
-import { Header } from './Header'
-import { Footer } from './Footer'
-import { SystemStatusCheck } from './SystemStatusCheck'
-import { DeploymentCheck } from './DeploymentCheck'
-import { SupabaseConnectionTest } from './SupabaseConnectionTest'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
-console.log("🏢 InvestmentPlatform component loaded")
+console.log("🔑 AuthProvider mounted")
 
-// Error Boundary Component
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error?: Error }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error }
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('React Error Boundary caught an error:', error, errorInfo)
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-red-600 text-2xl">⚠️</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-4">Something went wrong</h1>
-            <p className="text-gray-600 mb-4">
-              The application encountered an error. Please refresh the page or contact support.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Refresh Page
-            </button>
-            <details className="mt-4 text-left">
-              <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
-              <pre className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded overflow-auto">
-                {this.state.error?.message}
-              </pre>
-            </details>
-          </div>
-        </div>
-      )
-    }
-
-    return this.props.children
-  }
+interface User {
+  id: string
+  email: string
+  full_name?: string
+  documents_completed?: boolean
+  documents_completed_at?: string
 }
 
-export function InvestmentPlatform() {
-  const { user, loading } = useAuth()
-  const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
+interface Account {
+  id: string
+  balance: number
+  available_balance: number
+  total_deposits: number
+  total_withdrawals: number
+  currency: string
+  status: string
+}
 
-  // Check for success/cancel pages
-  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id')
-  const isCancelPage = window.location.pathname === '/cancel'
-  const isTestPage = window.location.search.includes('test=true') || window.location.hash.includes('test')
-  const isDebugPage = window.location.search.includes('debug=supabase')
-  const isConnectionTest = window.location.search.includes('test=connection')
+interface Subscription {
+  subscription_status: string
+  price_id: string | null
+  current_period_start: number | null
+  current_period_end: number | null
+  cancel_at_period_end: boolean
+  payment_method_brand: string | null
+  payment_method_last4: string | null
+}
 
-  // Show system test page
-  if (isTestPage) {
-    return <SystemStatusCheck />
+interface AuthError {
+  message: string
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  account: Account | null
+  subscription: Subscription | null
+  refreshAccount: () => Promise<void>
+  refreshSubscription: () => Promise<void>
+  processFunding: (amount: number, method: string, description?: string) => Promise<any>
+  markDocumentsCompleted: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  console.log('🔍 AuthProvider component rendering...')
+  
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [account, setAccount] = useState<Account | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+
+  // Check for existing session on mount
+  useEffect(() => {
+    console.log('🔍 AuthProvider useEffect - checking for existing session')
+    
+    const checkSession = async () => {
+      try {
+        console.log('🔍 Checking Supabase session...')
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Session check error:', error)
+        } else if (session?.user) {
+          console.log('✅ Found existing session for:', session.user.email)
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name
+          })
+          await loadUserAccount(session.user.id)
+        } else {
+          console.log('ℹ️ No existing session found')
+        }
+      } catch (err) {
+        console.error('❌ Session check failed:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkSession()
+  }, [])
+
+  const loadUserAccount = async (userId: string) => {
+    try {
+      console.log('🔍 Loading account for user:', userId)
+      
+      const { data: accountData, error: accountError } = await supabaseClient
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (accountError) {
+        console.error('❌ Account load error:', accountError)
+      } else {
+        console.log('✅ Account loaded:', accountData)
+        setAccount(accountData)
+      }
+
+      // Also load user profile data to check document completion
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('documents_completed, documents_completed_at')
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        console.error('❌ User profile load error:', userError)
+      } else if (userData) {
+        console.log('✅ User profile loaded:', userData)
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: userData.documents_completed,
+          documents_completed_at: userData.documents_completed_at
+        } : null)
+      }
+    } catch (err) {
+      console.error('❌ Account load failed:', err)
+    }
   }
 
-  // Show Supabase debugger
-  if (isDebugPage) {
-    return <SupabaseConnectionTest />
+  const refreshAccount = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
+    }
   }
 
-  // Show connection test page
-  if (isConnectionTest) {
-    return <SupabaseConnectionTest />
+  const refreshSubscription = async () => {
+    console.log('🔄 refreshSubscription called')
   }
 
-  // Show deployment check page
-  const isDeploymentCheck = window.location.search.includes('deployment=check')
-  if (isDeploymentCheck) {
-    return <DeploymentCheck />
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    console.log('💰 processFunding called:', { amount, method, description })
+    
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    if (!account) {
+      throw new Error('User account not found')
+    }
+
+    try {
+      // Add transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: account.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `${method} deposit`
+        })
+
+      if (transactionError) {
+        console.error('❌ Transaction error:', transactionError)
+        throw new Error('Failed to record transaction')
+      }
+
+      // Update account balance
+      if (account) {
+        const { error: updateError } = await supabaseClient
+          .from('accounts')
+          .update({
+            balance: account.balance + amount,
+            available_balance: account.available_balance + amount,
+            total_deposits: account.total_deposits + amount
+          })
+          .eq('id', account.id)
+
+        if (updateError) {
+          console.error('❌ Account update error:', updateError)
+          throw new Error('Failed to update account balance')
+        }
+
+        // Refresh account data
+        await refreshAccount()
+      }
+
+      console.log('✅ Funding processed successfully')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Funding processing failed:', error)
+      throw error
+    }
   }
 
+  const markDocumentsCompleted = async () => {
+    if (!user) return
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <div className="w-8 h-8 bg-white rounded-full"></div>
-          </div>
-          <div className="text-navy-900 text-lg font-medium">Loading...</div>
-        </div>
-      </div>
-    )
+    try {
+      const { error } = await supabaseClient
+        .from('users')
+        .update({
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('❌ Failed to mark documents completed:', error)
+      } else {
+        console.log('✅ Documents marked as completed')
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        } : null)
+      }
+    } catch (err) {
+      console.error('❌ Error marking documents completed:', err)
+    }
   }
 
-  // Show success page
-  if (isSuccessPage) {
-    return <SuccessPage />
+  const signIn = async (email: string, password: string) => {
+    console.log('🔐 signIn called:', { email, password: '***' })
+    
+    // Handle demo user immediately without Supabase call
+    if (email === 'demo@globalmarket.com' && password === 'demo123456') {
+      console.log('✅ Demo login detected - using local demo mode')
+      setUser({
+        id: 'demo-user-id',
+        email: 'demo@globalmarket.com',
+        full_name: 'Demo User',
+        documents_completed: true,
+        documents_completed_at: '2024-01-01T00:00:00Z'
+      })
+      setAccount({
+        id: 'demo-account-id',
+        balance: 7850,
+        available_balance: 7850,
+        total_deposits: 8000,
+        total_withdrawals: 150,
+        currency: 'USD',
+        status: 'active'
+      })
+      return { error: null }
+    }
+
+    try {
+      console.log('🔍 Attempting Supabase authentication...')
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('❌ Supabase sign in error:', error.message)
+
+        // If it's invalid credentials and not the demo user, show helpful message
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: { message: 'Invalid login credentials' } }
+        }
+        
+        return { error: { message: error.message } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful:', data.user.email)
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: data.user.user_metadata?.full_name,
+          documents_completed: false
+        })
+        await loadUserAccount(data.user.id)
+        return { error: null }
+      }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('❌ Sign in failed:', err)
+      return { error: { message: 'Connection error' } }
+    }
   }
 
-  // Show cancel page
-  if (isCancelPage) {
-    return <CancelPage />
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    console.log('📝 signUp called:', { email, metadata })
+    
+    try {
+      console.log('🔍 Attempting Supabase signup...')
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+
+      if (error) {
+        console.error('❌ Supabase sign up error:', error.message, error)
+        
+        // Handle specific database trigger errors
+        if (error.message.includes('Database error saving new user')) {
+          console.error('❌ Database trigger error detected - this indicates a backend configuration issue')
+          return { error: { message: 'Account creation temporarily unavailable. Please contact support or try again later.' } }
+        }
+        
+        // Handle specific error cases
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
+        }
+        
+        if (error.message.includes('Invalid email')) {
+          return { error: { message: 'Please enter a valid email address.' } }
+        }
+        
+        if (error.message.includes('Password')) {
+          return { error: { message: 'Password must be at least 6 characters long.' } }
+        }
+        
+        return { error: { message: `Signup failed: ${error.message}` } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful:', data.user.email)
+        console.log('🔍 User data:', data.user)
+        
+        // Try to manually create user profile and account if triggers are failing
+        try {
+          console.log('🔍 Manually creating user profile and account...')
+          
+          // First, create the user profile
+          const { error: profileError } = await supabaseClient
+            .from('users')
+            .upsert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              kyc_status: 'pending',
+              two_factor_enabled: false,
+              documents_completed: false
+            }, {
+              onConflict: 'id'
+            })
+          
+          if (profileError) {
+            console.error('❌ Profile creation error:', profileError)
+            // Don't fail here - profile might already exist
+          } else {
+            console.log('✅ User profile created/updated')
+          }
+          
+          // Then create the account
+          console.log('🔍 Creating user account...')
+          const { error: accountError } = await supabaseClient
+            .from('accounts')
+            .upsert({
+              user_id: data.user.id,
+              account_type: 'trading',
+              balance: 0,
+              available_balance: 0,
+              total_deposits: 0,
+              total_withdrawals: 0,
+              currency: 'USD',
+              status: 'active'
+            }, {
+              onConflict: 'user_id'
+            })
+          
+          if (accountError) {
+            console.error('❌ Account creation error:', accountError)
+            // Don't fail here - account might already exist
+          } else {
+            console.log('✅ User account created/updated')
+          }
+          
+        } catch (setupError) {
+          console.error('❌ Manual user setup failed:', setupError)
+          // Continue anyway - user was created successfully in auth
+        }
+        
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: metadata?.full_name,
+          documents_completed: false
+        })
+        
+        // Load the user's account data
+        await loadUserAccount(data.user.id)
+        
+        return { error: null }
+      }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('❌ Sign up failed:', err)
+      
+      // Provide more helpful error messages
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+        }
+        return { error: { message: err.message } }
+      }
+      
+      return { error: { message: 'Unexpected error occurred during signup' } }
+    }
   }
 
-  // If user is authenticated, show dashboard selector
-  if (user) {
-    return <DashboardSelector />
+  const signOut = async () => {
+    console.log('🚪 signOut called')
+    
+    try {
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('❌ Sign out error:', error)
+      }
+    } catch (err) {
+      console.error('❌ Sign out failed:', err)
+    } finally {
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+    }
   }
 
-  // If showing auth forms
-  if (authMode === 'login') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-navy-50 to-white flex items-center justify-center p-4">
-        <LoginForm
-          onSuccess={() => setAuthMode(null)}
-          onSwitchToSignup={() => setAuthMode('signup')}
-        />
-        <button
-          onClick={() => setAuthMode(null)}
-          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
-        >
-          ← Back to Home
-        </button>
-      </div>
-    )
+  const value = {
+    user,
+    loading,
+    account,
+    subscription,
+    refreshAccount,
+    refreshSubscription,
+    processFunding,
+    markDocumentsCompleted,
+    signIn,
+    signUp,
+    signOut
   }
 
-  if (authMode === 'signup') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-navy-50 to-white flex items-center justify-center p-4">
-        <SignupForm
-          onSuccess={() => setAuthMode(null)}
-          onSwitchToLogin={() => setAuthMode('login')}
-        />
-        <button
-          onClick={() => setAuthMode(null)}
-          className="absolute top-4 left-4 text-navy-600 hover:text-navy-700 font-medium"
-        >
-          ← Back to Home
-        </button>
-      </div>
-    )
-  }
+  console.log('🔍 AuthProvider rendering with value:', { user: !!user, loading, account: !!account })
 
-  // Default: show marketing site
   return (
-    <main className="min-h-screen bg-white">
-      <Header onNavigateToLogin={() => setAuthMode('login')} />
-      <Hero />
-      <About />
-      <Services />
-      <Performance />
-      <Contact />
-      <Footer />
-    </main>
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
