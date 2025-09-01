@@ -1,18 +1,3 @@
-[build]
-  publish = "dist"
-  command = "npm run build"
-
-[build.environment]
-  NODE_VERSION = "18"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[functions]
-  directory = "netlify/functions"
-
 import React, { useState } from 'react'
 import { CreditCard, Shield, Lock, AlertCircle } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
@@ -93,9 +78,15 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       // Create Stripe checkout session via Supabase Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
       
-      if (!supabaseUrl || !anonKey) {
-        throw new Error('Payment system not configured')
+      if (!supabaseUrl || !anonKey || !stripePublishableKey) {
+        console.error('Missing environment variables:', {
+          supabaseUrl: !!supabaseUrl,
+          anonKey: !!anonKey,
+          stripeKey: !!stripePublishableKey
+        })
+        throw new Error('Payment system not configured - please contact support')
       }
 
       // Get the current user session for authentication
