@@ -260,15 +260,184 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
           )}
           
           {currentDocument.id === 2 && (
-            <div className="mt-6 space-y-4">
-              <h4 className="font-semibold text-gray-900">Risk Disclosures:</h4>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Past performance does not guarantee future results</li>
-                <li>Investment involves substantial risk of loss</li>
-                <li>Hedge fund strategies may use leverage and derivatives</li>
-                <li>Limited liquidity and redemption restrictions apply</li>
-                <li>Suitable for sophisticated investors only</li>
-              </ul>
+            <div className="space-y-6 text-sm leading-relaxed">
+              <div className="text-center border-b border-gray-200 pb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">LIMITED PARTNERSHIP AGREEMENT</h3>
+                <h4 className="text-lg font-semibold text-gray-800">GLOBAL MARKETS CONSULTING, LP</h4>
+                <p className="text-gray-600">A Delaware Limited Partnership</p>
+                <p className="text-gray-600 mt-2">Date: __________</p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE I - FORMATION AND PURPOSE</h4>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <strong>Section 1.1 Formation:</strong> The Partnership is formed as a Delaware limited partnership under the Delaware Revised Uniform Limited Partnership Act (the "Delaware Act").
+                  </div>
+                  <div>
+                    <strong>Section 1.2 Name and Principal Place of Business:</strong> The name of the Partnership is "Global Markets Consulting, LP." The principal place of business is 500 E Las Olas Blvd, Fort Lauderdale, FL 33301, or such other location as determined by the General Partner.
+                  </div>
+                  <div>
+                    <strong>Section 1.3 Purpose and Business:</strong> The Partnership's purpose is to engage in systematic and quantitative trading and investment activities across digital assets, equities, commodities, fixed income, foreign exchange, and alternative investments. The General Partner has full discretion to expand into other opportunities deemed appropriate.
+                  </div>
+                  <div>
+                    <strong>Section 1.4 Powers:</strong> The Partnership shall have all powers necessary to achieve its purposes, including borrowing, leverage, derivatives, pledging assets, and other lawful activities.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE II - TERM</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>Section 2.1 Term:</strong> The Partnership shall continue in perpetuity unless terminated as provided herein.
+                  </div>
+                  <div>
+                    <strong>Section 2.2 Continuity:</strong> The Partnership shall not dissolve upon the withdrawal, removal, death, or incapacity of any Partner, including the General Partner or its members.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE III - CAPITAL CONTRIBUTIONS</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>Section 3.1 Initial Contributions:</strong> Minimum contribution: $50,000 per Limited Partner, subject to GP discretion.
+                  </div>
+                  <div>
+                    <strong>Section 3.2 Additional Contributions:</strong> GP may request additional contributions. Limited Partners are not obligated to contribute beyond their initial commitment unless agreed.
+                  </div>
+                  <div>
+                    <strong>Section 3.3 No Withdrawal of Capital:</strong> Capital may not be withdrawn except as expressly provided.
+                  </div>
+                  <div>
+                    <strong>Section 3.4 No Interest:</strong> No interest shall accrue on capital accounts.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE IV - ALLOCATIONS AND DISTRIBUTIONS</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>Section 4.1 Profits and Losses:</strong> Allocated to Partners in proportion to capital accounts, subject to performance allocation.
+                  </div>
+                  <div>
+                    <strong>Section 4.2 Management Fee:</strong> 2% per annum of net assets under management (including leverage/reserves), payable quarterly in advance.
+                  </div>
+                  <div>
+                    <strong>Section 4.3 Performance Allocation:</strong> 20% of net profits allocated to GP after Limited Partners receive a 6% preferred return, subject to a high-water mark.
+                  </div>
+                  <div>
+                    <strong>Section 4.4 Distributions:</strong> Distributions made at GP discretion. GP may retain earnings for reserves and reinvestment.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE V - MANAGEMENT AND AUTHORITY</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>Section 5.1 Authority:</strong> GP has full, exclusive authority over investment, operations, and administration, including leverage, derivatives, short sales, hiring, agreements, compliance, valuation, and redemptions.
+                  </div>
+                  <div>
+                    <strong>Section 5.2 Standard of Care:</strong> GP to act in good faith. Duties limited to those expressly stated herein.
+                  </div>
+                  <div>
+                    <strong>Section 5.3 Business Judgment Rule:</strong> All GP decisions made in good faith are binding. LPs waive claims except for fraud or willful misconduct.
+                  </div>
+                  <div>
+                    <strong>Section 5.4 LP Restrictions:</strong> LPs may not manage, bind, or interfere with GP authority. Rights limited to information and distributions as provided.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE VI - REDEMPTIONS AND TRANSFERS</h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <strong>Section 6.1 Lock-up:</strong> 12-month lock-up from initial contribution.
+                  </div>
+                  <div>
+                    <strong>Section 6.2 Redemption Rights:</strong> Quarterly thereafter with 90-day notice.
+                  </div>
+                  <div>
+                    <strong>Section 6.3 Procedures:</strong> Redemption requests are irrevocable. Processed at NAV. Payment within 30 days.
+                  </div>
+                  <div>
+                    <strong>Section 6.4 Limitations:</strong> GP may suspend redemptions during extraordinary conditions. GP may cap redemptions at 25% NAV per quarter. GP may distribute in-kind.
+                  </div>
+                  <div>
+                    <strong>Section 6.5 Fees:</strong> 2% redemption fee within 24 months.
+                  </div>
+                  <div>
+                    <strong>Section 6.6 Transfers:</strong> No transfer without GP consent. Transfers subject to securities laws.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE VII - REPRESENTATIONS, WARRANTIES AND COVENANTS</h4>
+                <p className="text-xs text-gray-700">
+                  LPs represent they are accredited investors, investing for their own account, aware of risks, and financially able to bear losses. LPs covenant to maintain confidentiality, comply with laws, update information, and cooperate with tax/regulatory matters.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE VIII - BOOKS, RECORDS AND REPORTING</h4>
+                <p className="text-xs text-gray-700">
+                  GP maintains full books, records, and accounting. LPs receive monthly NAV statements (via administrator), quarterly reports, annual audited financials, and Schedule K-1. LP inspection rights are limited to protect confidentiality.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE IX - LIABILITY, INDEMNIFICATION AND EXCULPATION</h4>
+                <p className="text-xs text-gray-700">
+                  LPs' liability limited to contributions. GP not liable except for fraud or willful misconduct. GP indemnified by the Partnership against claims except in cases of fraud or willful misconduct. Fiduciary duties are waived to the maximum extent permitted by Delaware law.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE X - TAX MATTERS</h4>
+                <p className="text-xs text-gray-700">
+                  Partnership treated as a tax partnership. GP serves as Tax Matters Partner with full authority. Income and losses allocated per Agreement and tax laws. Investors receive K-1s annually.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE XI - GENERAL PROVISIONS</h4>
+                <p className="text-xs text-gray-700">
+                  Amendments: GP may amend Agreement for administrative or GP-related matters. Material changes require LP majority approval. Governing law: Delaware. Disputes resolved by arbitration in Delaware. Severability applies. Agreement constitutes entire understanding.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">ARTICLE XII - ADDITIONAL GENERAL PARTNER RIGHTS</h4>
+                <p className="text-xs text-gray-700">
+                  GP may use leverage, derivatives, short sales, and private placements. GP may establish reserves, borrow, enter joint ventures, delegate, and modify strategies. GP may enter side letters with LPs regarding fees/rights. GP and affiliates may engage in other businesses, and LPs consent to conflicts of interest. Advisory Board: GP may establish a non-binding Advisory Board for optics and LP relations. Board has no management authority.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-6">
+                <h4 className="font-bold text-gray-900 mb-3">SIGNATURE SECTION</h4>
+                <p className="text-xs text-gray-700 mb-3">
+                  IN WITNESS WHEREOF, the parties execute this Agreement as of the date first written above.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="font-medium text-gray-900 mb-2">GENERAL PARTNER:</p>
+                    <p>Global Markets Consulting, LLC</p>
+                    <p className="mt-2">By: Christopher Guccio, Managing Member</p>
+                    <p>By: Daniel Usmanov, Managing Member</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 mb-2">LIMITED PARTNER:</p>
+                    <p>Signature: _________________________</p>
+                    <p>Name: _________________________</p>
+                    <p>Date: _________________________</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           
