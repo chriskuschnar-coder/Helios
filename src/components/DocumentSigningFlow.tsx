@@ -242,7 +242,6 @@ This information is required for regulatory compliance and anti-money laundering
   };
 
   const currentDoc = documents[currentDocument];
-  const isValid = validateCurrentDocument();
 
   return (
     <div className="max-w-4xl mx-auto">
