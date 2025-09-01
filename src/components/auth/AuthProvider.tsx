@@ -306,6 +306,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       console.log('🔍 Attempting Supabase signup...')
+      
+      // First check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
+      console.log('🔍 Environment check:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey,
+        url: supabaseUrl
+      })
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('❌ Missing Supabase environment variables')
+        return { error: { message: 'Database not configured - please contact support' } }
+      }
+      
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -315,17 +331,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        console.error('❌ Supabase sign up error:', error.message, error)
-        return { error: { message: error.message } }
+        console.error('❌ Supabase sign up error:', error)
+        
+        // Provide more specific error messages
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
+        }
+        if (error.message.includes('Invalid email')) {
+          return { error: { message: 'Please enter a valid email address' } }
+        }
+        if (error.message.includes('Password')) {
+          return { error: { message: 'Password does not meet requirements' } }
+        }
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          return { error: { message: 'Connection error - please check your internet and try again' } }
+        }
+        
+        return { error: { message: `Signup failed: ${error.message}` } }
       }
 
       if (data.user) {
         console.log('✅ Sign up successful:', data.user.email)
-        console.log('🔍 User data:', data.user)
+        console.log('🔍 User ID:', data.user.id)
+        console.log('🔍 User confirmed:', data.user.email_confirmed_at ? 'Yes' : 'No')
         
-        // Wait a moment for the trigger to create the account
-        console.log('⏳ Waiting for account creation...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Check if user was created successfully
+        if (!data.user.id) {
+          console.error('❌ User created but no ID returned')
+          return { error: { message: 'Account creation incomplete - please try again' } }
+        }
+        
+        // Try to create user profile and account manually if triggers fail
+        console.log('🔄 Creating user profile and account...')
+        
+        try {
+          // First, try to create user profile
+          const { error: userProfileError } = await supabaseClient
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              kyc_status: 'pending',
+              two_factor_enabled: false,
+              documents_completed: false
+            })
+          
+          if (userProfileError && !userProfileError.message.includes('duplicate')) {
+            console.error('❌ User profile creation error:', userProfileError)
+            // Don't fail here - the trigger might have worked
+          } else {
+            console.log('✅ User profile created or already exists')
+          }
+          
+          // Wait a moment for triggers to complete
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+          // Try to create account if it doesn't exist
+          const { error: accountError } = await supabaseClient
+            .from('accounts')
+            .insert({
+              user_id: data.user.id,
+              account_type: 'trading',
+              balance: 0,
+              available_balance: 0,
+              total_deposits: 0,
+              total_withdrawals: 0,
+              currency: 'USD',
+              status: 'active'
+            })
+          
+          if (accountError && !accountError.message.includes('duplicate')) {
+            console.error('❌ Account creation error:', accountError)
+            // Don't fail here - the trigger might have worked
+          } else {
+            console.log('✅ Account created or already exists')
+          }
+          
+        } catch (setupError) {
+          console.error('❌ Manual setup error:', setupError)
+          // Continue anyway - user might still be able to login
+        }
         
         setUser({
           id: data.user.id,
@@ -334,8 +420,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: false
         })
         
-        // Try to load the user's account
-        await loadUserAccount(data.user.id)
+        // Try to load the user's account with retry
+        try {
+          await loadUserAccount(data.user.id)
+        } catch (loadError) {
+          console.error('❌ Failed to load user account after signup:', loadError)
+          // Don't fail signup - user can try logging in again
+        }
         
         return { error: null }
       }
@@ -343,7 +434,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'No user returned' } }
     } catch (err) {
       console.error('❌ Sign up failed:', err)
-      return { error: { message: 'Connection error' } }
+      
+      // Provide more helpful error messages
+      if (err instanceof Error) {
+        if (err.message.includes('fetch')) {
+          return { error: { message: 'Connection error - please check your internet and try again' } }
+        }
+        if (err.message.includes('network')) {
+          return { error: { message: 'Network error - please try again' } }
+        }
+        return { error: { message: `Signup error: ${err.message}` } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred - please try again' } }
     }
   }
 
