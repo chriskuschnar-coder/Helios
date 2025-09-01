@@ -19,96 +19,143 @@ serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
     const body = await req.text()
     
-    // Initialize Supabase client
+    console.log('Received Stripe webhook with signature:', signature ? 'Present' : 'Missing')
+    
+    // Initialize Supabase client with service role
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Verify webhook signature (in production)
-    // const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
-    // const event = stripe.webhooks.constructEvent(body, signature!, Deno.env.get('STRIPE_WEBHOOK_SECRET')!)
+    // Parse webhook event
+    let event
+    try {
+      event = JSON.parse(body)
+      console.log('Webhook event type:', event.type)
+    } catch (e) {
+      console.error('Invalid JSON in webhook body')
+      throw new Error('Invalid webhook payload')
+    }
 
-    // For now, parse the event directly
-    const event = JSON.parse(body)
-
-    console.log('Received Stripe webhook:', event.type)
-
+    // Process different event types
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object
+        console.log('Processing successful payment:', paymentIntent.id)
         
         // Extract user ID from metadata
         const userId = paymentIntent.metadata?.user_id
         const amount = paymentIntent.amount / 100 // Convert from cents
         
-        if (userId) {
-          // Create transaction record
-          const { error: transactionError } = await supabase
-            .from('transactions')
-            .insert({
-              user_id: userId,
-              type: 'deposit',
-              method: 'stripe',
-              amount: amount,
-              status: 'completed',
-              external_id: paymentIntent.id,
-              description: `Card payment - ${paymentIntent.id}`
-            })
+        if (!userId) {
+          console.error('No user_id in payment metadata')
+          throw new Error('Missing user ID in payment metadata')
+        }
 
-          if (transactionError) {
-            console.error('Error creating transaction:', transactionError)
-            throw transactionError
-          }
-
-          // Update account balance
-          const { error: balanceError } = await supabase.rpc('update_account_balance', {
-            p_user_id: userId,
-            p_amount: amount
+        // Create transaction record
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: userId,
+            type: 'deposit',
+            method: 'stripe',
+            amount: amount,
+            status: 'completed',
+            external_id: paymentIntent.id,
+            description: `Card payment - ${paymentIntent.id}`,
+            metadata: {
+              stripe_payment_intent: paymentIntent.id,
+              payment_method: paymentIntent.payment_method,
+              currency: paymentIntent.currency
+            }
           })
 
-          if (balanceError) {
-            console.error('Error updating balance:', balanceError)
-            throw balanceError
-          }
-
-          console.log(`✅ Payment processed: $${amount} for user ${userId}`)
+        if (transactionError) {
+          console.error('Error creating transaction:', transactionError)
+          throw transactionError
         }
+
+        // Get user's account
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+
+        if (accountError) {
+          console.error('Error fetching account:', accountError)
+          throw accountError
+        }
+
+        // Update account balance
+        const newBalance = (accountData.balance || 0) + amount
+        const newAvailableBalance = (accountData.available_balance || 0) + amount
+        const newTotalDeposits = (accountData.total_deposits || 0) + amount
+
+        const { error: updateError } = await supabase
+          .from('accounts')
+          .update({
+            balance: newBalance,
+            available_balance: newAvailableBalance,
+            total_deposits: newTotalDeposits,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+
+        if (updateError) {
+          console.error('Error updating account balance:', updateError)
+          throw updateError
+        }
+
+        console.log(`✅ Payment processed successfully: $${amount} for user ${userId}`)
+        console.log(`New balance: $${newBalance}`)
         break
 
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object
-        console.log('❌ Payment failed:', failedPayment.id)
+        console.log('Processing failed payment:', failedPayment.id)
         
-        // Log failed payment
-        const userId2 = failedPayment.metadata?.user_id
-        if (userId2) {
+        const failedUserId = failedPayment.metadata?.user_id
+        if (failedUserId) {
+          // Log failed payment
           await supabase
             .from('transactions')
             .insert({
-              user_id: userId2,
+              user_id: failedUserId,
               type: 'deposit',
               method: 'stripe',
               amount: failedPayment.amount / 100,
               status: 'failed',
               external_id: failedPayment.id,
-              description: `Failed card payment - ${failedPayment.id}`
+              description: `Failed card payment - ${failedPayment.id}`,
+              metadata: {
+                stripe_payment_intent: failedPayment.id,
+                failure_reason: failedPayment.last_payment_error?.message
+              }
             })
         }
+        break
+
+      case 'payment_intent.requires_action':
+        console.log('Payment requires additional action:', event.data.object.id)
+        // Handle 3D Secure or other authentication requirements
         break
 
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    return new Response(JSON.stringify({ 
+      received: true,
+      event_type: event.type 
+    }), {
       headers: {
         'Content-Type': 'application/json',
         ...corsHeaders,
       },
     })
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('Webhook processing error:', error)
     
     return new Response(
       JSON.stringify({ 

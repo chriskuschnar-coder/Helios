@@ -19,6 +19,11 @@ serve(async (req) => {
     
     console.log('Creating payment intent:', { amount, currency, user_id })
     
+    // Validate amount
+    if (!amount || amount < 100) {
+      throw new Error('Minimum amount is $1.00 (100 cents)')
+    }
+
     // Create Stripe payment intent
     const stripeResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
@@ -29,8 +34,10 @@ serve(async (req) => {
       body: new URLSearchParams({
         amount: amount.toString(),
         currency: currency,
+        'automatic_payment_methods[enabled]': 'true',
         'metadata[user_id]': user_id || '',
-        'metadata[purpose]': 'account_funding'
+        'metadata[purpose]': 'account_funding',
+        'metadata[platform]': 'hedge_fund_portal'
       }).toString()
     })
 
@@ -41,11 +48,13 @@ serve(async (req) => {
     }
 
     const paymentIntent = await stripeResponse.json()
-    console.log('✅ Payment intent created successfully')
+    console.log('✅ Payment intent created successfully:', paymentIntent.id)
 
     return new Response(JSON.stringify({
       client_secret: paymentIntent.client_secret,
-      payment_intent_id: paymentIntent.id
+      payment_intent_id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency
     }), {
       headers: {
         'Content-Type': 'application/json',
