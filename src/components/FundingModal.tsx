@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap } from 'lucide-react';
 import { StripeCardForm } from './StripeCardForm';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
+import { DocumentSigningFlow } from './DocumentSigningFlow';
 
 interface FundingModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [amount, setAmount] = useState(prefilledAmount || 1000);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
+  const [showDocumentSigning, setShowDocumentSigning] = useState(false);
 
   if (!isOpen) return null;
 
@@ -25,12 +27,27 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handleProceedToPayment = () => {
     setShowEmptyState(false);
+    setShowDocumentSigning(true);
+  };
+
+  const handleBack = () => {
+    if (showPaymentForm) {
+      setShowPaymentForm(false);
+      setShowDocumentSigning(true);
+    } else if (showDocumentSigning) {
+      setShowDocumentSigning(false);
+      setShowEmptyState(true);
+    }
+  };
+
+  const handleDocumentComplete = () => {
+    setShowDocumentSigning(false);
     setShowPaymentForm(true);
     onProceedToPayment?.(amount);
   };
 
-  const handleBack = () => {
-    setShowPaymentForm(false);
+  const handleBackToPortfolio = () => {
+    setShowDocumentSigning(false);
     setShowEmptyState(true);
   };
 
@@ -39,7 +56,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            {showEmptyState ? 'Fund Your Account' : 'Fund Portfolio'}
+            {showEmptyState ? 'Fund Your Account' : 
+             showDocumentSigning ? 'Complete Onboarding Documents' : 
+             'Investment Amount'}
           </h2>
           <button
             onClick={onClose}
@@ -55,12 +74,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               onFundAccount={handleProceedToPayment}
               onAmountSelect={handleAmountSelect}
             />
+          ) : showDocumentSigning ? (
+            <DocumentSigningFlow 
+              onComplete={handleDocumentComplete}
+              onBack={handleBackToPortfolio}
+            />
           ) : showPaymentForm ? (
             <div>
               <div className="mb-6">
                 <button
                   onClick={handleBack}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
                   ← Back to Portfolio Setup
                 </button>
