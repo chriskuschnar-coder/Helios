@@ -14,6 +14,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { SystemStatusCheck } from './SystemStatusCheck'
 import { DeploymentCheck } from './DeploymentCheck'
+import SupabaseDebugger from './SupabaseDebugger'
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -84,6 +85,12 @@ export function InvestmentPlatform() {
   const isDeploymentCheck = window.location.search.includes('deployment=check')
   if (isDeploymentCheck) {
     return <DeploymentCheck />
+  }
+
+  // Show Supabase debugger
+  const isDebugPage = window.location.search.includes('debug=supabase')
+  if (isDebugPage) {
+    return <SupabaseDebugger />
   }
 
   if (loading) {
