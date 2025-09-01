@@ -302,16 +302,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('❌ Supabase sign up error:', error.message, error)
-        return { error: { message: error.message } }
+        
+        // Handle specific database trigger errors
+        if (error.message.includes('Database error saving new user')) {
+          console.error('❌ Database trigger error detected - this indicates a backend configuration issue')
+          return { error: { message: 'Account creation temporarily unavailable. Please contact support or try again later.' } }
+        }
+        
+        // Handle specific error cases
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
+        }
+        
+        if (error.message.includes('Invalid email')) {
+          return { error: { message: 'Please enter a valid email address.' } }
+        }
+        
+        if (error.message.includes('Password')) {
+          return { error: { message: 'Password must be at least 6 characters long.' } }
+        }
+        
+        return { error: { message: `Signup failed: ${error.message}` } }
       }
 
       if (data.user) {
         console.log('✅ Sign up successful:', data.user.email)
         console.log('🔍 User data:', data.user)
         
-        // Wait a moment for the trigger to create the account
-        console.log('⏳ Waiting for account creation...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Try to manually create user profile and account if triggers are failing
+        try {
+          console.log('🔍 Manually creating user profile and account...')
+          
+          // First, create the user profile
+          const { error: profileError } = await supabaseClient
+            .from('users')
+            .upsert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              kyc_status: 'pending',
+              two_factor_enabled: false,
+              documents_completed: false
+            }, {
+              onConflict: 'id'
+            })
+          
+          if (profileError) {
+            console.error('❌ Profile creation error:', profileError)
+            // Don't fail here - profile might already exist
+          } else {
+            console.log('✅ User profile created/updated')
+          }
+          
+          // Then create the account
+          console.log('🔍 Creating user account...')
+          const { error: accountError } = await supabaseClient
+            .from('accounts')
+            .upsert({
+              user_id: data.user.id,
+              account_type: 'trading',
+              balance: 0,
+              available_balance: 0,
+              total_deposits: 0,
+              total_withdrawals: 0,
+              currency: 'USD',
+              status: 'active'
+            }, {
+              onConflict: 'user_id'
+            })
+          
+          if (accountError) {
+            console.error('❌ Account creation error:', accountError)
+            // Don't fail here - account might already exist
+          } else {
+            console.log('✅ User account created/updated')
+          }
+          
+        } catch (setupError) {
+          console.error('❌ Manual user setup failed:', setupError)
+          // Continue anyway - user was created successfully in auth
+        }
         
         setUser({
           id: data.user.id,
@@ -320,7 +390,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: false
         })
         
-        // Try to load the user's account
+        // Load the user's account data
         await loadUserAccount(data.user.id)
         
         return { error: null }
@@ -329,7 +399,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: 'No user returned' } }
     } catch (err) {
       console.error('❌ Sign up failed:', err)
-      return { error: { message: 'Connection error' } }
+      
+      // Provide more helpful error messages
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          return { error: { message: 'Unable to connect to database. Please check your internet connection and try again.' } }
+        }
+        return { error: { message: err.message } }
+      }
+      
+      return { error: { message: 'Unexpected error occurred during signup' } }
     }
   }
 
