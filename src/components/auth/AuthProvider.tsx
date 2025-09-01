@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabaseClient } from '../../lib/supabase-client'
 
-// Debug: Check if supabaseClient is properly imported
-console.log('🔍 AuthProvider - supabaseClient:', supabaseClient)
+// CRITICAL DEBUG: Check if supabaseClient is properly imported
+console.log('🔍 AuthProvider - supabaseClient imported:', !!supabaseClient)
+console.log('🔍 AuthProvider - supabaseClient type:', typeof supabaseClient)
+console.log('🔍 AuthProvider - supabaseClient.auth exists:', !!supabaseClient?.auth)
+console.log('🔍 AuthProvider - Full supabaseClient object:', supabaseClient)
 
 interface User {
   id: string
@@ -238,12 +241,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting sign in for:', email)
+    console.log('🔍 signIn - supabaseClient check:', !!supabaseClient)
+    console.log('🔍 signIn - supabaseClient.auth check:', !!supabaseClient?.auth)
     
     try {
+      console.log('🔍 About to call supabaseClient.auth.signInWithPassword...')
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       })
+      console.log('🔍 signInWithPassword response:', { data: !!data, error: !!error })
 
       if (error) {
         console.error('Sign in error:', error)
@@ -253,7 +260,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ Sign in successful')
       return { error: null }
     } catch (error) {
-      console.error('Sign in error:', error)
+      console.error('❌ Sign in CATCH error:', error)
+      console.error('❌ Error type:', typeof error)
+      console.error('❌ Error message:', error?.message)
+      console.error('❌ Full error object:', error)
       return { error: { message: 'Authentication failed' } }
     }
   }
