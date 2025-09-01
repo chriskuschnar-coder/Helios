@@ -325,12 +325,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAccount({
             id: 'demo-account-id',
             balance: 7850,
-            available_balance: 7850,
-            total_deposits: 7850,
-            total_withdrawals: 0,
-            currency: 'USD',
-            status: 'active'
+          await loadUserData(data.user.id)
           })
+          await loadSignedDocuments(data.user.id)
           return { error: null }
         }
 
