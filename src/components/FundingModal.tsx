@@ -3,6 +3,7 @@ import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap } from 'lucide-
 import { StripeCardForm } from './StripeCardForm';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
+import { CongratulationsPage } from './CongratulationsPage';
 
 interface FundingModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
   const [showDocumentSigning, setShowDocumentSigning] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   if (!isOpen) return null;
 
@@ -33,6 +35,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const handleBack = () => {
     if (showPaymentForm) {
       setShowPaymentForm(false);
+      setShowCongratulations(true);
+    } else if (showCongratulations) {
+      setShowCongratulations(false);
+      setShowDocumentSigning(true);
+    } else if (showDocumentSigning) {
+      setShowPaymentForm(false);
       setShowDocumentSigning(true);
     } else if (showDocumentSigning) {
       setShowDocumentSigning(false);
@@ -42,6 +50,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handleDocumentComplete = () => {
     setShowDocumentSigning(false);
+    setShowCongratulations(true);
+  };
+
+  const handleContinueToPayment = () => {
+    setShowCongratulations(false);
     setShowPaymentForm(true);
     onProceedToPayment?.(amount);
   };
@@ -58,6 +71,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
           <h2 className="text-2xl font-bold text-gray-900">
             {showEmptyState ? 'Fund Your Account' : 
              showDocumentSigning ? 'Complete Onboarding Documents' : 
+             showCongratulations ? 'Welcome to Global Markets!' :
              'Investment Amount'}
           </h2>
           <button
@@ -78,6 +92,10 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             <DocumentSigningFlow 
               onComplete={handleDocumentComplete}
               onBack={handleBackToPortfolio}
+            />
+          ) : showCongratulations ? (
+            <CongratulationsPage 
+              onContinueToPayment={handleContinueToPayment}
             />
           ) : showPaymentForm ? (
             <div>
