@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { TrendingUp, Plus, ArrowDownLeft, DollarSign } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { EmptyPortfolioState } from './EmptyPortfolioState'
 import { DocumentSigningFlow } from './DocumentSigningFlow'
 
 interface PortfolioValueCardProps {
@@ -12,33 +11,30 @@ interface PortfolioValueCardProps {
 export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioValueCardProps) {
   const { account } = useAuth()
   const [showDocumentSigning, setShowDocumentSigning] = useState(false)
+  const [pendingAmount, setPendingAmount] = useState<number | undefined>(undefined)
 
   const balance = account?.balance || 0
-  const dailyChange = 18500
-  const dailyChangePct = 0.76
+  const dailyChange = 1247.18
+  const dailyChangePct = 5.28
   const isPositive = dailyChange >= 0
 
-  // If balance is 0 or very low, show empty state
-  if (balance < 1000) {
-    return <EmptyPortfolioState onFundPortfolio={onFundPortfolio} />
-  }
-
   const handleFundPortfolio = (amount?: number) => {
-    // Show document signing flow first
+    setPendingAmount(amount)
     setShowDocumentSigning(true)
   }
 
   const handleDocumentSigningComplete = () => {
     setShowDocumentSigning(false)
     // After documents are signed, proceed to funding
-    onFundPortfolio()
+    onFundPortfolio(pendingAmount)
+    setPendingAmount(undefined)
   }
 
   return (
     <>
       <div className="portfolio-value-card">
         <div className="value-header">
-          <span className="label">Portfolio Value</span>
+          <span className="label">Total Portfolio Value</span>
           <div className="live-indicator">
             <div className="live-dot"></div>
             LIVE
@@ -47,7 +43,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
         
         <div className="value-display">
           <h2 className="current-value">
-            ${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
           <div className={`value-change ${isPositive ? 'positive' : 'negative'}`}>
             <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString()}</span>
@@ -58,7 +54,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
         <div className="actions-row">
           <button className="fund-button primary" onClick={() => handleFundPortfolio()}>
             <Plus className="icon" />
-            Add Capital
+            Fund Portfolio
           </button>
           <button className="fund-button secondary" onClick={onWithdraw}>
             <ArrowDownLeft className="icon" />
@@ -67,15 +63,18 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
         </div>
         
         <div className="quick-deposit-chips">
-          <span className="chip-label">Quick add:</span>
-          <button className="amount-chip" onClick={() => handleFundPortfolio(25000)}>
-            $25K
+          <span className="chip-label">Quick deposit:</span>
+          <button className="amount-chip" onClick={() => handleFundPortfolio(1000)}>
+            +$1K
           </button>
-          <button className="amount-chip" onClick={() => handleFundPortfolio(50000)}>
-            $50K
+          <button className="amount-chip" onClick={() => handleFundPortfolio(5000)}>
+            +$5K
           </button>
-          <button className="amount-chip premium" onClick={() => handleFundPortfolio(100000)}>
-            $100K
+          <button className="amount-chip" onClick={() => handleFundPortfolio(10000)}>
+            +$10K
+          </button>
+          <button className="amount-chip premium" onClick={() => handleFundPortfolio(25000)}>
+            +$25K
           </button>
         </div>
       </div>
