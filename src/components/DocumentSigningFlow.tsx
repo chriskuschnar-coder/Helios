@@ -798,6 +798,113 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
               </div>
               <p className="text-xs text-gray-500 mt-1">Minimum: $50,000</p>
               {formData.capitalContribution && parseFloat(formData.capitalContribution) < 50000 && (
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 5 – ADDITIONAL COVENANTS</h3>
+                  <p className="text-gray-700 mb-4">
+                    <strong>5.1 Confidentiality</strong><br />
+                    Subscriber agrees to maintain strict confidentiality of all non-public information.<br /><br />
+                    
+                    <strong>5.2 Compliance with Partnership Terms</strong><br />
+                    Subscriber agrees to be bound by all terms of the LPA and to execute additional documents if reasonably requested.<br /><br />
+                    
+                    <strong>5.3 Updates and Notices</strong><br />
+                    Subscriber agrees to promptly notify the GP of changes to provided information and supply further documents as requested.<br /><br />
+                    
+                    <strong>5.4 Side Letters</strong><br />
+                    Subscriber acknowledges the GP may enter into side letters granting certain investors different rights and waives any claim to such rights absent explicit written agreement.
+                  </p>
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 6 – LOCK-UP AND REDEMPTION ACKNOWLEDGMENT</h3>
+                  <p className="text-gray-700 mb-4">
+                    <strong>6.1 Lock-up Period:</strong><br />
+                    • No redemptions for 12 months following initial contribution<br />
+                    • After lock-up, quarterly redemptions with 90-day notice<br />
+                    • GP may suspend redemptions during market stress<br /><br />
+                    
+                    <strong>6.2 Redemption Procedures:</strong><br />
+                    • Requests must be in writing and are irrevocable once submitted<br />
+                    • Redemptions processed at NAV as determined by GP<br />
+                    • 2% redemption fee applies within 24 months of investment
+                  </p>
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 7 – TAX MATTERS</h3>
+                  <p className="text-gray-700 mb-4">
+                    <strong>7.1 Tax Documentation</strong><br />
+                    Subscriber shall provide valid IRS Form W-9 (U.S.) or Form W-8BEN (non-U.S.) and update as necessary.<br /><br />
+                    
+                    <strong>7.2 Tax Responsibility</strong><br />
+                    Subscriber is responsible for its own tax consequences and compliance obligations.
+                  </p>
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 8 – DISPUTE RESOLUTION</h3>
+                  <p className="text-gray-700 mb-4">
+                    <strong>8.1 Governing Law</strong><br />
+                    This Agreement shall be governed by Delaware law.<br /><br />
+                    
+                    <strong>8.2 Arbitration</strong><br />
+                    Any disputes shall be resolved by binding arbitration in New York, New York, under the Commercial Arbitration Rules of the AAA.<br /><br />
+                    
+                    <strong>8.3 Jury Trial Waiver</strong><br />
+                    Each party knowingly waives the right to a jury trial.
+                  </p>
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 9 – ENTIRE AGREEMENT</h3>
+                  <p className="text-gray-700 mb-4">
+                    This Agreement, together with the PPM and LPA, constitutes the entire agreement of the parties.
+                  </p>
+
+                  <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4">SECTION 10 – EXECUTION</h3>
+                  <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-4">SUBSCRIBER SIGNATURE:</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <strong>Individual Subscriber:</strong><br />
+                            Print Name: _________________________________<br />
+                            Signature: _________________________________<br />
+                            Date: _____________________
+                          </div>
+                          <div className="mt-4">
+                            <strong>Entity Subscriber:</strong><br />
+                            Entity Name: _________________________________<br />
+                            By: _________________________________<br />
+                            Name: _________________________________<br />
+                            Title: _________________________________<br />
+                            Date: _____________________
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-4">ACCEPTANCE BY GENERAL PARTNER:</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <strong>Global Markets Consulting, LLC</strong><br />
+                            <em>as General Partner of Global Markets Consulting, LP</em>
+                          </div>
+                          <div className="mt-4">
+                            By: _________________________________<br />
+                            Name: Christopher Guccio<br />
+                            Title: Managing Member<br />
+                            Date: _____________________
+                          </div>
+                          <div className="mt-4">
+                            By: _________________________________<br />
+                            Name: Daniel Usmanov<br />
+                            Title: Managing Member<br />
+                            Date: _____________________
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm text-red-700">
+                      <strong>IMPORTANT NOTICE:</strong> This investment has not been registered under federal or state securities laws and involves substantial risk. Consult your legal, tax, and financial advisors before investing.
+                    </p>
+                  </div>
                 <p className="text-xs text-red-500 mt-1">Amount must be at least $50,000</p>
               )}
             </div>
