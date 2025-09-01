@@ -4,14 +4,13 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔍 Supabase Environment Check:')
-console.log('URL:', supabaseUrl ? 'Loaded ✅' : 'Missing ❌')
-console.log('URL Value:', supabaseUrl)
-console.log('Anon Key:', supabaseAnonKey ? 'Loaded ✅' : 'Missing ❌')
-console.log('Anon Key Value:', supabaseAnonKey ? supabaseAnonKey.substring(0, 50) + '...' : 'undefined')
-console.log('All env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
-console.log('Mode:', import.meta.env.MODE)
-console.log('Dev:', import.meta.env.DEV)
+console.log('🔍 VITE ENVIRONMENT VARIABLE DEBUG:')
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL)
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY)
+console.log('VITE_STRIPE_PUBLISHABLE_KEY:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+console.log('All VITE_ variables:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+console.log('Mode:', import.meta.env.MODE, 'Dev:', import.meta.env.DEV)
+console.log('Raw import.meta.env object:', import.meta.env)
 
 // Create the client instance
 let clientInstance: any
