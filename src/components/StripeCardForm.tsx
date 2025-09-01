@@ -51,28 +51,10 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (amount < 100) {
-      onError('Minimum investment amount is $100')
-      return
-    }
-
-    // Validate card details
-    if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc || !cardDetails.name) {
-      onError('Please fill in all card details')
-      return
-    }
-
-    // Check for test card
-    const cleanCardNumber = cardDetails.number.replace(/\s/g, '')
-    if (cleanCardNumber !== '4242424242424242') {
-      onError('Please use test card: 4242 4242 4242 4242')
-      return
-    }
-
     setLoading(true)
 
     try {
-      console.log('💳 Processing payment for amount:', amount)
+      console.log('💳 Redirecting to Stripe checkout for amount:', amount)
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -81,7 +63,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         throw new Error('Payment system not configured')
       }
 
-      // Always use Stripe checkout - no fallbacks
+      // Get user session for authentication
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
@@ -89,6 +71,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         throw new Error('Please sign in to continue')
       }
 
+      // Create Stripe checkout session
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -99,7 +82,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         body: JSON.stringify({
           price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
           mode: 'payment',
-          amount: amount * 100, // Convert to cents
+          amount: amount * 100,
           success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
           cancel_url: `${window.location.origin}/cancel`
         })
@@ -120,10 +103,11 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       window.location.href = url
       
     } catch (error) {
-      console.error('❌ Payment processing error:', error)
+      console.error('❌ Stripe checkout error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
-    } finally {
       setLoading(false)
+    } finally {
+      // Don't set loading to false here since we're redirecting
     }
   }
 

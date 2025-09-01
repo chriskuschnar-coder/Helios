@@ -25,11 +25,12 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
       setError('Minimum investment amount is $100')
       return
     }
+    
     setLoading(true)
     setError('')
 
     try {
-      console.log('💰 Processing investment for amount:', amount)
+      console.log('💰 Creating Stripe checkout for amount:', amount)
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -38,7 +39,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
         throw new Error('Payment system not configured')
       }
 
-      // Always use Stripe checkout - no shortcuts or fallbacks
+      // Get authenticated session
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
@@ -46,6 +47,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
         throw new Error('Please sign in to continue')
       }
 
+      // Create checkout session via Edge Function
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -64,6 +66,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Checkout creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
@@ -73,14 +76,16 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
         throw new Error('No checkout URL received')
       }
       
+      console.log('✅ Redirecting to Stripe checkout:', url)
       // Redirect to Stripe Checkout
       window.location.href = url
       
     } catch (error) {
-      console.error('❌ Investment processing error:', error)
+      console.error('❌ Checkout creation error:', error)
       setError(error instanceof Error ? error.message : 'Checkout failed')
-    } finally {
       setLoading(false)
+    } finally {
+      // Don't set loading to false if we're redirecting successfully
     }
   }
 

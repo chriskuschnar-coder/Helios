@@ -52,7 +52,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     setError('')
 
     try {
-      console.log('💳 Creating Stripe checkout session for amount:', amount)
+      console.log('💳 Starting Stripe checkout process for amount:', amount)
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -67,15 +67,18 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         throw new Error('Payment system not configured - please contact support')
       }
 
-      // Always use Stripe checkout via Supabase Edge Function
+      // Get user session for authentication
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
       
       if (sessionError || !session) {
-        console.error('❌ No valid session for Stripe checkout')
+        console.error('❌ Authentication required for checkout')
         throw new Error('Authentication required - please sign in again')
       }
 
+      console.log('✅ User authenticated, creating checkout session...')
+      
+      // Create Stripe checkout session via Edge Function
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -86,7 +89,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         body: JSON.stringify({
           price_id: product.priceId,
           mode: product.mode,
-          amount: amount * 100, // Convert to cents
+          amount: amount * 100,
           success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${window.location.origin}/cancel`
         })
@@ -94,7 +97,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Stripe checkout error:', errorData)
+        console.error('❌ Edge function error:', errorData)
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
@@ -104,11 +107,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         throw new Error('No checkout URL received')
       }
       
+      console.log('✅ Checkout session created, redirecting to:', url)
       // Redirect to Stripe Checkout
       window.location.href = url
       
     } catch (error) {
-      console.error('❌ Checkout creation error:', error)
+      console.error('❌ Stripe checkout failed:', error)
       setError(error instanceof Error ? error.message : 'Checkout failed')
       setLoading(false)
     }

@@ -51,30 +51,11 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (amount < 100) {
-      onError('Minimum investment amount is $100')
-      return
-    }
-
-    // Validate card details
-    if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc || !cardDetails.name) {
-      onError('Please fill in all card details')
-      return
-    }
-
-    // Check for test card
-    const cleanCardNumber = cardDetails.number.replace(/\s/g, '')
-    if (cleanCardNumber !== '4242424242424242') {
-      onError('Please use test card: 4242 4242 4242 4242')
-      return
-    }
-
     setLoading(true)
 
     try {
-      console.log('💳 Processing payment for amount:', amount)
+      console.log('💳 Redirecting to Stripe checkout for amount:', amount)
       
-      // Always use proper Stripe checkout flow
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       
@@ -82,6 +63,7 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
         throw new Error('Payment system not configured')
       }
 
+      // Get authenticated session
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
@@ -89,6 +71,7 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
         throw new Error('Please sign in to continue')
       }
 
+      // Create checkout session
       const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -119,10 +102,11 @@ export function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentF
       }
       
     } catch (error) {
-      console.error('❌ Payment processing error:', error)
+      console.error('❌ Stripe checkout error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
-    } finally {
       setLoading(false)
+    } finally {
+      // Don't reset loading if we're redirecting
     }
   }
 
