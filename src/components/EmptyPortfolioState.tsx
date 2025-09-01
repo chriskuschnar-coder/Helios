@@ -23,7 +23,7 @@ export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProp
         <h2>Start Building Your Portfolio</h2>
         <p>
           Welcome to Global Market Consulting's quantitative investment platform. 
-          Complete your onboarding to begin accessing our institutional-grade 
+          Fund your account to begin accessing our institutional-grade 
           trading strategies and portfolio management tools.
         </p>
       </div>
@@ -44,8 +44,8 @@ export function EmptyPortfolioState({ onFundPortfolio }: EmptyPortfolioStateProp
       </div>
       
       <button className="cta-fund-button" onClick={onFundPortfolio}>
-        Complete Onboarding Documents
-        <span className="min-amount">Required for access</span>
+        Fund Portfolio
+        <span className="min-amount">$250K minimum</span>
         <ArrowRight className="arrow-icon" />
       </button>
     </div>
