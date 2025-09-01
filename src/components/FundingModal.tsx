@@ -370,11 +370,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
               <StripeCardForm 
                 amount={amount}
-                onSuccess={() => {
+                onSuccess={(result) => {
+                  console.log('✅ Payment successful:', result)
                   onClose();
+                  // Optionally refresh account data
+                  window.location.reload();
                 }}
                 onError={(error) => {
                   console.error('Payment error:', error);
+                  // Keep modal open to show error
                 }}
               />
             </div>
