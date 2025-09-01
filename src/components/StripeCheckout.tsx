@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { stripeProducts } from '../stripe-config'
 import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield } from 'lucide-react'
+import { StripeElementsProvider } from './StripeElementsProvider'
+import { EmbeddedStripeForm } from './EmbeddedStripeForm'
 
 interface StripeCheckoutProps {
   productId?: string
@@ -15,6 +17,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
   const [error, setError] = useState('')
   const [amount, setAmount] = useState(customAmount || 10000) // Default $100
   const [success, setSuccess] = useState(false)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
 
   // Find the product or use the first one as default
   const product = productId 
@@ -37,7 +40,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     setAmount(Math.max(100, value)) // Minimum $100
   }
 
-  const handleCheckout = async () => {
+  const handleProceedToPayment = () => {
     if (!user) {
       setError('Please sign in to continue')
       return
@@ -48,73 +51,19 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       return
     }
 
-    setLoading(true)
-    setError('')
-
-    try {
-      console.log('💳 Starting Stripe checkout process for amount:', amount)
-      
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      console.log('🔍 Using Supabase URL:', supabaseUrl)
-
-      // Get user session for authentication
-      const { supabaseClient } = await import('../lib/supabase-client')
-      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
-      
-      if (sessionError || !session) {
-        console.error('❌ Authentication required for checkout')
-        throw new Error('Authentication required - please sign in again')
-      }
-
-      console.log('✅ User authenticated, creating checkout session...')
-      
-      // Create Stripe checkout session via Edge Function
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          price_id: product.priceId,
-          mode: product.mode,
-          amount: amount * 100,
-          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-          cancel_url: `${window.location.origin}/funding-cancelled`
-        })
-      })
-
-      console.log('📡 Response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Edge function error:', errorData)
-        throw new Error(errorData.error || 'Failed to create checkout session')
-      }
-
-      const { url } = await response.json()
-      console.log('✅ Checkout URL received:', url)
-      
-      if (!url) {
-        throw new Error('No checkout URL received')
-      }
-      
-      console.log('🚀 Redirecting to Stripe checkout...')
-      window.location.href = url
-      
-    } catch (error) {
-      console.error('❌ Stripe checkout failed:', error)
-      setError(error instanceof Error ? error.message : 'Checkout failed')
-      setLoading(false)
-    }
+    setShowPaymentForm(true)
   }
 
   const onSuccess = (result: any) => {
     setSuccess(true)
     // You could add additional success handling here
+  }
+
+  const handlePaymentSuccess = (result: any) => {
+    setSuccess(true)
+    setShowPaymentForm(false)
+    onSuccess(result)
+    // Refresh account data
   }
 
   if (success) {
@@ -129,6 +78,22 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
             ${amount.toLocaleString()} has been added to your account
           </p>
         </div>
+      </div>
+    )
+  }
+
+  if (showPaymentForm) {
+    return (
+      <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
+        <button
+          onClick={() => setShowPaymentForm(false)}
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-6"
+        >
+          ← Back to Investment Amount
+        </button>
+        <StripeElementsProvider>
+          <EmbeddedStripeForm amount={amount} onSuccess={handlePaymentSuccess} onError={setError} />
+        </StripeElementsProvider>
       </div>
     )
   }
@@ -197,7 +162,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       )}
 
       <button
-        onClick={handleCheckout}
+        onClick={handleProceedToPayment}
         disabled={loading || !user || amount < 100}
         className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center text-lg"
       >

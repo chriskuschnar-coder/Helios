@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { AuthProvider, useAuth } from './components/auth/AuthProvider'
+import { StripeElementsProvider } from './components/StripeElementsProvider'
 import { LoginForm } from './components/auth/LoginForm'
 import { SignupForm } from './components/auth/SignupForm'
 import { DashboardSelector } from './components/DashboardSelector'
@@ -101,10 +102,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <EnvCheck />
-      <AppContent />
-    </AuthProvider>
+    <StripeElementsProvider>
+      <AuthProvider>
+        <EnvCheck />
+        <AppContent />
+      </AuthProvider>
+    </StripeElementsProvider>
   )
 }
 
