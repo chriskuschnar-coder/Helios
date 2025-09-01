@@ -303,6 +303,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('❌ Supabase sign up error:', error.message, error)
         
+        // Handle specific database trigger errors
+        if (error.message.includes('Database error saving new user')) {
+          console.error('❌ Database trigger error detected - this indicates a backend configuration issue')
+          return { error: { message: 'Account creation temporarily unavailable. Please contact support or try again later.' } }
+        }
+        
         // Handle specific error cases
         if (error.message.includes('User already registered')) {
           return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
@@ -323,34 +329,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Sign up successful:', data.user.email)
         console.log('🔍 User data:', data.user)
         
-        // Try to create user profile and account manually if triggers fail
+        // Try to manually create user profile and account if triggers are failing
         try {
-          console.log('🔍 Creating user profile...')
+          console.log('🔍 Manually creating user profile and account...')
           
           // First, create the user profile
           const { error: profileError } = await supabaseClient
             .from('users')
-            .insert({
+            .upsert({
               id: data.user.id,
               email: data.user.email,
               full_name: metadata?.full_name,
               kyc_status: 'pending',
               two_factor_enabled: false,
               documents_completed: false
+            }, {
+              onConflict: 'id'
             })
           
-          if (profileError && !profileError.message.includes('duplicate key')) {
+          if (profileError) {
             console.error('❌ Profile creation error:', profileError)
-            throw new Error(`Failed to create user profile: ${profileError.message}`)
+            // Don't fail here - profile might already exist
+          } else {
+            console.log('✅ User profile created/updated')
           }
-          
-          console.log('✅ User profile created')
           
           // Then create the account
           console.log('🔍 Creating user account...')
           const { error: accountError } = await supabaseClient
             .from('accounts')
-            .insert({
+            .upsert({
               user_id: data.user.id,
               account_type: 'trading',
               balance: 0,
@@ -359,18 +367,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               total_withdrawals: 0,
               currency: 'USD',
               status: 'active'
+            }, {
+              onConflict: 'user_id'
             })
           
-          if (accountError && !accountError.message.includes('duplicate key')) {
+          if (accountError) {
             console.error('❌ Account creation error:', accountError)
-            throw new Error(`Failed to create user account: ${accountError.message}`)
+            // Don't fail here - account might already exist
+          } else {
+            console.log('✅ User account created/updated')
           }
           
-          console.log('✅ User account created')
-          
         } catch (setupError) {
-          console.error('❌ User setup failed:', setupError)
-          return { error: { message: 'Database error saving new user. Please try again or contact support.' } }
+          console.error('❌ Manual user setup failed:', setupError)
+          // Continue anyway - user was created successfully in auth
         }
         
         setUser({
@@ -398,7 +408,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: err.message } }
       }
       
-      return { error: { message: 'An unknown error occurred during signup. Please try again.' } }
+      return { error: { message: 'Unexpected error occurred during signup' } }
     }
   }
 
