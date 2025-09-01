@@ -1,111 +1,340 @@
-import React, { useState } from 'react';
-import { FileText, Check, X } from 'lucide-react';
+import React, { useState } from 'react'
+import { X, FileText, PenTool, CheckCircle, AlertCircle, Download } from 'lucide-react'
 
-interface DocumentSigningFlowProps {
-  onComplete?: () => void;
-  onCancel?: () => void;
+interface Document {
+  id: string
+  title: string
+  type: string
+  content: string
+  signed: boolean
 }
 
-export function DocumentSigningFlow({ onComplete, onCancel }: DocumentSigningFlowProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [signature, setSignature] = useState('');
+interface DocumentSigningFlowProps {
+  isOpen: boolean
+  onClose: () => void
+  onComplete: () => void
+}
 
-  const documents = [
+export function DocumentSigningFlow({ isOpen, onClose, onComplete }: DocumentSigningFlowProps) {
+  const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0)
+  const [signature, setSignature] = useState('')
+  const [documents, setDocuments] = useState<Document[]>([
     {
-      title: 'Investment Agreement',
-      description: 'Terms and conditions for your investment',
-      required: true
-    },
-    {
-      title: 'Risk Disclosure',
-      description: 'Important risk information',
-      required: true
-    },
-    {
-      title: 'Privacy Policy',
-      description: 'How we handle your data',
-      required: false
+      id: 'ppm',
+      title: 'Private Placement Memorandum (PPM)',
+      type: 'investment_agreement',
+      content: `CONFIDENTIAL PRIVATE PLACEMENT MEMORANDUM
+Global Markets Consulting, LP A Delaware Limited Partnership  
+Offering of Limited Partnership Interests Date: __________
+
+IMPORTANT NOTICE
+
+This Confidential Private Placement Memorandum (this "Memorandum") contains confidential and proprietary information regarding Global Markets Consulting, LP (the "Fund"), a Delaware limited partnership. This Memorandum is being furnished solely to qualified investors for the purpose of evaluating a potential investment in the Fund and may not be reproduced or distributed without express written consent.
+
+THE SECURITIES OFFERED HEREBY HAVE NOT BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED, OR THE SECURITIES LAWS OF ANY STATE AND ARE BEING OFFERED AND SOLD IN RELIANCE ON RULE 506(b) UNDER REGULATION D AND OTHER EXEMPTIONS FROM SUCH REGISTRATION REQUIREMENTS.
+
+TABLE OF CONTENTS
+1. Executive Summary
+2. Fund Overview & Investment Objective
+3. Investment Strategy & Methodology
+4. Terms of the Offering
+5. Fee Structure
+6. Risk Factors
+7. Management & Governance
+8. Investor Rights & Restrictions
+9. Tax Considerations
+10. Subscription Process
+11. Reporting & Transparency
+12. General Partner Rights & Protections
+
+1. EXECUTIVE SUMMARY
+
+Fund Name: Global Markets Consulting, LP 
+Fund Type: Delaware Limited Partnership 
+General Partner: Global Markets Consulting, LLC 
+Managing Members: Christopher Guccio and Daniel Usmanov 
+Investment Focus: AI-driven systematic trading across digital assets, equities, and commodities 
+Target Investors: Accredited investors, qualified institutional buyers, and family offices 
+Minimum Investment: $50,000 (GP discretion to accept less) 
+Management Fee: 2% annually on net assets under management (including leverage and reserves) 
+Performance Allocation: 20% to General Partner, 80% to Limited Partners, subject to 6% preferred return and high-water mark 
+Lock-up Period: 12 months initial lock-up, followed by quarterly redemptions with 90-day notice 
+Target Outcome: Attractive risk-adjusted returns above traditional benchmarks 
+Leverage: Up to 3:1 leverage at General Partner's discretion
+
+2. FUND OVERVIEW & INVESTMENT OBJECTIVE
+
+Global Markets Consulting, LP seeks to generate superior risk-adjusted returns through quantitative, AI-driven systematic trading strategies across multiple asset classes.
+
+The Fund is managed by Global Markets Consulting, LLC. Jurisdiction: Delaware, with operations in Delaware and Florida.
+
+3. INVESTMENT STRATEGY & METHODOLOGY
+
+Core strategy: proprietary machine learning models, statistical arbitrage, momentum/mean-reversion, high-frequency and medium-frequency strategies.
+
+Asset classes: Digital Assets (30–60%), Equities (20–40%), Commodities (10–30%), Cash (0–20%). Risk management includes real-time monitoring, dynamic rebalancing, drawdown controls, and stress testing.
+
+4. TERMS OF THE OFFERING
+
+Securities Offered: LP interests 
+Minimum Investment: $50,000 
+Maximum Fund Size: $100M 
+Capital Calls: 100% initial funding 
+Lock-up: 12 months 
+Redemptions: Quarterly thereafter with 90-day notice 
+Redemption Fees: 2% if within 24 months 
+Redemption Gates: 25% NAV per quarter 
+GP may suspend redemptions in extraordinary market conditions.
+
+5. FEE STRUCTURE
+
+Management Fee: 2% per annum on net assets (includes leverage/reserves) 
+Performance Allocation: 20% of net profits after 6% preferred return, subject to high-water mark 
+Other Fees: Operating expenses, legal, accounting, audit, technology, execution, compliance
+
+6. RISK FACTORS
+
+Includes: market volatility (crypto, equities, commodities), model risk, liquidity, counterparty, cybersecurity, regulatory changes, reliance on key personnel, limited operating history.
+
+LPs explicitly assume custody risk in digital assets.
+
+7. MANAGEMENT & GOVERNANCE
+
+General Partner retains full discretion over investment/trading decisions.
+Advisory Board (non-binding, GP-selected) provides investor optics.
+Key person provisions tied to principals.
+Indemnification: GP not liable except in cases of willful misconduct or bad faith.
+
+8. INVESTOR RIGHTS & RESTRICTIONS
+
+Quarterly reports, annual audited financials, monthly NAV by independent administrator.
+Annual investor call.
+Transfer restrictions: No public market, GP consent required, subject to securities law.
+
+9. TAX CONSIDERATIONS
+
+Partnership tax treatment; investors receive K-1 forms.
+Income allocated whether or not distributed.
+Investors should consult their tax advisors.
+
+10. SUBSCRIPTION PROCESS
+
+Accredited investors only. Subscription documents include Subscription Agreement, LPA, AML/KYC compliance, tax forms.
+Funds wired upon acceptance.
+
+11. REPORTING & TRANSPARENCY
+
+Monthly NAV statements (via administrator), quarterly reports, annual audited financials.
+Investors may contact GP for additional inquiries.
+
+12. GENERAL PARTNER RIGHTS & PROTECTIONS
+
+GP may modify strategies, impose capacity limits, or suspend redemptions in stress periods.
+Broad indemnification provided to GP.
+Business judgment rule protects GP decisions absent bad faith/willful misconduct.
+
+By signing below, I acknowledge that I have read and understood this Private Placement Memorandum and that I am an accredited investor as defined above.`,
+      signed: false
     }
-  ];
+  ])
 
-  const handleSign = () => {
-    if (signature.trim()) {
-      if (currentStep < documents.length - 1) {
-        setCurrentStep(currentStep + 1);
-        setSignature('');
-      } else {
-        onComplete?.();
-      }
+  if (!isOpen) return null
+
+  const currentDocument = documents[currentDocumentIndex]
+  const allDocumentsSigned = documents.every(doc => doc.signed)
+
+  const handleSignDocument = () => {
+    if (!signature.trim()) {
+      alert('Please enter your signature')
+      return
     }
-  };
 
-  const currentDocument = documents[currentStep];
+    // Mark current document as signed
+    const updatedDocuments = [...documents]
+    updatedDocuments[currentDocumentIndex] = {
+      ...currentDocument,
+      signed: true
+    }
+    setDocuments(updatedDocuments)
+    setSignature('')
+
+    // Move to next document or complete
+    if (currentDocumentIndex < documents.length - 1) {
+      setCurrentDocumentIndex(currentDocumentIndex + 1)
+    } else {
+      // All documents signed
+      onComplete()
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentDocumentIndex > 0) {
+      setCurrentDocumentIndex(currentDocumentIndex - 1)
+    }
+  }
+
+  const handleNext = () => {
+    if (currentDocumentIndex < documents.length - 1) {
+      setCurrentDocumentIndex(currentDocumentIndex + 1)
+    }
+  }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Document Signing</h2>
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <span>Step {currentStep + 1} of {documents.length}</span>
-          <div className="flex-1 bg-gray-200 rounded-full h-2">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-navy-50">
+          <div className="flex items-center space-x-3">
+            <FileText className="h-6 w-6 text-navy-600" />
+            <div>
+              <h2 className="text-xl font-bold text-navy-900">Investment Documents</h2>
+              <p className="text-sm text-navy-600">
+                Document {currentDocumentIndex + 1} of {documents.length}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Signing Progress</span>
+            <span className="text-sm text-gray-600">
+              {documents.filter(doc => doc.signed).length} of {documents.length} completed
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentStep + 1) / documents.length) * 100}%` }}
+              className="bg-navy-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(documents.filter(doc => doc.signed).length / documents.length) * 100}%` }}
             />
           </div>
         </div>
-      </div>
 
-      <div className="mb-8">
-        <div className="flex items-center mb-4">
-          <FileText className="w-6 h-6 text-blue-600 mr-3" />
-          <h3 className="text-xl font-semibold text-gray-900">{currentDocument.title}</h3>
-          {currentDocument.required && (
-            <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-              Required
-            </span>
-          )}
-        </div>
-        <p className="text-gray-600 mb-6">{currentDocument.description}</p>
-
-        <div className="bg-gray-50 p-4 rounded-lg mb-6 h-40 overflow-y-auto">
-          <p className="text-sm text-gray-700">
-            [Document content would be displayed here. This is a placeholder for the actual document text that users would review before signing.]
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="signature" className="block text-sm font-medium text-gray-700 mb-2">
-            Digital Signature
-          </label>
-          <input
-            type="text"
-            id="signature"
-            value={signature}
-            onChange={(e) => setSignature(e.target.value)}
-            placeholder="Type your full name to sign"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        {/* Document Content */}
+        <div className="flex-1 overflow-y-auto p-6" style={{ maxHeight: '60vh' }}>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">{currentDocument.title}</h3>
+              {currentDocument.signed && (
+                <div className="flex items-center space-x-2 text-green-600">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="text-sm font-medium">Signed</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+                {currentDocument.content}
+              </pre>
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-between">
-          <button
-            onClick={onCancel}
-            className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Cancel
-          </button>
-          <button
-            onClick={handleSign}
-            disabled={!signature.trim()}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            <Check className="w-4 h-4 mr-2" />
-            {currentStep < documents.length - 1 ? 'Sign & Continue' : 'Complete Signing'}
-          </button>
+        {/* Signature Section */}
+        {!currentDocument.signed && (
+          <div className="border-t border-gray-200 p-6 bg-gray-50">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Digital Signature
+              </label>
+              <div className="relative">
+                <PenTool className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                  placeholder="Type your full legal name"
+                  required
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                By typing your name, you are providing a legally binding electronic signature
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-900">Legal Agreement</p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    By signing this document, you are entering into a legally binding agreement. 
+                    Please ensure you have read and understood all terms before proceeding.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSignDocument}
+              disabled={!signature.trim()}
+              className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+            >
+              <PenTool className="h-5 w-5 mr-2" />
+              Sign Document
+            </button>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="border-t border-gray-200 p-6 bg-white">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handlePrevious}
+              disabled={currentDocumentIndex === 0}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Previous
+            </button>
+
+            <div className="flex space-x-2">
+              {documents.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentDocumentIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentDocumentIndex
+                      ? 'bg-navy-600'
+                      : documents[index].signed
+                      ? 'bg-green-600'
+                      : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {currentDocumentIndex < documents.length - 1 ? (
+              <button
+                onClick={handleNext}
+                className="px-4 py-2 text-navy-600 hover:text-navy-700 transition-colors"
+              >
+                Next →
+              </button>
+            ) : allDocumentsSigned ? (
+              <button
+                onClick={onComplete}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Complete
+              </button>
+            ) : (
+              <div className="px-4 py-2 text-gray-400">
+                Sign to continue
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
