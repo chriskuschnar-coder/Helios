@@ -4,6 +4,8 @@ import { InvestmentPlatform } from './components/InvestmentPlatform';
 import { AuthProvider } from './components/auth/AuthProvider';
 import './index.css';
 
+console.log("🚀 App is starting...");
+
 // DEBUG: Check if main.tsx is loading
 console.log('🔍 main.tsx loading...')
 console.log('🔍 AuthProvider import:', !!AuthProvider)

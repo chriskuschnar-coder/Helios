@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
+console.log("🔑 AuthProvider mounted");
+
 // BASIC TEST: Check if AuthProvider loads at all
 console.log('🔍 AuthProvider loaded - basic test')
 console.log('🔍 AuthProvider file executing')
