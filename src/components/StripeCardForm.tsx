@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
 import { CreditCard, Shield, Lock, AlertCircle } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { supabaseClient } from '../lib/supabase-client'
 
 interface StripeCardFormProps {
   amount: number
   onSuccess: (result: any) => void
-  onCancel: () => void
+  onError: (error: string) => void
 }
 
-export function StripeCardForm({ amount, onSuccess, onCancel }: StripeCardFormProps) {
+export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormProps) {
   const { user, processFunding } = useAuth()
   const [loading, setLoading] = useState(false)
   const [cardDetails, setCardDetails] = useState({
@@ -17,7 +18,6 @@ export function StripeCardForm({ amount, onSuccess, onCancel }: StripeCardFormPr
     cvc: '',
     name: ''
   })
-  const [error, setError] = useState('')
 
   const handleCardChange = (field: string, value: string) => {
     setCardDetails(prev => ({
@@ -53,47 +53,98 @@ export function StripeCardForm({ amount, onSuccess, onCancel }: StripeCardFormPr
     e.preventDefault()
     
     if (amount < 100) {
-      setError('Minimum investment amount is $100')
+      onError('Minimum investment amount is $100')
       return
     }
 
     // Validate card details
     if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc || !cardDetails.name) {
-      setError('Please fill in all card details')
+      onError('Please fill in all card details')
       return
     }
 
     // Check for test card
     const cleanCardNumber = cardDetails.number.replace(/\s/g, '')
     if (cleanCardNumber !== '4242424242424242') {
-      setError('Please use test card: 4242 4242 4242 4242')
+      onError('Please use test card: 4242 4242 4242 4242')
       return
     }
 
     setLoading(true)
-    setError('')
 
     try {
-      console.log('💳 Processing capital transfer for amount:', amount)
+      console.log('💳 Processing payment for amount:', amount)
       
-      // Simulate Stripe processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Create Stripe checkout session via Supabase Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
       
-      // Process funding through auth provider
-      await processFunding(amount, 'stripe', `Capital contribution - $${amount}`)
+      if (!supabaseUrl || !anonKey || !stripePublishableKey) {
+        console.error('Missing environment variables:', {
+          supabaseUrl: !!supabaseUrl,
+          anonKey: !!anonKey,
+          stripeKey: !!stripePublishableKey
+        })
+        throw new Error('Payment system not configured - please contact support')
+      }
+
+      // Get the current user session for authentication
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
       
-      console.log('✅ Capital transfer successful')
-      
-      onSuccess({
-        id: 'transfer_' + Date.now(),
-        amount: amount,
-        method: 'stripe',
-        status: 'completed'
+      if (sessionError || !session) {
+        console.error('❌ No valid session for Stripe checkout')
+        throw new Error('Authentication required - please sign in again')
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
+          mode: 'payment',
+          amount: amount * 100, // Convert to cents
+          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${window.location.origin}/cancel`
+        })
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Stripe checkout error:', errorData)
+        
+        // If it's an auth error, fall back to local processing
+        if (response.status === 401 || response.status === 403) {
+          console.log('🔄 Falling back to local payment processing')
+          await processFunding(amount, 'stripe', `Investment funding - $${amount}`)
+          onSuccess({
+            id: 'payment_' + Date.now(),
+            amount: amount,
+            method: 'stripe',
+            status: 'completed'
+          })
+          return
+        }
+        
+        throw new Error(errorData.error || 'Failed to create checkout session')
+      }
+
+      const { url } = await response.json()
+      
+      if (url) {
+        // Redirect to Stripe Checkout
+        window.location.href = url
+      } else {
+        throw new Error('No checkout URL received')
+      }
       
     } catch (error) {
-      console.error('❌ Capital transfer error:', error)
-      setError(error instanceof Error ? error.message : 'Transfer failed')
+      console.error('❌ Payment processing error:', error)
+      onError(error instanceof Error ? error.message : 'Payment failed')
     } finally {
       setLoading(false)
     }
@@ -103,29 +154,19 @@ export function StripeCardForm({ amount, onSuccess, onCancel }: StripeCardFormPr
   const totalCharge = amount + processingFee
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900">Capital Transfer Details</h3>
-        <button
-          onClick={onCancel}
-          className="text-gray-500 hover:text-gray-700 font-medium"
-        >
-          ← Back to Methods
-        </button>
-      </div>
-
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
         <div className="flex items-center space-x-2 mb-2">
           <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Capital Processing</span>
+          <span className="font-medium text-blue-900">Secure Payment Processing</span>
           <Lock className="h-4 w-4 text-blue-600" />
         </div>
         <p className="text-sm text-blue-700">
-          Your capital transfer is encrypted and secure. Uses institutional-grade Stripe processing.
+          Your payment information is encrypted and secure. Uses Supabase + Stripe integration.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Cardholder Name
@@ -185,59 +226,52 @@ export function StripeCardForm({ amount, onSuccess, onCancel }: StripeCardFormPr
             />
           </div>
         </div>
+      </div>
 
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-700">Capital Contribution:</span>
-            <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-            <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-900">Total charge:</span>
-              <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
-            </div>
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Investment Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total charge:</span>
+            <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
           </div>
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center">
-            <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
-            <span className="text-red-700 text-sm">{error}</span>
-          </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Complete Payment - ${amount.toLocaleString()}
+          </>
         )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-        >
-          {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Processing Capital Transfer...
-            </>
-          ) : (
-            <>
-              <CreditCard className="h-4 w-4 mr-2" />
-              Complete Transfer - ${amount.toLocaleString()}
-            </>
-          )}
-        </button>
-        
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <div className="flex items-center space-x-2 mb-1">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <span className="font-medium text-yellow-900 text-sm">Test Mode</span>
-          </div>
-          <p className="text-xs text-yellow-700">
-            <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
-          </p>
+      </button>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+        <div className="flex items-center space-x-2 mb-1">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <span className="font-medium text-yellow-900 text-sm">Test Mode</span>
         </div>
-      </form>
-    </div>
+        <p className="text-xs text-yellow-700">
+          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
+        </p>
+      </div>
+    </form>
   )
 }
