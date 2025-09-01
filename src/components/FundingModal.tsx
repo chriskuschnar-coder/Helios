@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, TrendingUp, Shield, Award } from 'lucide-react';
+import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap } from 'lucide-react';
 import { StripeCardForm } from './StripeCardForm';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 
@@ -39,7 +39,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            {showEmptyState ? 'Fund Your Account' : showPaymentForm ? 'Capital Transfer' : 'Fund Portfolio'}
+            {showEmptyState ? 'Fund Your Account' : 'Fund Portfolio'}
           </h2>
           <button
             onClick={onClose}
@@ -70,7 +70,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   <div>
-                    <h3 className="font-semibold text-blue-900">Capital Transfer Amount</h3>
+                    <h3 className="font-semibold text-blue-900">Investment Amount</h3>
                     <p className="text-blue-700">${amount.toLocaleString()}</p>
                   </div>
                 </div>
@@ -91,6 +91,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 amount={amount}
                 onSuccess={() => {
                   onClose();
+                }}
+                onError={(error) => {
+                  console.error('Payment error:', error);
                 }}
               />
             </div>
