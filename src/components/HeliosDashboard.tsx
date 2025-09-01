@@ -4,6 +4,7 @@ import TickerTape from './TickerTape'
 import { TradingViewBTCChart } from './TradingViewBTCChart'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
+import { EmptyPortfolioState } from './EmptyPortfolioState'
 import '../styles/funding.css'
 
 interface DashboardData {
@@ -188,6 +189,35 @@ export function HeliosDashboard() {
           <div className="text-sm text-gray-400">Initializing trading systems</div>
         </div>
       </div>
+    )
+  }
+
+  // Show empty state for users with no balance
+  if (!account || account.balance === 0) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-900">
+          {/* Helios Header */}
+          <header className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">HELIOS CAPITAL</h1>
+                <div className="text-xs text-gray-400 uppercase tracking-wider mt-1">
+                  Quantitative Trading System
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <EmptyPortfolioState onFundAccount={() => openFunding()} />
+        </div>
+        <FundingModal
+          isOpen={showFundingModal}
+          onClose={() => setShowFundingModal(false)}
+          prefilledAmount={prefilledAmount}
+          onProceedToPayment={handleProceedToPayment}
+        />
+      </>
     )
   }
 
@@ -405,8 +435,9 @@ export function HeliosDashboard() {
             </table>
           </div>
         </div>
+
       </div>
-          
+
       {/* Funding Modal */}
       <FundingModal
         isOpen={showFundingModal}
