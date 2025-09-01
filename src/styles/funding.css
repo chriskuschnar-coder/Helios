@@ -1,14 +1,36 @@
-[build]
-  publish = "dist"
-  command = "npm run build"
+/* Funding Modal Styles */
+.funding-modal {
+  backdrop-filter: blur(8px);
+}
 
-[build.environment]
-  NODE_VERSION = "18"
+.funding-modal-content {
+  animation: slideUp 0.3s ease-out;
+}
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-[functions]
-  directory = "netlify/functions"
+.payment-method-card {
+  transition: all 0.2s ease;
+}
+
+.payment-method-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.amount-button {
+  transition: all 0.2s ease;
+}
+
+.amount-button:hover {
+  transform: scale(1.02);
+}
