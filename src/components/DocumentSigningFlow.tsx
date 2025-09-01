@@ -14,8 +14,8 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const documents = [
     {
       id: 1,
-      title: 'Investment Agreement',
-      description: 'Terms and conditions for your investment',
+      title: 'Private Placement Memorandum',
+      description: 'Confidential offering document for Global Markets Consulting, LP',
       required: true
     },
     {
@@ -102,22 +102,160 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       {/* Document Content */}
       <div className="bg-gray-50 rounded-lg p-8 mb-8 min-h-[400px]">
         <div className="prose max-w-none">
-          <p className="text-gray-700 leading-relaxed">
-            [Document content would be displayed here. This is a placeholder for the actual document 
-            text that users would review before signing.]
-          </p>
-          
           {/* Sample document content based on type */}
           {currentDocument.id === 1 && (
-            <div className="mt-6 space-y-4">
-              <h4 className="font-semibold text-gray-900">Investment Agreement Terms:</h4>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Minimum investment amount: $250,000</li>
-                <li>Management fee: 2% annually</li>
-                <li>Performance fee: 20% of profits</li>
-                <li>Lock-up period: 12 months</li>
-                <li>Redemption notice: 90 days</li>
-              </ul>
+            <div className="space-y-6 text-sm leading-relaxed">
+              <div className="text-center border-b border-gray-200 pb-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">CONFIDENTIAL PRIVATE PLACEMENT MEMORANDUM</h3>
+                <h4 className="text-lg font-semibold text-gray-800">Global Markets Consulting, LP</h4>
+                <p className="text-gray-600">A Delaware Limited Partnership</p>
+                <p className="text-gray-600 mt-2">Offering of Limited Partnership Interests</p>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 className="font-bold text-red-900 mb-2">IMPORTANT NOTICE</h4>
+                <p className="text-red-800 text-xs leading-relaxed">
+                  This Confidential Private Placement Memorandum (this "Memorandum") contains confidential 
+                  and proprietary information regarding Global Markets Consulting, LP (the "Fund"), a Delaware 
+                  limited partnership. This Memorandum is being furnished solely to qualified investors for the 
+                  purpose of evaluating a potential investment in the Fund and may not be reproduced or 
+                  distributed without express written consent.
+                </p>
+                <p className="text-red-900 font-bold text-xs mt-2">
+                  THE SECURITIES OFFERED HEREBY HAVE NOT BEEN REGISTERED UNDER THE 
+                  SECURITIES ACT OF 1933, AS AMENDED, OR THE SECURITIES LAWS OF ANY STATE 
+                  AND ARE BEING OFFERED AND SOLD IN RELIANCE ON RULE 506(b) UNDER 
+                  REGULATION D AND OTHER EXEMPTIONS FROM SUCH REGISTRATION REQUIREMENTS.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">1. EXECUTIVE SUMMARY</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-2">
+                    <p><strong>Fund Name:</strong> Global Markets Consulting, LP</p>
+                    <p><strong>Fund Type:</strong> Delaware Limited Partnership</p>
+                    <p><strong>General Partner:</strong> Global Markets Consulting, LLC</p>
+                    <p><strong>Managing Members:</strong> Christopher Guccio and Daniel Usmanov</p>
+                    <p><strong>Investment Focus:</strong> AI-driven systematic trading across digital assets, equities, and commodities</p>
+                    <p><strong>Target Investors:</strong> Accredited investors, qualified institutional buyers, and family offices</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p><strong>Minimum Investment:</strong> $50,000 (GP discretion to accept less)</p>
+                    <p><strong>Management Fee:</strong> 2% annually on net assets under management</p>
+                    <p><strong>Performance Allocation:</strong> 20% to General Partner, 80% to Limited Partners</p>
+                    <p><strong>Lock-up Period:</strong> 12 months initial, quarterly redemptions with 90-day notice</p>
+                    <p><strong>Target Outcome:</strong> Attractive risk-adjusted returns above traditional benchmarks</p>
+                    <p><strong>Leverage:</strong> Up to 3:1 leverage at General Partner's discretion</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">2. FUND OVERVIEW & INVESTMENT OBJECTIVE</h4>
+                <p className="text-gray-700 text-xs">
+                  Global Markets Consulting, LP seeks to generate superior risk-adjusted returns through 
+                  quantitative, AI-driven systematic trading strategies across multiple asset classes. 
+                  The Fund is managed by Global Markets Consulting, LLC. Jurisdiction: Delaware, with operations in Delaware and Florida.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">3. INVESTMENT STRATEGY & METHODOLOGY</h4>
+                <p className="text-gray-700 text-xs mb-2">
+                  Core strategy: proprietary machine learning models, statistical arbitrage, momentum/mean-reversion, 
+                  high-frequency and medium-frequency strategies.
+                </p>
+                <p className="text-gray-700 text-xs">
+                  Asset classes: Digital Assets (30–60%), Equities (20–40%), Commodities (10–30%), Cash (0–20%). 
+                  Risk management includes real-time monitoring, dynamic rebalancing, drawdown controls, and stress testing.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">4. TERMS OF THE OFFERING</h4>
+                <div className="text-xs space-y-1">
+                  <p><strong>Securities Offered:</strong> LP interests</p>
+                  <p><strong>Minimum Investment:</strong> $50,000</p>
+                  <p><strong>Maximum Fund Size:</strong> $100M</p>
+                  <p><strong>Capital Calls:</strong> 100% initial funding</p>
+                  <p><strong>Lock-up:</strong> 12 months</p>
+                  <p><strong>Redemptions:</strong> Quarterly thereafter with 90-day notice</p>
+                  <p><strong>Redemption Fees:</strong> 2% if within 24 months</p>
+                  <p><strong>Redemption Gates:</strong> 25% NAV per quarter</p>
+                  <p className="text-red-600"><strong>Note:</strong> GP may suspend redemptions in extraordinary market conditions.</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">5. FEE STRUCTURE</h4>
+                <div className="text-xs space-y-1">
+                  <p><strong>Management Fee:</strong> 2% per annum on net assets (includes leverage/reserves)</p>
+                  <p><strong>Performance Allocation:</strong> 20% of net profits after 6% preferred return, subject to high-water mark</p>
+                  <p><strong>Other Fees:</strong> Operating expenses, legal, accounting, audit, technology, execution, compliance</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">6. RISK FACTORS</h4>
+                <p className="text-gray-700 text-xs">
+                  Includes: market volatility (crypto, equities, commodities), model risk, liquidity, counterparty, 
+                  cybersecurity, regulatory changes, reliance on key personnel, limited operating history. 
+                  LPs explicitly assume custody risk in digital assets.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">7. MANAGEMENT & GOVERNANCE</h4>
+                <p className="text-gray-700 text-xs">
+                  General Partner retains full discretion over investment/trading decisions. 
+                  Advisory Board (non-binding, GP-selected) provides investor optics. 
+                  Key person provisions tied to principals. 
+                  Indemnification: GP not liable except in cases of willful misconduct or bad faith.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">8. INVESTOR RIGHTS & RESTRICTIONS</h4>
+                <p className="text-gray-700 text-xs">
+                  Quarterly reports, annual audited financials, monthly NAV by independent administrator. 
+                  Annual investor call. Transfer restrictions: No public market, GP consent required, subject to securities law.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">9. TAX CONSIDERATIONS</h4>
+                <p className="text-gray-700 text-xs">
+                  Partnership tax treatment; investors receive K-1 forms. 
+                  Income allocated whether or not distributed. 
+                  Investors should consult their tax advisors.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">10. SUBSCRIPTION PROCESS</h4>
+                <p className="text-gray-700 text-xs">
+                  Accredited investors only. Subscription documents include Subscription Agreement, 
+                  LPA, AML/KYC compliance, tax forms. Funds wired upon acceptance.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">11. REPORTING & TRANSPARENCY</h4>
+                <p className="text-gray-700 text-xs">
+                  Monthly NAV statements (via administrator), quarterly reports, annual audited financials. 
+                  Investors may contact GP for additional inquiries.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-900 mb-3">12. GENERAL PARTNER RIGHTS & PROTECTIONS</h4>
+                <p className="text-gray-700 text-xs">
+                  GP may modify strategies, impose capacity limits, or suspend redemptions in stress periods. 
+                  Broad indemnification provided to GP. 
+                  Business judgment rule protects GP decisions absent bad faith/willful misconduct.
+                </p>
+              </div>
             </div>
           )}
           
