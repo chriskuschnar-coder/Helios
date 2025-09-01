@@ -28,7 +28,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     }
   });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [isValid, setIsValid] = useState(false);
 
   const documents = [
     {
@@ -113,7 +112,7 @@ This information is required for regulatory compliance and anti-money laundering
     'Other qualified institutional investor'
   ];
 
-  const calculateValidationErrors = () => {
+  const validateCurrentDocument = () => {
     const doc = documents[currentDocument];
     const errors: string[] = [];
 
@@ -160,15 +159,9 @@ This information is required for regulatory compliance and anti-money laundering
       }
     }
 
-    return errors;
-  };
-
-  // Validate form whenever dependencies change
-  React.useEffect(() => {
-    const errors = calculateValidationErrors();
     setValidationErrors(errors);
-    setIsValid(errors.length === 0);
-  }, [currentDocument, signatures, formData]);
+    return errors.length === 0;
+  };
 
   const handleSignature = (signature: string) => {
     setSignatures(prev => ({
@@ -205,7 +198,7 @@ This information is required for regulatory compliance and anti-money laundering
   };
 
   const handleNext = async () => {
-    if (!isValid) {
+    if (!validateCurrentDocument()) {
       return;
     }
 
@@ -242,6 +235,7 @@ This information is required for regulatory compliance and anti-money laundering
   };
 
   const currentDoc = documents[currentDocument];
+  const isValid = validateCurrentDocument();
 
   return (
     <div className="max-w-4xl mx-auto">
