@@ -16,6 +16,8 @@ import { SystemStatusCheck } from './SystemStatusCheck'
 import { DeploymentCheck } from './DeploymentCheck'
 import { SupabaseConnectionTest } from './SupabaseConnectionTest'
 
+console.log("🏢 InvestmentPlatform component loaded")
+
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
