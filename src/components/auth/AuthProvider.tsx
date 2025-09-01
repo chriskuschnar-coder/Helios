@@ -126,12 +126,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('User not authenticated')
     }
 
+    if (!account) {
+      throw new Error('User account not found')
+    }
+
     try {
       // Add transaction record
       const { error: transactionError } = await supabaseClient
         .from('transactions')
         .insert({
           user_id: user.id,
+          account_id: account.id,
           type: 'deposit',
           method: method,
           amount: amount,
