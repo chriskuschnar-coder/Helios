@@ -1,14 +1,13 @@
-[build]
-  publish = "dist"
-  command = "npm run build"
+import React from 'react';
+import { AuthProvider } from './components/auth/AuthProvider';
+import { InvestmentPlatform } from './components/InvestmentPlatform';
 
-[build.environment]
-  NODE_VERSION = "18"
+function App() {
+  return (
+    <AuthProvider>
+      <InvestmentPlatform />
+    </AuthProvider>
+  );
+}
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[functions]
-  directory = "netlify/functions"
+export default App;
