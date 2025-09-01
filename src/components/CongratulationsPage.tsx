@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, TrendingUp, Crown, Sparkles, ArrowRight, DollarSign, Trophy, Star, Zap } from 'lucide-react';
+import { CheckCircle, TrendingUp, Crown, Sparkles, ArrowRight, DollarSign, Trophy, Star, Zap, Shield } from 'lucide-react';
 
 interface CongratulationsPageProps {
   onContinueToPayment: () => void;
