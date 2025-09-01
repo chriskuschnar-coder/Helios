@@ -119,6 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('❌ User profile load error:', userError)
       } else if (userData) {
         console.log('✅ User profile loaded:', userData)
+        
+        // Auto-mark documents as completed if user has a funded account (balance > 0)
+        // This handles existing users who invested before document tracking was implemented
+        if (!userData.documents_completed && accountData && accountData.balance > 0) {
+          console.log('🔄 Auto-marking documents as completed for funded user')
+          await markDocumentsCompletedInDB(userId)
+          userData.documents_completed = true
+          userData.documents_completed_at = new Date().toISOString()
+        }
+        
         setUser(prev => prev ? {
           ...prev,
           documents_completed: userData.documents_completed,
@@ -198,9 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const markDocumentsCompleted = async () => {
-    if (!user) return
-
+  const markDocumentsCompletedInDB = async (userId: string) => {
     try {
       const { error } = await supabaseClient
         .from('users')
@@ -208,21 +216,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: true,
           documents_completed_at: new Date().toISOString()
         })
-        .eq('id', user.id)
+        .eq('id', userId)
 
       if (error) {
-        console.error('❌ Failed to mark documents completed:', error)
+        console.error('❌ Failed to mark documents completed in DB:', error)
       } else {
-        console.log('✅ Documents marked as completed')
-        setUser(prev => prev ? {
-          ...prev,
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        } : null)
+        console.log('✅ Documents marked as completed in database')
       }
     } catch (err) {
-      console.error('❌ Error marking documents completed:', err)
+      console.error('❌ Error marking documents completed in DB:', err)
     }
+  }
+
+  const markDocumentsCompleted = async () => {
+    if (!user) return
+
+    await markDocumentsCompletedInDB(user.id)
+    setUser(prev => prev ? {
+      ...prev,
+      documents_completed: true,
+      documents_completed_at: new Date().toISOString()
+    } : null)
   }
 
   const signIn = async (email: string, password: string) => {
