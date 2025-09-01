@@ -5,6 +5,7 @@ interface EmptyPortfolioStateProps {
   onFundPortfolio: () => void
   onStartOnboarding: () => void
   onStartOnboarding: () => void
+}
 
 export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: EmptyPortfolioStateProps) {
   return (
@@ -62,3 +63,5 @@ export function EmptyPortfolioState({ onFundPortfolio, onStartOnboarding }: Empt
         <ArrowRight className="arrow-icon" />
       </button>
     </div>
+  )
+}
