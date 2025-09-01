@@ -6,7 +6,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 console.log('🔍 Supabase Environment Check:')
 console.log('URL:', supabaseUrl ? 'Loaded ✅' : 'Missing ❌')
+console.log('URL Value:', supabaseUrl)
 console.log('Anon Key:', supabaseAnonKey ? 'Loaded ✅' : 'Missing ❌')
+console.log('Anon Key Value:', supabaseAnonKey ? supabaseAnonKey.substring(0, 50) + '...' : 'undefined')
+console.log('All env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+console.log('Mode:', import.meta.env.MODE)
+console.log('Dev:', import.meta.env.DEV)
 
 // Create the client instance
 let clientInstance: any
