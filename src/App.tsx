@@ -1,14 +1,17 @@
-console.log("📦 App.tsx mounted");
+import React from 'react'
+import { AuthProvider } from './components/auth/AuthProvider'
+import { InvestmentPlatform } from './components/InvestmentPlatform'
+
+console.log("📦 App.tsx mounted")
 
 function App() {
-  console.log("📦 App component rendering");
+  console.log("📦 App component rendering")
   
   return (
-    <div>
-      <h1>Hello world - React is working!</h1>
-      <p>If you see this, React is mounting correctly.</p>
-    </div>
-  );
+    <AuthProvider>
+      <InvestmentPlatform />
+    </AuthProvider>
+  )
 }
 
-export default App;
+export default App

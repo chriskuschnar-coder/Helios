@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
-console.log("🔑 AuthProvider mounted");
-
-// BASIC TEST: Check if AuthProvider loads at all
-console.log('🔍 AuthProvider loaded - basic test')
-console.log('🔍 AuthProvider file executing')
-console.log('🔍 React imported:', !!React)
+console.log("🔑 AuthProvider mounted")
 
 interface User {
   id: string
@@ -56,13 +52,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   console.log('🔍 AuthProvider component rendering...')
   
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(false) // Start with false to avoid loading state
+  const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
-  // Mock functions for now to test if component loads
+  // Check for existing session on mount
+  useEffect(() => {
+    console.log('🔍 AuthProvider useEffect - checking for existing session')
+    
+    const checkSession = async () => {
+      try {
+        console.log('🔍 Checking Supabase session...')
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Session check error:', error)
+        } else if (session?.user) {
+          console.log('✅ Found existing session for:', session.user.email)
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name
+          })
+          await loadUserAccount(session.user.id)
+        } else {
+          console.log('ℹ️ No existing session found')
+        }
+      } catch (err) {
+        console.error('❌ Session check failed:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkSession()
+  }, [])
+
+  const loadUserAccount = async (userId: string) => {
+    try {
+      console.log('🔍 Loading account for user:', userId)
+      
+      const { data, error } = await supabaseClient
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (error) {
+        console.error('❌ Account load error:', error)
+      } else {
+        console.log('✅ Account loaded:', data)
+        setAccount(data)
+      }
+    } catch (err) {
+      console.error('❌ Account load failed:', err)
+    }
+  }
+
   const refreshAccount = async () => {
-    console.log('🔄 refreshAccount called')
+    if (user) {
+      await loadUserAccount(user.id)
+    }
   }
 
   const refreshSubscription = async () => {
@@ -71,50 +121,138 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const processFunding = async (amount: number, method: string, description?: string) => {
     console.log('💰 processFunding called:', { amount, method, description })
-    return { success: true }
+    
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    try {
+      // Add transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `${method} deposit`
+        })
+
+      if (transactionError) {
+        console.error('❌ Transaction error:', transactionError)
+        throw new Error('Failed to record transaction')
+      }
+
+      // Update account balance
+      if (account) {
+        const { error: updateError } = await supabaseClient
+          .from('accounts')
+          .update({
+            balance: account.balance + amount,
+            available_balance: account.available_balance + amount,
+            total_deposits: account.total_deposits + amount
+          })
+          .eq('id', account.id)
+
+        if (updateError) {
+          console.error('❌ Account update error:', updateError)
+          throw new Error('Failed to update account balance')
+        }
+
+        // Refresh account data
+        await refreshAccount()
+      }
+
+      console.log('✅ Funding processed successfully')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Funding processing failed:', error)
+      throw error
+    }
   }
 
   const signIn = async (email: string, password: string) => {
     console.log('🔐 signIn called:', { email, password: '***' })
     
-    // Demo user check
-    if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-      const demoUser = {
-        id: 'demo-user-id',
-        email: 'demo@globalmarket.com',
-        full_name: 'Demo User'
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('❌ Supabase sign in error:', error)
+        return { error: { message: error.message } }
       }
-      
-      const demoAccount = {
-        id: 'demo-account-id',
-        balance: 7850,
-        available_balance: 7850,
-        total_deposits: 10000,
-        total_withdrawals: 0,
-        currency: 'USD',
-        status: 'active'
+
+      if (data.user) {
+        console.log('✅ Sign in successful:', data.user.email)
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: data.user.user_metadata?.full_name
+        })
+        await loadUserAccount(data.user.id)
+        return { error: null }
       }
-      
-      setUser(demoUser)
-      setAccount(demoAccount)
-      
-      console.log('✅ Demo login successful')
-      return { error: null }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('❌ Sign in failed:', err)
+      return { error: { message: 'Connection error' } }
     }
-    
-    return { error: { message: 'Invalid credentials' } }
   }
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     console.log('📝 signUp called:', { email, metadata })
-    return { error: { message: 'Signup not implemented yet' } }
+    
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+
+      if (error) {
+        console.error('❌ Supabase sign up error:', error)
+        return { error: { message: error.message } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful:', data.user.email)
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: metadata?.full_name
+        })
+        return { error: null }
+      }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('❌ Sign up failed:', err)
+      return { error: { message: 'Connection error' } }
+    }
   }
 
   const signOut = async () => {
     console.log('🚪 signOut called')
-    setUser(null)
-    setAccount(null)
-    setSubscription(null)
+    
+    try {
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('❌ Sign out error:', error)
+      }
+    } catch (err) {
+      console.error('❌ Sign out failed:', err)
+    } finally {
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+    }
   }
 
   const value = {
