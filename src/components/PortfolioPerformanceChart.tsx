@@ -240,8 +240,9 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
   const initialValue = 250000
   const currentValue = currentBalance || 0
   
-  // Check if account has meaningful balance (more than $100)
-  const hasActivity = currentValue > 100
+  // Check if account has actual trading activity (not just deposits)
+  // For now, all accounts show 0 until we implement real trading data
+  const hasActivity = false // This will be true once we have real trading data from the system
   
   // All metrics should be zero for accounts with no meaningful balance
   const totalReturn = hasActivity ? ((currentValue - initialValue) / initialValue * 100) : 0
