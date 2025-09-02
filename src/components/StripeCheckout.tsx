@@ -272,6 +272,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           borderRadius: '8px',
         },
       },
+      paymentMethodTypes: ['card'],
     }
 
     return (
