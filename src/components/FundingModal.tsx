@@ -833,11 +833,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Cryptocurrency Payment</h3>
                 <p className="text-gray-600">
-                  Pay ${investmentAmount} with Bitcoin or Ethereum
+                  Pay ${investmentAmount} with Bitcoin, Ethereum, USDT, or Solana
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="border-2 border-orange-500 bg-orange-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-orange-600 mb-2">₿</div>
                   <div className="font-medium text-gray-900">Bitcoin (BTC)</div>
@@ -853,6 +853,24 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <div className="text-sm text-gray-600">Network fee: ~$25</div>
                   <div className="text-sm text-purple-600 font-medium mt-2">
                     ≈ {(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH
+                  </div>
+                </div>
+                
+                <div className="border-2 border-gray-300 bg-gray-50 rounded-lg p-4 text-center hover:border-green-500 hover:bg-green-50 transition-colors cursor-pointer">
+                  <div className="text-2xl font-bold text-green-600 mb-2">₮</div>
+                  <div className="font-medium text-gray-900">Tether (USDT)</div>
+                  <div className="text-sm text-gray-600">Network fee: ~$5</div>
+                  <div className="text-sm text-green-600 font-medium mt-2">
+                    ≈ {parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT
+                  </div>
+                </div>
+                
+                <div className="border-2 border-gray-300 bg-gray-50 rounded-lg p-4 text-center hover:border-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer">
+                  <div className="text-2xl font-bold text-indigo-600 mb-2">◎</div>
+                  <div className="font-medium text-gray-900">Solana (SOL)</div>
+                  <div className="text-sm text-gray-600">Network fee: ~$0.01</div>
+                  <div className="text-sm text-indigo-600 font-medium mt-2">
+                    ≈ {(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL
                   </div>
                 </div>
               </div>
@@ -874,6 +892,42 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <strong>Important:</strong> Only send Bitcoin to this address. Sending other cryptocurrencies will result in permanent loss.
                 </div>
               </div>
+              
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h4 className="font-medium text-green-900 mb-3">USDT Payment Address (ERC-20)</h4>
+                <div className="bg-white border rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm break-all">0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C</span>
+                    <button
+                      onClick={() => copyToClipboard('0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C', 'usdt')}
+                      className="p-1 hover:bg-gray-200 rounded ml-2"
+                    >
+                      {copiedField === 'usdt' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-green-700">
+                  <strong>Important:</strong> Only send USDT (ERC-20) to this address. Ensure you're using the Ethereum network.
+                </div>
+              </div>
+              
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                <h4 className="font-medium text-indigo-900 mb-3">Solana Payment Address</h4>
+                <div className="bg-white border rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm break-all">7xKXtg2CW87d97TXJLAuBjbTiSASaUvSMYQoQdu9ijSm</span>
+                    <button
+                      onClick={() => copyToClipboard('7xKXtg2CW87d97TXJLAuBjbTiSASaUvSMYQoQdu9ijSm', 'sol')}
+                      className="p-1 hover:bg-gray-200 rounded ml-2"
+                    >
+                      {copiedField === 'sol' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-indigo-700">
+                  <strong>Important:</strong> Only send Solana (SOL) to this address. Ultra-fast transactions with minimal fees.
+                </div>
+              </div>
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center space-x-2 mb-2">
@@ -881,9 +935,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <span className="font-medium text-yellow-900">Crypto Payment Instructions</span>
                 </div>
                 <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Send exact amount: {(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC</li>
+                  <li>• <strong>Bitcoin:</strong> {(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC</li>
+                  <li>• <strong>Ethereum:</strong> {(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH</li>
+                  <li>• <strong>USDT:</strong> {parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT (ERC-20 only)</li>
+                  <li>• <strong>Solana:</strong> {(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL</li>
                   <li>• Include memo/note: {wireInstructions?.referenceCode}</li>
-                  <li>• Confirmations required: 3 blocks (~30 minutes)</li>
+                  <li>• Confirmations: BTC (3 blocks), ETH (12 blocks), USDT (12 blocks), SOL (1 block)</li>
                   <li>• Contact support if payment doesn't appear within 2 hours</li>
                 </ul>
               </div>
