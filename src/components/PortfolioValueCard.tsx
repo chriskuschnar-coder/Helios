@@ -43,14 +43,6 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
           Withdraw
         </button>
       </div>
-      
-      <div className="quick-deposit-chips">
-        <span className="chip-label">Quick deposit:</span>
-        <button className="amount-chip" onClick={() => onFundPortfolio(1000)}>+$1K</button>
-        <button className="amount-chip" onClick={() => onFundPortfolio(5000)}>+$5K</button>
-        <button className="amount-chip" onClick={() => onFundPortfolio(10000)}>+$10K</button>
-        <button className="amount-chip premium" onClick={() => onFundPortfolio(25000)}>+$25K</button>
-      </div>
     </div>
   )
 }
