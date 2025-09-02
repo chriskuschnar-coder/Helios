@@ -75,10 +75,17 @@ export function InvestorDashboard() {
 
   const portfolioData = calculatePortfolioData()
 
-  const holdings = [
+  // Check if account has real trading activity (not just deposits)
+  const hasRealTradingActivity = false // This will be true once we implement real trading data
+  
+  const holdings = hasRealTradingActivity ? [
     { name: 'Alpha Fund', allocation: 65, value: (account?.balance || 0) * 0.65, return: 14.2, risk: 'Medium' },
     { name: 'Market Neutral Fund', allocation: 25, value: (account?.balance || 0) * 0.25, return: 8.7, risk: 'Low' },
     { name: 'Momentum Portfolio', allocation: 10, value: (account?.balance || 0) * 0.10, return: 18.9, risk: 'High' }
+  ] : [
+    { name: 'Alpha Fund', allocation: 0, value: 0, return: 0, risk: 'Medium' },
+    { name: 'Market Neutral Fund', allocation: 0, value: 0, return: 0, risk: 'Low' },
+    { name: 'Momentum Portfolio', allocation: 0, value: 0, return: 0, risk: 'High' }
   ]
 
   const recentTransactions = [
