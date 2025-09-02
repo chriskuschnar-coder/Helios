@@ -333,7 +333,8 @@ export function InvestorDashboard() {
                 </div>
               </div>
             )}
-              </div>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
