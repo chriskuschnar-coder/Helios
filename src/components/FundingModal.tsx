@@ -849,9 +849,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                         ? 'border-navy-600 bg-navy-50' 
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
-                  >
-                    <div className="text-3xl font-bold text-navy-600 mb-3">₿</div>
-                    <div className="font-medium text-gray-900">Bitcoin (BTC)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$15</div>
                   </button>
                   
@@ -862,9 +859,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                         ? 'border-navy-600 bg-navy-50' 
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
-                  >
-                    <div className="text-3xl font-bold text-navy-600 mb-3">Ξ</div>
-                    <div className="font-medium text-gray-900">Ethereum (ETH)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$25</div>
                   </button>
                   
@@ -875,9 +869,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                         ? 'border-navy-600 bg-navy-50' 
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
-                  >
-                    <div className="text-3xl font-bold text-navy-600 mb-3">₮</div>
-                    <div className="font-medium text-gray-900">Tether (USDT)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$5</div>
                   </button>
                   
@@ -892,9 +883,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     <div className="text-3xl font-bold text-navy-600 mb-3">◎</div>
                     <div className="font-medium text-gray-900">Solana (SOL)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$0.01</div>
-                  </button>
-                </div>
-              </div>
 
               {/* Payment Address - Only show when crypto is selected */}
               {selectedCrypto && (
@@ -905,6 +893,21 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     {selectedCrypto === 'usdt' && 'USDT Payment Address (ERC-20)'}
                     {selectedCrypto === 'solana' && 'Solana Payment Address'}
                   </h4>
+                  
+                  {/* Amount to Send */}
+                  <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
+                    <div className="text-sm font-medium text-navy-900 mb-2">Amount to Send</div>
+                    <div className="text-2xl font-bold text-navy-900">
+                      {selectedCrypto === 'bitcoin' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
+                      {selectedCrypto === 'ethereum' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
+                      {selectedCrypto === 'usdt' && `${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT`}
+                      {selectedCrypto === 'solana' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      USD Value: ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()}
+                    </div>
+                  </div>
+                  
                   
                   {/* Amount to Send */}
                   <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
@@ -931,6 +934,13 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                       <button
                         onClick={() => {
                           const address = selectedCrypto === 'bitcoin' ? 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' :
+      alert(`Payment address generated: ${invoice.payment_address}\nAmount: ${invoice.crypto_amount} ${cryptocurrency.toUpperCase()}`);
+      
+    } catch (error) {
+      console.error('❌ Crypto payment error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create crypto payment');
+    }
+  };
                                         selectedCrypto === 'ethereum' ? '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' :
                                         selectedCrypto === 'usdt' ? '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' :
                                         '7xKXtg2CW87d97TXJLAuBjbTiSASaUvSMYQoQdu9ijSm'
