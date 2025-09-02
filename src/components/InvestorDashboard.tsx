@@ -88,12 +88,16 @@ export function InvestorDashboard() {
     { name: 'Momentum Portfolio', allocation: 0, value: 0, return: 0, risk: 'High' }
   ]
 
-  const recentTransactions = [
-    { date: '2025-01-15', type: 'Dividend', amount: 12500, fund: 'Alpha Fund', status: 'Completed' },
-    { date: '2025-01-10', type: 'Investment', amount: 100000, fund: 'Market Neutral Fund', status: 'Completed' },
-    { date: '2025-01-05', type: 'Rebalancing', amount: -25000, fund: 'Momentum Portfolio', status: 'Completed' },
-    { date: '2025-01-01', type: 'Performance Fee', amount: -8500, fund: 'Alpha Fund', status: 'Completed' }
-  ]
+  // Get real transactions from database - for now show empty until real trading activity
+  const recentTransactions: any[] = []
+  
+  // TODO: When implementing real trading, fetch from database:
+  // const { data: transactions } = await supabaseClient
+  //   .from('transactions')
+  //   .select('*')
+  //   .eq('user_id', user?.id)
+  //   .order('created_at', { ascending: false })
+  //   .limit(10)
 
   const documents = [
     { name: 'Monthly Performance Report - January 2025', date: '2025-01-31', type: 'Performance' },
@@ -304,22 +308,40 @@ export function InvestorDashboard() {
         {selectedTopTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-8">
             <h3 className="font-serif text-xl font-bold text-navy-900 mb-6">Transaction History</h3>
-            <div className="space-y-3">
-              {recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{transaction.type}</div>
-                    <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+            {recentTransactions.length > 0 ? (
+              <div className="space-y-3">
+                {recentTransactions.map((transaction, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{transaction.type}</div>
+                      <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
                     </div>
-                    <div className="text-sm text-gray-600">{transaction.status}</div>
+                    <div className="text-right">
+                      <div className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">{transaction.status}</div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-2">No transactions yet</div>
+                <div className="text-sm text-gray-500">
+                  Transactions will appear here after funding and trading activity
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-2">No transactions yet</div>
+                <div className="text-sm text-gray-500">
+                  Transactions will appear here after funding and trading activity
+                </div>
+              </div>
+            )}
           </div>
         )}
 
