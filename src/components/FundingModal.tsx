@@ -1,11 +1,118 @@
 import React, { useState } from 'react';
 import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
-import { StripeElementsProvider } from './StripeElementsProvider';
-import { EmbeddedStripeForm } from './EmbeddedStripeForm';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
 import { useAuth } from './auth/AuthProvider';
+import { Loader2 } from 'lucide-react';
+
+const stripePromise = loadStripe('pk_live_51S2OIF3aD6OJYuckOW7RhBZ9xG0fHNkFSKCYVeRBjFMeusz0P9tSIvRyja7LY55HHhuhrgc5UZR6v78SrM9CE25300XPf5I5z4')
+
+// Payment form component for the modal
+function ModalCheckoutForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!stripe || !elements) {
+      onError('Stripe not loaded')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/funding-success`,
+        },
+        redirect: 'if_required'
+      })
+
+      if (error) {
+        onError(error.message || 'Payment failed')
+      } else {
+        onSuccess({ success: true })
+      }
+    } catch (err) {
+      onError('Payment processing failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const processingFee = amount * 0.029 + 0.30
+  const totalCharge = amount + processingFee
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <Shield className="h-5 w-5 text-green-600" />
+          <span className="font-medium text-green-900">Live Payment Processing</span>
+        </div>
+        <p className="text-sm text-green-700">
+          <strong>LIVE MODE:</strong> Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            defaultValues: {
+              billingDetails: {
+                email: ''
+              }
+            }
+          }}
+        />
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700">Investment Amount:</span>
+          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-900">Total charge:</span>
+            <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading || !stripe}
+        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center text-lg"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-5 w-5 mr-2" />
+            Complete Investment - ${amount.toLocaleString()}
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
 
 interface FundingModalProps {
   isOpen: boolean;
@@ -320,12 +427,13 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {clientSecret ? (
-                <EmbeddedStripeForm 
-                  amount={amount}
-                  clientSecret={clientSecret}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                />
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' as const } }}>
+                  <ModalCheckoutForm 
+                    amount={amount}
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                  />
+                </Elements>
               ) : (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
@@ -456,7 +564,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               >
                 {creatingPayment ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Initializing Payment...
                   </>
                 ) : (
