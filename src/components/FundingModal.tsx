@@ -9,23 +9,23 @@ import { CongratulationsPage } from './CongratulationsPage';
 import { useAuth } from './auth/AuthProvider';
 import { Loader2 } from 'lucide-react';
 
-const stripePromise = loadStripe('pk_live_51S2OIF3aD6OJYuckOW7RhBZ9xG0fHNkFSKCYVeRBjFMeusz0P9tSIvRyja7LY55HHhuhrgc5UZR6v78SrM9CE25300XPf5I5z4')
+const stripePromise = loadStripe('pk_live_51S2OIF3aD6OJYuckOW7RhBZ9xG0fHNkFSKCYVeRBjFMeusz0P9tSIvRyja7LY55HHhuhrgc5UZR6v78SrM9CE25300XPf5I5z4');
 
 // Payment form component for the modal
 function ModalCheckoutForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [loading, setLoading] = useState(false)
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!stripe || !elements) {
-      onError('Stripe not loaded')
-      return
+      onError('Stripe not loaded');
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const { error } = await stripe.confirmPayment({
@@ -34,22 +34,22 @@ function ModalCheckoutForm({ amount, onSuccess, onError }: { amount: number, onS
           return_url: `${window.location.origin}/funding-success`,
         },
         redirect: 'if_required'
-      })
+      });
 
       if (error) {
-        onError(error.message || 'Payment failed')
+        onError(error.message || 'Payment failed');
       } else {
-        onSuccess({ success: true })
+        onSuccess({ success: true });
       }
     } catch (err) {
-      onError('Payment processing failed')
+      onError('Payment processing failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const processingFee = amount * 0.029 + 0.30
-  const totalCharge = amount + processingFee
+  const processingFee = amount * 0.029 + 0.30;
+  const totalCharge = amount + processingFee;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -111,7 +111,7 @@ function ModalCheckoutForm({ amount, onSuccess, onError }: { amount: number, onS
         )}
       </button>
     </form>
-  )
+  );
 }
 
 interface FundingModalProps {
@@ -338,24 +338,24 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handlePaymentSuccess = (result: any) => {
-    console.log('✅ Payment successful:', result)
+    console.log('✅ Payment successful:', result);
     setShowPaymentForm(false);
     setClientSecret(null);
     setError('');
-    onClose()
+    onClose();
     // Refresh the page to update account balance
     setTimeout(() => {
-      window.location.reload()
-    }, 1000)
-  }
+      window.location.reload();
+    }, 1000);
+  };
 
   const handlePaymentError = (error: string) => {
-    console.error('❌ Payment error:', error)
+    console.error('❌ Payment error:', error);
     setError(error);
     // Don't close the payment form - let user try again
     // setShowPaymentForm(false);
     // setClientSecret(null);
-  }
+  };
 
   const paymentMethods = [
     {
@@ -430,9 +430,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               <div className="mb-6">
                 <button
                   onClick={() => {
-                    setShowPaymentForm(false)
-                    setClientSecret(null)
-                    setShowFundingPage(true)
+                    setShowPaymentForm(false);
+                    setClientSecret(null);
+                    setShowFundingPage(true);
                   }}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
@@ -834,32 +834,50 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Cryptocurrency Payment</h3>
                 <p className="text-gray-600">
-                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$15</div>
+                  Select your preferred cryptocurrency to pay ${investmentAmount}
+                </p>
+              </div>
+
               {/* Cryptocurrency Selection */}
               <div className="mb-8">
                 <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
                 <div className="grid grid-cols-2 gap-4">
-                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                  <button
                     onClick={() => setSelectedCrypto('bitcoin')}
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                      selectedCrypto === 'bitcoin' 
                         ? 'border-navy-600 bg-navy-50' 
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                        ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                    <div className="text-3xl font-bold text-navy-600 mb-3">Ξ</div>
+                    }`}
+                  >
+                    <div className="text-3xl font-bold text-navy-600 mb-3">₿</div>
+                    <div className="font-medium text-gray-900">Bitcoin (BTC)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$15</div>
-                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$25</div>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSelectedCrypto('ethereum')}
                     className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'ethereum' 
                         ? 'border-navy-600 bg-navy-50' 
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                    }`}
+                  >
+                    <div className="text-3xl font-bold text-navy-600 mb-3">Ξ</div>
+                    <div className="font-medium text-gray-900">Ethereum (ETH)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$25</div>
-                        ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                  </button>
+                  
                   <button
                     onClick={() => setSelectedCrypto('usdt')}
-                    <div className="text-3xl font-bold text-navy-600 mb-3">₮</div>
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'usdt' 
+                        ? 'border-navy-600 bg-navy-50' 
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-3xl font-bold text-navy-600 mb-3">₮</div>
+                    <div className="font-medium text-gray-900">Tether (USDT)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$5</div>
                   </button>
                   
@@ -867,10 +885,16 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     onClick={() => setSelectedCrypto('solana')}
                     className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'solana' 
-                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$0.01</div>
+                        ? 'border-navy-600 bg-navy-50' 
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
                     <div className="text-3xl font-bold text-navy-600 mb-3">◎</div>
                     <div className="font-medium text-gray-900">Solana (SOL)</div>
                     <div className="text-sm text-gray-600 mt-2">Network fee: ~$0.01</div>
+                  </button>
+                </div>
+              </div>
 
               {/* Payment Address - Only show when crypto is selected */}
               {selectedCrypto && (
@@ -881,36 +905,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     {selectedCrypto === 'usdt' && 'USDT Payment Address (ERC-20)'}
                     {selectedCrypto === 'solana' && 'Solana Payment Address'}
                   </h4>
-                  
-                  {/* Amount to Send */}
-                  <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
-                    <div className="text-sm font-medium text-navy-900 mb-2">Amount to Send</div>
-                    <div className="text-2xl font-bold text-navy-900">
-                      {selectedCrypto === 'bitcoin' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
-                      {selectedCrypto === 'ethereum' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
-                      {selectedCrypto === 'usdt' && `${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT`}
-                      {selectedCrypto === 'solana' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      USD Value: ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  
-                  {/* Amount to Send */}
-                  <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
-                    <div className="text-sm font-medium text-navy-900 mb-2">Amount to Send</div>
-                    <div className="text-2xl font-bold text-navy-900">
-                      {selectedCrypto === 'bitcoin' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
-                      {selectedCrypto === 'ethereum' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
-                      {selectedCrypto === 'usdt' && `${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT`}
-                      {selectedCrypto === 'solana' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      USD Value: ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()}
-                    </div>
-                  </div>
-                  
                   
                   {/* Amount to Send */}
                   <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
@@ -937,17 +931,10 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                       <button
                         onClick={() => {
                           const address = selectedCrypto === 'bitcoin' ? 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' :
-      alert(`Payment address generated: ${invoice.payment_address}\nAmount: ${invoice.crypto_amount} ${cryptocurrency.toUpperCase()}`);
-      
-    } catch (error) {
-      console.error('❌ Crypto payment error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create crypto payment');
-    }
-  };
                                         selectedCrypto === 'ethereum' ? '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' :
                                         selectedCrypto === 'usdt' ? '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' :
-                                        '7xKXtg2CW87d97TXJLAuBjbTiSASaUvSMYQoQdu9ijSm'
-                          copyToClipboard(address, selectedCrypto)
+                                        '7xKXtg2CW87d97TXJLAuBjbTiSASaUvSMYQoQdu9ijSm';
+                          copyToClipboard(address, selectedCrypto);
                         }}
                         className="p-1 hover:bg-gray-100 rounded ml-2"
                       >
@@ -994,7 +981,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               <button
                 onClick={() => {
                   // In production, this would create the crypto invoice
-                  console.log('Creating crypto payment invoice for:', selectedCrypto, investmentAmount)
+                  console.log('Creating crypto payment invoice for:', selectedCrypto, investmentAmount);
                   onClose();
                 }}
                 disabled={!selectedCrypto}
