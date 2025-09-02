@@ -1,72 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import { Shield, Lock, CreditCard, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface EmbeddedStripeFormProps {
   amount: number
+  clientSecret: string
   onSuccess: (result: any) => void
   onError: (error: string) => void
 }
 
-export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStripeFormProps) {
+export function EmbeddedStripeForm({ amount, clientSecret, onSuccess, onError }: EmbeddedStripeFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [paymentReady, setPaymentReady] = useState(false)
-
-  // Create payment intent when component mounts
-  useEffect(() => {
-    const createPaymentIntent = async () => {
-      if (!user) return
-
-      try {
-        console.log('💳 Creating payment intent for amount:', amount)
-        
-        const supabaseUrl = 'https://upevugqarcvxnekzddeh.supabase.co'
-        const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-        
-        const { supabaseClient } = await import('../lib/supabase-client')
-        const { data: { session } } = await supabaseClient.auth.getSession()
-        
-        if (!session) {
-          throw new Error('Please sign in to continue')
-        }
-
-        const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': anonKey
-          },
-          body: JSON.stringify({
-            amount: amount * 100, // Convert to cents
-            currency: 'usd',
-            user_id: user.id
-          })
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error?.message || 'Failed to create payment intent')
-        }
-
-        const { client_secret } = await response.json()
-        setClientSecret(client_secret)
-        console.log('✅ Payment intent created successfully')
-        
-      } catch (error) {
-        console.error('❌ Payment intent creation failed:', error)
-        setError(error instanceof Error ? error.message : 'Failed to initialize payment')
-      }
-    }
-
-    createPaymentIntent()
-  }, [amount, user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,26 +57,11 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
 
     } catch (error) {
       console.error('❌ Payment failed:', error)
-      setError(error instanceof Error ? error.message : 'Payment failed')
-      onError(error instanceof Error ? error.message : 'Payment failed')
+      const errorMessage = error instanceof Error ? error.message : 'Payment failed'
+      setError(errorMessage)
+      onError(errorMessage)
       setLoading(false)
     }
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <div className="flex items-center space-x-2 mb-2">
-            <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-            <span className="font-medium text-blue-900">Initializing Secure Payment</span>
-          </div>
-          <p className="text-sm text-blue-700">
-            Setting up encrypted payment processing...
-          </p>
-        </div>
-      </div>
-    )
   }
 
   const processingFee = amount * 0.029 + 0.30

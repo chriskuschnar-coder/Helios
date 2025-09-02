@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield, TrendingUp } from 'lucide-react'
 import { StripeElementsProvider } from './StripeElementsProvider'
@@ -12,17 +12,19 @@ interface StripeCheckoutProps {
 
 export function StripeCheckout({ productId, className = '', customAmount }: StripeCheckoutProps) {
   const { user } = useAuth()
-  const [amount, setAmount] = useState(customAmount || 10000) // Default $10,000
+  const [amount, setAmount] = useState(customAmount || 10000)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [creatingPayment, setCreatingPayment] = useState(false)
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0
-    setAmount(Math.max(100, value)) // Minimum $100
+    setAmount(Math.max(100, value))
   }
 
-  const handleProceedToPayment = () => {
+  const createPaymentIntent = async () => {
     if (!user) {
       setError('Please sign in to continue')
       return
@@ -33,8 +35,49 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       return
     }
 
+    setCreatingPayment(true)
     setError('')
-    setShowPaymentForm(true)
+
+    try {
+      console.log('💳 Creating payment intent for amount:', amount)
+      
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Please sign in to continue')
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          amount: amount * 100, // Convert to cents
+          currency: 'usd',
+          user_id: user.id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+      }
+
+      const { client_secret } = await response.json()
+      setClientSecret(client_secret)
+      setShowPaymentForm(true)
+      console.log('✅ Payment intent created successfully')
+      
+    } catch (error) {
+      console.error('❌ Payment intent creation failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to initialize payment')
+    } finally {
+      setCreatingPayment(false)
+    }
   }
 
   const handlePaymentSuccess = (result: any) => {
@@ -51,6 +94,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     console.error('❌ Payment error:', error)
     setError(error)
     setShowPaymentForm(false)
+    setClientSecret(null)
   }
 
   if (success) {
@@ -72,11 +116,14 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     )
   }
 
-  if (showPaymentForm) {
+  if (showPaymentForm && clientSecret) {
     return (
       <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
         <button
-          onClick={() => setShowPaymentForm(false)}
+          onClick={() => {
+            setShowPaymentForm(false)
+            setClientSecret(null)
+          }}
           className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-6"
         >
           ← Back to Investment Amount
@@ -92,9 +139,10 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           </div>
         </div>
 
-        <StripeElementsProvider>
+        <StripeElementsProvider clientSecret={clientSecret}>
           <EmbeddedStripeForm 
             amount={amount}
+            clientSecret={clientSecret}
             onSuccess={handlePaymentSuccess}
             onError={handlePaymentError}
           />
@@ -155,7 +203,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           <span className="font-medium text-blue-900">Secure Payment Processing</span>
         </div>
         <p className="text-sm text-blue-700">
-          Payments are processed securely through Stripe. The payment form will appear on this page.
+          Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
         </p>
       </div>
 
@@ -169,12 +217,21 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       )}
 
       <button
-        onClick={handleProceedToPayment}
-        disabled={!user || amount < 100}
-        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors text-lg"
+        onClick={createPaymentIntent}
+        disabled={!user || amount < 100 || creatingPayment}
+        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors text-lg flex items-center justify-center"
       >
-        <CreditCard className="h-5 w-5 mr-2 inline" />
-        Invest ${amount.toLocaleString()} Securely
+        {creatingPayment ? (
+          <>
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            Initializing Secure Payment...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-5 w-5 mr-2" />
+            Invest ${amount.toLocaleString()} Securely
+          </>
+        )}
       </button>
 
       {!user && (

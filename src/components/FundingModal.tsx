@@ -29,6 +29,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [showCryptoPayment, setShowCryptoPayment] = useState(false);
   const [wireInstructions, setWireInstructions] = useState(null);
   const [copiedField, setCopiedField] = useState('');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [creatingPayment, setCreatingPayment] = useState(false);
 
   if (!isOpen) return null;
 
@@ -108,8 +110,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       
       // Route to different payment flows based on method
       if (selectedPaymentMethod === 'card') {
-        setShowFundingPage(false);
-        setShowPaymentForm(true);
+        createPaymentIntent(numericAmount);
       } else if (selectedPaymentMethod === 'wire') {
         generateWireInstructions(numericAmount);
         setShowFundingPage(false);
@@ -121,6 +122,57 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         setShowFundingPage(false);
         setShowCryptoPayment(true);
       }
+    }
+  };
+
+  const createPaymentIntent = async (paymentAmount: number) => {
+    if (!user) {
+      setError('Please sign in to continue');
+      return;
+    }
+
+    setCreatingPayment(true);
+
+    try {
+      console.log('💳 Creating payment intent for amount:', paymentAmount);
+      
+      const { supabaseClient } = await import('../lib/supabase-client');
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Please sign in to continue');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          amount: paymentAmount * 100, // Convert to cents
+          currency: 'usd',
+          user_id: user.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to create payment intent');
+      }
+
+      const { client_secret } = await response.json();
+      setClientSecret(client_secret);
+      setShowFundingPage(false);
+      setShowPaymentForm(true);
+      console.log('✅ Payment intent created successfully');
+      
+    } catch (error) {
+      console.error('❌ Payment intent creation failed:', error);
+      setError(error instanceof Error ? error.message : 'Failed to initialize payment');
+    } finally {
+      setCreatingPayment(false);
     }
   };
 
@@ -149,6 +201,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handleBackToFunding = () => {
     setShowPaymentForm(false);
+    setClientSecret(null);
     setShowWireInstructions(false);
     setShowBankTransfer(false);
     setShowCryptoPayment(false);
@@ -157,6 +210,8 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handlePaymentSuccess = (result: any) => {
     console.log('✅ Payment successful:', result)
+    setShowPaymentForm(false);
+    setClientSecret(null);
     onClose()
     // Refresh the page to update account balance
     setTimeout(() => {
@@ -166,8 +221,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handlePaymentError = (error: string) => {
     console.error('❌ Payment error:', error)
-    setError(error)
-    setShowPaymentForm(false)
+    setError(error);
+    setShowPaymentForm(false);
+    setClientSecret(null);
   }
 
   const paymentMethods = [
@@ -259,24 +315,21 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
               </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Shield className="w-4 h-4 text-green-600" />
-                  <span>SIPC Protected up to $500,000</span>
+              {clientSecret ? (
+                <StripeElementsProvider clientSecret={clientSecret}>
+                  <EmbeddedStripeForm 
+                    amount={amount}
+                    clientSecret={clientSecret}
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                  />
+                </StripeElementsProvider>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Initializing secure payment...</p>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Award className="w-4 h-4 text-green-600" />
-                  <span>SEC Registered Investment Advisor</span>
-                </div>
-              </div>
-
-              <StripeElementsProvider>
-                <EmbeddedStripeForm 
-                  amount={amount}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                />
-              </StripeElementsProvider>
+              )}
             </div>
           ) : showFundingPage ? (
             <div>
@@ -396,11 +449,20 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               {/* Proceed Button */}
               <button
                 onClick={handleProceedWithPayment}
-                disabled={!investmentAmount || !selectedPaymentMethod}
+                disabled={!investmentAmount || !selectedPaymentMethod || creatingPayment}
                 className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center"
               >
-                Proceed to Payment
-                <ArrowRight className="w-5 h-5 ml-2" />
+                {creatingPayment ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Initializing Payment...
+                  </>
+                ) : (
+                  <>
+                    Proceed to Payment
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                )}
               </button>
             </div>
           ) : showWireInstructions ? (
