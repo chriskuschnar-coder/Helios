@@ -29,14 +29,51 @@ export function InvestorDashboard() {
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
 
-  const portfolioData = {
-    totalValue: account?.balance || 0,
-    monthlyReturn: 2.4,
-    yearlyReturn: 12.8,
-    totalReturn: 45.2,
-    dailyPnL: 18500,
-    dailyPnLPct: 0.76
+  // Calculate real P&L based on account data
+  const calculatePortfolioData = () => {
+    const currentBalance = account?.balance || 0
+    const totalDeposits = account?.total_deposits || 0
+    const totalWithdrawals = account?.total_withdrawals || 0
+    
+    // Net deposits (what user actually put in)
+    const netDeposits = totalDeposits - totalWithdrawals
+    
+    // Total P&L is current balance minus net deposits
+    const totalPnL = currentBalance - netDeposits
+    
+    // If no deposits yet, everything should be zero
+    if (netDeposits === 0) {
+      return {
+        totalValue: 0,
+        monthlyReturn: 0,
+        yearlyReturn: 0,
+        totalReturn: 0,
+        dailyPnL: 0,
+        dailyPnLPct: 0
+      }
+    }
+    
+    // Calculate percentages based on net deposits
+    const totalReturnPct = (totalPnL / netDeposits) * 100
+    
+    // For demo purposes, assume daily P&L is 1/365th of total return
+    const dailyPnL = totalPnL / 365
+    const dailyPnLPct = totalReturnPct / 365
+    
+    // YTD return (assume account opened this year)
+    const ytdReturn = totalReturnPct
+    
+    return {
+      totalValue: currentBalance,
+      monthlyReturn: totalReturnPct / 12, // Monthly average
+      yearlyReturn: ytdReturn,
+      totalReturn: totalReturnPct,
+      dailyPnL: dailyPnL,
+      dailyPnLPct: dailyPnLPct
+    }
   }
+
+  const portfolioData = calculatePortfolioData()
 
   const holdings = [
     { name: 'Alpha Fund', allocation: 65, value: (account?.balance || 0) * 0.65, return: 14.2, risk: 'Medium' },

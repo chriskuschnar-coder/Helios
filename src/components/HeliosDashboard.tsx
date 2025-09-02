@@ -75,16 +75,25 @@ export function HeliosDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
 
   // Mock data that matches the Python version exactly
-  const mockData: DashboardData = {
+  const generateMockData = (): DashboardData => {
+    const currentBalance = account?.balance || 0
+    const totalDeposits = account?.total_deposits || 0
+    const netDeposits = totalDeposits - (account?.total_withdrawals || 0)
+    
+    // Calculate real P&L
+    const totalPnL = currentBalance - netDeposits
+    const dailyPnL = netDeposits > 0 ? totalPnL / 365 : 0
+    
+    return {
     account: {
-      balance: account?.balance || 106010.00,
-      equity: (account?.balance || 106010.00) + 5.177,
+      balance: currentBalance,
+      equity: currentBalance + (netDeposits > 0 ? 5.177 : 0),
       margin: 0,
-      free_margin: account?.balance || 106010.00,
-      profit: 50.40,
-      initial_balance: 10000.00
+      free_margin: currentBalance,
+      profit: netDeposits > 0 ? 50.40 : 0,
+      initial_balance: netDeposits
     },
-    positions: [
+    positions: netDeposits > 0 ? [
       {
         ticket: 'BTC001',
         symbol: 'BTCUSD',
@@ -109,34 +118,34 @@ export function HeliosDashboard() {
         profit_pct: 0.25,
         time: '13:45:12'
       }
-    ],
+    ] : [],
     metrics: {
-      win_rate: 76.4,
-      profit_factor: 3.40,
-      sharpe_ratio: 2.84,
-      max_drawdown: 4.2,
-      avg_win: 285.50,
-      avg_loss: 142.30,
-      sortino_ratio: 3.12,
-      calmar_ratio: 2.89,
-      information_ratio: 1.67,
-      total_trades: 847
+      win_rate: netDeposits > 0 ? 76.4 : 0,
+      profit_factor: netDeposits > 0 ? 3.40 : 0,
+      sharpe_ratio: netDeposits > 0 ? 2.84 : 0,
+      max_drawdown: netDeposits > 0 ? 4.2 : 0,
+      avg_win: netDeposits > 0 ? 285.50 : 0,
+      avg_loss: netDeposits > 0 ? 142.30 : 0,
+      sortino_ratio: netDeposits > 0 ? 3.12 : 0,
+      calmar_ratio: netDeposits > 0 ? 2.89 : 0,
+      information_ratio: netDeposits > 0 ? 1.67 : 0,
+      total_trades: netDeposits > 0 ? 847 : 0
     },
     risk_metrics: {
-      var_daily: 1250.00,
-      var_weekly: 2800.00,
-      var_monthly: 5600.00,
-      leverage: 2.4,
-      exposure_net: 33000.00,
-      position_concentration: 15.8
+      var_daily: netDeposits > 0 ? 1250.00 : 0,
+      var_weekly: netDeposits > 0 ? 2800.00 : 0,
+      var_monthly: netDeposits > 0 ? 5600.00 : 0,
+      leverage: netDeposits > 0 ? 2.4 : 0,
+      exposure_net: netDeposits > 0 ? 33000.00 : 0,
+      position_concentration: netDeposits > 0 ? 15.8 : 0
     },
     execution_metrics: {
-      avg_slippage: 0.0012,
-      fill_rate: 98.5,
-      vwap_performance: 0.15,
-      execution_cost: 0.0025
+      avg_slippage: netDeposits > 0 ? 0.0012 : 0,
+      fill_rate: netDeposits > 0 ? 98.5 : 0,
+      vwap_performance: netDeposits > 0 ? 0.15 : 0,
+      execution_cost: netDeposits > 0 ? 0.0025 : 0
     },
-    active_signals: [
+    active_signals: netDeposits > 0 ? [
       {
         time: new Date().toLocaleTimeString(),
         symbol: 'BTCUSDT',
@@ -151,16 +160,17 @@ export function HeliosDashboard() {
         strategy: 'Mean Reversion',
         confidence: 72
       }
-    ],
+    ] : [],
     chart_data: {
       timestamps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      balance: [100000, 101000, 102500, 103200, 104800, 105200, 106000, 105800, 106010, 106010],
-      equity: [100000, 101000, 102500, 103200, 104800, 105200, 106000, 105800, 106015, 106015]
+      balance: netDeposits > 0 ? [netDeposits, netDeposits * 1.01, netDeposits * 1.025, netDeposits * 1.032, netDeposits * 1.048, netDeposits * 1.052, netDeposits * 1.06, netDeposits * 1.058, currentBalance, currentBalance] : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      equity: netDeposits > 0 ? [netDeposits, netDeposits * 1.01, netDeposits * 1.025, netDeposits * 1.032, netDeposits * 1.048, netDeposits * 1.052, netDeposits * 1.06, netDeposits * 1.058, currentBalance + 5, currentBalance + 5] : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
     }
   }
 
   useEffect(() => {
-    setData(mockData)
+    setData(generateMockData())
   }, [account])
 
   const openFunding = (amount: number | null = null) => {

@@ -11,8 +11,16 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const { account } = useAuth()
   
   const currentValue = account?.balance || 0
-  const dailyChange = 1247.18
-  const dailyChangePct = 5.28
+  const totalDeposits = account?.total_deposits || 0
+  const totalWithdrawals = account?.total_withdrawals || 0
+  const netDeposits = totalDeposits - totalWithdrawals
+  
+  // Calculate real P&L
+  const totalPnL = currentValue - netDeposits
+  
+  // Daily P&L (for demo, assume 1/365th of total P&L)
+  const dailyChange = netDeposits > 0 ? totalPnL / 365 : 0
+  const dailyChangePct = netDeposits > 0 ? (totalPnL / netDeposits * 100) / 365 : 0
   const isPositive = dailyChange >= 0
 
   return (
