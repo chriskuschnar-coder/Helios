@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const paymentIntentData = new URLSearchParams({
       amount: amount.toString(),
       currency: currency,
-      'payment_method_types[]': 'card',
+      'automatic_payment_methods[enabled]': 'true',
       'metadata[user_id]': user_id || 'anonymous',
       'metadata[purpose]': 'hedge_fund_investment',
       'metadata[investment_type]': 'capital_contribution',

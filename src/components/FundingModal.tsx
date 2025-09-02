@@ -446,11 +446,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {clientSecret ? (
-                <Elements stripe={stripePromise} options={{ 
-                  clientSecret, 
-                  appearance: { theme: 'stripe' as const },
-                  paymentMethodTypes: ['card']
-                }}>
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' as const } }}>
                   <ModalCheckoutForm 
                     amount={amount}
                     onSuccess={handlePaymentSuccess}
