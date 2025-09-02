@@ -22,11 +22,10 @@ Deno.serve(async (req) => {
       throw new Error('Minimum amount is $1.00 (100 cents)')
     }
 
-    // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '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'
-    if (!stripeSecretKey) {
-      throw new Error('Stripe secret key not configured')
-    }
+    // Use your live Stripe secret key
+    const stripeSecretKey = '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'
+    
+    console.log('🔍 Using LIVE Stripe key for payment intent')
 
     // Create Stripe payment intent
     const stripeResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
@@ -54,7 +53,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentIntent = await stripeResponse.json()
-    console.log('✅ Payment intent created successfully:', paymentIntent.id)
+    console.log('✅ LIVE Payment intent created successfully:', paymentIntent.id)
 
     // Create payment record in database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

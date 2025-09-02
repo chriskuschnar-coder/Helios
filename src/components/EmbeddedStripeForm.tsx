@@ -26,8 +26,8 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
       try {
         console.log('💳 Creating payment intent for amount:', amount)
         
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+        const supabaseUrl = 'https://upevugqarcvxnekzddeh.supabase.co'
+        const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
         
         const { supabaseClient } = await import('../lib/supabase-client')
         const { data: { session } } = await supabaseClient.auth.getSession()
@@ -108,6 +108,7 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
     } catch (error) {
       console.error('❌ Payment failed:', error)
       setError(error instanceof Error ? error.message : 'Payment failed')
+      onError(error instanceof Error ? error.message : 'Payment failed')
       setLoading(false)
     }
   }
@@ -133,23 +134,28 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
         <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Payment Processing</span>
-          <Lock className="h-4 w-4 text-blue-600" />
+          <Shield className="h-5 w-5 text-green-600" />
+          <span className="font-medium text-green-900">Live Payment Processing</span>
+          <Lock className="h-4 w-4 text-green-600" />
         </div>
-        <p className="text-sm text-blue-700">
-          Your payment information is encrypted and processed securely by Stripe. We never store your card details.
+        <p className="text-sm text-green-700">
+          <strong>LIVE MODE:</strong> Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
         </p>
       </div>
 
-      {/* Payment Element */}
+      {/* Stripe Payment Element - This is the embedded form */}
       <div className="space-y-4">
         <PaymentElement 
           onReady={() => setPaymentReady(true)}
           options={{
-            layout: 'tabs'
+            layout: 'tabs',
+            defaultValues: {
+              billingDetails: {
+                email: user?.email
+              }
+            }
           }}
         />
       </div>
@@ -184,7 +190,7 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
       <button
         type="submit"
         disabled={loading || !stripe || !paymentReady}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center text-lg"
+        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center text-lg"
       >
         {loading ? (
           <>
@@ -198,16 +204,6 @@ export function EmbeddedStripeForm({ amount, onSuccess, onError }: EmbeddedStrip
           </>
         )}
       </button>
-      
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <div className="flex items-center space-x-2 mb-1">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <span className="font-medium text-green-900 text-sm">Live Payment Processing</span>
-        </div>
-        <p className="text-xs text-yellow-700">
-          <strong>Live Mode:</strong> Real payments will be processed. Your card will be charged.
-        </p>
-      </div>
     </form>
   )
 }
