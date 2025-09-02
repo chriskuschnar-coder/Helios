@@ -144,8 +144,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handleAmountSelect = (selectedAmount: number) => {
     setAmount(selectedAmount);
+    setInvestmentAmount(selectedAmount.toLocaleString());
     setShowEmptyState(false);
-    setShowPaymentForm(true);
+    setShowFundingPage(true);
   };
 
   const handleProceedToPayment = () => {
@@ -205,6 +206,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
   const handlePresetAmountSelect = (amount: number) => {
     setInvestmentAmount(amount.toLocaleString());
+    setAmount(amount);
   };
 
   const handlePaymentMethodSelect = (methodId: string) => {
