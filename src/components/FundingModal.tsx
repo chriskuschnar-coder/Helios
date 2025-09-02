@@ -298,7 +298,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             <div>
               <div className="mb-6">
                 <button
-                  onClick={handleBackToFunding}
+                  onClick={() => {
+                    setShowPaymentForm(false)
+                    setClientSecret(null)
+                    setShowFundingPage(true)
+                  }}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
                   ← Back to Investment Amount
@@ -316,14 +320,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {clientSecret ? (
-                <StripeElementsProvider clientSecret={clientSecret}>
-                  <EmbeddedStripeForm 
-                    amount={amount}
-                    clientSecret={clientSecret}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                  />
-                </StripeElementsProvider>
+                <EmbeddedStripeForm 
+                  amount={amount}
+                  clientSecret={clientSecret}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
               ) : (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>

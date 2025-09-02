@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield, TrendingUp } from 'lucide-react'
-import { StripeElementsProvider } from './StripeElementsProvider'
 import { EmbeddedStripeForm } from './EmbeddedStripeForm'
 
 interface StripeCheckoutProps {
@@ -48,6 +47,8 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         throw new Error('Please sign in to continue')
       }
 
+      console.log('📡 Calling create-payment-intent function...')
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
@@ -62,13 +63,38 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         })
       })
 
+      console.log('📊 Response status:', response.status)
+      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to create payment intent')
+        const errorText = await response.text()
+        console.error('❌ Response error:', errorText)
+        
+        // Try to parse as JSON, fallback to text
+        let errorMessage = 'Failed to initialize payment'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error?.message || errorMessage
+        } catch {
+          // If it's HTML (like an error page), show a generic message
+          if (errorText.includes('<!DOCTYPE') || errorText.includes('<html>')) {
+            errorMessage = 'Payment service temporarily unavailable. Please try again.'
+          } else {
+            errorMessage = errorText.substring(0, 100)
+          }
+        }
+        
+        throw new Error(errorMessage)
       }
 
-      const { client_secret } = await response.json()
-      setClientSecret(client_secret)
+      const responseData = await response.json()
+      console.log('✅ Payment intent response:', responseData)
+
+      if (!responseData.client_secret) {
+        throw new Error('No client secret received from payment service')
+      }
+
+      setClientSecret(responseData.client_secret)
       setShowPaymentForm(true)
       console.log('✅ Payment intent created successfully')
       
@@ -97,6 +123,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     setClientSecret(null)
   }
 
+  const handleBackToAmount = () => {
+    setShowPaymentForm(false)
+    setClientSecret(null)
+    setError('')
+  }
+
   if (success) {
     return (
       <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
@@ -120,10 +152,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
     return (
       <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
         <button
-          onClick={() => {
-            setShowPaymentForm(false)
-            setClientSecret(null)
-          }}
+          onClick={handleBackToAmount}
           className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-6"
         >
           ← Back to Investment Amount
@@ -139,14 +168,12 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           </div>
         </div>
 
-        <StripeElementsProvider clientSecret={clientSecret}>
-          <EmbeddedStripeForm 
-            amount={amount}
-            clientSecret={clientSecret}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-          />
-        </StripeElementsProvider>
+        <EmbeddedStripeForm 
+          amount={amount}
+          clientSecret={clientSecret}
+          onSuccess={handlePaymentSuccess}
+          onError={handlePaymentError}
+        />
       </div>
     )
   }
@@ -197,13 +224,13 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       </div>
 
       {/* Security Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Payment Processing</span>
+          <Shield className="h-5 w-5 text-green-600" />
+          <span className="font-medium text-green-900">Live Payment Processing</span>
         </div>
-        <p className="text-sm text-blue-700">
-          Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
+        <p className="text-sm text-green-700">
+          <strong>LIVE MODE:</strong> Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
         </p>
       </div>
 

@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import { Shield, Lock, CreditCard, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+
+const stripePromise = loadStripe('pk_live_51S2OIF3aD6OJYuckOW7RhBZ9xG0fHNkFSKCYVeRBjFMeusz0P9tSIvRyja7LY55HHhuhrgc5UZR6v78SrM9CE25300XPf5I5z4')
 
 interface EmbeddedStripeFormProps {
   amount: number
@@ -10,7 +14,7 @@ interface EmbeddedStripeFormProps {
   onError: (error: string) => void
 }
 
-export function EmbeddedStripeForm({ amount, clientSecret, onSuccess, onError }: EmbeddedStripeFormProps) {
+function StripePaymentForm({ amount, clientSecret, onSuccess, onError }: EmbeddedStripeFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const { user } = useAuth()
@@ -140,5 +144,34 @@ export function EmbeddedStripeForm({ amount, clientSecret, onSuccess, onError }:
         )}
       </button>
     </form>
+  )
+}
+
+export function EmbeddedStripeForm({ amount, clientSecret, onSuccess, onError }: EmbeddedStripeFormProps) {
+  const options = {
+    clientSecret,
+    appearance: {
+      theme: 'stripe' as const,
+      variables: {
+        colorPrimary: '#1e40af',
+        colorBackground: '#ffffff',
+        colorText: '#1f2937',
+        colorDanger: '#dc2626',
+        fontFamily: 'system-ui, sans-serif',
+        spacingUnit: '4px',
+        borderRadius: '8px',
+      },
+    },
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={options}>
+      <StripePaymentForm 
+        amount={amount}
+        clientSecret={clientSecret}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
+    </Elements>
   )
 }
