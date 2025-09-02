@@ -334,14 +334,6 @@ export function InvestorDashboard() {
               </div>
             )}
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-2">No transactions yet</div>
-                <div className="text-sm text-gray-500">
-                  Transactions will appear here after funding and trading activity
-                </div>
-              </div>
-            )}
           </div>
         )}
 
