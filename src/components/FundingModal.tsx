@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
-import { StripeCardForm } from './StripeCardForm';
+import { StripeElementsProvider } from './StripeElementsProvider';
+import { EmbeddedStripeForm } from './EmbeddedStripeForm';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
@@ -15,7 +16,7 @@ interface FundingModalProps {
 
 export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
   const { account, user, markDocumentsCompleted } = useAuth();
-  const [amount, setAmount] = useState(prefilledAmount || 1000);
+  const [amount, setAmount] = useState(prefilledAmount || 10000);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
   const [showDocumentSigning, setShowDocumentSigning] = useState(false);
@@ -154,6 +155,21 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     setShowFundingPage(true);
   };
 
+  const handlePaymentSuccess = (result: any) => {
+    console.log('✅ Payment successful:', result)
+    onClose()
+    // Refresh the page to update account balance
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+
+  const handlePaymentError = (error: string) => {
+    console.error('❌ Payment error:', error)
+    setError(error)
+    setShowPaymentForm(false)
+  }
+
   const paymentMethods = [
     {
       id: 'card',
@@ -196,6 +212,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
              showDocumentSigning ? 'Complete Onboarding Documents' : 
              showCongratulations ? 'Welcome to Global Markets!' :
              showFundingPage ? 'Investment Amount' :
+             showPaymentForm ? 'Secure Payment' :
              'Investment Amount'}
           </h2>
           <button
@@ -221,6 +238,46 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             <CongratulationsPage 
               onContinueToPayment={handleContinueToPayment}
             />
+          ) : showPaymentForm ? (
+            <div>
+              <div className="mb-6">
+                <button
+                  onClick={handleBackToFunding}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  ← Back to Investment Amount
+                </button>
+              </div>
+              
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900">Investment Amount</h3>
+                    <p className="text-blue-700">${amount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Shield className="w-4 h-4 text-green-600" />
+                  <span>SIPC Protected up to $500,000</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Award className="w-4 h-4 text-green-600" />
+                  <span>SEC Registered Investment Advisor</span>
+                </div>
+              </div>
+
+              <StripeElementsProvider>
+                <EmbeddedStripeForm 
+                  amount={amount}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </StripeElementsProvider>
+            </div>
           ) : showFundingPage ? (
             <div>
               {/* Back Button */}
@@ -345,52 +402,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 Proceed to Payment
                 <ArrowRight className="w-5 h-5 ml-2" />
               </button>
-            </div>
-          ) : showPaymentForm ? (
-            <div>
-              <div className="mb-6">
-                <button
-                  onClick={handleBackToFunding}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  ← Back to Investment Amount
-                </button>
-              </div>
-              
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <h3 className="font-semibold text-blue-900">Investment Amount</h3>
-                    <p className="text-blue-700">${amount.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Shield className="w-4 h-4 text-green-600" />
-                  <span>SIPC Protected up to $500,000</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Award className="w-4 h-4 text-green-600" />
-                  <span>SEC Registered Investment Advisor</span>
-                </div>
-              </div>
-
-              <StripeCardForm 
-                amount={amount}
-                onSuccess={(result) => {
-                  console.log('✅ Payment successful:', result)
-                  onClose();
-                  // Optionally refresh account data
-                  window.location.reload();
-                }}
-                onError={(error) => {
-                  console.error('Payment error:', error);
-                  // Keep modal open to show error
-                }}
-              />
             </div>
           ) : showWireInstructions ? (
             <div>

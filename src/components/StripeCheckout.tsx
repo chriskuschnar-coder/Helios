@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
-import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield } from 'lucide-react'
+import { CreditCard, Loader2, CheckCircle, AlertCircle, DollarSign, Shield, TrendingUp } from 'lucide-react'
 import { StripeElementsProvider } from './StripeElementsProvider'
 import { EmbeddedStripeForm } from './EmbeddedStripeForm'
 
@@ -12,7 +12,7 @@ interface StripeCheckoutProps {
 
 export function StripeCheckout({ productId, className = '', customAmount }: StripeCheckoutProps) {
   const { user } = useAuth()
-  const [amount, setAmount] = useState(customAmount || 10000) // Default $100
+  const [amount, setAmount] = useState(customAmount || 10000) // Default $10,000
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -110,7 +110,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           <DollarSign className="h-8 w-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Investment Amount</h3>
-        <p className="text-gray-600">Make an investment in our hedge fund</p>
+        <p className="text-gray-600">Make an investment in our hedge fund with flexible amounts starting from $100</p>
       </div>
 
       {/* Amount Input */}
@@ -139,7 +139,9 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           <button
             key={quickAmount}
             onClick={() => setAmount(quickAmount)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:border-navy-500 hover:bg-navy-50 transition-colors"
+            className={`px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:border-navy-500 hover:bg-navy-50 transition-colors ${
+              amount === quickAmount ? 'border-navy-500 bg-navy-50' : ''
+            }`}
           >
             ${quickAmount.toLocaleString()}
           </button>
@@ -172,7 +174,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors text-lg"
       >
         <CreditCard className="h-5 w-5 mr-2 inline" />
-        Proceed to Secure Payment - ${amount.toLocaleString()}
+        Invest ${amount.toLocaleString()} Securely
       </button>
 
       {!user && (
