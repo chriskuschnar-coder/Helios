@@ -338,6 +338,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     console.log('✅ Payment successful:', result)
     setShowPaymentForm(false);
     setClientSecret(null);
+    setError('');
     onClose()
     // Refresh the page to update account balance
     setTimeout(() => {
@@ -348,8 +349,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const handlePaymentError = (error: string) => {
     console.error('❌ Payment error:', error)
     setError(error);
-    setShowPaymentForm(false);
-    setClientSecret(null);
+    // Don't close the payment form - let user try again
+    // setShowPaymentForm(false);
+    // setClientSecret(null);
   }
 
   const paymentMethods = [
@@ -447,6 +449,14 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
               {clientSecret ? (
                 <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' as const } }}>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <span className="text-red-900 font-medium">{error}</span>
+                      </div>
+                    </div>
+                  )}
                   <ModalCheckoutForm 
                     amount={amount}
                     onSuccess={handlePaymentSuccess}

@@ -228,8 +228,9 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
   const handlePaymentError = (error: string) => {
     console.error('❌ Payment error:', error)
     setError(error)
-    setShowPaymentForm(false)
-    setClientSecret(null)
+    // Don't close the payment form - let user try again
+    // setShowPaymentForm(false)
+    // setClientSecret(null)
   }
 
   const handleBackToAmount = () => {
@@ -294,6 +295,14 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         </div>
 
         <Elements stripe={stripePromise} options={options}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <span className="text-red-900 font-medium">{error}</span>
+              </div>
+            </div>
+          )}
           <CheckoutForm 
             amount={amount}
             onSuccess={handlePaymentSuccess}
