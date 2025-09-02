@@ -538,15 +538,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                       key={preset}
                       onClick={() => handlePresetAmountSelect(preset)}
                       className="py-4 px-4 border-2 border-gray-200 rounded-xl text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
-                    >
-                      ${preset.toLocaleString()}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setInvestmentAmount('100000')}
-                    className="py-4 px-4 bg-yellow-500 text-white font-semibold rounded-xl hover:bg-yellow-600 transition-all"
-                  >
-                    $100,000+
+                    <div className="flex flex-col items-center">
+                      <div className="text-3xl font-bold text-navy-600 mb-3">{crypto.symbol}</div>
+                      <div className="font-medium text-gray-900">{crypto.name} ({crypto.id})</div>
+                      <div className="text-sm text-gray-600 mt-2">Network fee: {crypto.networkFee}</div>
+                      <div className="text-sm text-navy-600 font-medium mt-2">
+                        ≈ {crypto.id === 'USDT' ? 
+                          amount.toLocaleString() : 
+                          (amount / crypto.rate).toFixed(crypto.id === 'BTC' ? 6 : 4)
+                        } {crypto.id}
+                      </div>
+                    </div>
                   </button>
                 </div>
               </div>
