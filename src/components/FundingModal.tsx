@@ -841,82 +841,85 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               {/* Cryptocurrency Selection */}
               <div className="mb-8">
                 <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setSelectedCrypto('bitcoin')}
-                    className={`border-2 rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'bitcoin' 
                         ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-300 bg-gray-50 hover:border-navy-300 hover:bg-navy-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-navy-600 mb-2">₿</div>
+                    <div className="text-3xl font-bold text-navy-600 mb-3">₿</div>
                     <div className="font-medium text-gray-900">Bitcoin (BTC)</div>
-                    <div className="text-sm text-gray-600">Network fee: ~$15</div>
-                    <div className="text-sm text-navy-600 font-medium mt-2">
-                      ≈ {(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC
-                    </div>
+                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$15</div>
                   </button>
                   
                   <button
                     onClick={() => setSelectedCrypto('ethereum')}
-                    className={`border-2 rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'ethereum' 
                         ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-300 bg-gray-50 hover:border-navy-300 hover:bg-navy-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-navy-600 mb-2">Ξ</div>
+                    <div className="text-3xl font-bold text-navy-600 mb-3">Ξ</div>
                     <div className="font-medium text-gray-900">Ethereum (ETH)</div>
-                    <div className="text-sm text-gray-600">Network fee: ~$25</div>
-                    <div className="text-sm text-navy-600 font-medium mt-2">
-                      ≈ {(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH
-                    </div>
+                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$25</div>
                   </button>
                   
                   <button
                     onClick={() => setSelectedCrypto('usdt')}
-                    className={`border-2 rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'usdt' 
                         ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-300 bg-gray-50 hover:border-navy-300 hover:bg-navy-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-navy-600 mb-2">₮</div>
+                    <div className="text-3xl font-bold text-navy-600 mb-3">₮</div>
                     <div className="font-medium text-gray-900">Tether (USDT)</div>
-                    <div className="text-sm text-gray-600">Network fee: ~$5</div>
-                    <div className="text-sm text-navy-600 font-medium mt-2">
-                      ≈ {parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT
-                    </div>
+                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$5</div>
                   </button>
                   
                   <button
                     onClick={() => setSelectedCrypto('solana')}
-                    className={`border-2 rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    className={`border-2 rounded-lg p-6 text-center transition-colors cursor-pointer ${
                       selectedCrypto === 'solana' 
                         ? 'border-navy-600 bg-navy-50' 
-                        : 'border-gray-300 bg-gray-50 hover:border-navy-300 hover:bg-navy-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-navy-600 mb-2">◎</div>
+                    <div className="text-3xl font-bold text-navy-600 mb-3">◎</div>
                     <div className="font-medium text-gray-900">Solana (SOL)</div>
-                    <div className="text-sm text-gray-600">Network fee: ~$0.01</div>
-                    <div className="text-sm text-navy-600 font-medium mt-2">
-                      ≈ {(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL
-                    </div>
+                    <div className="text-sm text-gray-600 mt-2">Network fee: ~$0.01</div>
                   </button>
                 </div>
               </div>
 
               {/* Payment Address - Only show when crypto is selected */}
               {selectedCrypto && (
-                <div className="bg-navy-50 border border-navy-200 rounded-lg p-4 mb-6">
+                <div className="bg-navy-50 border border-navy-200 rounded-lg p-6 mb-6">
                   <h4 className="font-medium text-navy-900 mb-3">
                     {selectedCrypto === 'bitcoin' && 'Bitcoin Payment Address'}
                     {selectedCrypto === 'ethereum' && 'Ethereum Payment Address'}
                     {selectedCrypto === 'usdt' && 'USDT Payment Address (ERC-20)'}
                     {selectedCrypto === 'solana' && 'Solana Payment Address'}
                   </h4>
+                  
+                  {/* Amount to Send */}
+                  <div className="bg-white border border-navy-200 rounded-lg p-4 mb-4">
+                    <div className="text-sm font-medium text-navy-900 mb-2">Amount to Send</div>
+                    <div className="text-2xl font-bold text-navy-900">
+                      {selectedCrypto === 'bitcoin' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
+                      {selectedCrypto === 'ethereum' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
+                      {selectedCrypto === 'usdt' && `${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT`}
+                      {selectedCrypto === 'solana' && `${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      USD Value: ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()}
+                    </div>
+                  </div>
+                  
                   <div className="bg-white border rounded-lg p-3 mb-3">
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-sm break-all">
@@ -953,17 +956,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               {selectedCrypto && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                   <div className="flex items-center space-x-2 mb-2">
-                    <AlertCircle className="h-5 w-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Payment Instructions</span>
+                    <AlertCircle className="h-5 w-5 text-navy-600" />
+                    <span className="font-medium text-navy-900">Payment Instructions</span>
                   </div>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <ul className="text-sm text-gray-600 space-y-1">
                     <li>• <strong>Amount to send:</strong> 
                       {selectedCrypto === 'bitcoin' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
                       {selectedCrypto === 'ethereum' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
                       {selectedCrypto === 'usdt' && ` ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT (ERC-20 only)`}
                       {selectedCrypto === 'solana' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
                     </li>
-                    <li>• Include memo/note: <strong>{wireInstructions?.referenceCode}</strong></li>
+                    <li>• Reference code: <strong>GMC-{selectedCrypto.toUpperCase()}-{Date.now().toString().slice(-6)}</strong></li>
                     <li>• Confirmations required: 
                       {selectedCrypto === 'bitcoin' && ' 3 blocks (~30 minutes)'}
                       {selectedCrypto === 'ethereum' && ' 12 blocks (~3 minutes)'}
@@ -977,11 +980,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
               <button
                 onClick={() => {
-                  // Mark as completed and close modal
+                  // In production, this would create the crypto invoice
+                  console.log('Creating crypto payment invoice for:', selectedCrypto, investmentAmount)
                   onClose();
                 }}
                 disabled={!selectedCrypto}
-                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors"
+                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors"
               >
                 {selectedCrypto ? `I've Sent the ${selectedCrypto.charAt(0).toUpperCase() + selectedCrypto.slice(1)}` : 'Select Cryptocurrency First'}
               </button>
