@@ -229,10 +229,10 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
         <div className="flex items-center space-x-2 mb-1">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-900 text-sm">Test Mode</span>
+          <span className="font-medium text-yellow-900 text-sm">Live Payment Processing</span>
         </div>
         <p className="text-xs text-yellow-700">
-          <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future date and any 3-digit CVC
+          <strong>Live Mode:</strong> Real payments will be processed. Use your actual credit card.
         </p>
       </div>
     </form>

@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
 
     // Get Stripe secret key
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_test_51S25DbFhEA0kH7xcFTmmlwmgxFUdKDnPpLu4vxCbT5xBOpT8SpnvbfKaR7a9e7oRGkqt1vdMD05nrvmVFnqIwqJl00UilCHTRD'
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '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'
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured')
     }
