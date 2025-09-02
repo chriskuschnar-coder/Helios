@@ -222,12 +222,6 @@ export function InvestorDashboard() {
               <div className="font-serif text-2xl font-bold text-navy-900 mb-1">
                 ${account?.available_balance?.toLocaleString() || '0'}
               </div>
-              <button
-                onClick={() => openFunding()}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Add Capital
-              </button>
             </div>
           </div>
         )}
