@@ -236,18 +236,18 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
     }
   }
 
-  // Calculate performance metrics
+  // Calculate performance metrics - FIXED to start at zero for new accounts
   const initialValue = 250000
   const currentValue = currentBalance || 0
   
-  // Calculate if account has meaningful trading activity
-  const hasActivity = currentValue > 0 && currentValue !== initialValue
+  // Check if account has meaningful balance (more than $100)
+  const hasActivity = currentValue > 100
   
-  // For accounts with no balance or no trading activity, all metrics should be zero
+  // All metrics should be zero for accounts with no meaningful balance
   const totalReturn = hasActivity ? ((currentValue - initialValue) / initialValue * 100) : 0
   const outperformance = hasActivity ? totalReturn - 18.0 : 0 // vs S&P 500 benchmark
   
-  // Calculate metrics based on whether account has trading activity
+  // Performance metrics - all zero for new accounts
   const bestMonth = hasActivity ? 8.4 : 0
   const avgMonthly = hasActivity ? 2.8 : 0
   const volatility = hasActivity ? 8.7 : 0
@@ -268,11 +268,15 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
         <div className="flex items-center space-x-4">
           <div className="text-right">
             <div className="text-sm text-gray-600">Total Return</div>
-            <div className="font-bold text-green-600">+{totalReturn.toFixed(1)}%</div>
+            <div className={`font-bold ${totalReturn === 0 ? 'text-gray-400' : 'text-green-600'}`}>
+              {totalReturn === 0 ? '0.0%' : `+${totalReturn.toFixed(1)}%`}
+            </div>
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-600">vs Benchmark</div>
-            <div className="font-bold text-navy-600">+{outperformance.toFixed(1)}%</div>
+            <div className={`font-bold ${outperformance === 0 ? 'text-gray-400' : 'text-navy-600'}`}>
+              {outperformance === 0 ? '0.0%' : `+${outperformance.toFixed(1)}%`}
+            </div>
           </div>
         </div>
       </div>
@@ -284,7 +288,7 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
       <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-100">
         <div className="text-center">
           <div className="flex items-center justify-center mb-2">
-            <TrendingUp className="h-5 w-5 text-green-600" />
+            <TrendingUp className={`h-5 w-5 ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`} />
           </div>
           <div className="text-sm text-gray-600 mb-1">Best Month</div>
           <div className={`font-bold ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`}>
@@ -297,7 +301,7 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
         
         <div className="text-center">
           <div className="flex items-center justify-center mb-2">
-            <Calendar className="h-5 w-5 text-navy-600" />
+            <Calendar className={`h-5 w-5 ${avgMonthly === 0 ? 'text-gray-400' : 'text-navy-600'}`} />
           </div>
           <div className="text-sm text-gray-600 mb-1">Avg Monthly</div>
           <div className={`font-bold ${avgMonthly === 0 ? 'text-gray-400' : 'text-navy-900'}`}>
@@ -310,7 +314,7 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
         
         <div className="text-center">
           <div className="flex items-center justify-center mb-2">
-            <BarChart3 className="h-5 w-5 text-gold-600" />
+            <BarChart3 className={`h-5 w-5 ${volatility === 0 ? 'text-gray-400' : 'text-gold-600'}`} />
           </div>
           <div className="text-sm text-gray-600 mb-1">Volatility</div>
           <div className={`font-bold ${volatility === 0 ? 'text-gray-400' : 'text-gold-600'}`}>
