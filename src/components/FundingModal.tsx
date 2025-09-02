@@ -138,6 +138,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [copiedField, setCopiedField] = useState('');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [creatingPayment, setCreatingPayment] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -239,6 +240,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     }
 
     setCreatingPayment(true);
+    setError('');
 
     try {
       console.log('💳 Creating payment intent for amount:', paymentAmount);
@@ -250,12 +252,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
         throw new Error('Please sign in to continue');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4';
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          'apikey': anonKey
         },
         body: JSON.stringify({
           amount: paymentAmount * 100, // Convert to cents
@@ -265,8 +270,22 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to create payment intent');
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
+        
+        let errorMessage = 'Failed to initialize payment';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          if (errorText.includes('<!DOCTYPE') || errorText.includes('<html>')) {
+            errorMessage = 'Payment service temporarily unavailable. Please try again.';
+          } else {
+            errorMessage = errorText.substring(0, 100);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const { client_secret } = await response.json();
@@ -557,6 +576,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {/* Proceed Button */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span className="text-red-900 font-medium">{error}</span>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleProceedWithPayment}
                 disabled={!investmentAmount || !selectedPaymentMethod || creatingPayment}

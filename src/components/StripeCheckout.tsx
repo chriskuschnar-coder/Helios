@@ -132,85 +132,88 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
   const createPaymentIntent = async () => {
     if (!user) {
-      setError('Please sign in to continue')
+      setError('Please sign in to continue');
       return
     }
 
     if (amount < 100) {
-      setError('Minimum investment amount is $100')
+      setError('Minimum investment amount is $100');
       return
     }
 
     setCreatingPayment(true)
-    setError('')
+    setError('');
 
     try {
-      console.log('💳 Creating payment intent for amount:', amount)
+      console.log('💳 Creating payment intent for amount:', amount);
       
-      const { supabaseClient } = await import('../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
+      const { supabaseClient } = await import('../lib/supabase-client');
+      const { data: { session } } = await supabaseClient.auth.getSession();
       
       if (!session) {
-        throw new Error('Please sign in to continue')
+        throw new Error('Please sign in to continue');
       }
 
-      console.log('📡 Calling create-payment-intent function...')
+      console.log('📡 Calling create-payment-intent function...');
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4';
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          'apikey': anonKey
         },
         body: JSON.stringify({
           amount: amount * 100, // Convert to cents
           currency: 'usd',
           user_id: user.id
         })
-      })
+      });
 
-      console.log('📊 Response status:', response.status)
+      console.log('📊 Response status:', response.status);
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ Response error:', errorText)
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
         
         // Try to parse as JSON, fallback to text
-        let errorMessage = 'Failed to initialize payment'
+        let errorMessage = 'Failed to initialize payment';
         try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error?.message || errorMessage
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorMessage;
         } catch {
           // If it's HTML (like an error page), show a generic message
           if (errorText.includes('<!DOCTYPE') || errorText.includes('<html>')) {
-            errorMessage = 'Payment service temporarily unavailable. Please try again.'
+            errorMessage = 'Payment service temporarily unavailable. Please try again.';
           } else {
-            errorMessage = errorText.substring(0, 100)
+            errorMessage = errorText.substring(0, 100);
           }
         }
         
-        throw new Error(errorMessage)
+        throw new Error(errorMessage);
       }
 
-      const responseData = await response.json()
-      console.log('✅ Payment intent response:', responseData)
+      const responseData = await response.json();
+      console.log('✅ Payment intent response:', responseData);
 
       if (!responseData.client_secret) {
-        throw new Error('No client secret received from payment service')
+        throw new Error('No client secret received from payment service');
       }
 
-      setClientSecret(responseData.client_secret)
-      setShowPaymentForm(true)
-      console.log('✅ Payment intent created successfully')
+      setClientSecret(responseData.client_secret);
+      setShowPaymentForm(true);
+      console.log('✅ Payment intent created successfully');
       
     } catch (error) {
-      console.error('❌ Payment intent creation failed:', error)
-      setError(error instanceof Error ? error.message : 'Failed to initialize payment')
+      console.error('❌ Payment intent creation failed:', error);
+      setError(error instanceof Error ? error.message : 'Failed to initialize payment');
     } finally {
-      setCreatingPayment(false)
+      setCreatingPayment(false);
     }
-  }
+  };
 
   const handlePaymentSuccess = (result: any) => {
     console.log('✅ Payment successful:', result)
