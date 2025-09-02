@@ -31,6 +31,51 @@ interface PortfolioPerformanceChartProps {
 
 export function PortfolioPerformanceChart({ currentBalance, className = '' }: PortfolioPerformanceChartProps) {
   const chartData = useMemo(() => {
+    // If no balance, show flat line at zero
+    if (!currentBalance || currentBalance === 0) {
+      const months = [
+        'Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024',
+        'Jul 2024', 'Aug 2024', 'Sep 2024', 'Oct 2024', 'Nov 2024', 'Dec 2024', 'Jan 2025'
+      ]
+      
+      const zeroValues = new Array(13).fill(0)
+      
+      return {
+        labels: months,
+        datasets: [
+          {
+            label: 'Portfolio Value',
+            data: zeroValues,
+            borderColor: '#1e40af',
+            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#1e40af',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          },
+          {
+            label: 'S&P 500 Benchmark',
+            data: zeroValues,
+            borderColor: '#6b7280',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: '#6b7280',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }
+        ]
+      }
+    }
+
     // Generate realistic portfolio growth data over 12 months
     const months = [
       'Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024',
@@ -193,9 +238,16 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
 
   // Calculate performance metrics
   const initialValue = 250000
-  const currentValue = currentBalance || 350000
-  const totalReturn = ((currentValue - initialValue) / initialValue * 100)
-  const outperformance = totalReturn - 18.0 // vs S&P 500 benchmark
+  const currentValue = currentBalance || 0
+  
+  // For accounts with no balance, all metrics should be zero
+  const totalReturn = currentValue === 0 ? 0 : ((currentValue - initialValue) / initialValue * 100)
+  const outperformance = currentValue === 0 ? 0 : totalReturn - 18.0 // vs S&P 500 benchmark
+  
+  // Calculate metrics based on whether account is funded
+  const bestMonth = currentValue === 0 ? 0 : 8.4
+  const avgMonthly = currentValue === 0 ? 0 : 2.8
+  const volatility = currentValue === 0 ? 0 : 8.7
 
   return (
     <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
@@ -232,8 +284,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
             <TrendingUp className="h-5 w-5 text-green-600" />
           </div>
           <div className="text-sm text-gray-600 mb-1">Best Month</div>
-          <div className="font-bold text-green-600">+8.4%</div>
-          <div className="text-xs text-gray-500">October 2024</div>
+          <div className={`font-bold ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`}>
+            {bestMonth === 0 ? '0.0%' : `+${bestMonth}%`}
+          </div>
+          <div className="text-xs text-gray-500">
+            {bestMonth === 0 ? 'No trading yet' : 'October 2024'}
+          </div>
         </div>
         
         <div className="text-center">
@@ -241,8 +297,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
             <Calendar className="h-5 w-5 text-navy-600" />
           </div>
           <div className="text-sm text-gray-600 mb-1">Avg Monthly</div>
-          <div className="font-bold text-navy-900">+2.8%</div>
-          <div className="text-xs text-gray-500">Consistent growth</div>
+          <div className={`font-bold ${avgMonthly === 0 ? 'text-gray-400' : 'text-navy-900'}`}>
+            {avgMonthly === 0 ? '0.0%' : `+${avgMonthly}%`}
+          </div>
+          <div className="text-xs text-gray-500">
+            {avgMonthly === 0 ? 'No trading yet' : 'Consistent growth'}
+          </div>
         </div>
         
         <div className="text-center">
@@ -250,8 +310,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
             <BarChart3 className="h-5 w-5 text-gold-600" />
           </div>
           <div className="text-sm text-gray-600 mb-1">Volatility</div>
-          <div className="font-bold text-gold-600">8.7%</div>
-          <div className="text-xs text-gray-500">Annualized</div>
+          <div className={`font-bold ${volatility === 0 ? 'text-gray-400' : 'text-gold-600'}`}>
+            {volatility === 0 ? '0.0%' : `${volatility}%`}
+          </div>
+          <div className="text-xs text-gray-500">
+            {volatility === 0 ? 'No trading yet' : 'Annualized'}
+          </div>
         </div>
       </div>
     </div>
