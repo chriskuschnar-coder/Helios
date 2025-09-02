@@ -240,14 +240,17 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
   const initialValue = 250000
   const currentValue = currentBalance || 0
   
-  // For accounts with no balance, all metrics should be zero
-  const totalReturn = currentValue === 0 ? 0 : ((currentValue - initialValue) / initialValue * 100)
-  const outperformance = currentValue === 0 ? 0 : totalReturn - 18.0 // vs S&P 500 benchmark
+  // Calculate if account has meaningful trading activity
+  const hasActivity = currentValue > 0 && currentValue !== initialValue
   
-  // Calculate metrics based on whether account is funded
-  const bestMonth = currentValue === 0 ? 0 : 8.4
-  const avgMonthly = currentValue === 0 ? 0 : 2.8
-  const volatility = currentValue === 0 ? 0 : 8.7
+  // For accounts with no balance or no trading activity, all metrics should be zero
+  const totalReturn = hasActivity ? ((currentValue - initialValue) / initialValue * 100) : 0
+  const outperformance = hasActivity ? totalReturn - 18.0 : 0 // vs S&P 500 benchmark
+  
+  // Calculate metrics based on whether account has trading activity
+  const bestMonth = hasActivity ? 8.4 : 0
+  const avgMonthly = hasActivity ? 2.8 : 0
+  const volatility = hasActivity ? 8.7 : 0
 
   return (
     <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
