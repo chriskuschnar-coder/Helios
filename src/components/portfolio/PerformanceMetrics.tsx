@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, Calendar, BarChart3, Target, Award, Activity, RefreshCw } from 'lucide-react'
+import { TrendingUp, Calendar, BarChart3, Target, Award, Activity, RefreshCw, ArrowUpRight } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
 interface PerformanceData {
@@ -362,8 +362,11 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
             <p className="text-sm text-gray-500">
               Real-time analysis • Last update: {lastNewsUpdate.toLocaleTimeString()}
             </p>
+            <p className="text-xs text-blue-600 mt-1 font-medium">
+              Update #{updateCount}
+            </p>
           </div>
-              <p className="text-xs text-blue-600 mt-1 font-medium">
+        </div>
         
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2 glass px-3 py-1 rounded-full">
