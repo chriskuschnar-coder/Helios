@@ -502,7 +502,7 @@ export function InvestorDashboard() {
       
       <div className="premium-container py-8 md:py-12">
         {/* Top Navigation Tabs */}
-        <div className="glass-card mb-8 md:mb-12 animate-slide-up">
+        <div className="exchange-card mb-8 md:mb-12 animate-slide-up">
           <div className="px-8 py-6">
             {/* Mobile: Horizontal scroll tabs */}
             <nav className="flex space-x-6 md:space-x-10 overflow-x-auto">
@@ -512,7 +512,7 @@ export function InvestorDashboard() {
                   onClick={() => setSelectedTopTab(tab.id)}
                   className={`flex items-center space-x-3 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap interactive-element ${
                     selectedTopTab === tab.id
-                      ? 'premium-button-primary text-white'
+                      ? 'exchange-button-primary text-black'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
@@ -526,26 +526,26 @@ export function InvestorDashboard() {
 
         {/* Investment Tab Content */}
         {selectedTopTab === 'invest' && (
-          <div className="premium-grid mb-8 md:mb-12">
+          <div className="exchange-grid mb-8 md:mb-12">
             <StripeCheckout className="h-fit" />
-            <div className="glass-card p-6">
-              <h3 className="premium-heading text-lg md:text-xl mb-6">Investment Information</h3>
+            <div className="exchange-card p-6">
+              <h3 className="exchange-heading text-lg md:text-xl mb-6">Investment Information</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-glow" />
-                  <span className="text-sm md:text-base premium-text">Secure payment processing via Stripe</span>
+                  <CheckCircle className="h-5 w-5 text-gold" />
+                  <span className="text-sm md:text-base exchange-text">Secure payment processing via Stripe</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-glow" />
-                  <span className="text-sm md:text-base premium-text">Instant account funding</span>
+                  <CheckCircle className="h-5 w-5 text-gold" />
+                  <span className="text-sm md:text-base exchange-text">Instant account funding</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-glow" />
-                  <span className="text-sm md:text-base premium-text">Professional investment management</span>
+                  <CheckCircle className="h-5 w-5 text-gold" />
+                  <span className="text-sm md:text-base exchange-text">Professional investment management</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-glow" />
-                  <span className="text-sm md:text-base premium-text">Real-time portfolio tracking</span>
+                  <CheckCircle className="h-5 w-5 text-gold" />
+                  <span className="text-sm md:text-base exchange-text">Real-time portfolio tracking</span>
                 </div>
               </div>
             </div>
@@ -555,10 +555,10 @@ export function InvestorDashboard() {
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
           <div className="mb-8 animate-slide-up">
-            <h1 className="premium-heading text-2xl md:text-3xl mb-4">
+            <h1 className="exchange-heading text-2xl md:text-3xl mb-4">
               Welcome back, {getFirstName()}
             </h1>
-            <p className="premium-text text-base">
+            <p className="exchange-text text-base">
               Here's your portfolio performance and investment overview
             </p>
           </div>
@@ -573,26 +573,26 @@ export function InvestorDashboard() {
 
         {/* Performance Summary Cards */}
         {selectedTopTab === 'portfolio' && (
-          <div className="premium-grid premium-spacing">
+          <div className="exchange-grid exchange-spacing">
             <div className="metric-card interactive-element">
               <div className="flex items-center justify-between mb-3">
-                <span className="premium-label">Daily P&L</span>
+                <span className="exchange-label">Daily P&L</span>
                 <div className="w-8 h-8 bg-gradient-success rounded-full flex items-center justify-center animate-pulse-glow">
                   <ArrowUpRight className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <div className="metric-value text-glow">
+              <div className="metric-value text-gold">
                 +${portfolioData.dailyPnL.toLocaleString()}
               </div>
-              <div className="premium-badge positive">
+              <div className="exchange-badge positive">
                 +{portfolioData.dailyPnLPct.toFixed(2)}%
               </div>
             </div>
             
             <div className="metric-card interactive-element">
               <div className="flex items-center justify-between mb-3">
-                <span className="premium-label">YTD Return</span>
-                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse-glow">
+                <span className="exchange-label">YTD Return</span>
+                <div className="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center animate-gold-glow">
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -604,8 +604,8 @@ export function InvestorDashboard() {
             
             <div className="metric-card interactive-element">
               <div className="flex items-center justify-between mb-3">
-                <span className="premium-label">Available Cash</span>
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center animate-pulse-glow">
+                <span className="exchange-label">Available Cash</span>
+                <div className="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center animate-gold-glow">
                   <Plus className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -627,7 +627,7 @@ export function InvestorDashboard() {
 
         {/* Advanced Portfolio Analytics */}
         {selectedTopTab === 'portfolio' && (
-          <div className="premium-grid mb-8 md:mb-12">
+          <div className="exchange-grid mb-8 md:mb-12">
             <InteractiveAllocationChart currentBalance={account?.balance || 0} />
             <PerformanceMetrics currentBalance={account?.balance || 0} />
           </div>
@@ -635,7 +635,7 @@ export function InvestorDashboard() {
 
         {/* AI Insights and Risk Management */}
         {selectedTopTab === 'portfolio' && (
-          <div className="premium-grid mb-8 md:mb-12">
+          <div className="exchange-grid mb-8 md:mb-12">
             <AIInsights currentBalance={account?.balance || 0} />
             <RiskDashboard currentBalance={account?.balance || 0} />
           </div>
@@ -667,55 +667,55 @@ export function InvestorDashboard() {
 
         {/* Transactions Tab Content */}
         {selectedTopTab === 'transactions' && (
-          <div className="glass-card p-6 mb-8 md:mb-12">
-            <h3 className="premium-heading text-lg md:text-xl mb-6">Transaction History</h3>
+          <div className="exchange-card p-6 mb-8 md:mb-12">
+            <h3 className="exchange-heading text-lg md:text-xl mb-6">Transaction History</h3>
             
             {/* Transaction Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <div className="metric-card text-center">
-                <div className="text-lg font-bold text-glow">
+                <div className="text-lg font-bold text-gold">
                   {allTransactions.filter(t => t.type === 'deposit').length}
                 </div>
-                <div className="premium-label">Deposits</div>
+                <div className="exchange-label">Deposits</div>
               </div>
               <div className="metric-card text-center">
-                <div className="text-lg font-bold text-glow">
+                <div className="text-lg font-bold text-gold">
                   {allTransactions.filter(t => t.type === 'withdrawal').length}
                 </div>
-                <div className="premium-label">Withdrawals</div>
+                <div className="exchange-label">Withdrawals</div>
               </div>
               <div className="metric-card text-center">
                 <div className="text-lg font-bold text-gradient">
                   {allTransactions.filter(t => t.type === 'trade').length}
                 </div>
-                <div className="premium-label">Trades</div>
+                <div className="exchange-label">Trades</div>
               </div>
               <div className="metric-card text-center">
                 <div className="text-lg font-bold text-gradient">
                   {allTransactions.filter(t => t.type === 'fee').length}
                 </div>
-                <div className="premium-label">Fees</div>
+                <div className="exchange-label">Fees</div>
               </div>
               <div className="metric-card text-center">
                 <div className="text-lg font-bold text-gradient">
                   {allTransactions.filter(t => t.type === 'interest').length}
                 </div>
-                <div className="premium-label">Interest</div>
+                <div className="exchange-label">Interest</div>
               </div>
             </div>
             
             {loadingTransactions ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="premium-loading h-16 rounded-lg"></div>
+                  <div key={i} className="exchange-loading h-16 rounded-lg"></div>
                 ))}
               </div>
             ) : allTransactions.length > 0 ? (
               <div className="space-y-3">
                 {recentTransactions.map((transaction, index) => (
-                  <div key={index} className="premium-table-row">
+                  <div key={index} className="exchange-table-row">
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="w-8 h-8 glass-card rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 exchange-card rounded-full flex items-center justify-center">
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div className="flex-1">
@@ -755,7 +755,7 @@ export function InvestorDashboard() {
                 
                 {allTransactions.length > 10 && (
                   <div className="text-center pt-4">
-                    <button className="premium-button text-sm">
+                    <button className="exchange-button text-sm">
                       View All {allTransactions.length} Transactions
                     </button>
                   </div>
@@ -774,7 +774,7 @@ export function InvestorDashboard() {
 
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
-          <div className="glass-card mb-8 md:mb-12 p-6">
+          <div className="exchange-card mb-8 md:mb-12 p-6">
           <div className="border-b border-white/10">
             <nav className="flex space-x-4 md:space-x-8 px-6 overflow-x-auto">
               {tabs.map((tab) => (
@@ -783,7 +783,7 @@ export function InvestorDashboard() {
                   onClick={() => setSelectedTab(tab.id)}
                   className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all duration-300 whitespace-nowrap ${
                     selectedTab === tab.id
-                      ? 'border-cyan-400 text-glow'
+                      ? 'border-yellow-400 text-gold'
                       : 'border-transparent text-white/60 hover:text-white/90'
                   }`}
                 >
@@ -798,11 +798,11 @@ export function InvestorDashboard() {
             {selectedTab === 'overview' && (
               <div className="space-y-8">
                 <div>
-                  <h3 className="premium-heading text-lg md:text-xl mb-6">Asset Allocation</h3>
-                  <div className="premium-grid">
+                  <h3 className="exchange-heading text-lg md:text-xl mb-6">Asset Allocation</h3>
+                  <div className="exchange-grid">
                     <div className="space-y-4">
                       {holdings.map((holding, index) => (
-                        <div key={index} className="premium-table-row">
+                        <div key={index} className="exchange-table-row">
                           <div className="flex-1">
                             <div className="text-sm font-medium text-white">{holding.name}</div>
                             <div className="text-xs text-white/60">{holding.allocation}% allocation • {holding.risk} risk</div>
@@ -811,13 +811,13 @@ export function InvestorDashboard() {
                             <div className="text-sm font-medium text-gradient">
                               ${holding.value.toLocaleString()}
                             </div>
-                            <div className="text-xs text-glow">+{holding.return}%</div>
+                            <div className="text-xs text-gold">+{holding.return}%</div>
                           </div>
                         </div>
                       ))}
                     </div>
                     
-                    <div className="glass-card-dark rounded-lg p-6">
+                    <div className="exchange-card-dark rounded-lg p-6">
                       <h4 className="text-base font-medium text-white mb-4">Performance Metrics</h4>
                       <div className="space-y-3">
                         <div className="flex justify-between">
@@ -841,8 +841,8 @@ export function InvestorDashboard() {
 
             {selectedTab === 'holdings' && (
               <div className="space-y-6">
-                <h3 className="premium-heading text-lg md:text-xl">Detailed Holdings</h3>
-                <div className="premium-table">
+                <h3 className="exchange-heading text-lg md:text-xl">Detailed Holdings</h3>
+                <div className="exchange-table">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-black/40">
@@ -855,20 +855,20 @@ export function InvestorDashboard() {
                     </thead>
                     <tbody>
                       {holdings.map((holding, index) => (
-                        <tr key={index} className="premium-table-row">
+                        <tr key={index} className="exchange-table-row">
                           <td className="py-4 px-4 text-sm font-medium text-white">{holding.name}</td>
                           <td className="py-4 px-4 text-sm text-right text-white/70">{holding.allocation}%</td>
                           <td className="py-4 px-4 text-sm text-right font-medium text-gradient">
                             ${holding.value.toLocaleString()}
                           </td>
-                          <td className="py-4 px-4 text-sm text-right font-medium text-glow">
+                          <td className="py-4 px-4 text-sm text-right font-medium text-gold">
                             +{holding.return}%
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              holding.risk === 'Low' ? 'premium-badge positive' :
-                              holding.risk === 'Medium' ? 'premium-badge neutral' :
-                              'premium-badge negative'
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                              holding.risk === 'Low' ? 'exchange-badge positive' :
+                              holding.risk === 'Medium' ? 'exchange-badge neutral' :
+                              'exchange-badge negative'
                             }`}>
                               {holding.risk}
                             </span>
@@ -883,20 +883,20 @@ export function InvestorDashboard() {
 
             {selectedTab === 'transactions' && (
               <div className="space-y-6">
-                <h3 className="premium-heading text-lg md:text-xl">Recent Transactions</h3>
+                <h3 className="exchange-heading text-lg md:text-xl">Recent Transactions</h3>
                 
                 {loadingTransactions ? (
                   <div className="space-y-4">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className="premium-loading h-16 rounded-lg"></div>
+                      <div key={i} className="exchange-loading h-16 rounded-lg"></div>
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {allTransactions.map((transaction, index) => (
-                      <div key={index} className="premium-table-row">
+                      <div key={index} className="exchange-table-row">
                         <div className="flex items-center space-x-3 flex-1">
-                          <div className="w-8 h-8 glass-card rounded-full flex items-center justify-center">
+                          <div className="w-8 h-8 exchange-card rounded-full flex items-center justify-center">
                             {getTransactionIcon(transaction.type)}
                           </div>
                           <div className="flex-1">
@@ -935,10 +935,10 @@ export function InvestorDashboard() {
 
             {selectedTab === 'documents' && (
               <div className="space-y-6">
-                <h3 className="premium-heading text-lg md:text-xl">Investment Documents</h3>
-                <div className="premium-grid">
+                <h3 className="exchange-heading text-lg md:text-xl">Investment Documents</h3>
+                <div className="exchange-grid">
                   {documents.map((doc, index) => (
-                    <div key={index} className="premium-table-row">
+                    <div key={index} className="exchange-table-row">
                       <div className="flex items-center space-x-3 flex-1">
                         <FileText className="h-5 w-5 text-white/60" />
                         <div>
@@ -946,7 +946,7 @@ export function InvestorDashboard() {
                           <div className="text-xs text-white/60">{doc.type} • {doc.date}</div>
                         </div>
                       </div>
-                      <button className="premium-button text-xs">
+                      <button className="exchange-button text-xs">
                         Download
                       </button>
                     </div>
