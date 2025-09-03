@@ -20,6 +20,7 @@ import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
 import { NavigationBar } from './NavigationBar'
 import { StripeCheckout } from './StripeCheckout'
 import { SubscriptionStatus } from './SubscriptionStatus'
+import { MarketsTab } from './markets/MarketsTab'
 import '../styles/funding.css'
 
 export function InvestorDashboard() {
@@ -269,32 +270,7 @@ export function InvestorDashboard() {
 
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-8">
-            <div className="text-center">
-              <TrendingUp className="h-16 w-16 text-navy-600 mx-auto mb-4" />
-              <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">Live Market Data</h3>
-              <p className="text-gray-600 mb-6">
-                Real-time market analysis and quantitative insights across global markets.
-              </p>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="bg-navy-50 rounded-lg p-6">
-                  <div className="font-serif text-2xl font-bold text-navy-900 mb-2">S&P 500</div>
-                  <div className="text-green-600 font-medium">+1.2% Today</div>
-                  <div className="text-sm text-gray-600 mt-2">5,970.50</div>
-                </div>
-                <div className="bg-navy-50 rounded-lg p-6">
-                  <div className="font-serif text-2xl font-bold text-navy-900 mb-2">Bitcoin</div>
-                  <div className="text-green-600 font-medium">+2.4% Today</div>
-                  <div className="text-sm text-gray-600 mt-2">$106,250</div>
-                </div>
-                <div className="bg-navy-50 rounded-lg p-6">
-                  <div className="font-serif text-2xl font-bold text-navy-900 mb-2">Gold</div>
-                  <div className="text-green-600 font-medium">+0.9% Today</div>
-                  <div className="text-sm text-gray-600 mt-2">$2,685.50</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MarketsTab />
         )}
 
         {/* Research Tab Content */}
