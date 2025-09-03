@@ -17,6 +17,7 @@ import { FundingSuccessPage } from './components/FundingSuccessPage'
 import { FundingCancelledPage } from './components/FundingCancelledPage'
 import { EnvCheck } from './components/EnvCheck'
 import { DatabaseDiagnostic } from './components/DatabaseDiagnostic'
+import { SiteDiagnostics } from './components/SiteDiagnostics'
 
 function AppContent() {
   const { user, loading } = useAuth()
