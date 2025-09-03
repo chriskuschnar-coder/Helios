@@ -632,8 +632,9 @@ export function InvestorDashboard() {
 
         {/* AI Insights and Risk Management */}
         {selectedTopTab === 'portfolio' && (
-          <div className="mb-4 md:mb-8">
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
             <AIInsights currentBalance={account?.balance || 0} />
+            <RiskDashboard currentBalance={account?.balance || 0} />
           </div>
         )}
 
