@@ -17,9 +17,6 @@ export function ResearchTab() {
       {/* Institutional Flow Intelligence */}
       <InstitutionalFlowIntelligence />
       
-      {/* Cross-Asset Correlations */}
-      <CrossAssetCorrelations />
-      
       {/* Factor Analysis */}
       <FactorAnalysis />
       
