@@ -22,9 +22,14 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   const [animationProgress, setAnimationProgress] = useState(0)
   const [selectedMetric, setSelectedMetric] = useState<any>(null)
   const [showMetricModal, setShowMetricModal] = useState(false)
+  const [allocationDrift, setAllocationDrift] = useState<{ [key: string]: number }>({})
+  const [rebalanceAlerts, setRebalanceAlerts] = useState<string[]>([])
 
   const generateAllocationData = (): AllocationData[] => {
-    const timeVariation = Date.now() % 100000 / 100000
+    // Live allocation drift simulation
+    const marketMovement = Math.sin(Date.now() / 20000) * 0.02    // ±2% market movement
+    const performanceDrift = Math.cos(Date.now() / 40000) * 0.015  // ±1.5% performance drift
+    const timeVariation = marketMovement + performanceDrift
     
     if (currentBalance === 0) {
       return [
@@ -34,6 +39,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
       ]
     }
 
+    // Calculate allocation drift from targets
     return [
       {
         name: 'Alpha Fund',
@@ -42,6 +48,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         performance: 14.2 + (timeVariation * 3),
         color: '#1e40af',
         target: 65,
+        deviation: (65 + timeVariation * 5) - 65,
         risk: 'Medium'
       },
       {
@@ -51,6 +58,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         performance: 8.7 + (timeVariation * 2),
         color: '#059669',
         target: 25,
+        deviation: (25 + timeVariation * 3) - 25,
         risk: 'Low'
       },
       {
@@ -60,6 +68,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         performance: 18.9 + (timeVariation * 4),
         color: '#dc2626',
         target: 10,
+        deviation: (10 + timeVariation * 2) - 10,
         risk: 'High'
       }
     ]
@@ -69,6 +78,18 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
 
   useEffect(() => {
     setAllocationData(generateAllocationData())
+    
+    // Check for rebalancing needs
+    const newData = generateAllocationData()
+    const alerts: string[] = []
+    
+    newData.forEach(allocation => {
+      if (Math.abs(allocation.deviation) > 3) {
+        alerts.push(`${allocation.name} is ${allocation.deviation > 0 ? 'overweight' : 'underweight'} by ${Math.abs(allocation.deviation).toFixed(1)}%`)
+      }
+    })
+    
+    setRebalanceAlerts(alerts)
   }, [currentBalance])
 
   useEffect(() => {
@@ -168,6 +189,11 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Portfolio Allocation</h3>
             <p className="text-sm text-gray-600">Interactive breakdown with performance</p>
+            {rebalanceAlerts.length > 0 && (
+              <p className="text-xs text-orange-600 mt-1">
+                🎯 {rebalanceAlerts[0]}
+              </p>
+            )}
           </div>
         </div>
         

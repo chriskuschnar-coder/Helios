@@ -24,9 +24,16 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
   const [updateCount, setUpdateCount] = useState(0)
   const [selectedMetric, setSelectedMetric] = useState<any>(null)
   const [showMetricModal, setShowMetricModal] = useState(false)
+  const [lastNewsUpdate, setLastNewsUpdate] = useState<Date>(new Date())
+  const [marketEvents, setMarketEvents] = useState<string[]>([])
 
   const generatePerformanceData = (): PerformanceData[] => {
-    const timeVariation = Date.now() % 100000 / 100000
+    // Multiple time variations for realistic market movements
+    const fastTick = Math.sin(Date.now() / 10000) * 0.002    // ±0.2% every 10 seconds
+    const newsImpact = Math.cos(Date.now() / 60000) * 0.005   // ±0.5% every minute (news cycle)
+    const dailyTrend = Math.sin(Date.now() / 300000) * 0.01   // ±1% every 5 minutes (daily trend)
+    const timeVariation = fastTick + newsImpact + dailyTrend
+    
     const hasActivity = currentBalance > 0
     
     if (!hasActivity) {
@@ -125,6 +132,20 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
   const refreshData = async () => {
     setLoading(true)
     setUpdateCount(prev => prev + 1)
+    
+    // Simulate news events affecting metrics
+    const newsEvents = [
+      'Fed Chair Powell speech impacts rate expectations',
+      'Tech earnings beat estimates, momentum factor strengthens',
+      'Geopolitical tensions increase volatility measures',
+      'Economic data release affects correlation patterns',
+      'Central bank policy shift impacts currency exposure',
+      'Market microstructure changes detected in options flow'
+    ]
+    
+    const currentEvent = newsEvents[Math.floor(Date.now() / (1000 * 60 * 3)) % newsEvents.length]
+    setMarketEvents(prev => [currentEvent, ...prev.slice(0, 4)])
+    setLastNewsUpdate(new Date())
     
     await new Promise(resolve => setTimeout(resolve, 300))
     
@@ -306,8 +327,10 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
   }
 
   useEffect(() => {
-    setPerformanceData(generatePerformanceData())
-    setTimeSeriesData(generateTimeSeriesData())
+    refreshData()
+    
+    const interval = setInterval(refreshData, 15 * 1000) // Update every 15 seconds for live feel
+    return () => clearInterval(interval)
   }, [selectedPeriod, currentBalance])
 
   const getTrendIcon = (trend: string) => {
@@ -337,12 +360,17 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Performance Metrics</h3>
             <p className="text-sm text-gray-600">
-              Quantitative analysis • Update #{updateCount}
+              Live updates every 15s • #{updateCount} • {lastNewsUpdate.toLocaleTimeString()}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+          {marketEvents.length > 0 && (
+            <div className="hidden md:block text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full max-w-xs truncate">
+              📰 {marketEvents[0]}
+            </div>
+          )}
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-xs text-green-600 font-medium">LIVE</span>
           <button
