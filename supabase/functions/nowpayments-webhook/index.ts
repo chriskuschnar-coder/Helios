@@ -102,7 +102,8 @@ Deno.serve(async (req) => {
           headers: {
             'apikey': supabaseServiceKey,
             'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json'
+            exchange_rate: event.pay_amount ? (paymentAmount / event.pay_amount) : null,
+            crypto_transaction_hash: event.payin_hash || event.payout_hash || null
           }
         })
 

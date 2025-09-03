@@ -97,6 +97,10 @@ Deno.serve(async (req) => {
                 console.error('❌ No user found for customer_id:', session.customer)
               }
             }
+            processed_at: new Date().toISOString(),
+            fund_name: 'Global Market Consulting Fund',
+            status: paymentIntent.status,
+            payment_reference: paymentIntent.id
           }
           break
         }

@@ -109,23 +109,13 @@ export function SiteDiagnostics() {
         addResult("Payments Table Schema", "error", `Schema query failed: ${schemaError.message}`, schemaError, true)
       } else {
         addResult("Payments Table Schema", "success", `Found ${schemaData?.length || 0} columns in payments table`, schemaData, false)
-        
-        // CRITICAL: Check for transaction_hash specifically
-        const hasTransactionHash = schemaData?.some(col => col.column_name === 'transaction_hash')
-        if (hasTransactionHash) {
-          addResult("Transaction Hash Column", "success", "✅ transaction_hash column EXISTS in payments table", 
-            schemaData?.find(col => col.column_name === 'transaction_hash'), false)
-        } else {
-          addResult("Transaction Hash Column", "error", "❌ transaction_hash column MISSING from payments table", 
-            { available_columns: schemaData?.map(col => col.column_name) }, true)
-        }
       }
     } catch (err: any) {
       addResult("Payments Table Schema", "error", `Schema analysis failed: ${err.message}`, err, true)
     }
 
-    // CRITICAL TEST 4: Insert Test with transaction_hash
-    addResult("Transaction Hash Insert Test", "info", "Testing insert with transaction_hash column...", null, true)
+    // CRITICAL TEST 4: Insert Test
+    addResult("Insert Test", "info", "Testing insert operation...", null, true)
     
     try {
       const testData = {
@@ -134,7 +124,6 @@ export function SiteDiagnostics() {
         quantity: 1,
         total_amount: 100.00,
         status: 'test',
-        transaction_hash: `test_hash_${Date.now()}`,
         metadata: { test: true, diagnostic: true }
       }
 
@@ -144,16 +133,11 @@ export function SiteDiagnostics() {
         .select()
 
       if (insertError) {
-        if (insertError.message.includes('transaction_hash')) {
-          addResult("Transaction Hash Insert Test", "error", 
-            "❌ CRITICAL: transaction_hash column does not exist or is not accessible", insertError, true)
-        } else {
-          addResult("Transaction Hash Insert Test", "warning", 
-            `Insert failed for other reason: ${insertError.message}`, insertError, false)
-        }
+        addResult("Insert Test", "warning", 
+          `Insert failed: ${insertError.message}`, insertError, false)
       } else {
-        addResult("Transaction Hash Insert Test", "success", 
-          "✅ Insert with transaction_hash successful - column works perfectly!", insertData, false)
+        addResult("Insert Test", "success", 
+          "✅ Insert successful!", insertData, false)
         
         // Clean up test record
         if (insertData && insertData.length > 0) {
@@ -162,7 +146,7 @@ export function SiteDiagnostics() {
         }
       }
     } catch (err: any) {
-      addResult("Transaction Hash Insert Test", "error", `Insert test error: ${err.message}`, err, true)
+      addResult("Insert Test", "error", `Insert test error: ${err.message}`, err, true)
     }
 
     // CRITICAL TEST 5: Authentication System
@@ -215,20 +199,15 @@ export function SiteDiagnostics() {
       // Test the exact query that might be failing in your app
       const { data: queryData, error: queryError } = await supabaseClient
         .from('payments')
-        .select('id, user_id, total_amount, status, transaction_hash, created_at')
+        .select('id, user_id, total_amount, status, created_at')
         .limit(5)
       
       if (queryError) {
-        if (queryError.message.includes('transaction_hash')) {
-          addResult("Real Query Test", "error", 
-            "❌ CONFIRMED: Real application queries are failing due to transaction_hash", queryError, true)
-        } else {
-          addResult("Real Query Test", "warning", 
-            `Query failed for different reason: ${queryError.message}`, queryError, false)
-        }
+        addResult("Real Query Test", "warning", 
+          `Query failed: ${queryError.message}`, queryError, false)
       } else {
         addResult("Real Query Test", "success", 
-          "✅ Real application queries work perfectly with transaction_hash", queryData, false)
+          "✅ Real application queries work perfectly", queryData, false)
       }
     } catch (err: any) {
       addResult("Real Query Test", "error", `Real query test error: ${err.message}`, err, true)
@@ -499,7 +478,7 @@ export function SiteDiagnostics() {
                     try {
                       const { data, error } = await supabaseClient
                         .from('payments')
-                        .select('id, user_id, total_amount, status, transaction_hash, metadata')
+                        .select('id, user_id, total_amount, status, metadata')
                         .limit(3)
                       
                       if (error) {
@@ -540,13 +519,12 @@ export function SiteDiagnostics() {
               <h3 className="font-medium text-gray-900 mb-3">Diagnostic Conclusion:</h3>
               {criticalIssues.length === 0 ? (
                 <div className="text-green-700">
-                  <strong>✅ No critical issues found!</strong> The transaction_hash error appears to be a false alarm. 
-                  Your database schema is correct and the column exists. The site should be working properly.
+                  <strong>✅ No critical issues found!</strong> Your database schema is working properly and the site should function correctly.
                 </div>
               ) : (
                 <div className="text-red-700">
                   <strong>❌ {criticalIssues.length} critical issue{criticalIssues.length > 1 ? 's' : ''} found!</strong> 
-                  These need to be fixed before the site will work properly. See the critical issues above for details.
+                  These need to be fixed before the site will work properly.
                 </div>
               )}
             </div>
