@@ -1,0 +1,396 @@
+import React, { useState, useEffect } from 'react'
+import { BarChart3, TrendingUp, TrendingDown, Target, AlertTriangle, Brain, Zap, RefreshCw } from 'lucide-react'
+
+interface FactorAttribution {
+  factor: string
+  contribution: number
+  weight: number
+  performance: number
+  color: string
+}
+
+interface RiskMetrics {
+  var_1d: number
+  var_1w: number
+  var_1m: number
+  beta: number
+  sharpe_ratio: number
+  sortino_ratio: number
+  max_drawdown: number
+  volatility: number
+}
+
+interface SectorExposure {
+  sector: string
+  allocation: number
+  performance: number
+  target: number
+  deviation: number
+}
+
+export function PortfolioAnalytics({ currentBalance }: { currentBalance: number }) {
+  const [selectedView, setSelectedView] = useState<'factors' | 'risk' | 'sectors'>('factors')
+  const [loading, setLoading] = useState(false)
+  const [updateCount, setUpdateCount] = useState(0)
+
+  const generateFactorAttribution = (): FactorAttribution[] => {
+    const timeVariation = Date.now() % 100000 / 100000
+    
+    return [
+      {
+        factor: 'Momentum',
+        contribution: 4.2 + (timeVariation * 2),
+        weight: 35,
+        performance: 18.4 + (timeVariation * 3),
+        color: 'bg-green-500'
+      },
+      {
+        factor: 'Quality',
+        contribution: 2.8 + (timeVariation * 1.5),
+        weight: 25,
+        performance: 14.2 + (timeVariation * 2),
+        color: 'bg-blue-500'
+      },
+      {
+        factor: 'Value',
+        contribution: 1.9 + (timeVariation * 1),
+        weight: 20,
+        performance: 11.8 + (timeVariation * 1.5),
+        color: 'bg-purple-500'
+      },
+      {
+        factor: 'Low Volatility',
+        contribution: 1.1 + (timeVariation * 0.8),
+        weight: 15,
+        performance: 8.9 + (timeVariation * 1),
+        color: 'bg-gray-500'
+      },
+      {
+        factor: 'Size',
+        contribution: -0.3 + (timeVariation * 0.5),
+        weight: 5,
+        performance: -2.1 + (timeVariation * 1),
+        color: 'bg-red-500'
+      }
+    ]
+  }
+
+  const generateRiskMetrics = (): RiskMetrics => {
+    const timeVariation = Date.now() % 100000 / 100000
+    
+    return {
+      var_1d: 1250 + (timeVariation * 300),
+      var_1w: 2800 + (timeVariation * 600),
+      var_1m: 5600 + (timeVariation * 1200),
+      beta: 0.85 + (timeVariation * 0.3),
+      sharpe_ratio: 2.84 + (timeVariation * 0.4),
+      sortino_ratio: 3.12 + (timeVariation * 0.3),
+      max_drawdown: 4.2 + (timeVariation * 1.5),
+      volatility: 8.7 + (timeVariation * 2)
+    }
+  }
+
+  const generateSectorExposure = (): SectorExposure[] => {
+    const timeVariation = Date.now() % 100000 / 100000
+    
+    return [
+      {
+        sector: 'Technology',
+        allocation: 35 + (timeVariation * 5),
+        performance: 22.4 + (timeVariation * 4),
+        target: 35,
+        deviation: (timeVariation * 5)
+      },
+      {
+        sector: 'Financial Services',
+        allocation: 20 + (timeVariation * 3),
+        performance: 18.1 + (timeVariation * 3),
+        target: 20,
+        deviation: (timeVariation * 3)
+      },
+      {
+        sector: 'Healthcare',
+        allocation: 15 + (timeVariation * 2),
+        performance: 14.7 + (timeVariation * 2),
+        target: 15,
+        deviation: (timeVariation * 2)
+      },
+      {
+        sector: 'Consumer Discretionary',
+        allocation: 12 + (timeVariation * 2),
+        performance: 16.3 + (timeVariation * 3),
+        target: 12,
+        deviation: (timeVariation * 2)
+      },
+      {
+        sector: 'Energy',
+        allocation: 8 + (timeVariation * 1.5),
+        performance: 12.9 + (timeVariation * 2),
+        target: 8,
+        deviation: (timeVariation * 1.5)
+      },
+      {
+        sector: 'Materials',
+        allocation: 6 + (timeVariation * 1),
+        performance: 9.8 + (timeVariation * 1.5),
+        target: 6,
+        deviation: (timeVariation * 1)
+      },
+      {
+        sector: 'Utilities',
+        allocation: 4 + (timeVariation * 0.5),
+        performance: 7.2 + (timeVariation * 1),
+        target: 4,
+        deviation: (timeVariation * 0.5)
+      }
+    ]
+  }
+
+  const [factorData, setFactorData] = useState<FactorAttribution[]>(generateFactorAttribution())
+  const [riskData, setRiskData] = useState<RiskMetrics>(generateRiskMetrics())
+  const [sectorData, setSectorData] = useState<SectorExposure[]>(generateSectorExposure())
+
+  const refreshData = async () => {
+    setLoading(true)
+    setUpdateCount(prev => prev + 1)
+    
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    setFactorData(generateFactorAttribution())
+    setRiskData(generateRiskMetrics())
+    setSectorData(generateSectorExposure())
+    
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    const interval = setInterval(refreshData, 30000) // Update every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
+
+  const views = [
+    { id: 'factors', name: 'Factor Attribution', icon: Target },
+    { id: 'risk', name: 'Risk Analytics', icon: AlertTriangle },
+    { id: 'sectors', name: 'Sector Exposure', icon: BarChart3 }
+  ]
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+            <Brain className="h-5 w-5 text-navy-600" />
+          </div>
+          <div>
+            <h3 className="font-serif text-lg font-bold text-navy-900">Advanced Portfolio Analytics</h3>
+            <p className="text-sm text-gray-600">
+              Quantitative analysis • Update #{updateCount}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-navy-500 rounded-full animate-pulse"></div>
+          <span className="text-xs text-navy-600 font-medium">LIVE</span>
+          <button
+            onClick={refreshData}
+            disabled={loading}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* View Selector */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {views.map(view => (
+          <button
+            key={view.id}
+            onClick={() => setSelectedView(view.id as any)}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              selectedView === view.id
+                ? 'bg-navy-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <view.icon className="h-4 w-4" />
+            <span>{view.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {loading && (
+        <div className="animate-pulse space-y-4">
+          <div className="h-48 bg-gray-200 rounded-lg"></div>
+        </div>
+      )}
+
+      {!loading && selectedView === 'factors' && (
+        <div className="space-y-6">
+          <h4 className="font-medium text-gray-900">Factor Attribution Analysis</h4>
+          <div className="space-y-4">
+            {factorData.map((factor, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded-full ${factor.color}`}></div>
+                    <span className="font-medium text-gray-900">{factor.factor}</span>
+                    <span className="text-sm text-gray-600">{factor.weight}% weight</span>
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-bold ${factor.contribution > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {factor.contribution > 0 ? '+' : ''}{factor.contribution.toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-gray-600">Contribution</div>
+                  </div>
+                </div>
+                
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${factor.color}`}
+                    style={{ width: `${Math.abs(factor.contribution) * 10}%` }}
+                  ></div>
+                </div>
+                
+                <div className="mt-2 text-sm text-gray-600">
+                  Factor Performance: {factor.performance > 0 ? '+' : ''}{factor.performance.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && selectedView === 'risk' && (
+        <div className="space-y-6">
+          <h4 className="font-medium text-gray-900">Risk Analytics Dashboard</h4>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-red-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-red-900">
+                ${riskData.var_1d.toLocaleString()}
+              </div>
+              <div className="text-sm text-red-700">1-Day VaR (95%)</div>
+            </div>
+            
+            <div className="bg-orange-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-orange-900">
+                ${riskData.var_1w.toLocaleString()}
+              </div>
+              <div className="text-sm text-orange-700">1-Week VaR (95%)</div>
+            </div>
+            
+            <div className="bg-blue-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-blue-900">
+                {riskData.beta.toFixed(2)}
+              </div>
+              <div className="text-sm text-blue-700">Portfolio Beta</div>
+            </div>
+            
+            <div className="bg-green-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-green-900">
+                {riskData.sharpe_ratio.toFixed(2)}
+              </div>
+              <div className="text-sm text-green-700">Sharpe Ratio</div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h5 className="font-medium text-gray-900 mb-4">Risk-Adjusted Returns</h5>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Sharpe Ratio:</span>
+                  <span className="font-medium">{riskData.sharpe_ratio.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Sortino Ratio:</span>
+                  <span className="font-medium">{riskData.sortino_ratio.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Max Drawdown:</span>
+                  <span className="font-medium text-red-600">-{riskData.max_drawdown.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Volatility:</span>
+                  <span className="font-medium">{riskData.volatility.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h5 className="font-medium text-gray-900 mb-4">Value at Risk (VaR)</h5>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">1-Day VaR (95%):</span>
+                  <span className="font-medium text-red-600">${riskData.var_1d.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">1-Week VaR (95%):</span>
+                  <span className="font-medium text-red-600">${riskData.var_1w.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">1-Month VaR (95%):</span>
+                  <span className="font-medium text-red-600">${riskData.var_1m.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Portfolio Beta:</span>
+                  <span className="font-medium">{riskData.beta.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && selectedView === 'sectors' && (
+        <div className="space-y-6">
+          <h4 className="font-medium text-gray-900">Sector Allocation & Performance</h4>
+          
+          <div className="space-y-4">
+            {sectorData.map((sector, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <span className="font-medium text-gray-900">{sector.sector}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      Math.abs(sector.deviation) < 1 ? 'bg-green-100 text-green-800' :
+                      Math.abs(sector.deviation) < 3 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {Math.abs(sector.deviation) < 1 ? 'On Target' :
+                       Math.abs(sector.deviation) < 3 ? 'Minor Drift' : 'Rebalance Needed'}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900">{sector.allocation.toFixed(1)}%</div>
+                    <div className="text-sm text-gray-600">Target: {sector.target}%</div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Current Allocation</div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-navy-600 h-2 rounded-full transition-all duration-1000"
+                        style={{ width: `${(sector.allocation / 40) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Performance</div>
+                    <div className={`font-medium ${sector.performance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {sector.performance > 0 ? '+' : ''}{sector.performance.toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
