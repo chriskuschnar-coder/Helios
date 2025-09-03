@@ -18,11 +18,11 @@ export function Performance() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
-            Quantitative Performance Track Record
+            Proven Track Record of Investment Success
           </h2>
           <p className="text-xl text-navy-200 max-w-3xl mx-auto">
-            Live trading results demonstrating consistent alpha generation through 
-            mathematical models and systematic risk management across multiple market cycles.
+            Our transparent performance history demonstrates consistent value creation for clients 
+            through disciplined investment strategies and professional risk management across all market conditions.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export function Performance() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
-                <div className="text-gray-600">Principal Losses</div>
+                <div className="text-gray-600">Account Blow-ups</div>
               </div>
             </div>
           </div>
@@ -108,23 +108,23 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-            Advanced Quantitative Metrics
+            Professional Performance Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
+              <div className="text-gray-700 font-medium">Principal Losses</div>
+              <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
+            </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
               <div className="text-gray-700 font-medium">Profit Factor</div>
               <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">0.28</div>
-              <div className="text-gray-700 font-medium">Kelly Fraction</div>
-              <div className="text-sm text-gray-600 mt-1">Optimal Position Size</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">52%</div>
-              <div className="text-gray-700 font-medium">Slippage Reduction</div>
-              <div className="text-sm text-gray-600 mt-1">vs TWAP Benchmark</div>
+              <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
+              <div className="text-gray-700 font-medium">System Uptime</div>
+              <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
           </div>
         </div>
