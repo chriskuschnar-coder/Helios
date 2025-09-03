@@ -29,12 +29,12 @@ export function About() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-            Revolutionary Quantitative Investment Management
+            Proven Investment Excellence Through Advanced Analytics
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Our quantitative system represents the intersection of academic finance theory 
-            and practical market application, utilizing advanced mathematical models to 
-            anticipate market dynamics through statistical inference.
+            Led by a team of seasoned professionals with backgrounds in finance, mathematics, and technology, 
+            we combine academic research with practical market insights to drive investment success. 
+            Our proven track record demonstrates consistent value creation for our clients.
           </p>
         </div>
 

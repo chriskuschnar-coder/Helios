@@ -89,7 +89,7 @@ export function Hero() {
                 <div className="pt-4 border-t border-gray-100">
                   <div className="text-center">
                     <div className="text-sm md:text-base text-gray-600">12,800+ Trades Executed</div>
-                    <div className="text-xs text-gray-500 mt-1">Zero Account Blow-ups</div>
+                    <div className="text-xs text-gray-500 mt-1">Consistent Capital Preservation</div>
                   </div>
                 </div>
               </div>

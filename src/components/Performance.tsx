@@ -99,7 +99,7 @@ export function Performance() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
-                <div className="text-gray-600">Account Blow-ups</div>
+                <div className="text-gray-600">Principal Losses</div>
               </div>
             </div>
           </div>

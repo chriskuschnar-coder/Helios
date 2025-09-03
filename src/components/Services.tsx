@@ -172,35 +172,35 @@ export function Services() {
               </div>
               <div className="bg-white rounded-xl p-6">
                 <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
-                  Market Maker Inventory Risk
+                  Professional Execution Strategies
                 </h4>
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                     <div>
-                      <div className="font-medium text-navy-900">Glosten-Milgrom Sequential Models</div>
-                      <div className="text-sm text-gray-600">Adverse selection prevention through informed trading detection</div>
+                      <div className="font-medium text-navy-900">Smart Order Timing</div>
+                      <div className="text-sm text-gray-600">Avoiding trades when large players might move against us, protecting your returns</div>
                     </div>
                   </li>
                   <li className="flex items-start">
                     <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                     <div>
-                      <div className="font-medium text-navy-900">Amihud-Mendelson Decomposition</div>
-                      <div className="text-sm text-gray-600">Bid-ask spread analysis for liquidity cost optimization</div>
+                      <div className="font-medium text-navy-900">Cost-Efficient Trading</div>
+                      <div className="text-sm text-gray-600">Minimizing trading costs through intelligent order placement and timing strategies</div>
                     </div>
                   </li>
                   <li className="flex items-start">
                     <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                     <div>
-                      <div className="font-medium text-navy-900">Ho-Stoll Dealer Framework</div>
-                      <div className="text-sm text-gray-600">Market maker positioning and inventory risk management</div>
+                      <div className="font-medium text-navy-900">Market Position Monitoring</div>
+                      <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
                     </div>
                   </li>
                   <li className="flex items-start">
                     <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                     <div>
-                      <div className="font-medium text-navy-900">Queue Position Optimization</div>
-                      <div className="text-sm text-gray-600">Advanced algorithms for optimal order placement and execution</div>
+                      <div className="font-medium text-navy-900">Optimal Order Placement</div>
+                      <div className="text-sm text-gray-600">Ensuring your trades get the best possible execution through strategic order placement</div>
                     </div>
                   </li>
                 </ul>
