@@ -175,23 +175,6 @@ export function InvestorDashboard() {
           </div>
         </div>
 
-        {/* Welcome Message */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-navy-600 rounded-full flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-navy-900 mb-2">
-                Welcome back, {getFirstName()}
-              </h1>
-              <p className="text-gray-600">
-                Here's your portfolio performance and investment overview
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Investment Tab Content */}
         {selectedTopTab === 'invest' && (
           <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -221,6 +204,17 @@ export function InvestorDashboard() {
         )}
 
         {/* Portfolio Value Card */}
+        {selectedTopTab === 'portfolio' && (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-navy-900 mb-1">
+              Welcome back, {getFirstName()}
+            </h1>
+            <p className="text-gray-600">
+              Here's your portfolio performance and investment overview
+            </p>
+          </div>
+        )}
+
         {selectedTopTab === 'portfolio' && (
           <PortfolioValueCard 
             onFundPortfolio={openFunding}
