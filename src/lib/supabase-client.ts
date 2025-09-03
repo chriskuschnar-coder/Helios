@@ -29,14 +29,25 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
 console.log('✅ Supabase client created successfully')
 
 // Test connection on load
-supabaseClient.from('users').select('count').limit(1)
-  .then(({ data, error }) => {
+// Test connection with timeout and graceful fallback
+const testConnection = async () => {
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Connection timeout')), 5000)
+    )
+    
+    const queryPromise = supabaseClient.from('users').select('count').limit(1)
+    
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
+    
     if (error) {
-      console.error('❌ Supabase connection test failed:', error.message)
+      console.warn('⚠️ Supabase connection test failed (non-critical):', error.message)
     } else {
       console.log('✅ Supabase connection test successful')
     }
-  })
-  .catch(err => {
-    console.error('❌ Supabase connection error:', err)
-  })
+  } catch (err) {
+    console.warn('⚠️ Supabase connection error (app will use fallback mode):', err)
+  }
+}
+
+testConnection()

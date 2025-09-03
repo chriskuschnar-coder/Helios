@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, Plus, Minus, Activity } from 'lucide-react'
+import { TrendingUp, Plus, Minus, Activity, TrendingDown } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface PortfolioValueCardProps {

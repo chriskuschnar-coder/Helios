@@ -95,13 +95,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔍 Loading account for user:', userId)
       
-      const { data: accountData, error: accountError } = await supabaseClient
+      // Add timeout and error handling for network issues
+      const accountPromise = supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
         .single()
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+      
+      const { data: accountData, error: accountError } = await Promise.race([
+        accountPromise,
+        timeoutPromise
+      ]) as any
 
       if (accountError) {
+        if (accountError.message?.includes('Failed to fetch') || accountError.message?.includes('timeout')) {
+          console.warn('⚠️ Network connectivity issue, using fallback account data')
+          // Set a default account structure for offline/demo mode
+          setAccount({
+            id: 'demo-account',
+            balance: 0,
+            available_balance: 0,
+            total_deposits: 0,
+            total_withdrawals: 0,
+            currency: 'USD',
+            status: 'active'
+          })
+          return
+        }
         console.error('❌ Account load error:', accountError)
       } else {
         console.log('✅ Account loaded:', accountData)
@@ -109,24 +133,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Also load user profile data to check document completion
-      const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('documents_completed, documents_completed_at')
-        .eq('id', userId)
-        .single()
+      try {
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('documents_completed, documents_completed_at')
+          .eq('id', userId)
+          .single()
 
-      if (userError) {
-        console.error('❌ User profile load error:', userError)
-      } else if (userData) {
-        console.log('✅ User profile loaded:', userData)
-        setUser(prev => prev ? {
-          ...prev,
-          documents_completed: userData.documents_completed,
-          documents_completed_at: userData.documents_completed_at
-        } : null)
+        if (userError) {
+          console.warn('⚠️ User profile load error (non-critical):', userError)
+        } else if (userData) {
+          console.log('✅ User profile loaded:', userData)
+          setUser(prev => prev ? {
+            ...prev,
+            documents_completed: userData.documents_completed,
+            documents_completed_at: userData.documents_completed_at
+          } : null)
+        }
+      } catch (profileError) {
+        console.warn('⚠️ User profile fetch failed (non-critical):', profileError)
       }
     } catch (err) {
-      console.error('❌ Account load failed:', err)
+      console.warn('⚠️ Account load failed, using fallback mode:', err)
+      // Set fallback account for demo/offline mode
+      setAccount({
+        id: 'fallback-account',
+        balance: 0,
+        available_balance: 0,
+        total_deposits: 0,
+        total_withdrawals: 0,
+        currency: 'USD',
+        status: 'active'
+      })
     }
   }
 
