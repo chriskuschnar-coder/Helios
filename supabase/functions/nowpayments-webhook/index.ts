@@ -41,11 +41,32 @@ Deno.serve(async (req) => {
     }
 
     // Verify webhook signature (implement proper HMAC verification in production)
-    const ipnSecret = Deno.env.get('NOWPAYMENTS_IPN_SECRET')
+    const ipnSecret = 'T8kk7npqjaovmsRdbeO2VbnSHESmFS7Y'
     if (ipnSecret && signature) {
-      // TODO: Implement HMAC-SHA512 verification
-      // For now, we'll process all webhooks
-      console.log('⚠️ Webhook signature verification not implemented - processing anyway')
+      // Verify HMAC-SHA512 signature
+      const encoder = new TextEncoder()
+      const keyData = encoder.encode(ipnSecret)
+      const messageData = encoder.encode(body)
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-512' },
+        false,
+        ['sign']
+      )
+      
+      const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData)
+      const computedSignature = Array.from(new Uint8Array(signatureBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+      
+      if (signature !== computedSignature) {
+        console.error('❌ Invalid webhook signature')
+        return new Response('Invalid signature', { status: 401 })
+      }
+      
+      console.log('✅ Webhook signature verified')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
