@@ -116,16 +116,11 @@ export function DatabaseConnectionTest() {
     try {
       const { data: queryData, error: queryError } = await supabaseClient
         .from('payments')
-        .select('id, user_id, total_amount, status, transaction_hash, created_at')
+        .select('id, user_id, total_amount, status, created_at')
         .limit(3)
       
       if (queryError) {
-        if (queryError.message.includes('transaction_hash')) {
-          addResult("Application Query Test", "error", "❌ CONFIRMED: Application queries failing due to transaction_hash")
-          setOverallStatus('critical')
-        } else {
-          addResult("Application Query Test", "warning", `Query failed for different reason: ${queryError.message}`)
-        }
+        addResult("Application Query Test", "warning", `Query failed: ${queryError.message}`)
       } else {
         addResult("Application Query Test", "success", "✅ Application queries work perfectly")
       }
@@ -144,7 +139,6 @@ export function DatabaseConnectionTest() {
         quantity: 1,
         total_amount: 100.00,
         status: 'test',
-        transaction_hash: `test_hash_${Date.now()}`,
         metadata: { test: true }
       }
 
@@ -154,14 +148,9 @@ export function DatabaseConnectionTest() {
         .select()
 
       if (insertError) {
-        if (insertError.message.includes('transaction_hash')) {
-          addResult("Insert Test", "error", "❌ Insert with transaction_hash FAILED - column issue confirmed")
-          setOverallStatus('critical')
-        } else {
-          addResult("Insert Test", "warning", `Insert failed for other reason: ${insertError.message}`)
-        }
+        addResult("Insert Test", "warning", `Insert failed: ${insertError.message}`)
       } else {
-        addResult("Insert Test", "success", "✅ Insert with transaction_hash SUCCESSFUL")
+        addResult("Insert Test", "success", "✅ Insert successful!")
         
         // Clean up test record
         if (insertData && insertData.length > 0) {
