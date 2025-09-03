@@ -529,15 +529,15 @@ export function SocialSentimentTracker() {
           </div>
         </div>
 
-        {/* Live Feed Modal */}
-        {selectedFeed && (
-          <LiveFeedModal
-            isOpen={!!selectedFeed}
-            onClose={() => setSelectedFeed(null)}
-            platform={selectedFeed.platform}
-            symbol={selectedFeed.symbol}
-          />
-        )}
+
+      {/* Live Feed Modal */}
+      {selectedFeed && (
+        <LiveFeedModal
+          isOpen={!!selectedFeed}
+          onClose={() => setSelectedFeed(null)}
+          platform={selectedFeed.platform}
+          symbol={selectedFeed.symbol}
+        />
       )}
     </div>
   )
