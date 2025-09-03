@@ -1,7 +1,7 @@
 import React from 'react'
 import { AIMarketNarrative } from './AIMarketNarrative'
 import { SocialSentimentTracker } from './SocialSentimentTracker'
-import { EconomicCalendar } from './EconomicCalendar'
+import { CorrelationMatrix3D } from './CorrelationMatrix3D'
 import { LiveMarketData } from './LiveMarketData'
 
 export function MarketsTab() {
@@ -16,8 +16,8 @@ export function MarketsTab() {
       {/* Social Sentiment Tracker */}
       <SocialSentimentTracker />
       
-      {/* Economic Calendar */}
-      <EconomicCalendar />
+      {/* 3D Correlation Matrix */}
+      <CorrelationMatrix3D />
     </div>
   )
 }

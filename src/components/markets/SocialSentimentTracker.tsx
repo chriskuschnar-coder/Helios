@@ -379,158 +379,156 @@ export function SocialSentimentTracker() {
   }
 
   return (
-    <>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <MessageCircle className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-serif text-lg font-bold text-navy-900">Social Sentiment Intelligence</h3>
-              <p className="text-sm text-gray-600">Live updates: {updateCount} • Real-time analysis</p>
-            </div>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <MessageCircle className="h-5 w-5 text-purple-600" />
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-green-600 font-medium">LIVE</span>
-            </div>
-            
-            <select
-              value={selectedTimeframe}
-              onChange={(e) => setSelectedTimeframe(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1 focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="1h">1 Hour</option>
-              <option value="24h">24 Hours</option>
-              <option value="7d">7 Days</option>
-            </select>
-            
-            <button
-              onClick={refreshData}
-              disabled={loading}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Refresh Data"
-            >
-              <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+          <div>
+            <h3 className="font-serif text-lg font-bold text-navy-900">Social Sentiment Intelligence</h3>
+            <p className="text-sm text-gray-600">Live updates: {updateCount} • Real-time analysis</p>
           </div>
         </div>
+        
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-green-600 font-medium">LIVE</span>
+          </div>
+          
+          <select
+            value={selectedTimeframe}
+            onChange={(e) => setSelectedTimeframe(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1 focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="1h">1 Hour</option>
+            <option value="24h">24 Hours</option>
+            <option value="7d">7 Days</option>
+          </select>
+          
+          <button
+            onClick={refreshData}
+            disabled={loading}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
-        {loading && !metrics ? (
-          <div className="animate-pulse space-y-4">
-            <div className="h-20 bg-gray-200 rounded-lg"></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-32 bg-gray-200 rounded-lg"></div>
-              <div className="h-32 bg-gray-200 rounded-lg"></div>
+      {loading && !metrics ? (
+        <div className="animate-pulse space-y-4">
+          <div className="h-20 bg-gray-200 rounded-lg"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      ) : metrics && (
+        <div className="space-y-6">
+          {/* Overall Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-navy-900 mb-1">
+                {metrics.overall_sentiment}
+              </div>
+              <div className="text-sm text-gray-600">Overall Sentiment</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {metrics.overall_sentiment >= 60 ? 'Bullish' : 
+                 metrics.overall_sentiment >= 40 ? 'Neutral' : 'Bearish'}
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-navy-900 mb-1">
+                {metrics.fear_greed_index}
+              </div>
+              <div className="text-sm text-gray-600">Fear & Greed</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {getFearGreedLabel(metrics.fear_greed_index)}
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-navy-900 mb-1">
+                {metrics.viral_coefficient.toFixed(1)}x
+              </div>
+              <div className="text-sm text-gray-600">Viral Coefficient</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {metrics.viral_coefficient > 2 ? 'High' : 
+                 metrics.viral_coefficient > 1.5 ? 'Medium' : 'Low'}
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-navy-900 mb-1">
+                {(metrics.institutional_mentions / metrics.retail_mentions * 100).toFixed(1)}%
+              </div>
+              <div className="text-sm text-gray-600">Institutional Ratio</div>
+              <div className="text-xs text-gray-500 mt-1">vs Retail</div>
             </div>
           </div>
-        ) : metrics && (
-          <div className="space-y-6">
-            {/* Overall Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-navy-900 mb-1">
-                  {metrics.overall_sentiment}
-                </div>
-                <div className="text-sm text-gray-600">Overall Sentiment</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {metrics.overall_sentiment >= 60 ? 'Bullish' : 
-                   metrics.overall_sentiment >= 40 ? 'Neutral' : 'Bearish'}
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-navy-900 mb-1">
-                  {metrics.fear_greed_index}
-                </div>
-                <div className="text-sm text-gray-600">Fear & Greed</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {getFearGreedLabel(metrics.fear_greed_index)}
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-navy-900 mb-1">
-                  {metrics.viral_coefficient.toFixed(1)}x
-                </div>
-                <div className="text-sm text-gray-600">Viral Coefficient</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {metrics.viral_coefficient > 2 ? 'High' : 
-                   metrics.viral_coefficient > 1.5 ? 'Medium' : 'Low'}
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-navy-900 mb-1">
-                  {(metrics.institutional_mentions / metrics.retail_mentions * 100).toFixed(1)}%
-                </div>
-                <div className="text-sm text-gray-600">Institutional Ratio</div>
-                <div className="text-xs text-gray-500 mt-1">vs Retail</div>
-              </div>
-            </div>
 
-            {/* Platform Breakdown */}
-            <div>
-              <h4 className="font-medium text-gray-900 mb-4">Platform Sentiment Breakdown</h4>
-              <div className="space-y-3">
-                {metrics.sentiment_data.map((data, index) => (
-                  <div 
-                    key={index} 
-                    onClick={() => setSelectedFeed({ platform: data.platform, symbol: data.symbol })}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getSentimentColor(data.sentiment)}`}>
-                        {getSentimentIcon(data.sentiment)}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{data.platform}</div>
-                        <div className="text-sm text-gray-600">{data.symbol} • {data.volume.toLocaleString()} mentions</div>
-                      </div>
+          {/* Platform Breakdown */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Platform Sentiment Breakdown</h4>
+            <div className="space-y-3">
+              {metrics.sentiment_data.map((data, index) => (
+                <div 
+                  key={index} 
+                  onClick={() => setSelectedFeed({ platform: data.platform, symbol: data.symbol })}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getSentimentColor(data.sentiment)}`}>
+                      {getSentimentIcon(data.sentiment)}
                     </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-right">
-                        <div className="font-bold text-gray-900">{data.sentiment}/100</div>
-                        <div className="text-sm text-gray-600">
-                          Influence: {data.influencerScore}%
-                        </div>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="h-5 w-5 text-blue-600" />
-                      </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{data.platform}</div>
+                      <div className="text-sm text-gray-600">{data.symbol} • {data.volume.toLocaleString()} mentions</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Trending Topics */}
-            <div>
-              <h4 className="font-medium text-gray-900 mb-4">Trending Topics</h4>
-              <div className="flex flex-wrap gap-2">
-                {metrics.trending_topics.map((topic, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors cursor-pointer"
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Live Updates Indicator */}
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 pt-4 border-t border-gray-100">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Live updates every 15 seconds • Update #{updateCount}</span>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <div className="font-bold text-gray-900">{data.sentiment}/100</div>
+                      <div className="text-sm text-gray-600">
+                        Influence: {data.influencerScore}%
+                      </div>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ExternalLink className="h-5 w-5 text-blue-600" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Trending Topics */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Trending Topics</h4>
+            <div className="flex flex-wrap gap-2">
+              {metrics.trending_topics.map((topic, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors cursor-pointer"
+                >
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Live Updates Indicator */}
+          <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 pt-4 border-t border-gray-100">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Live updates every 15 seconds • Update #{updateCount}</span>
+          </div>
+        </div>
+      )}
 
       {/* Live Feed Modal */}
       {selectedFeed && (
@@ -541,6 +539,6 @@ export function SocialSentimentTracker() {
           symbol={selectedFeed.symbol}
         />
       )}
-    </>
+    </div>
   )
 }
