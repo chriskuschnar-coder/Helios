@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { BarChart3, TrendingUp, TrendingDown, Target, AlertTriangle, Brain, Zap, RefreshCw } from 'lucide-react'
+import { MetricDetailModal } from './MetricDetailModal'
 
 interface FactorAttribution {
   factor: string
@@ -32,6 +33,8 @@ export function PortfolioAnalytics({ currentBalance }: { currentBalance: number 
   const [selectedView, setSelectedView] = useState<'factors' | 'risk' | 'sectors'>('factors')
   const [loading, setLoading] = useState(false)
   const [updateCount, setUpdateCount] = useState(0)
+  const [selectedMetric, setSelectedMetric] = useState<any>(null)
+  const [showMetricModal, setShowMetricModal] = useState(false)
 
   const generateFactorAttribution = (): FactorAttribution[] => {
     const timeVariation = Date.now() % 100000 / 100000
@@ -168,6 +171,41 @@ export function PortfolioAnalytics({ currentBalance }: { currentBalance: number 
     return () => clearInterval(interval)
   }, [])
 
+  const getFactorDetails = (factor: FactorAttribution) => {
+    return {
+      name: `${factor.factor} Factor`,
+      value: `${factor.contribution > 0 ? '+' : ''}${factor.contribution.toFixed(1)}%`,
+      description: `The ${factor.factor.toLowerCase()} factor measures ${factor.factor === 'Momentum' ? 'the tendency of assets that have performed well to continue performing well' : factor.factor === 'Quality' ? 'companies with strong fundamentals, low debt, and stable earnings' : factor.factor === 'Value' ? 'undervalued companies trading below their intrinsic value' : factor.factor === 'Low Volatility' ? 'stocks with lower price volatility and more stable returns' : 'smaller companies that may offer higher growth potential'}.`,
+      calculation: `Factor Loading × Factor Return × Portfolio Weight (${factor.weight}%)`,
+      interpretation: `This factor contributed ${factor.contribution > 0 ? 'positively' : 'negatively'} to your portfolio performance with a ${Math.abs(factor.contribution).toFixed(1)}% impact. The factor performance of ${factor.performance.toFixed(1)}% ${factor.performance > 15 ? 'significantly outperformed' : factor.performance > 10 ? 'outperformed' : factor.performance > 5 ? 'moderately performed' : 'underperformed'} during this period.`,
+      benchmark: '0.0%',
+      percentile: 75 + Math.random() * 20,
+      trend: factor.contribution > 0 ? 'up' as const : 'down' as const,
+      historicalData: [
+        { period: 'Last Month', value: factor.contribution * 0.7 },
+        { period: 'Last Quarter', value: factor.contribution * 0.85 },
+        { period: 'Last 6 Months', value: factor.contribution * 0.92 },
+        { period: 'Current Period', value: factor.contribution }
+      ],
+      relatedMetrics: [
+        { name: 'Factor Loading', value: (factor.weight / 100).toFixed(2), correlation: 0.95 },
+        { name: 'Factor Volatility', value: (8 + Math.random() * 4).toFixed(1) + '%', correlation: 0.34 },
+        { name: 'Factor Sharpe', value: (1.2 + Math.random() * 0.8).toFixed(2), correlation: 0.67 }
+      ],
+      actionableInsights: [
+        `${factor.factor} factor is ${factor.contribution > 0 ? 'contributing positively' : 'detracting from'} portfolio performance`,
+        `Consider ${factor.contribution > 2 ? 'taking profits' : factor.contribution < -1 ? 'reducing exposure' : 'maintaining current allocation'} in ${factor.factor.toLowerCase()} strategies`,
+        `Monitor factor rotation signals for optimal timing of ${factor.factor.toLowerCase()} exposure adjustments`
+      ]
+    }
+  }
+
+  const handleFactorClick = (factor: FactorAttribution) => {
+    const details = getFactorDetails(factor)
+    setSelectedMetric(details)
+    setShowMetricModal(true)
+  }
+
   const views = [
     { id: 'factors', name: 'Factor Attribution', icon: Target },
     { id: 'risk', name: 'Risk Analytics', icon: AlertTriangle },
@@ -231,11 +269,15 @@ export function PortfolioAnalytics({ currentBalance }: { currentBalance: number 
           <h4 className="font-medium text-gray-900">Factor Attribution Analysis</h4>
           <div className="space-y-4">
             {factorData.map((factor, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+              <div 
+                key={index} 
+                className="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
+                onClick={() => handleFactorClick(factor)}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${factor.color}`}></div>
-                    <span className="font-medium text-gray-900">{factor.factor}</span>
+                    <span className="font-medium text-gray-900 group-hover:text-blue-900">{factor.factor}</span>
                     <span className="text-sm text-gray-600">{factor.weight}% weight</span>
                   </div>
                   <div className="text-right">
@@ -255,6 +297,10 @@ export function PortfolioAnalytics({ currentBalance }: { currentBalance: number 
                 
                 <div className="mt-2 text-sm text-gray-600">
                   Factor Performance: {factor.performance > 0 ? '+' : ''}{factor.performance.toFixed(1)}%
+                </div>
+                
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-xs text-blue-600 font-medium">Click for factor analysis →</div>
                 </div>
               </div>
             ))}
@@ -391,6 +437,16 @@ export function PortfolioAnalytics({ currentBalance }: { currentBalance: number 
           </div>
         </div>
       )}
+      
+      {/* Metric Detail Modal */}
+      <MetricDetailModal
+        metric={selectedMetric}
+        isOpen={showMetricModal}
+        onClose={() => {
+          setShowMetricModal(false)
+          setSelectedMetric(null)
+        }}
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { TrendingUp, Calendar, BarChart3, Target, Award, Activity, RefreshCw } from 'lucide-react'
+import { MetricDetailModal } from './MetricDetailModal'
 
 interface PerformanceData {
   metric: string
@@ -21,6 +22,8 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
   const [selectedPeriod, setSelectedPeriod] = useState<'1M' | '3M' | '6M' | '1Y' | 'YTD'>('YTD')
   const [loading, setLoading] = useState(false)
   const [updateCount, setUpdateCount] = useState(0)
+  const [selectedMetric, setSelectedMetric] = useState<any>(null)
+  const [showMetricModal, setShowMetricModal] = useState(false)
 
   const generatePerformanceData = (): PerformanceData[] => {
     const timeVariation = Date.now() % 100000 / 100000
@@ -131,6 +134,177 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
     setLoading(false)
   }
 
+  const getMetricDetails = (metricName: string, data: PerformanceData) => {
+    const metricDetails = {
+      'Total Return': {
+        name: 'Total Return',
+        value: data.current.toFixed(1) + '%',
+        description: 'The total percentage gain or loss of your portfolio over the selected time period, including all dividends, interest, and capital appreciation.',
+        calculation: '((Ending Value - Beginning Value) / Beginning Value) × 100',
+        interpretation: `Your portfolio has generated a ${data.current.toFixed(1)}% return over the ${selectedPeriod} period, ${data.current > data.benchmark ? 'outperforming' : 'underperforming'} the benchmark by ${Math.abs(data.current - data.benchmark).toFixed(1)} percentage points.`,
+        benchmark: data.benchmark.toFixed(1) + '%',
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: 'Last Month', value: data.current * 0.3 },
+          { period: 'Last Quarter', value: data.current * 0.7 },
+          { period: 'Last 6 Months', value: data.current * 0.85 },
+          { period: 'Current Period', value: data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Alpha', value: (data.current - data.benchmark).toFixed(1) + '%', correlation: 0.95 },
+          { name: 'Tracking Error', value: '2.1%', correlation: -0.34 },
+          { name: 'Information Ratio', value: '1.67', correlation: 0.78 }
+        ],
+        actionableInsights: [
+          'Strong outperformance suggests effective strategy execution',
+          'Consider taking profits if returns exceed long-term targets',
+          'Monitor for mean reversion in overperforming sectors'
+        ]
+      },
+      'Sharpe Ratio': {
+        name: 'Sharpe Ratio',
+        value: data.current.toFixed(2),
+        description: 'A measure of risk-adjusted return that indicates how much excess return you receive for the extra volatility you endure for holding a riskier asset.',
+        calculation: '(Portfolio Return - Risk-Free Rate) / Portfolio Standard Deviation',
+        interpretation: `A Sharpe ratio of ${data.current.toFixed(2)} indicates ${data.current > 2 ? 'excellent' : data.current > 1.5 ? 'good' : data.current > 1 ? 'adequate' : 'poor'} risk-adjusted performance. Values above 2.0 are considered exceptional in institutional investing.`,
+        benchmark: data.benchmark.toFixed(2),
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: 'Q1 2025', value: data.current * 0.85 },
+          { period: 'Q2 2025', value: data.current * 0.92 },
+          { period: 'Q3 2025', value: data.current * 0.97 },
+          { period: 'Current', value: data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Sortino Ratio', value: (data.current * 1.15).toFixed(2), correlation: 0.89 },
+          { name: 'Calmar Ratio', value: (data.current * 0.95).toFixed(2), correlation: 0.76 },
+          { name: 'Volatility', value: '8.7%', correlation: -0.45 }
+        ],
+        actionableInsights: [
+          'Sharpe ratio above 2.0 indicates superior risk management',
+          'Consider increasing position sizes during high Sharpe periods',
+          'Monitor for regime changes that could impact risk-adjusted returns'
+        ]
+      },
+      'Max Drawdown': {
+        name: 'Maximum Drawdown',
+        value: data.current.toFixed(1) + '%',
+        description: 'The largest peak-to-trough decline in portfolio value during the selected period. This measures the worst-case scenario for capital preservation.',
+        calculation: 'Max((Peak Value - Trough Value) / Peak Value) × 100',
+        interpretation: `A maximum drawdown of ${data.current.toFixed(1)}% means your portfolio declined by this amount from its highest point. ${data.current < 10 ? 'This is excellent capital preservation.' : data.current < 20 ? 'This represents moderate risk control.' : 'This suggests high volatility periods.'}`,
+        benchmark: data.benchmark.toFixed(1) + '%',
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: 'Jan 2025', value: -2.1 },
+          { period: 'Mar 2025', value: -3.8 },
+          { period: 'Jun 2025', value: -data.current * 0.8 },
+          { period: 'Current', value: -data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Recovery Time', value: '12 days', correlation: 0.67 },
+          { name: 'Ulcer Index', value: '2.8', correlation: 0.85 },
+          { name: 'Pain Index', value: '1.4', correlation: 0.72 }
+        ],
+        actionableInsights: [
+          'Low drawdown indicates strong risk management protocols',
+          'Consider stress testing portfolio for larger market shocks',
+          'Maintain stop-loss levels to preserve capital preservation record'
+        ]
+      },
+      'Win Rate': {
+        name: 'Win Rate',
+        value: data.current.toFixed(0) + '%',
+        description: 'The percentage of trades or investment periods that resulted in positive returns. Higher win rates indicate consistent strategy execution.',
+        calculation: '(Number of Winning Trades / Total Number of Trades) × 100',
+        interpretation: `A ${data.current.toFixed(0)}% win rate means ${data.current.toFixed(0)} out of every 100 trades are profitable. ${data.current > 70 ? 'This is exceptionally high and indicates strong strategy selection.' : data.current > 60 ? 'This represents solid performance.' : 'This suggests room for strategy improvement.'}`,
+        benchmark: data.benchmark.toFixed(0) + '%',
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: 'Last 30 Days', value: data.current * 0.95 },
+          { period: 'Last 60 Days', value: data.current * 0.98 },
+          { period: 'Last 90 Days', value: data.current * 1.02 },
+          { period: 'Current Period', value: data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Profit Factor', value: '3.4', correlation: 0.82 },
+          { name: 'Average Win', value: '$285', correlation: 0.45 },
+          { name: 'Average Loss', value: '$142', correlation: -0.67 }
+        ],
+        actionableInsights: [
+          'High win rate suggests effective entry and exit timing',
+          'Focus on increasing average win size while maintaining win rate',
+          'Consider position sizing adjustments during high-confidence periods'
+        ]
+      },
+      'Volatility': {
+        name: 'Portfolio Volatility',
+        value: data.current.toFixed(1) + '%',
+        description: 'The annualized standard deviation of portfolio returns, measuring the degree of variation in returns over time. Lower volatility indicates more stable returns.',
+        calculation: 'Standard Deviation of Daily Returns × √252 (trading days)',
+        interpretation: `Your portfolio volatility of ${data.current.toFixed(1)}% is ${data.current < 15 ? 'low, indicating stable returns' : data.current < 25 ? 'moderate, showing balanced risk-taking' : 'high, suggesting aggressive positioning'}. This compares favorably to the market benchmark of ${data.benchmark.toFixed(1)}%.`,
+        benchmark: data.benchmark.toFixed(1) + '%',
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: '30-Day', value: data.current * 0.9 },
+          { period: '60-Day', value: data.current * 0.95 },
+          { period: '90-Day', value: data.current * 1.05 },
+          { period: 'Annualized', value: data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Downside Deviation', value: (data.current * 0.7).toFixed(1) + '%', correlation: 0.78 },
+          { name: 'VaR (95%)', value: '$1,250', correlation: 0.85 },
+          { name: 'Beta', value: '0.73', correlation: 0.67 }
+        ],
+        actionableInsights: [
+          'Low volatility enables higher position sizing with same risk budget',
+          'Consider volatility targeting strategies during high-vol periods',
+          'Monitor for volatility regime changes that could impact returns'
+        ]
+      },
+      'Beta': {
+        name: 'Portfolio Beta',
+        value: data.current.toFixed(2),
+        description: 'A measure of your portfolio\'s sensitivity to market movements. Beta of 1.0 means your portfolio moves in line with the market, while beta below 1.0 indicates lower market sensitivity.',
+        calculation: 'Covariance(Portfolio Returns, Market Returns) / Variance(Market Returns)',
+        interpretation: `Your portfolio beta of ${data.current.toFixed(2)} means your portfolio is ${data.current < 1 ? 'less volatile than' : data.current > 1 ? 'more volatile than' : 'as volatile as'} the overall market. ${data.current < 0.8 ? 'This provides good downside protection.' : data.current > 1.2 ? 'This amplifies both gains and losses.' : 'This provides balanced market exposure.'}`,
+        benchmark: '1.00',
+        percentile: data.percentile,
+        trend: data.trend,
+        historicalData: [
+          { period: '1 Month', value: data.current * 1.05 },
+          { period: '3 Months', value: data.current * 1.02 },
+          { period: '6 Months', value: data.current * 0.98 },
+          { period: 'Current', value: data.current }
+        ],
+        relatedMetrics: [
+          { name: 'Alpha', value: (data.current * 5).toFixed(1) + '%', correlation: -0.23 },
+          { name: 'R-Squared', value: '0.85', correlation: 0.45 },
+          { name: 'Correlation', value: '0.73', correlation: 0.89 }
+        ],
+        actionableInsights: [
+          'Low beta provides natural hedge during market downturns',
+          'Consider increasing beta exposure during bull markets',
+          'Monitor beta drift as portfolio composition changes'
+        ]
+      }
+    }
+
+    return metricDetails[metricName] || null
+  }
+
+  const handleMetricClick = (metricName: string, data: PerformanceData) => {
+    const details = getMetricDetails(metricName, data)
+    if (details) {
+      setSelectedMetric(details)
+      setShowMetricModal(true)
+    }
+  }
+
   useEffect(() => {
     setPerformanceData(generatePerformanceData())
     setTimeSeriesData(generateTimeSeriesData())
@@ -207,9 +381,13 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
           {/* Performance Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {performanceData.map((metric, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <div 
+                key={index} 
+                className="bg-gray-50 rounded-lg p-4 hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
+                onClick={() => handleMetricClick(metric.metric, metric)}
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{metric.metric}</span>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">{metric.metric}</span>
                   {getTrendIcon(metric.trend)}
                 </div>
                 
@@ -239,6 +417,10 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
                 
                 <div className="mt-2 text-xs text-gray-500">
                   {metric.description}
+                </div>
+                
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-xs text-blue-600 font-medium">Click for details →</div>
                 </div>
               </div>
             ))}
@@ -311,6 +493,16 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
           </div>
         </div>
       )}
+      
+      {/* Metric Detail Modal */}
+      <MetricDetailModal
+        metric={selectedMetric}
+        isOpen={showMetricModal}
+        onClose={() => {
+          setShowMetricModal(false)
+          setSelectedMetric(null)
+        }}
+      />
     </div>
   )
 }
