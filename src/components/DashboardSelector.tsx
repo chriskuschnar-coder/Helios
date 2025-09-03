@@ -19,14 +19,14 @@ export function DashboardSelector() {
 
   // Dashboard switcher header
   const DashboardSwitcher = () => (
-    <div className="glass backdrop-blur-strong sticky top-0 z-50 safe-area-top border-b border-white/20">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-18 md:h-20">
-          <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
-            <div className="w-10 h-10 bg-primary-gradient rounded-full flex items-center justify-center">
+    <div className="nav-container">
+      <div className="exchange-container">
+        <div className="flex justify-between items-center h-20">
+          <div className="nav-brand">
+            <div className="nav-logo">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
-            <span className="text-premium text-lg md:text-xl text-white mobile-text-sm">
+            <span className="nav-title">
               Global Market Consulting
             </span>
           </div>
@@ -34,15 +34,15 @@ export function DashboardSelector() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors mobile-button mobile-compact-padding"
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
           >
-            {mobileMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
+            {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
           </button>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-8">
             {/* Dashboard Toggle */}
-            <div className="flex items-center space-x-2 glass-dark rounded-xl p-2">
+            <div className="nav-tabs">
               <button
                 onClick={() => setSelectedDashboard('investor')}
                 className={`nav-tab ${
@@ -67,16 +67,16 @@ export function DashboardSelector() {
               </button>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-right text-white">
-                <div className="text-sm font-bold">
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <div className="text-sm font-bold text-gradient">
                   ${(account?.balance || 0).toLocaleString()}
                 </div>
-                <div className="text-xs opacity-70">{user?.email}</div>
+                <div className="text-xs text-white opacity-60">{user?.email}</div>
               </div>
               <button
                 onClick={handleSignOut}
-                className="glass-button text-sm"
+                className="exchange-button text-sm"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -87,10 +87,10 @@ export function DashboardSelector() {
         
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/20 glass">
-            <div className="px-4 py-4 space-y-3">
+          <div className="md:hidden border-t border-white/10 exchange-card-dark">
+            <div className="px-6 py-6 space-y-4">
               {/* Dashboard Toggle Mobile */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <button
                   onClick={() => {
                     setSelectedDashboard('investor')
@@ -122,20 +122,20 @@ export function DashboardSelector() {
               </div>
               
               {/* Account Info Mobile */}
-              <div className="border-t border-white/20 pt-3">
+              <div className="border-t border-white/10 pt-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-white">
-                    <div className="text-sm font-bold">
+                  <div>
+                    <div className="text-sm font-bold text-gradient">
                       ${(account?.balance || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs opacity-70">{user?.email}</div>
+                    <div className="text-xs text-white opacity-60">{user?.email}</div>
                   </div>
                   <button
                     onClick={() => {
                       handleSignOut()
                       setMobileMenuOpen(false)
                     }}
-                    className="glass-button text-sm"
+                    className="exchange-button text-sm"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Sign Out</span>
@@ -159,9 +159,11 @@ export function DashboardSelector() {
   }
 
   return (
-    <>
-      <DashboardSwitcher />
+    <div className="min-h-screen bg-white">
+      <div className="exchange-nav">
+        <DashboardSwitcher />
+      </div>
       <InvestorDashboard />
-    </>
+    </div>
   )
 }
