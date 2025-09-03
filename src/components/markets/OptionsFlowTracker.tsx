@@ -37,66 +37,71 @@ export function OptionsFlowTracker() {
   const [liveCount, setLiveCount] = useState(0)
   const [showInsiderMode, setShowInsiderMode] = useState(false)
 
-  const generateOptionsFlow = (): OptionsFlow[] => {
-    const assetsByCategory = {
-      tech: [
-        { symbol: 'AAPL', basePrice: 225 },
-        { symbol: 'MSFT', basePrice: 415 },
-        { symbol: 'NVDA', basePrice: 875 },
-        { symbol: 'GOOGL', basePrice: 165 },
-        { symbol: 'META', basePrice: 485 },
-        { symbol: 'TSLA', basePrice: 248 },
-        { symbol: 'AMZN', basePrice: 185 },
-        { symbol: 'NFLX', basePrice: 485 },
-        { symbol: 'CRM', basePrice: 285 },
-        { symbol: 'ORCL', basePrice: 125 }
-      ],
-      finance: [
-        { symbol: 'JPM', basePrice: 225 },
-        { symbol: 'BAC', basePrice: 42 },
-        { symbol: 'WFC', basePrice: 58 },
-        { symbol: 'GS', basePrice: 485 },
-        { symbol: 'MS', basePrice: 115 },
-        { symbol: 'C', basePrice: 68 },
-        { symbol: 'BRK.B', basePrice: 485 },
-        { symbol: 'V', basePrice: 285 },
-        { symbol: 'MA', basePrice: 485 },
-        { symbol: 'AXP', basePrice: 285 }
-      ],
-      crypto: [
-        { symbol: 'BTC', basePrice: 106250 },
-        { symbol: 'ETH', basePrice: 3195 },
-        { symbol: 'COIN', basePrice: 285 },
-        { symbol: 'MSTR', basePrice: 385 },
-        { symbol: 'RIOT', basePrice: 12 },
-        { symbol: 'MARA', basePrice: 18 }
-      ],
-      indices: [
-        { symbol: 'SPY', basePrice: 597 },
-        { symbol: 'QQQ', basePrice: 485 },
-        { symbol: 'IWM', basePrice: 231 },
-        { symbol: 'VIX', basePrice: 18 },
-        { symbol: 'DIA', basePrice: 425 },
-        { symbol: 'EFA', basePrice: 85 },
-        { symbol: 'EEM', basePrice: 42 }
-      ],
-      energy: [
-        { symbol: 'XOM', basePrice: 118 },
-        { symbol: 'CVX', basePrice: 158 },
-        { symbol: 'COP', basePrice: 108 },
-        { symbol: 'SLB', basePrice: 42 },
-        { symbol: 'XLE', basePrice: 95 },
-        { symbol: 'OXY', basePrice: 58 }
-      ],
-      healthcare: [
-        { symbol: 'JNJ', basePrice: 155 },
-        { symbol: 'PFE', basePrice: 25 },
-        { symbol: 'UNH', basePrice: 585 },
-        { symbol: 'ABBV', basePrice: 175 },
-        { symbol: 'LLY', basePrice: 785 },
-        { symbol: 'MRK', basePrice: 98 },
-        { symbol: 'XLV', basePrice: 125 }
-      ]
+  const assetsByCategory = {
+    tech: [
+      { symbol: 'AAPL', basePrice: 225 },
+      { symbol: 'MSFT', basePrice: 415 },
+      { symbol: 'NVDA', basePrice: 875 },
+      { symbol: 'GOOGL', basePrice: 165 },
+      { symbol: 'META', basePrice: 485 },
+      { symbol: 'TSLA', basePrice: 248 },
+      { symbol: 'AMZN', basePrice: 185 },
+      { symbol: 'NFLX', basePrice: 485 },
+      { symbol: 'CRM', basePrice: 285 },
+      { symbol: 'ORCL', basePrice: 125 }
+    ],
+    finance: [
+      { symbol: 'JPM', basePrice: 225 },
+      { symbol: 'BAC', basePrice: 42 },
+      { symbol: 'WFC', basePrice: 58 },
+      { symbol: 'GS', basePrice: 485 },
+      { symbol: 'MS', basePrice: 115 },
+      { symbol: 'C', basePrice: 68 },
+      { symbol: 'BRK.B', basePrice: 485 },
+      { symbol: 'V', basePrice: 285 },
+      { symbol: 'MA', basePrice: 485 },
+      { symbol: 'AXP', basePrice: 285 }
+    ],
+    crypto: [
+      { symbol: 'BTC', basePrice: 106250 },
+      { symbol: 'ETH', basePrice: 3195 },
+      { symbol: 'COIN', basePrice: 285 },
+      { symbol: 'MSTR', basePrice: 385 },
+      { symbol: 'RIOT', basePrice: 12 },
+      { symbol: 'MARA', basePrice: 18 }
+    ],
+    indices: [
+      { symbol: 'SPY', basePrice: 597 },
+      { symbol: 'QQQ', basePrice: 485 },
+      { symbol: 'IWM', basePrice: 231 },
+      { symbol: 'VIX', basePrice: 18 },
+      { symbol: 'DIA', basePrice: 425 },
+      { symbol: 'EFA', basePrice: 85 },
+      { symbol: 'EEM', basePrice: 42 }
+    ],
+    energy: [
+      { symbol: 'XOM', basePrice: 118 },
+      { symbol: 'CVX', basePrice: 158 },
+      { symbol: 'COP', basePrice: 108 },
+      { symbol: 'SLB', basePrice: 42 },
+      { symbol: 'XLE', basePrice: 95 },
+      { symbol: 'OXY', basePrice: 58 }
+    ],
+    healthcare: [
+      { symbol: 'JNJ', basePrice: 155 },
+      { symbol: 'PFE', basePrice: 25 },
+      { symbol: 'UNH', basePrice: 585 },
+      { symbol: 'ABBV', basePrice: 175 },
+      { symbol: 'LLY', basePrice: 785 },
+      { symbol: 'MRK', basePrice: 98 },
+      { symbol: 'XLV', basePrice: 125 }
+    ]
+  }
+
+  const allAssets = Object.entries(assetsByCategory).flatMap(([category, assets]) => 
+    assets.map(asset => ({ ...asset, category: category as any }))
+  )
+
     }
     const traders = [
       'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
@@ -107,10 +112,6 @@ export function OptionsFlowTracker() {
     const now = Date.now()
     const timeVariation = (now % 100000) / 100000
     
-    return Array.from({ length: 15 + Math.floor(timeVariation * 10) }, (_, i) => {
-      const symbol = symbols[Math.floor((timeVariation * 1000 + i * 100) % symbols.length)]
-      const isCall = Math.random() > 0.4
-      const basePrice = symbol === 'SPY' ? 597 : symbol === 'QQQ' ? 485 : symbol === 'TSLA' ? 248 : 
                        symbol === 'AAPL' ? 225 : symbol === 'BTC' ? 106250 : 150 + Math.random() * 200
       
       const strike = basePrice * (0.95 + Math.random() * 0.1) // ±5% from current price
