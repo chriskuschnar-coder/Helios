@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { PieChart, BarChart3, TrendingUp, RefreshCw, Target, Zap } from 'lucide-react'
+import { PieChart, BarChart3, TrendingUp, RefreshCw, Target, Zap, ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
 interface AllocationData {
@@ -10,6 +10,8 @@ interface AllocationData {
   color: string
   target: number
   risk: 'Low' | 'Medium' | 'High'
+  category: 'stocks' | 'crypto' | 'bonds' | 'cash' | 'other'
+  icon: string
 }
 
 interface ChartProps {
@@ -22,54 +24,66 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   const [animationProgress, setAnimationProgress] = useState(0)
   const [selectedMetric, setSelectedMetric] = useState<any>(null)
   const [showMetricModal, setShowMetricModal] = useState(false)
-  const [allocationDrift, setAllocationDrift] = useState<{ [key: string]: number }>({})
-  const [rebalanceAlerts, setRebalanceAlerts] = useState<string[]>([])
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const generateAllocationData = (): AllocationData[] => {
-    // Live allocation drift simulation
-    const marketMovement = Math.sin(Date.now() / 20000) * 0.02    // ±2% market movement
-    const performanceDrift = Math.cos(Date.now() / 40000) * 0.015  // ±1.5% performance drift
+    const marketMovement = Math.sin(Date.now() / 20000) * 0.02
+    const performanceDrift = Math.cos(Date.now() / 40000) * 0.015
     const timeVariation = marketMovement + performanceDrift
     
     if (currentBalance === 0) {
       return [
-        { name: 'Alpha Fund', value: 0, percentage: 0, performance: 0, color: '#1e40af', target: 65, risk: 'Medium' },
-        { name: 'Market Neutral', value: 0, percentage: 0, performance: 0, color: '#059669', target: 25, risk: 'Low' },
-        { name: 'Momentum Portfolio', value: 0, percentage: 0, performance: 0, color: '#dc2626', target: 10, risk: 'High' }
+        { name: 'Stocks', value: 0, percentage: 0, performance: 0, color: '#3B82F6', target: 60, risk: 'Medium', category: 'stocks', icon: '📈' },
+        { name: 'Crypto', value: 0, percentage: 0, performance: 0, color: '#F59E0B', target: 20, risk: 'High', category: 'crypto', icon: '₿' },
+        { name: 'Bonds', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 15, risk: 'Low', category: 'bonds', icon: '🏛️' },
+        { name: 'Cash', value: 0, percentage: 0, performance: 0, color: '#6B7280', target: 5, risk: 'Low', category: 'cash', icon: '💵' }
       ]
     }
 
-    // Calculate allocation drift from targets
     return [
       {
-        name: 'Alpha Fund',
-        value: currentBalance * 0.65,
-        percentage: 65,
+        name: 'Stocks',
+        value: currentBalance * 0.60,
+        percentage: 60 + (timeVariation * 3),
         performance: 14.2 + (timeVariation * 3),
-        color: '#1e40af',
-        target: 65,
-        deviation: (65 + timeVariation * 5) - 65,
-        risk: 'Medium'
+        color: '#3B82F6',
+        target: 60,
+        risk: 'Medium',
+        category: 'stocks',
+        icon: '📈'
       },
       {
-        name: 'Market Neutral',
-        value: currentBalance * 0.25,
-        percentage: 25,
-        performance: 8.7 + (timeVariation * 2),
-        color: '#059669',
-        target: 25,
-        deviation: (25 + timeVariation * 3) - 25,
-        risk: 'Low'
+        name: 'Crypto',
+        value: currentBalance * 0.20,
+        percentage: 20 + (timeVariation * 2),
+        performance: 28.7 + (timeVariation * 5),
+        color: '#F59E0B',
+        target: 20,
+        risk: 'High',
+        category: 'crypto',
+        icon: '₿'
       },
       {
-        name: 'Momentum Portfolio',
-        value: currentBalance * 0.10,
-        percentage: 10,
-        performance: 18.9 + (timeVariation * 4),
-        color: '#dc2626',
-        target: 10,
-        deviation: (10 + timeVariation * 2) - 10,
-        risk: 'High'
+        name: 'Bonds',
+        value: currentBalance * 0.15,
+        percentage: 15 + (timeVariation * 1.5),
+        performance: 6.8 + (timeVariation * 2),
+        color: '#10B981',
+        target: 15,
+        risk: 'Low',
+        category: 'bonds',
+        icon: '🏛️'
+      },
+      {
+        name: 'Cash',
+        value: currentBalance * 0.05,
+        percentage: 5 + (timeVariation * 0.5),
+        performance: 2.1 + (timeVariation * 0.5),
+        color: '#6B7280',
+        target: 5,
+        risk: 'Low',
+        category: 'cash',
+        icon: '💵'
       }
     ]
   }
@@ -78,18 +92,6 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
 
   useEffect(() => {
     setAllocationData(generateAllocationData())
-    
-    // Check for rebalancing needs
-    const newData = generateAllocationData()
-    const alerts: string[] = []
-    
-    newData.forEach(allocation => {
-      if (Math.abs(allocation.deviation) > 3) {
-        alerts.push(`${allocation.name} is ${allocation.deviation > 0 ? 'overweight' : 'underweight'} by ${Math.abs(allocation.deviation).toFixed(1)}%`)
-      }
-    })
-    
-    setRebalanceAlerts(alerts)
   }, [currentBalance])
 
   useEffect(() => {
@@ -102,10 +104,10 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   const getAllocationDetails = (allocation: AllocationData) => {
     return {
       name: allocation.name,
-      value: `${allocation.percentage}% (${allocation.value.toLocaleString()})`,
-      description: `${allocation.name} represents ${allocation.percentage}% of your total portfolio allocation. This ${allocation.risk.toLowerCase()}-risk investment strategy focuses on ${allocation.name.includes('Alpha') ? 'generating alpha through quantitative models' : allocation.name.includes('Neutral') ? 'market-neutral strategies with low correlation to market movements' : 'momentum-based strategies with higher return potential'}.`,
-      calculation: `(Fund Value / Total Portfolio Value) × 100 = (${allocation.value.toLocaleString()} / ${currentBalance.toLocaleString()}) × 100`,
-      interpretation: `Your ${allocation.name} allocation is ${Math.abs(allocation.percentage - allocation.target) < 2 ? 'well-balanced' : allocation.percentage > allocation.target ? 'overweight' : 'underweight'} relative to the target of ${allocation.target}%. The ${allocation.performance.toFixed(1)}% performance ${allocation.performance > 10 ? 'significantly exceeds' : allocation.performance > 5 ? 'exceeds' : 'meets'} expectations for this risk level.`,
+      value: `${allocation.percentage.toFixed(1)}% (${allocation.value.toLocaleString()})`,
+      description: `${allocation.name} represents ${allocation.percentage.toFixed(1)}% of your total portfolio allocation.`,
+      calculation: `(Asset Value / Total Portfolio Value) × 100`,
+      interpretation: `Your ${allocation.name} allocation is ${Math.abs(allocation.percentage - allocation.target) < 2 ? 'well-balanced' : allocation.percentage > allocation.target ? 'overweight' : 'underweight'} relative to the target of ${allocation.target}%.`,
       benchmark: `${allocation.target}% target`,
       percentile: allocation.performance > 15 ? 90 : allocation.performance > 10 ? 75 : 60,
       trend: allocation.performance > 0 ? 'up' as const : 'down' as const,
@@ -122,8 +124,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
       ],
       actionableInsights: [
         `${allocation.name} is ${allocation.percentage > allocation.target ? 'overweight' : allocation.percentage < allocation.target ? 'underweight' : 'properly weighted'} in your portfolio`,
-        `Consider ${allocation.performance > 15 ? 'taking profits' : allocation.performance < 0 ? 'reducing exposure' : 'maintaining position'} based on recent performance`,
-        `${allocation.risk === 'High' ? 'Monitor volatility closely' : allocation.risk === 'Low' ? 'Stable allocation suitable for risk management' : 'Balanced risk profile supports core allocation'}`
+        `Consider ${allocation.performance > 15 ? 'taking profits' : allocation.performance < 0 ? 'reducing exposure' : 'maintaining position'} based on recent performance`
       ]
     }
   }
@@ -134,10 +135,11 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
     setShowMetricModal(true)
   }
 
-  const createPieChart = () => {
-    const centerX = 150
-    const centerY = 150
-    const radius = 120
+  const createDonutChart = () => {
+    const centerX = 120
+    const centerY = 120
+    const outerRadius = 100
+    const innerRadius = 65
     let currentAngle = -90
 
     return allocationData.map((item, index) => {
@@ -145,216 +147,419 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
       const startAngle = currentAngle
       const endAngle = currentAngle + angle
       
-      const x1 = centerX + radius * Math.cos((startAngle * Math.PI) / 180)
-      const y1 = centerY + radius * Math.sin((startAngle * Math.PI) / 180)
-      const x2 = centerX + radius * Math.cos((endAngle * Math.PI) / 180)
-      const y2 = centerY + radius * Math.sin((endAngle * Math.PI) / 180)
+      const x1 = centerX + outerRadius * Math.cos((startAngle * Math.PI) / 180)
+      const y1 = centerY + outerRadius * Math.sin((startAngle * Math.PI) / 180)
+      const x2 = centerX + outerRadius * Math.cos((endAngle * Math.PI) / 180)
+      const y2 = centerY + outerRadius * Math.sin((endAngle * Math.PI) / 180)
+      
+      const x3 = centerX + innerRadius * Math.cos((endAngle * Math.PI) / 180)
+      const y3 = centerY + innerRadius * Math.sin((endAngle * Math.PI) / 180)
+      const x4 = centerX + innerRadius * Math.cos((startAngle * Math.PI) / 180)
+      const y4 = centerY + innerRadius * Math.sin((startAngle * Math.PI) / 180)
       
       const largeArcFlag = angle > 180 ? 1 : 0
       
       const pathData = [
-        `M ${centerX} ${centerY}`,
-        `L ${x1} ${y1}`,
-        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        `M ${x1} ${y1}`,
+        `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        `L ${x3} ${y3}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
         'Z'
       ].join(' ')
       
       currentAngle += angle
       
+      const isHovered = hoveredSegment === item.name
+      const scale = isHovered ? 1.05 : 1
+      
       return (
-        <path
-          key={index}
-          d={pathData}
-          fill={item.color}
-          stroke="white"
-          strokeWidth="3"
-          className={`transition-all duration-300 cursor-pointer ${
-            hoveredSegment === item.name ? 'opacity-80 transform scale-105' : 'opacity-90'
-          }`}
-          onMouseEnter={() => setHoveredSegment(item.name)}
-          onMouseLeave={() => setHoveredSegment(null)}
-          onClick={() => handleAllocationClick(item)}
-        />
+        <g key={index}>
+          <path
+            d={pathData}
+            fill={item.color}
+            stroke="white"
+            strokeWidth="2"
+            className="transition-all duration-300 cursor-pointer"
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: `${centerX}px ${centerY}px`,
+              filter: isHovered ? 'brightness(1.1)' : 'none'
+            }}
+            onMouseEnter={() => setHoveredSegment(item.name)}
+            onMouseLeave={() => setHoveredSegment(null)}
+            onClick={() => handleAllocationClick(item)}
+          />
+          {isHovered && (
+            <text
+              x={centerX}
+              y={centerY - 5}
+              textAnchor="middle"
+              className="text-sm font-semibold fill-gray-700"
+            >
+              {item.name}
+            </text>
+          )}
+          {isHovered && (
+            <text
+              x={centerX}
+              y={centerY + 10}
+              textAnchor="middle"
+              className="text-xs fill-gray-600"
+            >
+              {item.percentage.toFixed(1)}%
+            </text>
+          )}
+        </g>
       )
     })
   }
 
+  // Calculate today's change
+  const todaysChange = allocationData.reduce((sum, item) => sum + (item.value * 0.012), 0) // Simulated daily change
+  const todaysChangePercent = currentBalance > 0 ? (todaysChange / currentBalance) * 100 : 0
+  const isPositiveChange = todaysChange >= 0
+
+  // Calculate allocation balance score
+  const allocationBalance = allocationData.reduce((sum, item) => {
+    const deviation = Math.abs(item.percentage - item.target)
+    return sum + (deviation > 5 ? 0 : (5 - deviation) * 20)
+  }, 0) / allocationData.length
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <PieChart className="h-5 w-5 text-blue-600" />
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Total Portfolio Value */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Portfolio Value</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           </div>
-          <div>
-            <h3 className="font-serif text-lg font-bold text-navy-900">Portfolio Allocation</h3>
-            <p className="text-sm text-gray-600">Interactive breakdown with performance</p>
-            {rebalanceAlerts.length > 0 && (
-              <p className="text-xs text-orange-600 mt-1">
-                🎯 {rebalanceAlerts[0]}
-              </p>
-            )}
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            ${currentBalance.toLocaleString()}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Updated just now
           </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setSelectedView('pie')}
-            className={`p-2 rounded-lg transition-colors ${
-              selectedView === 'pie' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            <PieChart className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setSelectedView('bar')}
-            className={`p-2 rounded-lg transition-colors ${
-              selectedView === 'bar' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-          </button>
+
+        {/* Today's Change */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Today's Change</span>
+            {isPositiveChange ? (
+              <ArrowUpRight className="w-4 h-4 text-green-500" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4 text-red-500" />
+            )}
+          </div>
+          <div className={`text-2xl font-bold mb-1 ${isPositiveChange ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositiveChange ? '+' : ''}${Math.abs(todaysChange).toLocaleString()}
+          </div>
+          <div className={`text-xs ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
+            {isPositiveChange ? '+' : ''}{todaysChangePercent.toFixed(2)}%
+          </div>
+        </div>
+
+        {/* Allocation Balance */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Allocation Balance</span>
+            <Target className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {allocationBalance.toFixed(0)}%
+          </div>
+          <div className={`text-xs ${allocationBalance > 80 ? 'text-green-500' : allocationBalance > 60 ? 'text-yellow-500' : 'text-red-500'}`}>
+            {allocationBalance > 80 ? 'Well balanced' : allocationBalance > 60 ? 'Minor drift' : 'Needs rebalancing'}
+          </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Chart */}
-        <div className="flex items-center justify-center">
-          {selectedView === 'pie' ? (
-            <div className="relative">
-              <svg width="300" height="300" className="transform transition-all duration-500">
-                {createPieChart()}
-                
-                {/* Center circle */}
-                <circle
-                  cx="150"
-                  cy="150"
-                  r="60"
-                  fill="white"
-                  stroke="#e5e7eb"
-                  strokeWidth="2"
-                />
-                
-                {/* Center text */}
-                <text
-                  x="150"
-                  y="140"
-                  textAnchor="middle"
-                  className="text-sm font-medium fill-gray-600"
+      {/* Main Portfolio Allocation Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Portfolio Allocation</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Asset distribution and performance</p>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedView('pie')}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    selectedView === 'pie' 
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
                 >
-                  Total Value
-                </text>
-                <text
-                  x="150"
-                  y="160"
-                  textAnchor="middle"
-                  className="text-lg font-bold fill-gray-900"
+                  <PieChart className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setSelectedView('bar')}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    selectedView === 'bar' 
+                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
                 >
-                  ${currentBalance.toLocaleString()}
-                </text>
-              </svg>
+                  <BarChart3 className="w-4 h-4" />
+                </button>
+              </div>
               
-              {hoveredSegment && (
-                <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
-                  {hoveredSegment}
-                </div>
-              )}
+              <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
             </div>
-          ) : (
-            <div className="w-full space-y-4">
-              {allocationData.map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-900">{item.name}</span>
-                    <span className="text-sm text-gray-600">{item.percentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="h-3 rounded-full transition-all duration-1000"
-                      style={{ 
-                        width: `${item.percentage}%`,
-                        backgroundColor: item.color
-                      }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">${item.value.toLocaleString()}</span>
-                    <span className={`font-medium ${item.performance > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Legend & Details */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Fund Details</h4>
-          
-          {allocationData.map((item, index) => (
-            <div 
-              key={index}
-              className={`p-4 rounded-lg border transition-all cursor-pointer group ${
-                hoveredSegment === item.name 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
-              }`}
-              onMouseEnter={() => setHoveredSegment(item.name)}
-              onMouseLeave={() => setHoveredSegment(null)}
-              onClick={() => handleAllocationClick(item)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="font-medium text-gray-900 group-hover:text-blue-900">{item.name}</span>
+        {/* Content */}
+        <div className="p-6">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Chart Section */}
+            <div className="flex items-center justify-center">
+              {selectedView === 'pie' ? (
+                <div className="relative">
+                  <svg width="240" height="240" className="transform transition-all duration-500">
+                    {createDonutChart()}
+                    
+                    {/* Center content */}
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r="65"
+                      fill="white"
+                      stroke="#f3f4f6"
+                      strokeWidth="1"
+                      className="dark:fill-gray-800 dark:stroke-gray-600"
+                    />
+                    
+                    <text
+                      x="120"
+                      y="110"
+                      textAnchor="middle"
+                      className="text-xs font-medium fill-gray-500 dark:fill-gray-400"
+                    >
+                      Total Value
+                    </text>
+                    <text
+                      x="120"
+                      y="125"
+                      textAnchor="middle"
+                      className="text-lg font-bold fill-gray-900 dark:fill-white"
+                    >
+                      ${(currentBalance / 1000).toFixed(0)}K
+                    </text>
+                    <text
+                      x="120"
+                      y="140"
+                      textAnchor="middle"
+                      className={`text-xs font-medium ${isPositiveChange ? 'fill-green-600' : 'fill-red-600'}`}
+                    >
+                      {isPositiveChange ? '+' : ''}{todaysChangePercent.toFixed(1)}%
+                    </text>
+                  </svg>
+                  
+                  {/* Hover tooltip */}
+                  {hoveredSegment && (
+                    <div className="absolute top-4 left-4 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm shadow-lg animate-in fade-in duration-200">
+                      <div className="font-medium">{hoveredSegment}</div>
+                      <div className="text-xs opacity-80">
+                        {allocationData.find(item => item.name === hoveredSegment)?.percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  item.risk === 'Low' ? 'bg-green-100 text-green-800' :
-                  item.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {item.risk} Risk
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Value:</span>
-                  <span className="font-medium ml-2">${item.value.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Performance:</span>
-                  <span className={`font-medium ml-2 ${item.performance > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Allocation:</span>
-                  <span className="font-medium ml-2">{item.percentage}%</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Target:</span>
-                  <span className="font-medium ml-2">{item.target}%</span>
-                </div>
-              </div>
-              
-              {Math.abs(item.deviation) > 2 && (
-                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-                  <Target className="h-3 w-3 inline mr-1" />
-                  Consider rebalancing: {item.deviation > 0 ? 'Overweight' : 'Underweight'} by {Math.abs(item.deviation).toFixed(1)}%
+              ) : (
+                <div className="w-full space-y-4">
+                  {allocationData.map((item, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{item.icon}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{item.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">{item.percentage.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-2 rounded-full transition-all duration-1000 ease-out"
+                          style={{ 
+                            width: `${item.percentage}%`,
+                            backgroundColor: item.color
+                          }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">${item.value.toLocaleString()}</span>
+                        <span className={`font-medium ${item.performance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+            </div>
+
+            {/* Legend & Details */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Asset Breakdown</h4>
+                <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors">
+                  Rebalance
+                </button>
+              </div>
               
-              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="text-xs text-blue-600 font-medium">Click for allocation details →</div>
+              <div className="space-y-3">
+                {allocationData.map((item, index) => (
+                  <div 
+                    key={index}
+                    className={`group p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
+                      hoveredSegment === item.name 
+                        ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
+                        : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                    onMouseEnter={() => setHoveredSegment(item.name)}
+                    onMouseLeave={() => setHoveredSegment(null)}
+                    onClick={() => handleAllocationClick(item)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          ></div>
+                          <span className="text-lg">{item.icon}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {item.name}
+                          </span>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              item.risk === 'Low' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                              item.risk === 'Medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                              'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                            }`}>
+                              {item.risk} Risk
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          {item.percentage.toFixed(1)}%
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          ${item.value.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Performance:</span>
+                        <span className={`font-semibold ml-2 ${item.performance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Target:</span>
+                        <span className="font-semibold ml-2 text-gray-700 dark:text-gray-300">{item.target}%</span>
+                      </div>
+                    </div>
+                    
+                    {/* Allocation bar */}
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <span>Current vs Target</span>
+                        <span>{Math.abs(item.percentage - item.target).toFixed(1)}% {item.percentage > item.target ? 'over' : 'under'}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
+                        <div className="flex h-full">
+                          <div
+                            className="transition-all duration-1000 ease-out rounded-full"
+                            style={{ 
+                              width: `${Math.min(item.percentage, item.target)}%`,
+                              backgroundColor: item.color
+                            }}
+                          ></div>
+                          {item.percentage > item.target && (
+                            <div
+                              className="transition-all duration-1000 ease-out bg-opacity-50 rounded-full"
+                              style={{ 
+                                width: `${item.percentage - item.target}%`,
+                                backgroundColor: item.color
+                              }}
+                            ></div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {Math.abs(item.percentage - item.target) > 3 && (
+                      <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <div className="flex items-center space-x-1">
+                          <Target className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                          <span className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">
+                            Consider rebalancing: {item.percentage > item.target ? 'Overweight' : 'Underweight'} by {Math.abs(item.percentage - item.target).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
+                        View details <ArrowUpRight className="w-3 h-3 ml-1" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Performance Summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Summary</h4>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                {allocationData.reduce((sum, item) => sum + item.performance * (item.percentage / 100), 0).toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Weighted Return</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                {allocationData.filter(item => item.performance > 0).length}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Positive Assets</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {allocationData.find(item => item.performance === Math.max(...allocationData.map(a => a.performance)))?.name}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Top Performer</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {(allocationData.reduce((sum, item) => sum + Math.abs(item.percentage - item.target), 0) / allocationData.length).toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Avg Deviation</div>
+            </div>
+          </div>
         </div>
       </div>
       
