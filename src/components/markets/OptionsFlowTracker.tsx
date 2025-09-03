@@ -38,7 +38,66 @@ export function OptionsFlowTracker() {
   const [showInsiderMode, setShowInsiderMode] = useState(false)
 
   const generateOptionsFlow = (): OptionsFlow[] => {
-    const symbols = ['SPY', 'QQQ', 'TSLA', 'AAPL', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'BTC']
+    const assetsByCategory = {
+      tech: [
+        { symbol: 'AAPL', basePrice: 225 },
+        { symbol: 'MSFT', basePrice: 415 },
+        { symbol: 'NVDA', basePrice: 875 },
+        { symbol: 'GOOGL', basePrice: 165 },
+        { symbol: 'META', basePrice: 485 },
+        { symbol: 'TSLA', basePrice: 248 },
+        { symbol: 'AMZN', basePrice: 185 },
+        { symbol: 'NFLX', basePrice: 485 },
+        { symbol: 'CRM', basePrice: 285 },
+        { symbol: 'ORCL', basePrice: 125 }
+      ],
+      finance: [
+        { symbol: 'JPM', basePrice: 225 },
+        { symbol: 'BAC', basePrice: 42 },
+        { symbol: 'WFC', basePrice: 58 },
+        { symbol: 'GS', basePrice: 485 },
+        { symbol: 'MS', basePrice: 115 },
+        { symbol: 'C', basePrice: 68 },
+        { symbol: 'BRK.B', basePrice: 485 },
+        { symbol: 'V', basePrice: 285 },
+        { symbol: 'MA', basePrice: 485 },
+        { symbol: 'AXP', basePrice: 285 }
+      ],
+      crypto: [
+        { symbol: 'BTC', basePrice: 106250 },
+        { symbol: 'ETH', basePrice: 3195 },
+        { symbol: 'COIN', basePrice: 285 },
+        { symbol: 'MSTR', basePrice: 385 },
+        { symbol: 'RIOT', basePrice: 12 },
+        { symbol: 'MARA', basePrice: 18 }
+      ],
+      indices: [
+        { symbol: 'SPY', basePrice: 597 },
+        { symbol: 'QQQ', basePrice: 485 },
+        { symbol: 'IWM', basePrice: 231 },
+        { symbol: 'VIX', basePrice: 18 },
+        { symbol: 'DIA', basePrice: 425 },
+        { symbol: 'EFA', basePrice: 85 },
+        { symbol: 'EEM', basePrice: 42 }
+      ],
+      energy: [
+        { symbol: 'XOM', basePrice: 118 },
+        { symbol: 'CVX', basePrice: 158 },
+        { symbol: 'COP', basePrice: 108 },
+        { symbol: 'SLB', basePrice: 42 },
+        { symbol: 'XLE', basePrice: 95 },
+        { symbol: 'OXY', basePrice: 58 }
+      ],
+      healthcare: [
+        { symbol: 'JNJ', basePrice: 155 },
+        { symbol: 'PFE', basePrice: 25 },
+        { symbol: 'UNH', basePrice: 585 },
+        { symbol: 'ABBV', basePrice: 175 },
+        { symbol: 'LLY', basePrice: 785 },
+        { symbol: 'MRK', basePrice: 98 },
+        { symbol: 'XLV', basePrice: 125 }
+      ]
+    }
     const traders = [
       'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
       'OPTIVER_GAMMA', 'VIRTU_EXECUTION', 'TWO_SIGMA_QUANT', 'RENAISSANCE_TECH',
@@ -149,23 +208,27 @@ export function OptionsFlowTracker() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'text-red-600 bg-red-50 border-red-200'
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-      case 'low': return 'text-green-600 bg-green-50 border-green-200'
+      case 'high': return 'text-black bg-gray-100 border-gray-300'
+      case 'medium': return 'text-gray-700 bg-gray-50 border-gray-200'
+      case 'low': return 'text-gray-600 bg-white border-gray-200'
       default: return 'text-gray-600 bg-gray-50 border-gray-200'
     }
   }
 
   const getTypeColor = (type: string) => {
-    return type === 'CALL' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+    return type === 'CALL' ? 'text-black bg-gray-100' : 'text-gray-700 bg-gray-200'
   }
 
   const getSweepColor = (sweep: string) => {
     switch (sweep) {
-      case 'AGGRESSIVE': return 'text-red-600 bg-red-100'
-      case 'BLOCK': return 'text-purple-600 bg-purple-100'
-      default: return 'text-blue-600 bg-blue-100'
+      case 'AGGRESSIVE': return 'text-black bg-gray-200'
+      case 'BLOCK': return 'text-gray-800 bg-gray-100'
+      default: return 'text-gray-700 bg-gray-100'
     }
+  }
+
+  const getCategoryColor = (category: string) => {
+    return 'text-gray-700 bg-gray-100'
   }
 
   const getTimeAgo = (timestamp: string) => {
@@ -197,7 +260,7 @@ export function OptionsFlowTracker() {
             onClick={() => setShowInsiderMode(!showInsiderMode)}
             className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium transition-all ${
               showInsiderMode 
-                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
+                ? 'bg-black text-white border border-gray-400' 
                 : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
             }`}
           >
@@ -280,14 +343,14 @@ export function OptionsFlowTracker() {
           {getFilteredFlows().map((flow) => (
             <div 
               key={flow.id}
-              className={`p-4 rounded-lg border transition-all hover:shadow-md cursor-pointer group ${
+              className={`p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer group bg-gradient-to-r from-blue-50 to-white border-blue-100 hover:border-blue-200 ${
                 flow.unusualActivity 
-                  ? 'bg-yellow-50 border-yellow-200 hover:border-yellow-300' 
+                  ? 'ring-1 ring-gray-300 bg-gradient-to-r from-gray-50 to-white' 
                   : flow.institutionalFlow
-                    ? 'bg-purple-50 border-purple-200 hover:border-purple-300'
+                    ? 'ring-1 ring-gray-300 bg-gradient-to-r from-gray-50 to-white'
                     : flow.darkPool
-                      ? 'bg-gray-50 border-gray-300 hover:border-gray-400'
-                      : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                      ? 'ring-1 ring-gray-400 bg-gradient-to-r from-gray-100 to-white'
+                      : ''
               }`}
             >
               <div className="flex items-center justify-between">
@@ -299,17 +362,17 @@ export function OptionsFlowTracker() {
                       {flow.type}
                     </span>
                     {flow.unusualActivity && (
-                      <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs font-bold">
+                      <span className="px-2 py-1 bg-black text-white rounded text-xs font-bold">
                         UNUSUAL
                       </span>
                     )}
                     {flow.institutionalFlow && (
-                      <span className="px-2 py-1 bg-purple-200 text-purple-800 rounded text-xs font-bold">
+                      <span className="px-2 py-1 bg-gray-800 text-white rounded text-xs font-bold">
                         SMART $
                       </span>
                     )}
                     {flow.darkPool && (
-                      <span className="px-2 py-1 bg-gray-300 text-gray-800 rounded text-xs font-bold">
+                      <span className="px-2 py-1 bg-gray-900 text-white rounded text-xs font-bold">
                         DARK
                       </span>
                     )}
@@ -325,23 +388,23 @@ export function OptionsFlowTracker() {
                 <div className="flex items-center space-x-6">
                   {/* Volume */}
                   <div className="text-right">
-                    <div className="text-navy-900 font-bold font-mono">
+                    <div className="text-navy-900 font-bold font-mono text-sm">
                       {flow.volume.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">VOLUME</div>
+                    <div className="text-xs text-gray-500">VOL</div>
                   </div>
                   
                   {/* Premium */}
                   <div className="text-right">
-                    <div className="text-green-600 font-bold font-mono">
+                    <div className="text-gray-900 font-bold font-mono text-sm">
                       ${flow.premium.toFixed(2)}
                     </div>
-                    <div className="text-xs text-gray-500">PREMIUM</div>
+                    <div className="text-xs text-gray-500">PREM</div>
                   </div>
                   
                   {/* Notional */}
                   <div className="text-right">
-                    <div className="text-purple-600 font-bold font-mono">
+                    <div className="text-black font-bold font-mono text-sm">
                       ${(flow.notional / 1000000).toFixed(1)}M
                     </div>
                     <div className="text-xs text-gray-500">NOTIONAL</div>
@@ -356,10 +419,10 @@ export function OptionsFlowTracker() {
                   </div>
                   
                   {/* Confidence */}
-                  <div className="text-right min-w-[60px]">
-                    <div className={`font-bold font-mono ${
-                      flow.confidence > 90 ? 'text-green-600' : 
-                      flow.confidence > 75 ? 'text-yellow-600' : 'text-red-600'
+                  <div className="text-right min-w-[50px]">
+                    <div className={`font-bold font-mono text-sm ${
+                      flow.confidence > 90 ? 'text-black' : 
+                      flow.confidence > 75 ? 'text-gray-700' : 'text-gray-500'
                     }`}>
                       {flow.confidence}%
                     </div>
@@ -376,7 +439,7 @@ export function OptionsFlowTracker() {
                       <span className="text-yellow-700 font-bold">TRADER:</span>
                       <span className="text-navy-900 font-mono">{flow.trader}</span>
                       <span className={`px-2 py-1 rounded font-bold ${
-                        flow.institutionalFlow ? 'bg-purple-200 text-purple-800' : 'bg-gray-200 text-gray-700'
+                        flow.institutionalFlow ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'
                       }`}>
                         {flow.institutionalFlow ? 'INSTITUTIONAL' : 'RETAIL'}
                       </span>
@@ -394,33 +457,39 @@ export function OptionsFlowTracker() {
 
       {/* Summary Stats */}
       <div className="mt-6 pt-6 border-t border-gray-100">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">
+            <div className="text-lg font-bold text-black">
               {flows.filter(f => f.type === 'CALL').length}
             </div>
             <div className="text-xs text-gray-500">CALLS</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-red-600">
+            <div className="text-lg font-bold text-gray-700">
               {flows.filter(f => f.type === 'PUT').length}
             </div>
             <div className="text-xs text-gray-500">PUTS</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-yellow-600">
+            <div className="text-lg font-bold text-black">
               {flows.filter(f => f.unusualActivity).length}
             </div>
             <div className="text-xs text-gray-500">UNUSUAL</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-purple-600">
+            <div className="text-lg font-bold text-gray-800">
               {flows.filter(f => f.institutionalFlow).length}
             </div>
             <div className="text-xs text-gray-500">SMART $</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-navy-900">
+            <div className="text-lg font-bold text-gray-700">
+              {flows.filter(f => f.darkPool).length}
+            </div>
+            <div className="text-xs text-gray-500">DARK</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-black">
               ${(flows.reduce((sum, f) => sum + f.notional, 0) / 1000000).toFixed(0)}M
             </div>
             <div className="text-xs text-gray-500">TOTAL FLOW</div>
@@ -430,8 +499,8 @@ export function OptionsFlowTracker() {
 
       {/* Insider Mode Warning */}
       {showInsiderMode && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center space-x-2 text-yellow-700">
+        <div className="mt-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
+          <div className="flex items-center space-x-2 text-gray-800">
             <Lock className="h-4 w-4" />
             <span className="font-medium text-xs">
               INSIDER MODE: Showing institutional trader identities and flow sources
@@ -442,7 +511,7 @@ export function OptionsFlowTracker() {
 
       {/* Live Update Indicator */}
       <div className="mt-4 flex items-center justify-center space-x-2 text-xs text-gray-500">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
         <span>Live updates every 8 seconds • Feed #{liveCount}</span>
       </div>
     </div>
