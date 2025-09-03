@@ -525,3 +525,5 @@ export function InvestorDashboard() {
     </div>
   )
 }
+
+export default InvestorDashboard
