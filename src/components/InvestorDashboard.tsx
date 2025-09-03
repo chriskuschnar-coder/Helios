@@ -22,6 +22,12 @@ import { StripeCheckout } from './StripeCheckout'
 import { SubscriptionStatus } from './SubscriptionStatus'
 import { MarketsTab } from './markets/MarketsTab'
 import { ResearchTab } from './research/ResearchTab'
+import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
+import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
+import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
+import { AIInsights } from './portfolio/AIInsights'
+import { RiskDashboard } from './portfolio/RiskDashboard'
+import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { supabaseClient } from '../lib/supabase-client'
 import '../styles/funding.css'
 
@@ -599,6 +605,32 @@ export function InvestorDashboard() {
             currentBalance={account?.balance || 0}
             className="mb-4 md:mb-8"
           />
+        )}
+
+        {/* Advanced Portfolio Analytics */}
+        {selectedTopTab === 'portfolio' && (
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
+            <InteractiveAllocationChart currentBalance={account?.balance || 0} />
+            <PerformanceMetrics currentBalance={account?.balance || 0} />
+          </div>
+        )}
+
+        {/* AI Insights and Risk Management */}
+        {selectedTopTab === 'portfolio' && (
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
+            <AIInsights currentBalance={account?.balance || 0} />
+            <RiskDashboard currentBalance={account?.balance || 0} />
+          </div>
+        )}
+
+        {/* Portfolio Optimization Engine */}
+        {selectedTopTab === 'portfolio' && (
+          <OptimizationEngine currentBalance={account?.balance || 0} />
+        )}
+
+        {/* Advanced Analytics Section */}
+        {selectedTopTab === 'portfolio' && (
+          <PortfolioAnalytics currentBalance={account?.balance || 0} />
         )}
 
         {/* Markets Tab Content */}
