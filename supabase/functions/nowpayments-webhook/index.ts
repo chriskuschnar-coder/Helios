@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-nowpayments-sig',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -13,45 +13,58 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔔 BitPay webhook received')
+    console.log('🔔 NOWPayments webhook received')
     
+    const signature = req.headers.get('x-nowpayments-sig')
     const body = await req.text()
-    const event = JSON.parse(body)
     
-    console.log('📦 Webhook event:', {
-      id: event.id,
-      status: event.status,
-      price: event.price,
-      currency: event.currency
+    console.log('📦 Webhook details:', {
+      signature: signature?.substring(0, 20) + '...',
+      bodyLength: body.length
     })
 
-    // Verify webhook authenticity (you should implement proper verification)
-    // For now, we'll process all webhooks
-    
+    // Parse the webhook payload
+    let event
+    try {
+      event = JSON.parse(body)
+      console.log('📦 Webhook event:', {
+        payment_id: event.payment_id,
+        payment_status: event.payment_status,
+        price_amount: event.price_amount,
+        price_currency: event.price_currency,
+        pay_currency: event.pay_currency,
+        order_id: event.order_id
+      })
+    } catch (err) {
+      console.error('❌ Invalid JSON in webhook body')
+      return new Response('Invalid JSON', { status: 400 })
+    }
+
+    // Verify webhook signature (implement proper HMAC verification in production)
+    const ipnSecret = Deno.env.get('NOWPAYMENTS_IPN_SECRET')
+    if (ipnSecret && signature) {
+      // TODO: Implement HMAC-SHA512 verification
+      // For now, we'll process all webhooks
+      console.log('⚠️ Webhook signature verification not implemented - processing anyway')
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Handle different BitPay statuses
-    switch (event.status) {
-      case 'paid':
+    // Handle different NOWPayments statuses
+    switch (event.payment_status) {
+      case 'finished':
       case 'confirmed':
-      case 'complete':
-        console.log('✅ Processing confirmed BitPay payment')
+        console.log('✅ Processing confirmed NOWPayments payment')
         
-        // Extract user_id from posData
-        let posData
-        try {
-          posData = JSON.parse(event.posData || '{}')
-        } catch {
-          posData = {}
-        }
-        
-        const userId = posData.user_id
-        if (!userId) {
-          console.error('❌ No user_id found in BitPay posData')
+        // Extract user_id from order_id (format: GMC-{user_id}-{timestamp})
+        const orderParts = event.order_id.split('-')
+        if (orderParts.length < 2 || orderParts[0] !== 'GMC') {
+          console.error('❌ Invalid order_id format:', event.order_id)
           break
         }
-
+        
+        const userId = orderParts[1]
         console.log('👤 Processing payment for user:', userId)
         
         // Get user's account
@@ -75,7 +88,7 @@ Deno.serve(async (req) => {
         }
 
         const account = accounts[0]
-        const paymentAmount = parseFloat(event.price)
+        const paymentAmount = parseFloat(event.price_amount)
 
         console.log('💰 Updating account balance:', {
           currentBalance: account.balance,
@@ -121,14 +134,16 @@ Deno.serve(async (req) => {
             method: 'crypto',
             amount: paymentAmount,
             status: 'completed',
-            external_id: event.id,
-            reference_id: event.orderId,
-            description: `BitPay crypto payment - $${paymentAmount.toLocaleString()}`,
+            external_id: event.payment_id,
+            reference_id: event.order_id,
+            description: `NOWPayments crypto payment - ${event.pay_currency} - $${paymentAmount.toLocaleString()}`,
             metadata: {
-              bitpay_invoice_id: event.id,
-              bitpay_status: event.status,
-              crypto_currency: posData.crypto_currency || 'unknown',
-              bitpay_url: event.url
+              nowpayments_payment_id: event.payment_id,
+              nowpayments_status: event.payment_status,
+              crypto_currency: event.pay_currency,
+              crypto_amount: event.pay_amount,
+              payin_hash: event.payin_hash,
+              payout_hash: event.payout_hash
             }
           })
         })
@@ -141,14 +156,42 @@ Deno.serve(async (req) => {
 
         break
 
+      case 'partially_paid':
+        console.log('⚠️ NOWPayments partial payment received:', event.payment_id)
+        // Could implement partial payment handling here
+        break
+
+      case 'failed':
       case 'expired':
-      case 'invalid':
-        console.log('⚠️ BitPay payment expired or invalid:', event.id)
-        // Could update any pending payment records to failed status
+        console.log('❌ NOWPayments payment failed/expired:', event.payment_id)
+        
+        // Update any pending payment records to failed status
+        const failedUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/payments?external_id=eq.${event.payment_id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            status: 'failed'
+          })
+        })
+
+        if (failedUpdateResponse.ok) {
+          console.log('✅ Payment record marked as failed')
+        }
+        break
+
+      case 'waiting':
+      case 'confirming':
+        console.log('ℹ️ NOWPayments status update:', event.payment_status, 'for payment:', event.payment_id)
+        // Could update payment status in database for tracking
         break
 
       default:
-        console.log('ℹ️ BitPay status update:', event.status, 'for invoice:', event.id)
+        console.log('ℹ️ Unknown NOWPayments status:', event.payment_status, 'for payment:', event.payment_id)
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -158,7 +201,7 @@ Deno.serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error('❌ BitPay webhook processing error:', error)
+    console.error('❌ NOWPayments webhook processing error:', error)
     
     return new Response(
       JSON.stringify({ 

@@ -6,7 +6,7 @@ import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
-import { BitPayCryptoPayment } from './BitPayCryptoPayment';
+import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
 import { useAuth } from './auth/AuthProvider';
 import { Loader2 } from 'lucide-react';
 
@@ -850,17 +850,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </button>
               </div>
 
-              {/* BitPay Crypto Payment Integration */}
-              <BitPayCryptoPayment 
+              {/* NOWPayments Crypto Payment Integration */}
+              <NOWPaymentsCrypto 
                 amount={parseInt(investmentAmount.replace(/,/g, ''))}
                 userId={user?.id}
                 onSuccess={(invoice) => {
-                  console.log('✅ BitPay payment initiated:', invoice.id)
+                  console.log('✅ NOWPayments payment initiated:', invoice.payment_id)
                   // Payment will be confirmed via webhook
                   onClose()
                 }}
                 onError={(error) => {
-                  console.error('❌ BitPay payment error:', error)
+                  console.error('❌ NOWPayments payment error:', error)
                   setError(error)
                 }}
                 onBack={handleBackToFunding}
