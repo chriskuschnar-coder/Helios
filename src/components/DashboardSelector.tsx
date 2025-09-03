@@ -163,8 +163,6 @@ export function DashboardSelector() {
       <div className="cinematic-nav">
         <DashboardSwitcher />
       </div>
-        <DashboardSwitcher />
-      </div>
       <InvestorDashboard />
     </>
   )
