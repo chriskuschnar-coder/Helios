@@ -379,13 +379,4 @@ export function CorrelationMatrix3D() {
       )}
     </div>
   )
-
-  function getCorrelationColor(value: number) {
-    const intensity = Math.abs(value) * 0.8 + 0.2
-    if (value > 0.7) return `rgba(34, 197, 94, ${intensity})` // Strong positive - green
-    if (value > 0.3) return `rgba(59, 130, 246, ${intensity})` // Moderate positive - blue
-    if (value > -0.3) return `rgba(156, 163, 175, ${intensity})` // Neutral - gray
-    if (value > -0.7) return `rgba(249, 115, 22, ${intensity})` // Moderate negative - orange
-    return `rgba(239, 68, 68, ${intensity})` // Strong negative - red
-  }
 }
