@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target, ArrowUpRight } from 'lucide-react'
-import { MetricDetailModal } from './MetricDetailModal'
+import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target } from 'lucide-react'
 
 interface StressTestResult {
   scenario: string
@@ -24,16 +23,9 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
   const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [updateCount, setUpdateCount] = useState(0)
-  const [riskAlertLevel, setRiskAlertLevel] = useState<'low' | 'medium' | 'high'>('low')
-  const [lastRiskEvent, setLastRiskEvent] = useState<string>('')
-  const [selectedMetric, setSelectedMetric] = useState<any>(null)
-  const [showMetricModal, setShowMetricModal] = useState(false)
 
   const generateStressTests = (): StressTestResult[] => {
-    // Dynamic risk calculations based on live market conditions
-    const volatilitySpike = Math.sin(Date.now() / 30000) * 0.3 + 0.7   // Volatility cycles
-    const correlationShift = Math.cos(Date.now() / 60000) * 0.2 + 0.8  // Correlation changes
-    const timeVariation = volatilitySpike * correlationShift
+    const timeVariation = Date.now() % 100000 / 100000
     
     return [
       {
@@ -121,23 +113,6 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
     setLoading(true)
     setUpdateCount(prev => prev + 1)
     
-    // Generate risk events
-    const riskEvents = [
-      'VIX spike detected - volatility expansion likely',
-      'Correlation breakdown in crypto markets',
-      'Credit spreads widening - risk-off sentiment',
-      'Options flow shows defensive positioning',
-      'Cross-asset momentum divergence detected',
-      'Liquidity conditions deteriorating'
-    ]
-    
-    const currentRiskEvent = riskEvents[Math.floor(Date.now() / (1000 * 60 * 1.5)) % riskEvents.length]
-    setLastRiskEvent(currentRiskEvent)
-    
-    // Dynamic risk alert level
-    const riskScore = Math.sin(Date.now() / 40000) * 0.5 + 0.5
-    setRiskAlertLevel(riskScore > 0.7 ? 'high' : riskScore > 0.4 ? 'medium' : 'low')
-    
     await new Promise(resolve => setTimeout(resolve, 600))
     
     setStressTests(generateStressTests())
@@ -146,45 +121,10 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
     setLoading(false)
   }
 
-  const getStressTestDetails = (test: StressTestResult) => {
-    return {
-      name: `Stress Test: ${test.scenario}`,
-      value: `${test.portfolio_impact > 0 ? '+' : ''}${test.portfolio_impact.toFixed(1)}%`,
-      description: `This stress test simulates the impact of ${test.scenario.toLowerCase()} on your portfolio. It helps assess potential losses and the effectiveness of your risk management strategies.`,
-      calculation: 'Monte Carlo simulation with 10,000 iterations using historical correlations and volatilities',
-      interpretation: `Under the ${test.scenario} scenario, your portfolio would ${test.portfolio_impact > 0 ? 'gain' : 'lose'} approximately ${Math.abs(test.portfolio_impact).toFixed(1)}%. The ${test.probability.toFixed(0)}% probability suggests this is a ${test.probability > 30 ? 'relatively likely' : test.probability > 15 ? 'possible' : 'low probability'} scenario to prepare for.`,
-      benchmark: test.scenario.includes('Market Crash') ? '-20.0%' : test.scenario.includes('Rate Spike') ? '-12.0%' : '-8.0%',
-      percentile: test.portfolio_impact > -10 ? 85 : test.portfolio_impact > -15 ? 70 : 50,
-      trend: test.portfolio_impact > 0 ? 'up' as const : 'down' as const,
-      historicalData: [
-        { period: 'Best Case', value: test.portfolio_impact * 0.5 },
-        { period: 'Likely Case', value: test.portfolio_impact * 0.8 },
-        { period: 'Expected', value: test.portfolio_impact },
-        { period: 'Worst Case', value: test.portfolio_impact * 1.3 }
-      ],
-      relatedMetrics: [
-        { name: 'Scenario Probability', value: test.probability.toFixed(0) + '%', correlation: 1.0 },
-        { name: 'Recovery Time', value: Math.floor(Math.abs(test.portfolio_impact) * 2) + ' days', correlation: 0.78 },
-        { name: 'Hedge Cost', value: (Math.abs(test.portfolio_impact) * 0.1).toFixed(1) + '%', correlation: 0.65 }
-      ],
-      actionableInsights: [
-        test.hedge_suggestion,
-        `Consider ${Math.abs(test.portfolio_impact) > 10 ? 'increasing' : 'maintaining'} hedge positions for this scenario`,
-        `Monitor early warning indicators for ${test.scenario.toLowerCase()} conditions`
-      ]
-    }
-  }
-
-  const handleStressTestClick = (test: StressTestResult) => {
-    const details = getStressTestDetails(test)
-    setSelectedMetric(details)
-    setShowMetricModal(true)
-  }
-
   useEffect(() => {
     refreshData()
     
-    const interval = setInterval(refreshData, 25000) // Update every 25 seconds
+    const interval = setInterval(refreshData, 60000) // Update every minute
     return () => clearInterval(interval)
   }, [currentBalance])
 
@@ -207,41 +147,27 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="fintech-card animate-slide-up">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-danger-gradient rounded-xl flex items-center justify-center pulse-glow">
-            <Shield className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+            <Shield className="h-5 w-5 text-red-600" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 text-premium">Risk Management</h3>
-            <p className="text-sm text-gray-500">
-              Real-time monitoring • Update #{updateCount} • {new Date().toLocaleTimeString()}
+            <h3 className="font-serif text-lg font-bold text-navy-900">Risk Management Dashboard</h3>
+            <p className="text-sm text-gray-600">
+              Stress testing & alerts • Update #{updateCount}
             </p>
-            {lastRiskEvent && (
-              <p className="text-xs text-red-500 mt-1 font-medium">
-                ⚠️ {lastRiskEvent}
-              </p>
-            )}
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-            riskAlertLevel === 'high' ? 'bg-red-100 text-red-800' :
-            riskAlertLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
-          }`}>
-            {riskAlertLevel.toUpperCase()} RISK
-          </div>
-          <div className="flex items-center space-x-2 glass px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-700 font-semibold">MONITORING</span>
-          </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+          <span className="text-xs text-red-600 font-medium">MONITORING</span>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="glass-button p-2 hover-lift"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -257,42 +183,32 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
         <div className="space-y-6">
           {/* Stress Test Results */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Stress Test Results</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Portfolio Stress Testing</h4>
             <div className="space-y-3">
               {stressTests.map((test, index) => (
-                <div 
-                  key={index} 
-                  className={`p-5 rounded-xl border-2 ${getSeverityColor(test.severity)} hover-lift interactive-element group transition-all duration-300 stagger-${(index % 3) + 1}`}
-                  onClick={() => handleStressTestClick(test)}
-                >
+                <div key={index} className={`p-4 rounded-lg border ${getSeverityColor(test.severity)}`}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       {getSeverityIcon(test.severity)}
                       <div>
-                        <h5 className="font-bold group-hover:text-blue-900 text-premium">{test.scenario}</h5>
-                        <p className="text-sm opacity-80 font-medium">{test.hedge_suggestion}</p>
+                        <h5 className="font-medium">{test.scenario}</h5>
+                        <p className="text-sm opacity-80">{test.hedge_suggestion}</p>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold animate-count-up ${test.portfolio_impact > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-lg font-bold ${test.portfolio_impact > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {test.portfolio_impact > 0 ? '+' : ''}{test.portfolio_impact.toFixed(1)}%
                       </div>
-                      <div className="text-xs opacity-80 font-medium">{test.probability.toFixed(0)}% probability</div>
+                      <div className="text-xs opacity-80">{test.probability.toFixed(0)}% probability</div>
                     </div>
                   </div>
                   
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className={`h-3 rounded-full transition-all duration-1000 ${test.portfolio_impact > 0 ? 'bg-success-gradient' : 'bg-danger-gradient'}`}
+                      className={`h-2 rounded-full ${test.portfolio_impact > 0 ? 'bg-green-500' : 'bg-red-500'}`}
                       style={{ width: `${Math.min(100, Math.abs(test.portfolio_impact) * 5)}%` }}
                     ></div>
-                  </div>
-                  
-                  <div className="mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    <div className="text-xs text-blue-600 font-bold flex items-center gap-1">
-                      Detailed Analysis <ArrowUpRight className="h-3 w-3" />
-                    </div>
                   </div>
                 </div>
               ))}
@@ -301,20 +217,20 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
 
           {/* Risk Alerts */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Risk Alerts</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Active Risk Alerts</h4>
             <div className="space-y-3">
               {riskAlerts.map((alert) => (
-                <div key={alert.id} className={`p-5 rounded-xl border-2 ${getSeverityColor(alert.severity)} hover-lift transition-all duration-300`}>
+                <div key={alert.id} className={`p-4 rounded-lg border ${getSeverityColor(alert.severity)}`}>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start space-x-3">
                       {getSeverityIcon(alert.severity)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-premium">{alert.title}</h5>
-                        <p className="text-sm opacity-90 mt-2 leading-relaxed">{alert.description}</p>
+                        <h5 className="font-medium">{alert.title}</h5>
+                        <p className="text-sm opacity-80 mt-1">{alert.description}</p>
                       </div>
                     </div>
                     
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                       alert.severity === 'high' ? 'bg-red-100 text-red-800' :
                       alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-green-100 text-green-800'
@@ -323,12 +239,9 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
                     </div>
                   </div>
                   
-                  <div className="mt-4 p-3 glass rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      <span className="font-bold text-gray-900">Recommendation:</span>
-                    </div>
-                    <p className="text-sm mt-1 font-medium">{alert.recommendation}</p>
+                  <div className="mt-3 p-2 bg-white bg-opacity-50 rounded text-sm">
+                    <Target className="h-3 w-3 inline mr-1" />
+                    <strong>Recommendation:</strong> {alert.recommendation}
                   </div>
                 </div>
               ))}
@@ -336,16 +249,6 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
           </div>
         </div>
       )}
-      
-      {/* Metric Detail Modal */}
-      <MetricDetailModal
-        metric={selectedMetric}
-        isOpen={showMetricModal}
-        onClose={() => {
-          setShowMetricModal(false)
-          setSelectedMetric(null)
-        }}
-      />
     </div>
   )
 }

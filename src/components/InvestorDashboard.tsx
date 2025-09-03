@@ -42,8 +42,6 @@ export function InvestorDashboard() {
   const [startY, setStartY] = useState(0)
   const [allTransactions, setAllTransactions] = useState<any[]>([])
   const [loadingTransactions, setLoadingTransactions] = useState(true)
-  const [liveUpdateIndicator, setLiveUpdateIndicator] = useState(0)
-  const [lastSystemUpdate, setLastSystemUpdate] = useState<Date>(new Date())
 
   // Extract first name from user data
   const getFirstName = () => {
@@ -343,21 +341,6 @@ export function InvestorDashboard() {
     loadTransactions()
   }, [user, account])
   
-  // Global live update system
-  useEffect(() => {
-    const globalUpdateInterval = setInterval(() => {
-      setLiveUpdateIndicator(prev => prev + 1)
-      setLastSystemUpdate(new Date())
-      
-      // Trigger refresh of account data every 30 seconds
-      if (liveUpdateIndicator % 6 === 0) { // Every 6th update (30 seconds)
-        refreshAccount()
-      }
-    }, 5000) // Update indicator every 5 seconds
-    
-    return () => clearInterval(globalUpdateInterval)
-  }, [liveUpdateIndicator, refreshAccount])
-  
   // Check if account has real trading activity
   const hasRealTradingActivity = allTransactions.some(t => t.type === 'trade')
   
@@ -481,11 +464,21 @@ export function InvestorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-primary-gradient safe-area-bottom">
+    <div 
+      className="min-h-screen bg-gray-50 safe-area-bottom"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
-        <div className="fixed top-0 left-0 right-0 z-40 glass flex items-center justify-center transition-all duration-300"
-             style={{ height: `${pullDistance}px`, opacity: pullDistance / 80 }}>
+        <div 
+          className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-center transition-all duration-300"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 80 
+          }}
+        >
           <div className={`text-gray-600 text-sm font-medium ${isRefreshing ? 'animate-spin' : ''}`}>
             {isRefreshing ? (
               <RefreshCw className="h-5 w-5" />
@@ -498,20 +491,20 @@ export function InvestorDashboard() {
         </div>
       )}
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Top Navigation Tabs */}
-        <div className="fintech-card mb-6 md:mb-8 stagger-1">
-          <div className="px-6 py-4">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
+          <div className="px-3 md:px-6 py-3 md:py-4">
             {/* Mobile: Horizontal scroll tabs */}
-            <nav className="flex space-x-4 md:space-x-8 overflow-x-auto smooth-scroll">
+            <nav className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide">
               {topTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTopTab(tab.id)}
-                  className={`flex items-center space-x-2 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap interactive-element ${
+                  className={`flex items-center space-x-2 py-2 px-3 md:px-4 rounded-lg font-medium text-sm transition-colors mobile-tab whitespace-nowrap ${
                     selectedTopTab === tab.id
-                      ? 'bg-primary-gradient text-white shadow-medium'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-navy-600 text-white'
+                      : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
                   }`}
                 >
                   <tab.icon className="h-4 w-4 flex-shrink-0" />
@@ -552,11 +545,11 @@ export function InvestorDashboard() {
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
-          <div className="mb-6 stagger-2">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 text-shadow">
+          <div className="mb-4 md:mb-6 mobile-card">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
               Welcome back, {getFirstName()}
             </h1>
-            <p className="text-base text-white/80">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 mobile-text-sm">
               Here's your portfolio performance and investment overview
             </p>
           </div>
@@ -571,46 +564,37 @@ export function InvestorDashboard() {
 
         {/* Performance Summary Cards */}
         {selectedTopTab === 'portfolio' && (
-          <div className="metric-grid stagger-3">
-            <div className="metric-card interactive-element">
-              <div className="flex items-center justify-between mb-3">
-                <span className="metric-label">Daily P&L</span>
-                <div className="w-8 h-8 bg-success-gradient rounded-full flex items-center justify-center">
-                  <ArrowUpRight className="h-4 w-4 text-white" />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-6 mb-4 md:mb-8 mobile-grid">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">Daily P&L</span>
+                <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="metric-value text-green-600 animate-count-up">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-green-600 mb-1 mobile-text-lg">
                 +${portfolioData.dailyPnL.toLocaleString()}
               </div>
-              <div className="percentage-badge positive">
-                +{portfolioData.dailyPnLPct.toFixed(2)}%
-              </div>
+              <div className="text-xs sm:text-sm text-green-600 mobile-text-xs">+{portfolioData.dailyPnLPct}%</div>
             </div>
             
-            <div className="metric-card interactive-element stagger-1">
-              <div className="flex items-center justify-between mb-3">
-                <span className="metric-label">YTD Return</span>
-                <div className="w-8 h-8 bg-primary-gradient rounded-full flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">YTD Return</span>
+                <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="metric-value text-purple-600 animate-count-up">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-green-600 mb-1 mobile-text-lg">
                 +{portfolioData.yearlyReturn}%
               </div>
-              <div className="text-sm text-gray-500 font-medium">vs S&P 500</div>
+              <div className="text-xs sm:text-sm text-gray-500 mobile-text-xs">Outperforming benchmark</div>
             </div>
             
-            <div className="metric-card interactive-element stagger-2">
-              <div className="flex items-center justify-between mb-3">
-                <span className="metric-label">Available Cash</span>
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Plus className="h-4 w-4 text-white" />
-                </div>
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">Available Cash</span>
+                <Plus className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="metric-value text-blue-600 animate-count-up">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
                 ${account?.available_balance?.toLocaleString() || '0'}
               </div>
-              <div className="text-sm text-gray-500 font-medium">Ready to invest</div>
             </div>
           </div>
         )}
@@ -625,7 +609,7 @@ export function InvestorDashboard() {
 
         {/* Advanced Portfolio Analytics */}
         {selectedTopTab === 'portfolio' && (
-          <div className="grid lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
             <InteractiveAllocationChart currentBalance={account?.balance || 0} />
             <PerformanceMetrics currentBalance={account?.balance || 0} />
           </div>
@@ -633,7 +617,7 @@ export function InvestorDashboard() {
 
         {/* AI Insights and Risk Management */}
         {selectedTopTab === 'portfolio' && (
-          <div className="grid lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
             <AIInsights currentBalance={account?.balance || 0} />
             <RiskDashboard currentBalance={account?.balance || 0} />
           </div>

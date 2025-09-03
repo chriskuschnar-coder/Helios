@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle, ArrowUpRight } from 'lucide-react'
+import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle } from 'lucide-react'
 
 interface AIInsight {
   id: string
@@ -24,15 +24,9 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   const [marketConditions, setMarketConditions] = useState<MarketCondition[]>([])
   const [loading, setLoading] = useState(true)
   const [updateCount, setUpdateCount] = useState(0)
-  const [newsImpact, setNewsImpact] = useState<string[]>([])
-  const [lastMarketEvent, setLastMarketEvent] = useState<string>('')
 
   const generateAIInsights = (): AIInsight[] => {
-    // Real-time market variations
-    const marketVolatility = Math.sin(Date.now() / 20000) * 0.3 + 0.7  // 0.4-1.0 range
-    const newsImpact = Math.cos(Date.now() / 45000) * 0.2 + 0.8        // 0.6-1.0 range
-    const timeVariation = marketVolatility * newsImpact
-    
+    const timeVariation = Date.now() % 100000 / 100000
     const hasActivity = currentBalance > 0
     
     if (!hasActivity) {
@@ -147,19 +141,6 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     setLoading(true)
     setUpdateCount(prev => prev + 1)
     
-    // Generate market events that affect AI insights
-    const marketEvents = [
-      'FOMC minutes release shifts rate expectations',
-      'Earnings season momentum accelerating',
-      'Geopolitical risk premium increasing',
-      'Crypto correlation breakdown detected',
-      'Institutional flow patterns changing',
-      'Volatility regime shift in progress'
-    ]
-    
-    const currentEvent = marketEvents[Math.floor(Date.now() / (1000 * 60 * 2)) % marketEvents.length]
-    setLastMarketEvent(currentEvent)
-    
     await new Promise(resolve => setTimeout(resolve, 800))
     
     setInsights(generateAIInsights())
@@ -171,7 +152,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   useEffect(() => {
     refreshData()
     
-    const interval = setInterval(refreshData, 20000) // Update every 20 seconds
+    const interval = setInterval(refreshData, 45000) // Update every 45 seconds
     return () => clearInterval(interval)
   }, [currentBalance])
 
@@ -207,34 +188,27 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="fintech-card animate-slide-up">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center pulse-glow">
-            <Brain className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <Brain className="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 text-premium">AI Insights</h3>
-            <p className="text-sm text-gray-500">
-              Machine learning analysis • Update #{updateCount} • {new Date().toLocaleTimeString()}
+            <h3 className="font-serif text-lg font-bold text-navy-900">AI Portfolio Insights</h3>
+            <p className="text-sm text-gray-600">
+              Machine learning analysis • Update #{updateCount}
             </p>
-            {lastMarketEvent && (
-              <p className="text-xs text-purple-600 mt-1 font-medium">
-                📊 {lastMarketEvent}
-              </p>
-            )}
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 glass px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-700 font-semibold">AI ACTIVE</span>
-          </div>
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+          <span className="text-xs text-purple-600 font-medium">AI ACTIVE</span>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="glass-button p-2 hover-lift"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -251,36 +225,36 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
         <div className="space-y-6">
           {/* AI Insights */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Active Insights</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Active Insights</h4>
             <div className="space-y-3">
               {insights.map((insight) => (
-                <div key={insight.id} className={`p-5 rounded-xl border-2 ${getInsightColor(insight.type)} hover-lift interactive-element transition-all duration-300`}>
+                <div key={insight.id} className={`p-4 rounded-lg border ${getInsightColor(insight.type)}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-gray-900 mb-2 text-premium">{insight.title}</h5>
-                        <p className="text-sm text-gray-700 leading-relaxed">{insight.description}</p>
+                        <h5 className="font-medium text-gray-900 mb-1">{insight.title}</h5>
+                        <p className="text-sm text-gray-700">{insight.description}</p>
                       </div>
                     </div>
                     
                     <div className="flex flex-col items-end space-y-2">
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${getImpactColor(insight.impact)}`}>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(insight.impact)}`}>
                         {insight.impact.toUpperCase()} IMPACT
                       </div>
-                      <div className="text-xs text-gray-500 font-medium">
+                      <div className="text-xs text-gray-600">
                         {insight.confidence}% confidence
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-500 font-medium">
+                    <div className="text-sm text-gray-600">
                       Timeframe: {insight.timeframe}
                     </div>
                     {insight.actionable && (
-                      <button className="text-sm font-bold text-purple-600 hover:text-purple-700 transition-colors flex items-center gap-1 hover-lift">
-                        Take Action <ArrowUpRight className="h-3 w-3" />
+                      <button className="text-sm font-medium text-navy-600 hover:text-navy-700 transition-colors">
+                        Take Action →
                       </button>
                     )}
                   </div>
@@ -291,26 +265,26 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
 
           {/* Market Conditions */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Market Regime Analysis</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Market Regime Analysis</h4>
             <div className="space-y-3">
               {marketConditions.map((condition, index) => (
-                <div key={index} className={`p-5 glass-dark rounded-xl border border-purple-200 hover-lift stagger-${(index % 3) + 1}`}>
+                <div key={index} className="p-4 bg-navy-50 border border-navy-200 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-bold text-gray-900 text-premium">{condition.condition}</h5>
+                    <h5 className="font-medium text-navy-900">{condition.condition}</h5>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-gradient animate-count-up">{condition.probability}%</div>
-                      <div className="text-xs text-gray-500 font-medium">Probability</div>
+                      <div className="text-lg font-bold text-navy-900">{condition.probability}%</div>
+                      <div className="text-xs text-navy-700">Probability</div>
                     </div>
                   </div>
                   
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-gray-600 font-medium">Portfolio Impact:</span>
-                      <span className="ml-2 text-gray-900 font-semibold">{condition.impact_on_portfolio}</span>
+                      <span className="text-navy-700">Portfolio Impact:</span>
+                      <span className="ml-2 text-navy-900">{condition.impact_on_portfolio}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600 font-medium">Recommended Action:</span>
-                      <span className="ml-2 font-bold text-gray-900">{condition.recommended_action}</span>
+                      <span className="text-navy-700">Recommended Action:</span>
+                      <span className="ml-2 font-medium text-navy-900">{condition.recommended_action}</span>
                     </div>
                   </div>
                 </div>
