@@ -60,7 +60,7 @@ function LiveFeedModal({ isOpen, onClose, platform, symbol }: LiveFeedModalProps
           `On-chain metrics for ${symbol} are screaming bullish. HODL strong through this volatility.`
         ]
       },
-      'Reddit WSB': {
+      'Reddit Investors': {
         authors: ['u/DiamondHands', 'u/ToTheMoon', 'u/YOLO_Trader', 'u/StockGuru', 'u/MarketMaker', 'u/BullRun2025'],
         templates: [
           `${symbol} to the moon! 🚀🚀🚀 Just YOLO'd my entire portfolio. This is the way!`,
@@ -71,7 +71,7 @@ function LiveFeedModal({ isOpen, onClose, platform, symbol }: LiveFeedModalProps
           `Technical analysis on ${symbol}: RSI oversold, MACD bullish crossover. Easy money.`
         ]
       },
-      'FinTwit': {
+      'Financial Twitter': {
         authors: ['@WallStreetPro', '@QuantTrader', '@HedgeFundCIO', '@MarketAnalyst', '@TradingDesk', '@AlphaSeeker'],
         templates: [
           `${symbol} institutional flow analysis: $${(Math.random() * 500 + 200).toFixed(0)}M net buying over 5 days. Momentum building.`,
@@ -82,7 +82,7 @@ function LiveFeedModal({ isOpen, onClose, platform, symbol }: LiveFeedModalProps
           `Fundamental analysis on ${symbol}: Strong balance sheet, growing market share. Fair value $${(Math.random() * 2000 + 60000).toFixed(0)}.`
         ]
       },
-      'LinkedIn Finance': {
+      'Professional Networks': {
         authors: ['John Smith, CFA', 'Sarah Johnson, Portfolio Manager', 'Mike Chen, Analyst', 'Lisa Wang, CIO', 'David Brown, Strategist', 'Emma Davis, Research'],
         templates: [
           `${symbol} represents a compelling investment opportunity in the current macro environment. Our models suggest 15-20% upside.`,
@@ -311,7 +311,7 @@ export function SocialSentimentTracker() {
           influencerScore: Math.floor((Math.random() * 30 + 70) * liveVariation)
         },
         {
-          platform: 'Reddit WSB',
+          platform: 'Reddit Investors',
           symbol: 'SPY',
           sentiment: Math.floor((Math.random() * 60 + 20) * liveVariation), // Dynamic 20-80
           volume: Math.floor(Math.random() * 5000 * liveVariation + 2000),
@@ -320,7 +320,7 @@ export function SocialSentimentTracker() {
           influencerScore: Math.floor((Math.random() * 40 + 40) * liveVariation)
         },
         {
-          platform: 'FinTwit',
+          platform: 'Financial Twitter',
           symbol: 'TSLA',
           sentiment: Math.floor((Math.random() * 50 + 25) * liveVariation), // Dynamic 25-75
           volume: Math.floor(Math.random() * 3000 * liveVariation + 1000),
@@ -329,7 +329,7 @@ export function SocialSentimentTracker() {
           influencerScore: Math.floor((Math.random() * 35 + 55) * liveVariation)
         },
         {
-          platform: 'LinkedIn Finance',
+          platform: 'Professional Networks',
           symbol: 'GOLD',
           sentiment: Math.floor((Math.random() * 30 + 50) * liveVariation), // Dynamic 50-80
           volume: Math.floor(Math.random() * 1000 * liveVariation + 500),
@@ -387,7 +387,7 @@ export function SocialSentimentTracker() {
               <MessageCircle className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-bold text-navy-900">Social Sentiment Intelligence</h3>
+              <h3 className="font-serif text-lg font-bold text-navy-900">Market Buzz Tracker</h3>
               <p className="text-sm text-gray-600">Live updates: {updateCount} • Real-time analysis</p>
             </div>
           </div>
@@ -474,7 +474,7 @@ export function SocialSentimentTracker() {
 
             {/* Platform Breakdown */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-4">Platform Sentiment Breakdown</h4>
+              <h4 className="font-medium text-gray-900 mb-4">What Investors Are Saying</h4>
               <div className="space-y-3">
                 {metrics.sentiment_data.map((data, index) => (
                   <div 
@@ -488,7 +488,7 @@ export function SocialSentimentTracker() {
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">{data.platform}</div>
-                        <div className="text-sm text-gray-600">{data.symbol} • {data.volume.toLocaleString()} mentions</div>
+                        <div className="text-sm text-gray-600">{data.symbol} • {data.volume.toLocaleString()} discussions</div>
                       </div>
                     </div>
                     
@@ -496,7 +496,7 @@ export function SocialSentimentTracker() {
                       <div className="text-right">
                         <div className="font-bold text-gray-900">{data.sentiment}/100</div>
                         <div className="text-sm text-gray-600">
-                          Influence: {data.influencerScore}%
+                          Investor Mood: {data.influencerScore}%
                         </div>
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -510,7 +510,7 @@ export function SocialSentimentTracker() {
 
             {/* Trending Topics */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-4">Trending Topics</h4>
+              <h4 className="font-medium text-gray-900 mb-4">What's Trending</h4>
               <div className="flex flex-wrap gap-2">
                 {metrics.trending_topics.map((topic, index) => (
                   <span
