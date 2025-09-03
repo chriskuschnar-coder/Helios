@@ -24,28 +24,28 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const isPositive = dailyChange >= 0
 
   return (
-    <div className="portfolio-header holographic-card animate-liquid luxury-spacing">
+    <div className="portfolio-header premium-spacing animate-slide-up">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-primary-gradient rounded-full flex items-center justify-center animate-neural-pulse">
+          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse-glow">
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="ai-label">Portfolio Value</span>
+            <span className="premium-label">Portfolio Value</span>
             <div className="text-xs text-white/40 mt-1">Real-time balance</div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-neural-pulse"></div>
-          <span className="text-xs text-cyan-400 font-medium tracking-wider">LIVE</span>
+        <div className="live-indicator">
+          <div className="live-dot"></div>
+          <span className="live-text">LIVE</span>
         </div>
       </div>
       
       <div className="mb-8">
-        <h1 className="ai-portfolio-value">
+        <h1 className="portfolio-value">
           ${currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h1>
-        <div className={`ai-change-indicator ${isPositive ? 'positive' : 'negative'}`}>
+        <div className={`change-indicator ${isPositive ? 'positive' : 'negative'}`}>
           {isPositive ? <ArrowUpRight className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
           <span className="text-lg font-bold">
             {isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -53,12 +53,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
           <span className="text-base opacity-80">
             ({isPositive ? '+' : ''}{dailyChangePct.toFixed(2)}%)
           </span>
-          <span className="text-sm opacity-60 ai-thinking">
-            <span className="ai-thinking-dots">
-              <span className="ai-thinking-dot"></span>
-              <span className="ai-thinking-dot"></span>
-              <span className="ai-thinking-dot"></span>
-            </span>
+          <span className="text-sm opacity-60">
             today
           </span>
         </div>
@@ -67,17 +62,17 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
       <div className="flex flex-col xs:flex-row gap-4">
         <button 
           onClick={() => onFundPortfolio()}
-          className="flex-1 neural-button-primary interactive-element group"
+          className="flex-1 premium-button-primary interactive-element group"
         >
           <div className="flex items-center justify-center space-x-2">
-            <Plus className="h-5 w-5 group-hover:rotate-90 cinematic-transition" />
+            <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
             <span>Add Capital</span>
-            <Zap className="h-4 w-4 opacity-0 group-hover:opacity-100 cinematic-transition" />
+            <Zap className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
         </button>
         <button 
           onClick={onWithdraw}
-          className="flex-1 glass-button interactive-element"
+          className="flex-1 premium-button interactive-element"
         >
           <div className="flex items-center justify-center space-x-2">
             <TrendingDown className="h-5 w-5" />

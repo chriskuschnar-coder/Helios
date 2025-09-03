@@ -207,14 +207,14 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="holographic-card animate-liquid stagger-1">
+    <div className="glass-card p-6 animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center animate-neural-pulse">
+          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center animate-pulse-glow">
             <Brain className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="futuristic-heading text-xl">AI Insights</h3>
+            <h3 className="premium-heading text-xl">AI Insights</h3>
             <p className="text-sm text-white/60">
               Machine learning analysis • Update #{updateCount} • {new Date().toLocaleTimeString()}
             </p>
@@ -227,18 +227,14 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
         </div>
         
         <div className="flex items-center space-x-2">
-          <div className="ai-thinking">
-            <div className="ai-thinking-dots">
-              <div className="ai-thinking-dot"></div>
-              <div className="ai-thinking-dot"></div>
-              <div className="ai-thinking-dot"></div>
-            </div>
-            <span className="text-xs text-purple-400 font-semibold">AI ACTIVE</span>
+          <div className="live-indicator">
+            <div className="live-dot"></div>
+            <span className="live-text text-purple-400">AI ACTIVE</span>
           </div>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="neural-button p-2 hover-lift"
+            className="premium-button p-2 hover-lift"
           >
             <RefreshCw className={`h-4 w-4 text-white/80 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -247,29 +243,29 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
 
       {loading ? (
         <div className="space-y-4">
-          <div className="h-24 quantum-loading rounded-lg"></div>
-          <div className="h-24 quantum-loading rounded-lg"></div>
-          <div className="h-24 quantum-loading rounded-lg"></div>
+          <div className="h-24 premium-loading rounded-lg"></div>
+          <div className="h-24 premium-loading rounded-lg"></div>
+          <div className="h-24 premium-loading rounded-lg"></div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* AI Insights */}
           <div>
-            <h4 className="futuristic-heading text-lg mb-6">Active Insights</h4>
+            <h4 className="premium-heading text-lg mb-6">Active Insights</h4>
             <div className="space-y-3">
               {insights.map((insight) => (
-                <div key={insight.id} className="liquid-card hover-lift interactive-element hologram-effect">
+                <div key={insight.id} className="insight-card hover-lift interactive-element">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-white mb-2 premium-text">{insight.title}</h5>
-                        <p className="text-sm quantum-text leading-relaxed">{insight.description}</p>
+                        <h5 className="font-bold text-white mb-2">{insight.title}</h5>
+                        <p className="text-sm premium-text leading-relaxed">{insight.description}</p>
                       </div>
                     </div>
                     
                     <div className="flex flex-col items-end space-y-2">
-                      <div className="percentage-badge positive">
+                      <div className="premium-badge positive">
                         {insight.impact.toUpperCase()} IMPACT
                       </div>
                       <div className="text-xs text-white/60 font-medium">
@@ -283,7 +279,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                       Timeframe: {insight.timeframe}
                     </div>
                     {insight.actionable && (
-                      <button className="neural-button text-sm flex items-center gap-1">
+                      <button className="premium-button text-sm flex items-center gap-1">
                         Take Action <ArrowUpRight className="h-3 w-3" />
                       </button>
                     )}
@@ -295,15 +291,15 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
 
           {/* Market Conditions */}
           <div>
-            <h4 className="futuristic-heading text-lg mb-6">Market Regime Analysis</h4>
+            <h4 className="premium-heading text-lg mb-6">Market Regime Analysis</h4>
             <div className="space-y-3">
               {marketConditions.map((condition, index) => (
-                <div key={index} className="quantum-metric hover-lift hologram-effect animate-morphic">
+                <div key={index} className="metric-card hover-lift">
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-bold text-white premium-text">{condition.condition}</h5>
+                    <h5 className="font-bold text-white">{condition.condition}</h5>
                     <div className="text-right">
-                      <div className="text-xl font-bold ai-gradient-text">{condition.probability}%</div>
-                      <div className="ai-label">Probability</div>
+                      <div className="text-xl font-bold text-gradient">{condition.probability}%</div>
+                      <div className="premium-label">Probability</div>
                     </div>
                   </div>
                   
@@ -314,7 +310,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                     </div>
                     <div>
                       <span className="text-white/60 font-medium">Recommended Action:</span>
-                      <span className="ml-2 font-bold text-holographic">{condition.recommended_action}</span>
+                      <span className="ml-2 font-bold text-gradient">{condition.recommended_action}</span>
                     </div>
                   </div>
                 </div>
