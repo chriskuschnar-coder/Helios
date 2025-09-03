@@ -629,16 +629,6 @@ export function InvestorDashboard() {
           </div>
         )}
 
-        {/* Portfolio Optimization Engine */}
-        {selectedTopTab === 'portfolio' && (
-          <OptimizationEngine currentBalance={account?.balance || 0} />
-        )}
-
-        {/* Advanced Analytics Section */}
-        {selectedTopTab === 'portfolio' && (
-          <PortfolioAnalytics currentBalance={account?.balance || 0} />
-        )}
-
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
           <div className="space-y-3 sm:space-y-4 md:space-y-8 mobile-space-y-2">
