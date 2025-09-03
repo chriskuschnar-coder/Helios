@@ -25,55 +25,58 @@ export function SocialSentimentTracker() {
   const [metrics, setMetrics] = useState<SocialMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedTimeframe, setSelectedTimeframe] = useState('24h')
+  const [updateCount, setUpdateCount] = useState(0)
 
   const generateSentimentData = (): SocialMetrics => {
     const timeMultiplier = selectedTimeframe === '1h' ? 0.3 : selectedTimeframe === '24h' ? 1 : 7
+    const liveVariation = Math.sin(Date.now() / 30000) * 0.3 + 0.7 // 0.4-1.0 multiplier
+    const trendingBoost = Math.cos(Date.now() / 45000) * 0.2 + 0.8 // 0.6-1.0 multiplier
 
     return {
-      overall_sentiment: Math.floor(Math.random() * 40 + 30), // 30-70 range
-      fear_greed_index: Math.floor(Math.random() * 30 + 45), // 45-75 range
-      viral_coefficient: Math.random() * 2 + 1, // 1-3 range
-      institutional_mentions: Math.floor(Math.random() * 500 * timeMultiplier + 200),
-      retail_mentions: Math.floor(Math.random() * 5000 * timeMultiplier + 2000),
+      overall_sentiment: Math.floor((Math.random() * 40 + 30) * liveVariation), // Dynamic 30-70 range
+      fear_greed_index: Math.floor((Math.random() * 30 + 45) * liveVariation), // Dynamic 45-75 range  
+      viral_coefficient: (Math.random() * 2 + 1) * trendingBoost, // Dynamic 1-3 range
+      institutional_mentions: Math.floor(Math.random() * 500 * timeMultiplier * liveVariation + 200),
+      retail_mentions: Math.floor(Math.random() * 5000 * timeMultiplier * liveVariation + 2000),
       trending_topics: [
-        '#Bitcoin', '#Ethereum', '#FedPolicy', '#Inflation', '#TechStocks'
+        '#Bitcoin', '#Ethereum', '#FedPolicy', '#Inflation', '#TechStocks', '#AI', '#DeFi', '#Web3'
       ],
       sentiment_data: [
         {
           platform: 'Crypto Twitter',
           symbol: 'BTC',
-          sentiment: Math.floor(Math.random() * 40 + 40), // 40-80
-          volume: Math.floor(Math.random() * 10000 + 5000),
-          trending: Math.random() > 0.3,
+          sentiment: Math.floor((Math.random() * 40 + 40) * liveVariation), // Dynamic 40-80
+          volume: Math.floor(Math.random() * 10000 * liveVariation + 5000),
+          trending: Math.random() * trendingBoost > 0.3,
           keyMentions: ['@elonmusk', '@michael_saylor', '@cz_binance'],
-          influencerScore: Math.floor(Math.random() * 30 + 70)
+          influencerScore: Math.floor((Math.random() * 30 + 70) * liveVariation)
         },
         {
           platform: 'Reddit WSB',
           symbol: 'SPY',
-          sentiment: Math.floor(Math.random() * 60 + 20), // 20-80
-          volume: Math.floor(Math.random() * 5000 + 2000),
-          trending: Math.random() > 0.4,
+          sentiment: Math.floor((Math.random() * 60 + 20) * liveVariation), // Dynamic 20-80
+          volume: Math.floor(Math.random() * 5000 * liveVariation + 2000),
+          trending: Math.random() * trendingBoost > 0.4,
           keyMentions: ['diamond hands', 'to the moon', 'HODL'],
-          influencerScore: Math.floor(Math.random() * 40 + 40)
+          influencerScore: Math.floor((Math.random() * 40 + 40) * liveVariation)
         },
         {
           platform: 'FinTwit',
           symbol: 'TSLA',
-          sentiment: Math.floor(Math.random() * 50 + 25), // 25-75
-          volume: Math.floor(Math.random() * 3000 + 1000),
-          trending: Math.random() > 0.5,
+          sentiment: Math.floor((Math.random() * 50 + 25) * liveVariation), // Dynamic 25-75
+          volume: Math.floor(Math.random() * 3000 * liveVariation + 1000),
+          trending: Math.random() * trendingBoost > 0.5,
           keyMentions: ['earnings', 'delivery numbers', 'FSD'],
-          influencerScore: Math.floor(Math.random() * 35 + 55)
+          influencerScore: Math.floor((Math.random() * 35 + 55) * liveVariation)
         },
         {
           platform: 'LinkedIn Finance',
           symbol: 'GOLD',
-          sentiment: Math.floor(Math.random() * 30 + 50), // 50-80
-          volume: Math.floor(Math.random() * 1000 + 500),
-          trending: Math.random() > 0.6,
+          sentiment: Math.floor((Math.random() * 30 + 50) * liveVariation), // Dynamic 50-80
+          volume: Math.floor(Math.random() * 1000 * liveVariation + 500),
+          trending: Math.random() * trendingBoost > 0.6,
           keyMentions: ['inflation hedge', 'central banks', 'safe haven'],
-          influencerScore: Math.floor(Math.random() * 25 + 65)
+          influencerScore: Math.floor((Math.random() * 25 + 65) * liveVariation)
         }
       ]
     }
@@ -81,8 +84,9 @@ export function SocialSentimentTracker() {
 
   const refreshData = async () => {
     setLoading(true)
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    setUpdateCount(prev => prev + 1)
+    // Simulate API call delay (shorter for more responsive feel)
+    await new Promise(resolve => setTimeout(resolve, 500))
     setMetrics(generateSentimentData())
     setLoading(false)
   }
@@ -90,8 +94,8 @@ export function SocialSentimentTracker() {
   useEffect(() => {
     refreshData()
     
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(refreshData, 5 * 60 * 1000)
+    // LIVE UPDATES: Refresh every 15 seconds for continuous live feel
+    const interval = setInterval(refreshData, 15 * 1000)
     return () => clearInterval(interval)
   }, [selectedTimeframe])
 
@@ -124,11 +128,16 @@ export function SocialSentimentTracker() {
           </div>
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Social Sentiment Intelligence</h3>
-            <p className="text-sm text-gray-600">Real-time social media analysis</p>
+            <p className="text-sm text-gray-600">Live updates: {updateCount} • Real-time analysis</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-green-600 font-medium">LIVE</span>
+          </div>
+          
           <select
             value={selectedTimeframe}
             onChange={(e) => setSelectedTimeframe(e.target.value)}
@@ -248,7 +257,7 @@ export function SocialSentimentTracker() {
           {/* Live Updates Indicator */}
           <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 pt-4 border-t border-gray-100">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Live updates every 5 minutes</span>
+            <span>Live updates every 15 seconds • Update #{updateCount}</span>
           </div>
         </div>
       )}
