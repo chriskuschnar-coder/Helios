@@ -305,7 +305,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
           {allocationData.map((item, index) => (
             <div 
               key={index}
-              className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-all cursor-pointer group"
+              className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group"
               onMouseEnter={() => setHoveredSegment(item.name)}
               onMouseLeave={() => setHoveredSegment(null)}
               onClick={() => handleAllocationClick(item)}
