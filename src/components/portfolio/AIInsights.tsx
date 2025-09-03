@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Brain, ChevronRight, ChevronDown, TrendingUp, AlertTriangle, Target, CheckCircle, Clock, Lightbulb, ArrowRight } from 'lucide-react'
+import { MetricDetailModal } from './MetricDetailModal'
 
 interface AIInsight {
   id: string
@@ -26,6 +27,8 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   const [updateCount, setUpdateCount] = useState(0)
   const [isExpanded, setIsExpanded] = useState(false)
   const [lastMarketEvent, setLastMarketEvent] = useState<string>('')
+  const [selectedInsight, setSelectedInsight] = useState<any>(null)
+  const [showInsightModal, setShowInsightModal] = useState(false)
 
   const generateAIInsights = (): AIInsight[] => {
     const timeVariation = Math.sin(Date.now() / 30000) * 0.3 + 0.7
@@ -124,7 +127,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     
     const marketEvents = [
       'Bitcoin ETF flows accelerating',
-      'Ethereum upgrade momentum building', 
+      'Ethereum upgrade momentum building',
       'Altcoin correlation breakdown detected',
       'Institutional crypto adoption increasing',
       'DeFi yield opportunities expanding',
@@ -148,6 +151,42 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     const interval = setInterval(refreshData, 20000)
     return () => clearInterval(interval)
   }, [currentBalance])
+
+  const getInsightDetails = (insight: AIInsight) => {
+    return {
+      name: insight.title,
+      value: `${insight.confidence}% confidence`,
+      description: `${insight.description} This insight is based on our AI analysis of current market conditions and your portfolio composition.`,
+      calculation: `AI Model Analysis: ${insight.type} detection with ${insight.confidence}% confidence level`,
+      interpretation: `This ${insight.type} insight suggests ${insight.actionable ? 'immediate action may be beneficial' : 'monitoring the situation'}. The ${insight.impact} impact rating indicates ${insight.impact === 'high' ? 'significant potential effect' : insight.impact === 'medium' ? 'moderate potential effect' : 'minor potential effect'} on your portfolio performance.`,
+      benchmark: `${insight.impact === 'high' ? '85%+' : insight.impact === 'medium' ? '70%+' : '60%+'} confidence threshold`,
+      percentile: insight.confidence > 85 ? 90 : insight.confidence > 75 ? 80 : 70,
+      trend: insight.type === 'opportunity' ? 'up' as const : insight.type === 'risk' ? 'down' as const : 'stable' as const,
+      historicalData: [
+        { period: 'Previous Week', value: insight.confidence * 0.85 },
+        { period: 'Previous Month', value: insight.confidence * 0.92 },
+        { period: 'Previous Quarter', value: insight.confidence * 0.88 },
+        { period: 'Current Analysis', value: insight.confidence }
+      ],
+      relatedMetrics: [
+        { name: 'Impact Level', value: insight.impact.charAt(0).toUpperCase() + insight.impact.slice(1), correlation: 0.85 },
+        { name: 'Timeframe', value: insight.timeframe, correlation: 0.65 },
+        { name: 'Actionable', value: insight.actionable ? 'Yes' : 'No', correlation: 0.45 }
+      ],
+      actionableInsights: [
+        `${insight.title} shows ${insight.confidence}% confidence level`,
+        `Recommended timeframe for action: ${insight.timeframe}`,
+        `Impact assessment: ${insight.impact} priority for portfolio optimization`,
+        insight.actionable ? 'Consider taking action based on this insight' : 'Continue monitoring this situation'
+      ]
+    }
+  }
+
+  const handleInsightClick = (insight: AIInsight) => {
+    const details = getInsightDetails(insight)
+    setSelectedInsight(details)
+    setShowInsightModal(true)
+  }
 
   const getInsightIcon = (type: string) => {
     switch (type) {
@@ -259,15 +298,19 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                 
                 <div className="space-y-3">
                   {insights.map((insight) => (
-                    <div key={insight.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-all duration-200">
-                      <div className="flex items-start justify-between mb-3">
+                    <div 
+                      key={insight.id}
+                      onClick={() => handleInsightClick(insight)}
+                      className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
                           <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                             {getInsightIcon(insight.type)}
                           </div>
                           <div className="flex-1">
-                            <h5 className="font-medium text-gray-900 dark:text-white mb-1">{insight.title}</h5>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{insight.description}</p>
+                            <h5 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{insight.title}</h5>
+                            <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{insight.description}</div>
                           </div>
                         </div>
                         
@@ -279,7 +322,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center space-x-1">
                             <Clock className="h-3 w-3" />
@@ -288,11 +331,17 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                           <span className="capitalize">{insight.impact} impact</span>
                         </div>
                         {insight.actionable && (
-                          <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
-                            <span>Take Action</span>
+                          <div className="text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors flex items-center space-x-1">
+                            <span>View Details</span>
                             <ArrowRight className="h-3 w-3" />
-                          </button>
+                          </div>
                         )}
+                      </div>
+                      
+                      <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
+                          Click for detailed analysis <ArrowRight className="w-3 h-3 ml-1" />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -333,25 +382,25 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
                 <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">Analysis Summary</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
-                    <div className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+                    <div className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
                       {insightCounts.opportunities}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Opportunities</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-semibold text-gray-600 dark:text-gray-400">
+                    <div className="text-2xl font-semibold text-gray-600 dark:text-gray-400">
                       {insightCounts.risks}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Risk Alerts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <div className="text-2xl font-semibold text-gray-900 dark:text-white">
                       {insightCounts.actions}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Actionable</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <div className="text-2xl font-semibold text-gray-900 dark:text-white">
                       {Math.round(insights.reduce((sum, i) => sum + i.confidence, 0) / insights.length)}%
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Avg Confidence</div>
@@ -362,6 +411,16 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
           )}
         </div>
       )}
+      
+      {/* Insight Detail Modal */}
+      <MetricDetailModal
+        metric={selectedInsight}
+        isOpen={showInsightModal}
+        onClose={() => {
+          setShowInsightModal(false)
+          setSelectedInsight(null)
+        }}
+      />
     </div>
   )
 }
