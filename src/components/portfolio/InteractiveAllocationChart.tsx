@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { ModernPortfolioAllocation } from './ModernPortfolioAllocation'
 import { PieChart, BarChart3, TrendingUp, RefreshCw, Target, Zap } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
@@ -24,6 +25,11 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   const [showMetricModal, setShowMetricModal] = useState(false)
   const [allocationDrift, setAllocationDrift] = useState<{ [key: string]: number }>({})
   const [rebalanceAlerts, setRebalanceAlerts] = useState<string[]>([])
+
+  // Use the modern component for better UX
+  return (
+    <ModernPortfolioAllocation currentBalance={currentBalance} />
+  )
 
   const generateAllocationData = (): AllocationData[] => {
     // Live allocation drift simulation
