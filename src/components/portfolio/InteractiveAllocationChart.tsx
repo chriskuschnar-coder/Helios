@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { PieChart, BarChart3, TrendingUp, RefreshCw, Target, Zap } from 'lucide-react'
+import { MetricDetailModal } from './MetricDetailModal'
 
 interface AllocationData {
   name: string
@@ -19,6 +20,8 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null)
   const [selectedView, setSelectedView] = useState<'pie' | 'bar'>('pie')
   const [animationProgress, setAnimationProgress] = useState(0)
+  const [selectedMetric, setSelectedMetric] = useState<any>(null)
+  const [showMetricModal, setShowMetricModal] = useState(false)
 
   const generateAllocationData = (): AllocationData[] => {
     const timeVariation = Date.now() % 100000 / 100000
@@ -75,6 +78,41 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
     return () => clearInterval(timer)
   }, [])
 
+  const getAllocationDetails = (allocation: AllocationData) => {
+    return {
+      name: allocation.name,
+      value: `${allocation.percentage}% (${allocation.value.toLocaleString()})`,
+      description: `${allocation.name} represents ${allocation.percentage}% of your total portfolio allocation. This ${allocation.risk.toLowerCase()}-risk investment strategy focuses on ${allocation.name.includes('Alpha') ? 'generating alpha through quantitative models' : allocation.name.includes('Neutral') ? 'market-neutral strategies with low correlation to market movements' : 'momentum-based strategies with higher return potential'}.`,
+      calculation: `(Fund Value / Total Portfolio Value) × 100 = (${allocation.value.toLocaleString()} / ${currentBalance.toLocaleString()}) × 100`,
+      interpretation: `Your ${allocation.name} allocation is ${Math.abs(allocation.percentage - allocation.target) < 2 ? 'well-balanced' : allocation.percentage > allocation.target ? 'overweight' : 'underweight'} relative to the target of ${allocation.target}%. The ${allocation.performance.toFixed(1)}% performance ${allocation.performance > 10 ? 'significantly exceeds' : allocation.performance > 5 ? 'exceeds' : 'meets'} expectations for this risk level.`,
+      benchmark: `${allocation.target}% target`,
+      percentile: allocation.performance > 15 ? 90 : allocation.performance > 10 ? 75 : 60,
+      trend: allocation.performance > 0 ? 'up' as const : 'down' as const,
+      historicalData: [
+        { period: 'Target', value: allocation.target },
+        { period: 'Last Month', value: allocation.percentage * 0.95 },
+        { period: 'Last Quarter', value: allocation.percentage * 0.98 },
+        { period: 'Current', value: allocation.percentage }
+      ],
+      relatedMetrics: [
+        { name: 'Performance', value: `${allocation.performance > 0 ? '+' : ''}${allocation.performance.toFixed(1)}%`, correlation: 0.85 },
+        { name: 'Risk Level', value: allocation.risk, correlation: 0.45 },
+        { name: 'Target Deviation', value: `${allocation.percentage - allocation.target > 0 ? '+' : ''}${(allocation.percentage - allocation.target).toFixed(1)}%`, correlation: -0.23 }
+      ],
+      actionableInsights: [
+        `${allocation.name} is ${allocation.percentage > allocation.target ? 'overweight' : allocation.percentage < allocation.target ? 'underweight' : 'properly weighted'} in your portfolio`,
+        `Consider ${allocation.performance > 15 ? 'taking profits' : allocation.performance < 0 ? 'reducing exposure' : 'maintaining position'} based on recent performance`,
+        `${allocation.risk === 'High' ? 'Monitor volatility closely' : allocation.risk === 'Low' ? 'Stable allocation suitable for risk management' : 'Balanced risk profile supports core allocation'}`
+      ]
+    }
+  }
+
+  const handleAllocationClick = (allocation: AllocationData) => {
+    const details = getAllocationDetails(allocation)
+    setSelectedMetric(details)
+    setShowMetricModal(true)
+  }
+
   const createPieChart = () => {
     const centerX = 150
     const centerY = 150
@@ -114,6 +152,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
           }`}
           onMouseEnter={() => setHoveredSegment(item.name)}
           onMouseLeave={() => setHoveredSegment(null)}
+          onClick={() => handleAllocationClick(item)}
         />
       )
     })
@@ -231,13 +270,14 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
           {allocationData.map((item, index) => (
             <div 
               key={index}
-              className={`p-4 rounded-lg border transition-all cursor-pointer ${
+              className={`p-4 rounded-lg border transition-all cursor-pointer group ${
                 hoveredSegment === item.name 
                   ? 'border-blue-500 bg-blue-50' 
                   : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
               }`}
               onMouseEnter={() => setHoveredSegment(item.name)}
               onMouseLeave={() => setHoveredSegment(null)}
+              onClick={() => handleAllocationClick(item)}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
@@ -245,7 +285,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
                     className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: item.color }}
                   ></div>
-                  <span className="font-medium text-gray-900">{item.name}</span>
+                  <span className="font-medium text-gray-900 group-hover:text-blue-900">{item.name}</span>
                 </div>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   item.risk === 'Low' ? 'bg-green-100 text-green-800' :
@@ -283,10 +323,24 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
                   Consider rebalancing: {item.deviation > 0 ? 'Overweight' : 'Underweight'} by {Math.abs(item.deviation).toFixed(1)}%
                 </div>
               )}
+              
+              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="text-xs text-blue-600 font-medium">Click for allocation details →</div>
+              </div>
             </div>
           ))}
         </div>
       </div>
+      
+      {/* Metric Detail Modal */}
+      <MetricDetailModal
+        metric={selectedMetric}
+        isOpen={showMetricModal}
+        onClose={() => {
+          setShowMetricModal(false)
+          setSelectedMetric(null)
+        }}
+      />
     </div>
   )
 }
