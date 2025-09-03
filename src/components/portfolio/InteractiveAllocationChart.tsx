@@ -227,55 +227,6 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Portfolio Value */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Portfolio Value</span>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            ${currentBalance.toLocaleString()}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            Updated just now
-          </div>
-        </div>
-
-        {/* Today's Change */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Today's Change</span>
-            {isPositiveChange ? (
-              <ArrowUpRight className="w-4 h-4 text-green-500" />
-            ) : (
-              <ArrowDownRight className="w-4 h-4 text-red-500" />
-            )}
-          </div>
-          <div className={`text-2xl font-bold mb-1 ${isPositiveChange ? 'text-green-600' : 'text-red-600'}`}>
-            {isPositiveChange ? '+' : ''}${Math.abs(todaysChange).toLocaleString()}
-          </div>
-          <div className={`text-xs ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
-            {isPositiveChange ? '+' : ''}{todaysChangePercent.toFixed(2)}%
-          </div>
-        </div>
-
-        {/* Allocation Balance */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Allocation Balance</span>
-            <Target className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {allocationBalance.toFixed(0)}%
-          </div>
-          <div className={`text-xs ${allocationBalance > 80 ? 'text-green-500' : allocationBalance > 60 ? 'text-yellow-500' : 'text-red-500'}`}>
-            {allocationBalance > 80 ? 'Well balanced' : allocationBalance > 60 ? 'Minor drift' : 'Needs rebalancing'}
-          </div>
-        </div>
-      </div>
-
       {/* Main Portfolio Allocation Card */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
         {/* Header */}
