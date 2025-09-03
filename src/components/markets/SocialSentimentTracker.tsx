@@ -379,7 +379,8 @@ export function SocialSentimentTracker() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+    <>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -527,19 +528,19 @@ export function SocialSentimentTracker() {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span>Live updates every 15 seconds • Update #{updateCount}</span>
           </div>
-        </div>
 
 
-        {/* Live Feed Modal */}
-        {selectedFeed && (
-          <LiveFeedModal
-            isOpen={!!selectedFeed}
-            onClose={() => setSelectedFeed(null)}
-            platform={selectedFeed.platform}
-            symbol={selectedFeed.symbol}
-          />
-        )}
       </div>
+
+      {/* Live Feed Modal */}
+      {selectedFeed && (
+        <LiveFeedModal
+          isOpen={!!selectedFeed}
+          onClose={() => setSelectedFeed(null)}
+          platform={selectedFeed.platform}
+          symbol={selectedFeed.symbol}
+        />
+      )}
     </>
   )
 }
