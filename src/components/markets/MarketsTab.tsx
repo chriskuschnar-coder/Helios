@@ -3,6 +3,7 @@ import { AIMarketNarrative } from './AIMarketNarrative'
 import { SocialSentimentTracker } from './SocialSentimentTracker'
 import { EconomicCalendar } from './EconomicCalendar'
 import { LiveMarketData } from './LiveMarketData'
+import { OptionsFlowTracker } from './OptionsFlowTracker'
 
 export function MarketsTab() {
   return (
@@ -15,6 +16,9 @@ export function MarketsTab() {
       
       {/* Social Sentiment Tracker */}
       <SocialSentimentTracker />
+      
+      {/* Options Flow Tracker */}
+      <OptionsFlowTracker />
       
       {/* Economic Calendar */}
       <EconomicCalendar />
