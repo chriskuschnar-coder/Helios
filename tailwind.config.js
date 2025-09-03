@@ -11,6 +11,10 @@ export default {
         'xl': '1280px',
       },
       colors: {
+        'neon-cyan': '#00f5ff',
+        'neon-violet': '#8b5cf6',
+        'neon-emerald': '#10b981',
+        'neon-pink': '#ec4899',
         navy: {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -37,23 +41,35 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'system-ui', 'sans-serif'],
         mono: ['SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
-        serif: ['SF Pro Display', 'Georgia', 'Times New Roman', 'serif'],
+        serif: ['SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        'xs': ['11px', { lineHeight: '1.4', letterSpacing: '0.02em' }],
+        'sm': ['13px', { lineHeight: '1.5', letterSpacing: '0.01em' }],
+        'base': ['15px', { lineHeight: '1.6', letterSpacing: '0em' }],
+        'lg': ['17px', { lineHeight: '1.6', letterSpacing: '-0.01em' }],
+        'xl': ['20px', { lineHeight: '1.5', letterSpacing: '-0.02em' }],
+        '2xl': ['24px', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
+        '3xl': ['30px', { lineHeight: '1.3', letterSpacing: '-0.03em' }],
+        '4xl': ['36px', { lineHeight: '1.2', letterSpacing: '-0.03em' }],
+        '5xl': ['48px', { lineHeight: '1.1', letterSpacing: '-0.04em' }],
+        '6xl': ['60px', { lineHeight: '1.0', letterSpacing: '-0.04em' }],
       },
       animation: {
-        'slide-up': 'slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-        'slide-right': 'slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-        'fade-scale': 'fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        'count-up': 'countUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-        'shimmer': 'shimmer 1.5s infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
-        'bounce': 'bounce 1s infinite',
+        'holographic': 'holographicShift 8s ease-in-out infinite',
+        'liquid-float': 'liquidFloat 6s ease-in-out infinite',
+        'neural-pulse': 'neuralPulse 3s ease-in-out infinite',
+        'data-stream': 'dataStream 3s ease-in-out infinite',
+        'quantum-glow': 'quantumGlow 4s ease-in-out infinite',
+        'morphic-shift': 'morphicShift 8s ease-in-out infinite',
+        'ai-thinking': 'aiThinking 1.4s ease-in-out infinite',
       },
       transitionTimingFunction: {
-        'fintech': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'cinematic': 'cubic-bezier(0.23, 1, 0.32, 1)',
         'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-        'smooth': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        'liquid': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       },
       backdropBlur: {
         'xs': '2px',
@@ -63,6 +79,12 @@ export default {
         'xl': '24px',
         '2xl': '40px',
         '3xl': '64px',
+      },
+      backgroundImage: {
+        'holographic-primary': 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        'holographic-secondary': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #43e97b 100%)',
+        'aurora-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #43e97b 75%, #4facfe 100%)',
+        'neural-network': 'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%)',
       },
     },
   },
@@ -75,6 +97,26 @@ export default {
           '&::-webkit-scrollbar': {
             display: 'none'
           }
+        },
+        '.text-holographic': {
+          background: 'linear-gradient(135deg, #ffffff 0%, #00f5ff 50%, #ffffff 100%)',
+          backgroundSize: '200% 200%',
+          '-webkit-background-clip': 'text',
+          '-webkit-text-fill-color': 'transparent',
+          'background-clip': 'text',
+          animation: 'holographicShift 4s ease-in-out infinite',
+        },
+        '.text-quantum-glow': {
+          color: '#00f5ff',
+          textShadow: '0 0 20px rgba(0, 245, 255, 0.5)',
+        },
+        '.glass-morphism': {
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+        },
+        '.neural-glow': {
+          boxShadow: '0 0 40px rgba(102, 126, 234, 0.3), 0 0 80px rgba(118, 75, 162, 0.2)',
         },
         '.touch-manipulation': {
           'touch-action': 'manipulation'
