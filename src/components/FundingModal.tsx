@@ -342,11 +342,20 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     setShowPaymentForm(false);
     setClientSecret(null);
     setError('');
-    onClose();
-    // Refresh the page to update account balance
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    
+    // Process the funding in the database
+    processFunding(amount, 'stripe', 'Credit card payment').then(() => {
+      console.log('✅ Account balance updated');
+      onClose();
+      // Refresh account data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }).catch(error => {
+      console.error('❌ Failed to update account balance:', error);
+      // Still close modal but show error
+      onClose();
+    });
   };
 
   const handlePaymentError = (error: string) => {
@@ -757,7 +766,14 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
                 <button
                   onClick={() => {
-                    // Mark as completed and close modal
+                    // Process wire transfer funding
+                    const wireAmount = parseInt(investmentAmount.replace(/,/g, ''));
+                    processFunding(wireAmount, 'wire', `Wire transfer - ${wireInstructions?.referenceCode}`).then(() => {
+                      console.log('✅ Wire transfer recorded');
+                      onClose();
+                    }).catch(error => {
+                      console.error('❌ Failed to record wire transfer:', error);
+                    });
                     onClose();
                   }}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors mt-6"
