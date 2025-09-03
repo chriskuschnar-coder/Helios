@@ -379,8 +379,7 @@ export function SocialSentimentTracker() {
   }
 
   return (
-    <>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -483,8 +482,8 @@ export function SocialSentimentTracker() {
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getSentimentColor(data.sentiment >= 60 ? 'bullish' : data.sentiment >= 40 ? 'neutral' : 'bearish')}`}>
-                      {getSentimentIcon(data.sentiment >= 60 ? 'bullish' : data.sentiment >= 40 ? 'neutral' : 'bearish')}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getSentimentColor(data.sentiment)}`}>
+                      {getSentimentIcon(data.sentiment)}
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{data.platform}</div>
@@ -494,10 +493,10 @@ export function SocialSentimentTracker() {
                   
                   <div className="flex items-center space-x-3">
                     <div className="text-right">
-                    <div className="font-bold text-gray-900">{data.sentiment}/100</div>
-                    <div className="text-sm text-gray-600">
-                      Influence: {data.influencerScore}%
-                    </div>
+                      <div className="font-bold text-gray-900">{data.sentiment}/100</div>
+                      <div className="text-sm text-gray-600">
+                        Influence: {data.influencerScore}%
+                      </div>
                     </div>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <ExternalLink className="h-5 w-5 text-blue-600" />
@@ -528,9 +527,8 @@ export function SocialSentimentTracker() {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span>Live updates every 15 seconds • Update #{updateCount}</span>
           </div>
-
-
-      </div>
+        </div>
+      )}
 
       {/* Live Feed Modal */}
       {selectedFeed && (
@@ -541,6 +539,6 @@ export function SocialSentimentTracker() {
           symbol={selectedFeed.symbol}
         />
       )}
-    </>
+    </div>
   )
 }
