@@ -2,110 +2,94 @@ import { ArrowRight, Shield, TrendingUp, Users, BarChart3 } from 'lucide-react'
 
 export function Hero() {
   return (
-    <section id="home" className="relative pt-16 min-h-screen bg-gradient-to-br from-slate-900 via-navy-900 to-slate-800 safe-area-top overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gold-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }}></div>
-      </div>
-      
+    <section id="home" className="pt-16 bg-gradient-to-br from-navy-50 to-white safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-32">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <div className="inline-block px-4 py-2 bg-emerald-500/20 backdrop-blur-sm rounded-full border border-emerald-500/30 mb-6">
-              <span className="text-emerald-300 text-sm font-medium">🚀 Live Trading Platform</span>
-            </div>
-            <h1 className="font-display text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <h1 className="font-serif text-3xl md:text-4xl lg:text-6xl font-bold text-navy-900 leading-tight mb-4 md:mb-6">
               Quantitative Investment
-              <span className="bg-gradient-to-r from-gold-400 to-emerald-400 bg-clip-text text-transparent"> Excellence</span>
+              <span className="text-gold-600"> Excellence</span>
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
               Global Market Consulting delivers revolutionary quantitative strategies through 
               advanced market microstructure analysis, processing 50,000+ tick-level events 
               per second for superior risk-adjusted returns.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-12 justify-center lg:justify-start">
-              <a href="/portal" className="group bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center justify-center shadow-lg hover:shadow-glow transform hover:scale-105">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8 md:mb-12">
+              <a href="/portal" className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 inline-flex items-center justify-center mobile-button active:scale-95">
                 Client Portal
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </a>
-              <a href="#about" className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-xl font-semibold transition-all duration-300 text-center transform hover:scale-105">
+              <a href="#about" className="bg-white hover:bg-gray-50 text-navy-600 border border-navy-200 px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 text-center mobile-button active:scale-95">
                 Learn More
               </a>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8">
-              <div className="text-center lg:text-left">
-                <div className="flex justify-center lg:justify-start mb-3">
-                  <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-emerald-400" />
-                  </div>
+            <div className="grid grid-cols-3 gap-4 md:gap-8">
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <Shield className="h-6 w-6 md:h-8 md:w-8 text-navy-600" />
                 </div>
-                <div className="font-display text-2xl md:text-3xl font-bold text-white mb-1">$4.2M</div>
-                <div className="text-sm text-slate-400">Assets Under Management</div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">$4.2M</div>
+                <div className="text-xs md:text-sm text-gray-600">Assets Under Management</div>
               </div>
-              <div className="text-center lg:text-left">
-                <div className="flex justify-center lg:justify-start mb-3">
-                  <div className="w-12 h-12 bg-gold-500/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-gold-400" />
-                  </div>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-gold-600" />
                 </div>
-                <div className="font-display text-2xl md:text-3xl font-bold text-white mb-1">22.4%</div>
-                <div className="text-sm text-slate-400">Monthly Return (2025)</div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">22.4%</div>
+                <div className="text-xs md:text-sm text-gray-600">Monthly Return (2025)</div>
               </div>
-              <div className="text-center lg:text-left">
-                <div className="flex justify-center lg:justify-start mb-3">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                    <BarChart3 className="h-6 w-6 text-blue-400" />
-                  </div>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-navy-600" />
                 </div>
-                <div className="font-display text-2xl md:text-3xl font-bold text-white mb-1">3.12</div>
-                <div className="text-sm text-slate-400">Sharpe Ratio</div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">3.12</div>
+                <div className="text-xs md:text-sm text-gray-600">Sharpe Ratio</div>
               </div>
             </div>
           </div>
           
-          <div className="relative lg:flex lg:justify-end">
-            <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20 mobile-card max-w-md mx-auto lg:mx-0">
+          <div className="relative">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 border border-gray-100 mobile-card">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display text-lg md:text-xl font-bold text-white">Live Performance Metrics</h3>
-                  <span className="text-sm md:text-base text-emerald-400 font-semibold bg-emerald-500/20 px-3 py-1 rounded-full">+287% Annual</span>
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Live Performance Metrics</h3>
+                  <span className="text-sm md:text-base text-green-600 font-semibold">+287% Annual</span>
                 </div>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm md:text-base text-slate-300">Win Rate</span>
+                    <span className="text-sm md:text-base text-gray-600">Win Rate</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-20 md:w-24 bg-white/20 rounded-full h-3">
-                        <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-3 rounded-full shadow-glow" style={{ width: '76%' }}></div>
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-600 h-2 rounded-full" style={{ width: '76%' }}></div>
                       </div>
-                      <span className="text-sm font-medium text-white">76%</span>
+                      <span className="text-sm font-medium">76%</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm md:text-base text-slate-300">Max Drawdown</span>
+                    <span className="text-sm md:text-base text-gray-600">Max Drawdown</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-20 md:w-24 bg-white/20 rounded-full h-3">
-                        <div className="bg-gradient-to-r from-blue-400 to-blue-500 h-3 rounded-full" style={{ width: '3.8%' }}></div>
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-navy-600 h-2 rounded-full" style={{ width: '3.8%' }}></div>
                       </div>
-                      <span className="text-sm font-medium text-white">3.8%</span>
+                      <span className="text-sm font-medium">3.8%</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm md:text-base text-slate-300">Profit Factor</span>
+                    <span className="text-sm md:text-base text-gray-600">Profit Factor</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-20 md:w-24 bg-white/20 rounded-full h-3">
-                        <div className="bg-gradient-to-r from-gold-400 to-gold-500 h-3 rounded-full" style={{ width: '85%' }}></div>
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-gold-600 h-2 rounded-full" style={{ width: '85%' }}></div>
                       </div>
-                      <span className="text-sm font-medium text-white">3.4:1</span>
+                      <span className="text-sm font-medium">3.4:1</span>
                     </div>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-white/20">
+                <div className="pt-4 border-t border-gray-100">
                   <div className="text-center">
-                    <div className="text-sm md:text-base text-slate-300 font-medium">12,800+ Trades Executed</div>
-                    <div className="text-xs text-emerald-400 mt-1 font-semibold">Zero Account Blow-ups</div>
+                    <div className="text-sm md:text-base text-gray-600">12,800+ Trades Executed</div>
+                    <div className="text-xs text-gray-500 mt-1">Zero Account Blow-ups</div>
                   </div>
                 </div>
               </div>
