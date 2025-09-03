@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Target, RefreshCw, TrendingUp, BarChart3, Activity, Zap } from 'lucide-react'
+import { Target, RefreshCw, TrendingUp, TrendingDown, BarChart3, Activity, Zap } from 'lucide-react'
 
 interface FactorData {
   factor: string
