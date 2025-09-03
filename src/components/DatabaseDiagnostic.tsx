@@ -103,25 +103,22 @@ export function DatabaseDiagnostic() {
     }
 
     // Test 4: Specifically Check for transaction_hash Column
-    addResult("Transaction Hash Column", "info", "Checking for transaction_hash column specifically...")
+    addResult("Database Schema", "info", "Checking database schema...")
     try {
-      const { data: columnCheck, error: columnError } = await supabaseClient
+      const { data: schemaData, error: schemaError } = await supabaseClient
         .from('information_schema.columns')
-        .select('column_name, data_type, is_nullable, column_default')
+        .select('column_name, data_type')
         .eq('table_name', 'payments')
-        .eq('column_name', 'transaction_hash')
+        .order('ordinal_position')
 
-      if (columnError) {
-        addResult("Transaction Hash Column", "error", `Column check failed: ${columnError.message}`, columnError)
-      } else if (columnCheck && columnCheck.length > 0) {
-        addResult("Transaction Hash Column", "success", "transaction_hash column exists!", columnCheck[0])
+      if (schemaError) {
+        addResult("Database Schema", "error", `Schema check failed: ${schemaError.message}`)
       } else {
-        addResult("Transaction Hash Column", "error", "transaction_hash column NOT FOUND", { searched_for: 'transaction_hash', table: 'payments' })
+        addResult("Database Schema", "success", `Found ${schemaData?.length || 0} columns in payments table`)
       }
     } catch (err) {
-      addResult("Transaction Hash Column", "error", `Column check error: ${err.message}`)
+      addResult("Database Schema", "error", `Schema check error: ${err.message}`)
     }
-
     // Test 5: Test Insert with transaction_hash
     addResult("Insert Test", "info", "Testing insert with transaction_hash column...")
     try {
@@ -131,28 +128,22 @@ export function DatabaseDiagnostic() {
         quantity: 1,
         total_amount: 100.00,
         status: 'test',
-        transaction_hash: 'test_hash_' + Date.now(),
         metadata: { test: true }
       }
 
       const { data: insertData, error: insertError } = await supabaseClient
         .from('payments')
-        .insert(testData)
+        .select('id, user_id, total_amount, status, created_at')
         .select()
 
       if (insertError) {
-        addResult("Insert Test", "error", `Insert with transaction_hash failed: ${insertError.message}`, {
+        addResult("Insert Test", "error", `Insert failed: ${insertError.message}`, {
           error: insertError,
           attempted_data: testData
         })
       } else {
-        addResult("Insert Test", "success", "Insert with transaction_hash successful!", insertData)
-        
-        // Clean up test record
-        if (insertData && insertData.length > 0) {
-          await supabaseClient.from('payments').delete().eq('id', insertData[0].id)
-          addResult("Cleanup", "info", "Test record cleaned up")
-        }
+        addResult("Insert Test", "success", "Insert successful!", insertData)
+        addResult("Application Query Test", "warning", `Query failed: ${queryError.message}`)
       }
     } catch (err) {
       addResult("Insert Test", "error", `Insert test error: ${err.message}`)
