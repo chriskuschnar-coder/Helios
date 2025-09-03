@@ -387,7 +387,6 @@ export function InvestorDashboard() {
   const getTransactionColor = (type: string, amount: number) => {
     if (type === 'deposit' || type === 'interest') return 'text-green-600'
     if (type === 'withdrawal' || type === 'fee') return 'text-red-600'
-    }
     return 'text-gray-600'
   }
   
