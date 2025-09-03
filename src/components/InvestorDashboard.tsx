@@ -29,6 +29,9 @@ export function InvestorDashboard() {
   const [selectedTopTab, setSelectedTopTab] = useState('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [pullDistance, setPullDistance] = useState(0)
+  const [startY, setStartY] = useState(0)
 
   // Extract first name from user data
   const getFirstName = () => {
@@ -151,25 +154,79 @@ export function InvestorDashboard() {
     console.log('Proceeding to payment:', { amount, method })
   }
 
+  // Pull-to-refresh functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartY(e.touches[0].clientY)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const currentY = e.touches[0].clientY
+    const diff = currentY - startY
+    
+    if (diff > 0 && window.scrollY === 0) {
+      setPullDistance(Math.min(diff * 0.5, 80))
+    }
+  }
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true)
+      await refreshAccount()
+      setTimeout(() => {
+        setIsRefreshing(false)
+        setPullDistance(0)
+      }, 1000)
+    } else {
+      setPullDistance(0)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div 
+      className="min-h-screen bg-gray-50 safe-area-bottom"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-center transition-all duration-300"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 80 
+          }}
+        >
+          <div className={`text-gray-600 text-sm font-medium ${isRefreshing ? 'animate-spin' : ''}`}>
+            {isRefreshing ? (
+              <RefreshCw className="h-5 w-5" />
+            ) : pullDistance > 60 ? (
+              'Release to refresh'
+            ) : (
+              'Pull to refresh'
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Top Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8">
-          <div className="px-6 py-4">
-            <nav className="flex space-x-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
+          <div className="px-3 md:px-6 py-3 md:py-4">
+            {/* Mobile: Horizontal scroll tabs */}
+            <nav className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide">
               {topTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTopTab(tab.id)}
-                  className={`flex items-center space-x-2 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                  className={`flex items-center space-x-2 py-2 px-3 md:px-4 rounded-lg font-medium text-sm transition-colors mobile-tab whitespace-nowrap ${
                     selectedTopTab === tab.id
                       ? 'bg-navy-600 text-white'
                       : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
                   }`}
                 >
-                  <tab.icon className="h-4 w-4" />
-                  <span>{tab.name}</span>
+                  <tab.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.name}</span>
                 </button>
               ))}
             </nav>
@@ -178,26 +235,26 @@ export function InvestorDashboard() {
 
         {/* Investment Tab Content */}
         {selectedTopTab === 'invest' && (
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
             <StripeCheckout className="h-fit" />
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-              <h3 className="font-serif text-xl font-bold text-navy-900 mb-4">Investment Information</h3>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+              <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-4">Investment Information</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-gray-700">Secure payment processing via Stripe</span>
+                  <span className="text-sm md:text-base text-gray-700">Secure payment processing via Stripe</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-gray-700">Instant account funding</span>
+                  <span className="text-sm md:text-base text-gray-700">Instant account funding</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-gray-700">Professional investment management</span>
+                  <span className="text-sm md:text-base text-gray-700">Professional investment management</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-gray-700">Real-time portfolio tracking</span>
+                  <span className="text-sm md:text-base text-gray-700">Real-time portfolio tracking</span>
                 </div>
               </div>
             </div>
@@ -206,11 +263,11 @@ export function InvestorDashboard() {
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-navy-900 mb-1">
+          <div className="mb-4 md:mb-6 mobile-card">
+            <h1 className="text-xl md:text-2xl font-bold text-navy-900 mb-1">
               Welcome back, {getFirstName()}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm md:text-base text-gray-600">
               Here's your portfolio performance and investment overview
             </p>
           </div>
@@ -225,35 +282,35 @@ export function InvestorDashboard() {
 
         {/* Performance Summary Cards */}
         {selectedTopTab === 'portfolio' && (
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 font-medium">Daily P&L</span>
+                <span className="text-sm md:text-base text-gray-600 font-medium">Daily P&L</span>
                 <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="font-serif text-2xl font-bold text-green-600 mb-1">
+              <div className="font-serif text-xl md:text-2xl font-bold text-green-600 mb-1">
                 +${portfolioData.dailyPnL.toLocaleString()}
               </div>
               <div className="text-sm text-green-600">+{portfolioData.dailyPnLPct}%</div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 font-medium">YTD Return</span>
+                <span className="text-sm md:text-base text-gray-600 font-medium">YTD Return</span>
                 <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="font-serif text-2xl font-bold text-green-600 mb-1">
+              <div className="font-serif text-xl md:text-2xl font-bold text-green-600 mb-1">
                 +{portfolioData.yearlyReturn}%
               </div>
               <div className="text-sm text-gray-500">Outperforming benchmark</div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 font-medium">Available Cash</span>
+                <span className="text-sm md:text-base text-gray-600 font-medium">Available Cash</span>
                 <Plus className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="font-serif text-2xl font-bold text-navy-900 mb-1">
+              <div className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-1">
                 ${account?.available_balance?.toLocaleString() || '0'}
               </div>
             </div>
@@ -264,38 +321,38 @@ export function InvestorDashboard() {
         {selectedTopTab === 'portfolio' && (
           <PortfolioPerformanceChart 
             currentBalance={account?.balance || 0}
-            className="mb-8"
+            className="mb-4 md:mb-8"
           />
         )}
 
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
-          <div className="space-y-8">
+          <div className="space-y-4 md:space-y-8">
             <MarketsTab />
           </div>
         )}
 
         {/* Research Tab Content */}
         {selectedTopTab === 'research' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-8">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-8 mobile-card">
             <div className="text-center">
-              <FileText className="h-16 w-16 text-navy-600 mx-auto mb-4" />
-              <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">Quantitative Research</h3>
-              <p className="text-gray-600 mb-6">
+              <FileText className="h-12 w-12 md:h-16 md:w-16 text-navy-600 mx-auto mb-4" />
+              <h3 className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-4">Quantitative Research</h3>
+              <p className="text-sm md:text-base text-gray-600 mb-6">
                 Access our latest research reports, market analysis, and quantitative insights.
               </p>
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="bg-navy-50 rounded-lg p-6 text-left">
                   <h4 className="font-medium text-navy-900 mb-2">Latest Research Report</h4>
                   <p className="text-sm text-gray-600 mb-3">Q1 2025 Market Outlook: Quantitative Signals Analysis</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm">
+                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm mobile-button">
                     Download PDF →
                   </button>
                 </div>
                 <div className="bg-navy-50 rounded-lg p-6 text-left">
                   <h4 className="font-medium text-navy-900 mb-2">Strategy Performance</h4>
                   <p className="text-sm text-gray-600 mb-3">Monthly attribution analysis and factor decomposition</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm">
+                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm mobile-button">
                     View Analysis →
                   </button>
                 </div>
@@ -306,18 +363,18 @@ export function InvestorDashboard() {
 
         {/* Transactions Tab Content */}
         {selectedTopTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-8">
-            <h3 className="font-serif text-xl font-bold text-navy-900 mb-6">Transaction History</h3>
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-8 mobile-card">
+            <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-6">Transaction History</h3>
             {recentTransactions.length > 0 ? (
               <div className="space-y-3">
                 {recentTransactions.map((transaction, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">{transaction.type}</div>
+                      <div className="text-sm md:text-base font-medium text-gray-900">{transaction.type}</div>
                       <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-sm md:text-base font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-600">{transaction.status}</div>
@@ -338,41 +395,41 @@ export function InvestorDashboard() {
 
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex space-x-4 md:space-x-8 px-3 md:px-6 overflow-x-auto scrollbar-hide">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                  className={`flex items-center space-x-2 py-3 md:py-4 border-b-2 font-medium text-sm transition-colors mobile-tab whitespace-nowrap ${
                     selectedTab === tab.id
                       ? 'border-navy-600 text-navy-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   <tab.icon className="h-5 w-5" />
-                  <span>{tab.name}</span>
+                  <span className="hidden sm:inline">{tab.name}</span>
                 </button>
               ))}
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             {selectedTab === 'overview' && (
               <div className="space-y-8">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-navy-900 mb-6">Asset Allocation</h3>
-                  <div className="grid lg:grid-cols-2 gap-8">
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-4 md:mb-6">Asset Allocation</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                     <div className="space-y-4">
                       {holdings.map((holding, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg mobile-button">
                           <div className="flex-1">
-                            <div className="font-medium text-gray-900">{holding.name}</div>
+                            <div className="text-sm md:text-base font-medium text-gray-900">{holding.name}</div>
                             <div className="text-sm text-gray-600">{holding.allocation}% allocation • {holding.risk} risk</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-medium text-gray-900">
+                            <div className="text-sm md:text-base font-medium text-gray-900">
                               ${holding.value.toLocaleString()}
                             </div>
                             <div className="text-sm text-green-600">+{holding.return}%</div>
@@ -381,20 +438,20 @@ export function InvestorDashboard() {
                       ))}
                     </div>
                     
-                    <div className="bg-navy-50 rounded-lg p-6">
-                      <h4 className="font-medium text-navy-900 mb-4">Performance Metrics</h4>
+                    <div className="bg-navy-50 rounded-lg p-4 md:p-6">
+                      <h4 className="text-sm md:text-base font-medium text-navy-900 mb-4">Performance Metrics</h4>
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Sharpe Ratio</span>
-                          <span className="font-medium text-navy-900">2.84</span>
+                          <span className="text-sm text-gray-600">Sharpe Ratio</span>
+                          <span className="text-sm font-medium text-navy-900">2.84</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Max Drawdown</span>
-                          <span className="font-medium text-navy-900">-4.2%</span>
+                          <span className="text-sm text-gray-600">Max Drawdown</span>
+                          <span className="text-sm font-medium text-navy-900">-4.2%</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Volatility</span>
-                          <span className="font-medium text-navy-900">8.7%</span>
+                          <span className="text-sm text-gray-600">Volatility</span>
+                          <span className="text-sm font-medium text-navy-900">8.7%</span>
                         </div>
                       </div>
                     </div>
@@ -405,30 +462,30 @@ export function InvestorDashboard() {
 
             {selectedTab === 'holdings' && (
               <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-navy-900">Detailed Holdings</h3>
-                <div className="overflow-x-auto">
+                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Detailed Holdings</h3>
+                <div className="overflow-x-auto -mx-3 md:mx-0">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 font-medium text-gray-900">Fund Name</th>
-                        <th className="text-right py-3 font-medium text-gray-900">Allocation</th>
-                        <th className="text-right py-3 font-medium text-gray-900">Market Value</th>
-                        <th className="text-right py-3 font-medium text-gray-900">Return</th>
-                        <th className="text-right py-3 font-medium text-gray-900">Risk Level</th>
+                        <th className="text-left py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Fund Name</th>
+                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Allocation</th>
+                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Value</th>
+                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Return</th>
+                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Risk</th>
                       </tr>
                     </thead>
                     <tbody>
                       {holdings.map((holding, index) => (
                         <tr key={index} className="border-b border-gray-100">
-                          <td className="py-4 font-medium text-gray-900">{holding.name}</td>
-                          <td className="py-4 text-right text-gray-600">{holding.allocation}%</td>
-                          <td className="py-4 text-right font-medium text-gray-900">
+                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">{holding.name}</td>
+                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right text-gray-600">{holding.allocation}%</td>
+                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right font-medium text-gray-900">
                             ${holding.value.toLocaleString()}
                           </td>
-                          <td className="py-4 text-right font-medium text-green-600">
+                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right font-medium text-green-600">
                             +{holding.return}%
                           </td>
-                          <td className="py-4 text-right">
+                          <td className="py-3 md:py-4 px-2 md:px-0 text-right">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               holding.risk === 'Low' ? 'bg-green-100 text-green-800' :
                               holding.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -447,16 +504,16 @@ export function InvestorDashboard() {
 
             {selectedTab === 'transactions' && (
               <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-navy-900">Recent Transactions</h3>
+                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Recent Transactions</h3>
                 <div className="space-y-3">
                   {recentTransactions.map((transaction, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button">
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">{transaction.type}</div>
+                        <div className="text-sm md:text-base font-medium text-gray-900">{transaction.type}</div>
                         <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
                       </div>
                       <div className="text-right">
-                        <div className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-sm md:text-base font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                         </div>
                         <div className="text-sm text-gray-600">{transaction.status}</div>
@@ -469,18 +526,18 @@ export function InvestorDashboard() {
 
             {selectedTab === 'documents' && (
               <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-navy-900">Investment Documents</h3>
-                <div className="grid md:grid-cols-2 gap-4">
+                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Investment Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   {documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={index} className="flex items-center justify-between p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mobile-button">
                       <div className="flex items-center space-x-3 flex-1">
                         <FileText className="h-5 w-5 text-gray-600" />
                         <div>
-                          <div className="font-medium text-gray-900">{doc.name}</div>
+                          <div className="text-sm md:text-base font-medium text-gray-900">{doc.name}</div>
                           <div className="text-sm text-gray-600">{doc.type} • {doc.date}</div>
                         </div>
                       </div>
-                      <button className="text-navy-600 hover:text-navy-700 font-medium text-sm px-3 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors">
+                      <button className="text-navy-600 hover:text-navy-700 font-medium text-xs md:text-sm px-2 md:px-3 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors mobile-button">
                         Download
                       </button>
                     </div>

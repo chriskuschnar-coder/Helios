@@ -192,14 +192,14 @@ export function AIMarketNarrative() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center">
             <Brain className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-serif text-lg font-bold text-navy-900">AI Market Analysis</h3>
+            <h3 className="font-serif text-base md:text-lg font-bold text-navy-900">AI Market Analysis</h3>
             <p className="text-sm text-gray-600">
               Live updates: {liveUpdateCount} • {lastRefresh.toLocaleTimeString()}
             </p>
@@ -207,14 +207,14 @@ export function AIMarketNarrative() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-xs text-green-600 font-medium">LIVE</span>
           </div>
           
-          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getSentimentColor(narrative?.sentiment || 'neutral')}`}>
+          <div className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-3 py-1 rounded-full border ${getSentimentColor(narrative?.sentiment || 'neutral')}`}>
             {getSentimentIcon(narrative?.sentiment || 'neutral')}
-            <span className="text-sm font-medium capitalize">
+            <span className="text-xs md:text-sm font-medium capitalize">
               {narrative?.sentiment || 'Analyzing'}
             </span>
           </div>
@@ -222,7 +222,7 @@ export function AIMarketNarrative() {
           <button
             onClick={refreshNarrative}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors mobile-button"
             title="Refresh Analysis"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
@@ -231,19 +231,19 @@ export function AIMarketNarrative() {
       </div>
 
       {narrative && (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <div>
-            <h4 className="font-serif text-xl font-bold text-navy-900 mb-3">
+            <h4 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-3">
               {narrative.headline}
             </h4>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-sm md:text-base text-gray-700 leading-relaxed">
               {narrative.analysis}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
-              <h5 className="font-medium text-gray-900 mb-3">Key Market Signals</h5>
+              <h5 className="text-sm md:text-base font-medium text-gray-900 mb-3">Key Market Signals</h5>
               <ul className="space-y-2">
                 {narrative.keyPoints.map((point, index) => (
                   <li key={index} className="flex items-start space-x-2">
@@ -254,13 +254,13 @@ export function AIMarketNarrative() {
               </ul>
             </div>
             
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h5 className="font-medium text-gray-900 mb-3">AI Confidence Metrics</h5>
+            <div className="bg-gray-50 rounded-lg p-3 md:p-4">
+              <h5 className="text-sm md:text-base font-medium text-gray-900 mb-3">AI Confidence Metrics</h5>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Analysis Confidence</span>
                   <div className="flex items-center space-x-2">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="w-16 md:w-20 bg-gray-200 rounded-full h-2 overflow-hidden">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-1000 ease-in-out" 
                         style={{ width: `${narrative.confidence}%` }}

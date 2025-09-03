@@ -4,8 +4,30 @@
     <meta charset="UTF-8" />
     <script src="https://js.stripe.com/v3/"></script>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Global Markets" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#102a43" />
     <title>Complete Hedge Fund Platform Setup</title>
+    <style>
+      /* Prevent zoom on input focus */
+      input[type="text"], input[type="email"], input[type="password"], input[type="number"], textarea, select {
+        font-size: 16px !important;
+      }
+      
+      /* Smooth scrolling for iOS */
+      * {
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Hide scrollbars but keep functionality */
+      ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

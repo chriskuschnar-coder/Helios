@@ -24,31 +24,39 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const isPositive = dailyChange >= 0
 
   return (
-    <div className="portfolio-value-card">
-      <div className="value-header">
-        <span className="label">Total Portfolio Value</span>
-        <span className="live-indicator">
-          <div className="live-dot"></div>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-6 mobile-card">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
+        <span className="text-xs md:text-sm uppercase tracking-wider text-gray-500 font-semibold">Total Portfolio Value</span>
+        <span className="flex items-center space-x-2 text-xs text-green-600 font-medium">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           LIVE
         </span>
       </div>
       
-      <div className="value-display">
-        <h1 className="current-value">${currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h1>
-        <div className={`value-change ${isPositive ? 'positive' : 'negative'}`}>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-3xl md:text-5xl font-light text-gray-900 mb-2 font-mono tracking-tight">
+          ${currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </h1>
+        <div className={`flex items-center space-x-2 text-sm md:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-          <span className="percentage">({isPositive ? '+' : ''}{dailyChangePct.toFixed(2)}%)</span>
+          <span className="opacity-80">({isPositive ? '+' : ''}{dailyChangePct.toFixed(2)}%)</span>
         </div>
       </div>
       
-      <div className="actions-row">
-        <button className="fund-button primary" onClick={() => onFundPortfolio()}>
-          <Plus className="icon" />
-          Fund Portfolio
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+        <button 
+          onClick={() => onFundPortfolio()}
+          className="flex-1 bg-black hover:bg-gray-800 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 mobile-button active:scale-95"
+        >
+          <Plus className="h-4 w-4 md:h-5 md:w-5" />
+          <span className="text-sm md:text-base">Fund Portfolio</span>
         </button>
-        <button className="fund-button secondary" onClick={onWithdraw}>
-          <Minus className="icon" />
-          Withdraw
+        <button 
+          onClick={onWithdraw}
+          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-4 md:px-6 py-3 md:py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 mobile-button active:scale-95"
+        >
+          <TrendingDown className="h-4 w-4 md:h-5 md:w-5" />
+          <span className="text-sm md:text-base">Withdraw</span>
         </button>
       </div>
     </div>

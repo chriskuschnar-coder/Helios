@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       colors: {
         navy: {
           50: '#f0f4f8',
@@ -33,7 +36,39 @@ export default {
         serif: ['Georgia', 'Times New Roman', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      animation: {
+        'slide-up': 'slideInUp 0.4s ease-out',
+        'slide-right': 'slideInRight 0.3s ease-out',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'scale-in': 'scaleIn 0.2s ease-out',
+        'shimmer': 'shimmer 1.5s infinite',
+      },
+      transitionTimingFunction: {
+        'bounce-in': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        },
+        '.touch-manipulation': {
+          'touch-action': 'manipulation'
+        },
+        '.hardware-acceleration': {
+          'transform': 'translateZ(0)',
+          'backface-visibility': 'hidden',
+          'will-change': 'transform'
+        }
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 };
