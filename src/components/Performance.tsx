@@ -14,39 +14,29 @@ export function Performance() {
   const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
 
   return (
-    <section id="performance" className="py-20 bg-gradient-to-br from-slate-900 via-navy-900 to-slate-800 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-10 left-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-10 right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }}></div>
-        <div className="absolute top-1/2 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
-      </div>
-      
+    <section id="performance" className="py-20 bg-navy-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative z-10 text-center mb-16">
-          <div className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6 border border-white/20">
-            <span className="text-emerald-300 text-sm font-semibold">TRACK RECORD</span>
-          </div>
-          <h2 className="font-display text-3xl lg:text-5xl font-bold text-white mb-6">
+        <div className="text-center mb-16">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             Quantitative Performance Track Record
           </h2>
-          <p className="text-xl text-slate-300 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl text-navy-200 max-w-3xl mx-auto">
             Live trading results demonstrating consistent alpha generation through 
             mathematical models and systematic risk management across multiple market cycles.
           </p>
         </div>
 
-        <div className="relative z-10 bg-white/10 backdrop-blur-lg rounded-3xl p-8 lg:p-12 border border-white/20 shadow-2xl">
+        <div className="bg-white rounded-2xl p-8 lg:p-12">
           <div className="flex justify-center mb-8">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-1 border border-white/30">
+            <div className="bg-gray-100 rounded-lg p-1">
               {periods.map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 ${
                     selectedPeriod === period
-                      ? 'bg-white text-navy-900 shadow-lg'
-                      : 'text-white hover:bg-white/20'
+                      ? 'bg-navy-600 text-white'
+                      : 'text-gray-600 hover:text-navy-600'
                   }`}
                 >
                   {period}
@@ -57,93 +47,84 @@ export function Performance() {
 
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="text-center">
-              <div className="font-display text-4xl md:text-5xl font-bold text-emerald-400 mb-3">
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
                 {currentData.return}
               </div>
-              <div className="text-slate-300 font-semibold text-lg">
+              <div className="text-gray-600 font-medium">
                 {selectedPeriod === 'Live' ? 'Monthly Return' : 'Annual Return'}
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-gray-500">
                 {selectedPeriod === 'Live' ? 'YTD Average' : currentData.period}
               </div>
             </div>
             <div className="text-center">
-              <div className="font-display text-4xl md:text-5xl font-bold text-blue-400 mb-3">
+              <div className="font-serif text-4xl font-bold text-navy-900 mb-2">
                 {currentData.sharpe}
               </div>
-              <div className="text-slate-300 font-semibold text-lg">Sharpe Ratio</div>
-              <div className="text-sm text-slate-400">Risk-adjusted</div>
+              <div className="text-gray-600 font-medium">Sharpe Ratio</div>
+              <div className="text-sm text-gray-500">Risk-adjusted</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-4xl md:text-5xl font-bold text-gold-400 mb-3">
+              <div className="font-serif text-4xl font-bold text-gold-600 mb-2">
                 {currentData.drawdown}
               </div>
-              <div className="text-slate-300 font-semibold text-lg">Max Drawdown</div>
-              <div className="text-sm text-slate-400">Capital preservation</div>
+              <div className="text-gray-600 font-medium">Max Drawdown</div>
+              <div className="text-sm text-gray-500">Capital preservation</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-4xl md:text-5xl font-bold text-emerald-400 mb-3">
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
                 {currentData.winRate}
               </div>
-              <div className="text-slate-300 font-semibold text-lg">Win Rate</div>
-              <div className="text-sm text-slate-400">8,400+ trades</div>
+              <div className="text-gray-600 font-medium">Win Rate</div>
+              <div className="text-sm text-gray-500">8,400+ trades</div>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-            <h4 className="font-display text-xl font-bold text-white mb-6">
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h4 className="font-serif text-lg font-bold text-navy-900 mb-4">
               Multi-Account Performance Summary
             </h4>
             <div className="grid md:grid-cols-4 gap-6">
               <div>
-                <div className="text-3xl font-bold text-white mb-2">6</div>
-                <div className="text-slate-300 font-medium">Institutional Accounts</div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">6</div>
+                <div className="text-gray-600">Institutional Accounts</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-white mb-2">$4.2M</div>
-                <div className="text-slate-300 font-medium">Assets Under Management</div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">$4.2M</div>
+                <div className="text-gray-600">Assets Under Management</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-emerald-400 mb-2">100%</div>
-                <div className="text-slate-300 font-medium">Profitable Accounts</div>
+                <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
+                <div className="text-gray-600">Profitable Accounts</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-white mb-2">0</div>
-                <div className="text-slate-300 font-medium">Account Blow-ups</div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
+                <div className="text-gray-600">Account Blow-ups</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Quantitative Metrics */}
-        <div className="relative z-10 mt-16 bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 lg:p-12 shadow-2xl">
-          <h3 className="font-display text-2xl lg:text-4xl font-bold text-white mb-12 text-center">
+        <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
+          <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
             Advanced Quantitative Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-gold-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-gold-400 mb-3">3.4:1</div>
-              <div className="text-slate-300 font-semibold text-lg">Profit Factor</div>
-              <div className="text-sm text-slate-400 mt-1">Winners vs Losers</div>
+              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
+              <div className="text-gray-700 font-medium">Profit Factor</div>
+              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Target className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-emerald-400 mb-3">0.28</div>
-              <div className="text-slate-300 font-semibold text-lg">Kelly Fraction</div>
-              <div className="text-sm text-slate-400 mt-1">Optimal Position Size</div>
+              <div className="text-3xl font-bold text-gold-400 mb-2">0.28</div>
+              <div className="text-gray-700 font-medium">Kelly Fraction</div>
+              <div className="text-sm text-gray-600 mt-1">Optimal Position Size</div>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-blue-400 mb-3">52%</div>
-              <div className="text-slate-300 font-semibold text-lg">Slippage Reduction</div>
-              <div className="text-sm text-slate-400 mt-1">vs TWAP Benchmark</div>
+              <div className="text-3xl font-bold text-gold-400 mb-2">52%</div>
+              <div className="text-gray-700 font-medium">Slippage Reduction</div>
+              <div className="text-sm text-gray-600 mt-1">vs TWAP Benchmark</div>
             </div>
           </div>
         </div>
