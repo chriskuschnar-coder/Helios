@@ -516,3 +516,13 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
           </div>
         </div>
       )}
+
+      {showMetricModal && selectedMetric && (
+        <MetricDetailModal
+          metric={selectedMetric}
+          onClose={() => setShowMetricModal(false)}
+        />
+      )}
+    </div>
+  )
+}
