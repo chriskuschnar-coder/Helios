@@ -34,6 +34,7 @@ export function OptionsFlowTracker() {
   const [alerts, setAlerts] = useState<FlowAlert[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'unusual' | 'institutional' | 'dark'>('all')
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'tech' | 'finance' | 'crypto' | 'indices' | 'energy' | 'healthcare'>('all')
   const [liveCount, setLiveCount] = useState(0)
   const [showInsiderMode, setShowInsiderMode] = useState(false)
 
@@ -103,20 +104,19 @@ export function OptionsFlowTracker() {
   )
 
   const generateOptionsFlow = (): OptionsFlow[] => {
-    return Array.from({ length: 25 }, (_, i) => {
-      const asset = allAssets[Math.floor(Math.random() * allAssets.length)]
-      const symbol = asset.symbol
-      const basePrice = asset.basePrice
-      const isCall = Math.random() > 0.45
-      
-      const traders = [
-        'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
-        'OPTIVER_GAMMA', 'VIRTU_EXECUTION', 'TWO_SIGMA_QUANT', 'RENAISSANCE_TECH',
-        'BRIDGEWATER_MACRO', 'MILLENNIUM_PARTNERS', 'DE_SHAW_SYSTEMATIC', 'AQR_CAPITAL'
-      ]
-      
-      const now = Date.now()
-      const timeVariation = (now % 100000) / 100000
+    const traders = [
+      'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
+      'OPTIVER_GAMMA', 'VIRTU_EXECUTION', 'TWO_SIGMA_QUANT', 'RENAISSANCE_TECH',
+      'BRIDGEWATER_MACRO', 'MILLENNIUM_PARTNERS', 'DE_SHAW_SYSTEMATIC', 'AQR_CAPITAL'
+    ]
+    
+    const now = Date.now()
+    const timeVariation = (now % 100000) / 100000
+    
+    return Array.from({ length: 20 + Math.floor(timeVariation * 15) }, (_, i) => {
+      const asset = allAssets[Math.floor((timeVariation * 1000 + i * 100) % allAssets.length)]
+      const isCall = Math.random() > 0.4
+      const { symbol, basePrice } = asset
       
       const strike = basePrice * (0.95 + Math.random() * 0.1) // ±5% from current price
       const volume = Math.floor(500 + Math.random() * 5000 + (timeVariation * 2000))
