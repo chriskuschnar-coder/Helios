@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 export function Performance() {
-  const [selectedPeriod, setSelectedPeriod] = useState('Live')
 
   const periods = ['Live', '2024', 'Inception']
   
@@ -14,15 +13,15 @@ export function Performance() {
   const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
 
   return (
-    <section id="performance" className="py-20 bg-navy-900">
+    <section id="contact" className="py-20 bg-navy-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
-            Proven Track Record of Investment Success
+            Partner with Investment Excellence
           </h2>
           <p className="text-xl text-navy-200 max-w-3xl mx-auto">
-            Our transparent performance history demonstrates consistent value creation for clients 
-            through disciplined investment strategies and professional risk management across all market conditions.
+            Ready to explore how our quantitative strategies can enhance your investment portfolio? 
+            Contact our team to discuss your investment goals and learn more about our proven approach.
           </p>
         </div>
 
@@ -108,6 +107,7 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
+            Professional Performance Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
