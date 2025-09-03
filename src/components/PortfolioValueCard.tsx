@@ -24,14 +24,14 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const isPositive = dailyChange >= 0
 
   return (
-    <div className="portfolio-header exchange-spacing animate-slide-up">
+    <div className="portfolio-header premium-spacing animate-slide-up">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-blue rounded-xl flex items-center justify-center animate-blue-glow">
+          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse-glow">
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="exchange-label">Portfolio Value</span>
+            <span className="premium-label">Portfolio Value</span>
             <div className="text-xs text-white/40 mt-1">Real-time balance</div>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
       <div className="flex flex-col xs:flex-row gap-4">
         <button 
           onClick={() => onFundPortfolio()}
-          className="flex-1 exchange-button-primary group"
+          className="flex-1 premium-button-primary interactive-element group"
         >
           <div className="flex items-center justify-center space-x-2">
             <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
@@ -72,7 +72,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
         </button>
         <button 
           onClick={onWithdraw}
-          className="flex-1 exchange-button"
+          className="flex-1 premium-button interactive-element"
         >
           <div className="flex items-center justify-center space-x-2">
             <TrendingDown className="h-5 w-5" />

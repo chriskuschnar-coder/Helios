@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BarChart3, Activity, LogOut, TrendingUp, Menu, X } from 'lucide-react'
+import { BarChart3, Activity, LogOut, TrendingUp, Menu, X, ArrowUpRight } from 'lucide-react'
 import InvestorDashboard from './InvestorDashboard'
 import { HeliosDashboard } from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
@@ -20,7 +20,7 @@ export function DashboardSelector() {
   // Dashboard switcher header
   const DashboardSwitcher = () => (
     <div className="nav-container">
-      <div className="exchange-container">
+      <div className="premium-container">
         <div className="flex justify-between items-center h-20">
           <div className="nav-brand">
             <div className="nav-logo">
@@ -76,7 +76,7 @@ export function DashboardSelector() {
               </div>
               <button
                 onClick={handleSignOut}
-                className="exchange-button text-sm"
+                className="premium-button text-sm"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -87,7 +87,7 @@ export function DashboardSelector() {
         
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 exchange-card-dark">
+          <div className="md:hidden border-t border-white/10 glass-card-dark">
             <div className="px-6 py-6 space-y-4">
               {/* Dashboard Toggle Mobile */}
               <div className="space-y-3">
@@ -135,7 +135,7 @@ export function DashboardSelector() {
                       handleSignOut()
                       setMobileMenuOpen(false)
                     }}
-                    className="exchange-button text-sm"
+                    className="premium-button text-sm"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Sign Out</span>
@@ -159,8 +159,8 @@ export function DashboardSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="exchange-nav">
+    <div className="min-h-screen bg-black">
+      <div className="premium-nav">
         <DashboardSwitcher />
       </div>
       <InvestorDashboard />
