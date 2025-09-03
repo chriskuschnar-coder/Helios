@@ -24,18 +24,13 @@ export function LiveMarketData() {
   const [marketData, setMarketData] = useState<MarketOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'crypto' | 'stocks' | 'forex' | 'commodities'>('all')
-  const [tickCount, setTickCount] = useState(0)
 
   const generateLiveData = (): MarketOverview => {
     const baseTime = Date.now()
-    const microTrend = Math.sin(baseTime / 10000) * 0.02 // ±2% micro movements
-    const dailyTrend = Math.cos(baseTime / 100000) * 0.01 // ±1% daily trend
     
     // Generate realistic price movements
     const generatePrice = (basePrice: number, volatility: number = 0.02) => {
-      const randomChange = (Math.random() - 0.5) * 2 * volatility
-      const trendChange = microTrend + dailyTrend
-      const change = randomChange + trendChange
+      const change = (Math.random() - 0.5) * 2 * volatility
       return {
         price: basePrice * (1 + change),
         changePercent: change * 100
@@ -193,8 +188,7 @@ export function LiveMarketData() {
 
   const refreshData = async () => {
     setLoading(true)
-    setTickCount(prev => prev + 1)
-    await new Promise(resolve => setTimeout(resolve, 200)) // Faster updates
+    await new Promise(resolve => setTimeout(resolve, 500))
     const newData = generateLiveData()
     
     // Calculate change values
@@ -226,8 +220,8 @@ export function LiveMarketData() {
   useEffect(() => {
     refreshData()
     
-    // LIVE UPDATES: Refresh every 10 seconds for true live market feel
-    const interval = setInterval(refreshData, 10 * 1000)
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(refreshData, 30 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -286,14 +280,14 @@ export function LiveMarketData() {
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Live Market Data</h3>
             <p className="text-sm text-gray-600">
-              Live tick #{tickCount} • Real-time global markets
+              Real-time prices across global markets
             </p>
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm text-green-600 font-medium">LIVE • 10s updates</span>
+          <span className="text-sm text-gray-600">Live</span>
         </div>
       </div>
 
