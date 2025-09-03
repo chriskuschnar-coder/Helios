@@ -386,10 +386,7 @@ export function InvestorDashboard() {
   // Get transaction type color
   const getTransactionColor = (type: string, amount: number) => {
     if (type === 'deposit' || type === 'interest') return 'text-green-600'
-    if (type === 'withdrawal' || type === 'fee'
-    )
-  }
-}) return 'text-red-600'
+    if (type === 'withdrawal' || type === 'fee') return 'text-red-600'
     if (type === 'trade') {
       // For trades, check metadata for P&L or assume positive
       return 'text-blue-600'
