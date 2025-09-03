@@ -502,18 +502,18 @@ export function InvestorDashboard() {
       
       <div className="premium-container py-8 md:py-12">
         {/* Top Navigation Tabs */}
-        <div className="exchange-card mb-8 md:mb-12 animate-slide-up">
-          <div className="px-8 py-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8 md:mb-12 animate-slide-up">
+          <div className="px-6 py-4">
             {/* Mobile: Horizontal scroll tabs */}
-            <nav className="flex space-x-6 md:space-x-10 overflow-x-auto">
+            <nav className="flex space-x-2 md:space-x-4 overflow-x-auto">
               {topTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTopTab(tab.id)}
-                  className={`flex items-center space-x-3 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap interactive-element ${
+                  className={`flex items-center space-x-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 whitespace-nowrap ${
                     selectedTopTab === tab.id
-                      ? 'exchange-button-primary text-black'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                   }`}
                 >
                   <tab.icon className="h-4 w-4 flex-shrink-0" />

@@ -98,8 +98,7 @@ body {
 /* ===== EXCHANGE-GRADE COMPONENTS ===== */
 
 .exchange-card {
-  background: var(--glass-white);
-  backdrop-filter: var(--blur-medium);
+  background: white;
   border: 1px solid rgba(37, 99, 235, 0.1);
   border-radius: 12px;
   box-shadow: var(--shadow-medium);
@@ -109,13 +108,11 @@ body {
 .exchange-card:hover {
   border-color: rgba(37, 99, 235, 0.2);
   box-shadow: var(--shadow-strong), var(--shadow-blue);
-  background: rgba(255, 255, 255, 0.98);
+  background: white;
 }
 
 .exchange-card-dark {
-  background: linear-gradient(135deg, 
-    var(--white-card) 0%, 
-    var(--white-surface) 100%);
+  background: #f8fafc;
   border: 1px solid rgba(37, 99, 235, 0.08);
 }
 
