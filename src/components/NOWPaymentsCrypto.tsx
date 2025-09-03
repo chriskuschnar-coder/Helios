@@ -346,12 +346,12 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
 
   // Show cryptocurrency selection
   return (
-              Generating {selectedCrypto.toUpperCase()} Address...
+    <div className="space-y-6">
       <div className="mb-6">
         <button
           onClick={onBack}
           className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-              Generate {selectedCrypto.toUpperCase()} Payment Address
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Payment Methods
         </button>
@@ -370,7 +370,6 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       {/* Cryptocurrency Selection */}
       <div className="mb-8">
         <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
-        <div className="grid grid-cols-1 gap-3 max-w-xs mx-auto">
         <div className="grid grid-cols-2 gap-3">
           {cryptoOptions.map((crypto) => (
             <button
@@ -415,12 +414,12 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         {loading ? (
           <>
             <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Generating Bitcoin Address...
+            Generating {selectedCrypto.toUpperCase()} Address...
           </>
         ) : (
           <>
             <Coins className="w-5 h-5 mr-2" />
-            Generate Bitcoin Payment Address
+            Generate {selectedCrypto.toUpperCase()} Payment Address
           </>
         )}
       </button>
