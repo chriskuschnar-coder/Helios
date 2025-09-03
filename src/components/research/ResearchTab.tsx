@@ -1,0 +1,31 @@
+import React from 'react'
+import { MarketRegimeDetector } from './MarketRegimeDetector'
+import { InstitutionalFlowIntelligence } from './InstitutionalFlowIntelligence'
+import { QuantitativeReports } from './QuantitativeReports'
+import { CrossAssetCorrelations } from './CrossAssetCorrelations'
+import { FactorAnalysis } from './FactorAnalysis'
+import { ModelPlayground } from './ModelPlayground'
+
+export function ResearchTab() {
+  return (
+    <div className="space-y-4 md:space-y-6">
+      {/* AI Market Regime Detection - Top Priority */}
+      <MarketRegimeDetector />
+      
+      {/* Institutional Flow Intelligence */}
+      <InstitutionalFlowIntelligence />
+      
+      {/* Cross-Asset Correlations */}
+      <CrossAssetCorrelations />
+      
+      {/* Factor Analysis */}
+      <FactorAnalysis />
+      
+      {/* Quantitative Research Reports */}
+      <QuantitativeReports />
+      
+      {/* Interactive Model Playground */}
+      <ModelPlayground />
+    </div>
+  )
+}

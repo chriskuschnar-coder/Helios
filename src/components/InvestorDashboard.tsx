@@ -21,6 +21,7 @@ import { NavigationBar } from './NavigationBar'
 import { StripeCheckout } from './StripeCheckout'
 import { SubscriptionStatus } from './SubscriptionStatus'
 import { MarketsTab } from './markets/MarketsTab'
+import { ResearchTab } from './research/ResearchTab'
 import '../styles/funding.css'
 
 export function InvestorDashboard() {
@@ -334,30 +335,8 @@ export function InvestorDashboard() {
 
         {/* Research Tab Content */}
         {selectedTopTab === 'research' && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-4 md:mb-8 mobile-card">
-            <div className="text-center">
-              <FileText className="h-8 w-8 sm:h-12 sm:w-12 md:h-16 md:w-16 text-navy-600 mx-auto mb-3 sm:mb-4" />
-              <h3 className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-3 sm:mb-4 mobile-text-lg">Quantitative Research</h3>
-              <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-4 sm:mb-6 mobile-text-sm">
-                Access our latest research reports, market analysis, and quantitative insights.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mobile-grid">
-                <div className="bg-navy-50 rounded-lg p-3 sm:p-4 md:p-6 text-left mobile-card">
-                  <h4 className="font-medium text-navy-900 mb-1 sm:mb-2 text-sm sm:text-base mobile-text-sm">Latest Research Report</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 mobile-text-xs">Q1 2025 Market Outlook: Quantitative Signals Analysis</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-xs sm:text-sm mobile-button mobile-text-xs">
-                    Download PDF →
-                  </button>
-                </div>
-                <div className="bg-navy-50 rounded-lg p-3 sm:p-4 md:p-6 text-left mobile-card">
-                  <h4 className="font-medium text-navy-900 mb-1 sm:mb-2 text-sm sm:text-base mobile-text-sm">Strategy Performance</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 mobile-text-xs">Monthly attribution analysis and factor decomposition</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-xs sm:text-sm mobile-button mobile-text-xs">
-                    View Analysis →
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-3 sm:space-y-4 md:space-y-6 mobile-space-y-2">
+            <ResearchTab />
           </div>
         )}
 
