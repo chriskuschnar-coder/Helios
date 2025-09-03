@@ -31,7 +31,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
   const cryptoOptions = [
     { code: 'btc', name: 'Bitcoin', symbol: '₿', color: 'text-orange-600' },
     { code: 'eth', name: 'Ethereum', symbol: 'Ξ', color: 'text-blue-600' },
-    { code: 'usdt', name: 'Tether USDT', symbol: '₮', color: 'text-green-600' },
+    { code: 'usdterc20', name: 'Tether USDT', symbol: '₮', color: 'text-green-600' },
     { code: 'usdc', name: 'USD Coin', symbol: '$', color: 'text-blue-500' }
   ]
 
@@ -44,7 +44,9 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
     setLoading(true)
 
     try {
-      console.log('💳 Creating NOWPayments invoice for:', { amount, currency: selectedCrypto, userId })
+      // Convert frontend currency to NOWPayments format
+      const nowPaymentsCurrency = selectedCrypto === 'usdt' ? 'usdterc20' : selectedCrypto
+      console.log('💳 Creating NOWPayments invoice for:', { amount, currency: nowPaymentsCurrency, userId })
       
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
@@ -66,7 +68,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         },
         body: JSON.stringify({
           amount: amount,
-          currency: selectedCrypto,
+          currency: nowPaymentsCurrency,
           user_id: userId,
           user_email: session.user?.email
         })

@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       throw new Error('Minimum amount is $10')
     }
     
-    if (!currency || !['btc', 'eth', 'usdt', 'usdc'].includes(currency.toLowerCase())) {
+    if (!currency || !['btc', 'eth', 'usdt', 'usdterc20', 'usdc'].includes(currency.toLowerCase())) {
       throw new Error('Unsupported cryptocurrency')
     }
 
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     const invoiceData = {
       price_amount: amount,
       price_currency: 'usd',
-      pay_currency: currency.toLowerCase(),
+      pay_currency: currency.toLowerCase() === 'usdt' ? 'usdterc20' : currency.toLowerCase(),
       order_id: orderId,
       order_description: `Global Market Consulting Investment - $${amount.toLocaleString()}`,
       ipn_callback_url: `${supabaseUrl}/functions/v1/nowpayments-webhook`,
