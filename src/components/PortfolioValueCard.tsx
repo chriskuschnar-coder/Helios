@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, Plus, Minus, Activity, TrendingDown } from 'lucide-react'
+import { TrendingUp, Plus, Activity, TrendingDown } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface PortfolioValueCardProps {
@@ -24,39 +24,39 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const isPositive = dailyChange >= 0
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-6 mobile-card">
-      <div className="flex justify-between items-center mb-4 md:mb-6">
-        <span className="text-xs md:text-sm uppercase tracking-wider text-gray-500 font-semibold">Total Portfolio Value</span>
-        <span className="flex items-center space-x-2 text-xs text-green-600 font-medium">
+    <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-3 sm:mb-4 md:mb-6 mobile-card">
+      <div className="flex justify-between items-center mb-3 sm:mb-4 md:mb-6">
+        <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold mobile-text-xs">Total Portfolio Value</span>
+        <span className="flex items-center space-x-1 sm:space-x-2 text-xs text-green-600 font-medium mobile-text-xs mobile-space-x-1">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           LIVE
         </span>
       </div>
       
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-5xl font-light text-gray-900 mb-2 font-mono tracking-tight">
+      <div className="mb-4 sm:mb-6 md:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-5xl font-light text-gray-900 mb-1 sm:mb-2 font-mono tracking-tight mobile-portfolio-value">
           ${currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h1>
-        <div className={`flex items-center space-x-2 text-sm md:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm md:text-base font-medium mobile-text-xs mobile-space-x-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           <span className="opacity-80">({isPositive ? '+' : ''}{dailyChangePct.toFixed(2)}%)</span>
         </div>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+      <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 md:gap-4 mobile-space-y-1">
         <button 
           onClick={() => onFundPortfolio()}
-          className="flex-1 bg-black hover:bg-gray-800 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 mobile-button active:scale-95"
+          className="flex-1 bg-black hover:bg-gray-800 text-white px-3 sm:px-4 md:px-6 py-3 md:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
         >
-          <Plus className="h-4 w-4 md:h-5 md:w-5" />
-          <span className="text-sm md:text-base">Fund Portfolio</span>
+          <Plus className="h-4 w-4" />
+          <span className="text-xs sm:text-sm md:text-base mobile-text-xs">Fund Portfolio</span>
         </button>
         <button 
           onClick={onWithdraw}
-          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-4 md:px-6 py-3 md:py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 mobile-button active:scale-95"
+          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-3 sm:px-4 md:px-6 py-3 md:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
         >
-          <TrendingDown className="h-4 w-4 md:h-5 md:w-5" />
-          <span className="text-sm md:text-base">Withdraw</span>
+          <TrendingDown className="h-4 w-4" />
+          <span className="text-xs sm:text-sm md:text-base mobile-text-xs">Withdraw</span>
         </button>
       </div>
     </div>

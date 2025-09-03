@@ -264,10 +264,10 @@ export function InvestorDashboard() {
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
           <div className="mb-4 md:mb-6 mobile-card">
-            <h1 className="text-xl md:text-2xl font-bold text-navy-900 mb-1">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
               Welcome back, {getFirstName()}
             </h1>
-            <p className="text-sm md:text-base text-gray-600">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 mobile-text-sm">
               Here's your portfolio performance and investment overview
             </p>
           </div>
@@ -282,35 +282,35 @@ export function InvestorDashboard() {
 
         {/* Performance Summary Cards */}
         {selectedTopTab === 'portfolio' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm md:text-base text-gray-600 font-medium">Daily P&L</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-6 mb-4 md:mb-8 mobile-grid">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">Daily P&L</span>
                 <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="font-serif text-xl md:text-2xl font-bold text-green-600 mb-1">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-green-600 mb-1 mobile-text-lg">
                 +${portfolioData.dailyPnL.toLocaleString()}
               </div>
-              <div className="text-sm text-green-600">+{portfolioData.dailyPnLPct}%</div>
+              <div className="text-xs sm:text-sm text-green-600 mobile-text-xs">+{portfolioData.dailyPnLPct}%</div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm md:text-base text-gray-600 font-medium">YTD Return</span>
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">YTD Return</span>
                 <ArrowUpRight className="h-5 w-5 text-green-600" />
               </div>
-              <div className="font-serif text-xl md:text-2xl font-bold text-green-600 mb-1">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-green-600 mb-1 mobile-text-lg">
                 +{portfolioData.yearlyReturn}%
               </div>
-              <div className="text-sm text-gray-500">Outperforming benchmark</div>
+              <div className="text-xs sm:text-sm text-gray-500 mobile-text-xs">Outperforming benchmark</div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm md:text-base text-gray-600 font-medium">Available Cash</span>
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-xs sm:text-sm md:text-base text-gray-600 font-medium mobile-text-xs">Available Cash</span>
                 <Plus className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-1">
+              <div className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
                 ${account?.available_balance?.toLocaleString() || '0'}
               </div>
             </div>
@@ -327,32 +327,32 @@ export function InvestorDashboard() {
 
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
-          <div className="space-y-4 md:space-y-8">
+          <div className="space-y-3 sm:space-y-4 md:space-y-8 mobile-space-y-2">
             <MarketsTab />
           </div>
         )}
 
         {/* Research Tab Content */}
         {selectedTopTab === 'research' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-8 mobile-card">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-4 md:mb-8 mobile-card">
             <div className="text-center">
-              <FileText className="h-12 w-12 md:h-16 md:w-16 text-navy-600 mx-auto mb-4" />
-              <h3 className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-4">Quantitative Research</h3>
-              <p className="text-sm md:text-base text-gray-600 mb-6">
+              <FileText className="h-8 w-8 sm:h-12 sm:w-12 md:h-16 md:w-16 text-navy-600 mx-auto mb-3 sm:mb-4" />
+              <h3 className="font-serif text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-3 sm:mb-4 mobile-text-lg">Quantitative Research</h3>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-4 sm:mb-6 mobile-text-sm">
                 Access our latest research reports, market analysis, and quantitative insights.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="bg-navy-50 rounded-lg p-6 text-left">
-                  <h4 className="font-medium text-navy-900 mb-2">Latest Research Report</h4>
-                  <p className="text-sm text-gray-600 mb-3">Q1 2025 Market Outlook: Quantitative Signals Analysis</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm mobile-button">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mobile-grid">
+                <div className="bg-navy-50 rounded-lg p-3 sm:p-4 md:p-6 text-left mobile-card">
+                  <h4 className="font-medium text-navy-900 mb-1 sm:mb-2 text-sm sm:text-base mobile-text-sm">Latest Research Report</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 mobile-text-xs">Q1 2025 Market Outlook: Quantitative Signals Analysis</p>
+                  <button className="text-navy-600 hover:text-navy-700 font-medium text-xs sm:text-sm mobile-button mobile-text-xs">
                     Download PDF →
                   </button>
                 </div>
-                <div className="bg-navy-50 rounded-lg p-6 text-left">
-                  <h4 className="font-medium text-navy-900 mb-2">Strategy Performance</h4>
-                  <p className="text-sm text-gray-600 mb-3">Monthly attribution analysis and factor decomposition</p>
-                  <button className="text-navy-600 hover:text-navy-700 font-medium text-sm mobile-button">
+                <div className="bg-navy-50 rounded-lg p-3 sm:p-4 md:p-6 text-left mobile-card">
+                  <h4 className="font-medium text-navy-900 mb-1 sm:mb-2 text-sm sm:text-base mobile-text-sm">Strategy Performance</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 mobile-text-xs">Monthly attribution analysis and factor decomposition</p>
+                  <button className="text-navy-600 hover:text-navy-700 font-medium text-xs sm:text-sm mobile-button mobile-text-xs">
                     View Analysis →
                   </button>
                 </div>
@@ -363,29 +363,29 @@ export function InvestorDashboard() {
 
         {/* Transactions Tab Content */}
         {selectedTopTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-8 mobile-card">
-            <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-6">Transaction History</h3>
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-4 md:mb-8 mobile-card">
+            <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mb-4 sm:mb-6 mobile-text-lg">Transaction History</h3>
             {recentTransactions.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3 mobile-space-y-1">
                 {recentTransactions.map((transaction, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button">
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button mobile-compact-padding">
                     <div className="flex-1">
-                      <div className="text-sm md:text-base font-medium text-gray-900">{transaction.type}</div>
-                      <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
+                      <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">{transaction.type}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{transaction.fund} • {transaction.date}</div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-sm md:text-base font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-xs sm:text-sm md:text-base font-medium mobile-text-xs ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                       </div>
-                      <div className="text-sm text-gray-600">{transaction.status}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{transaction.status}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-2">No transactions yet</div>
-                <div className="text-sm text-gray-500">
+              <div className="text-center py-8 sm:py-12">
+                <div className="text-gray-400 mb-2 text-sm sm:text-base mobile-text-sm">No transactions yet</div>
+                <div className="text-xs sm:text-sm text-gray-500 mobile-text-xs">
                   Transactions will appear here after funding and trading activity
                 </div>
               </div>
@@ -395,63 +395,63 @@ export function InvestorDashboard() {
 
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-4 md:space-x-8 px-3 md:px-6 overflow-x-auto scrollbar-hide">
+            <nav className="flex space-x-2 sm:space-x-4 md:space-x-8 px-2 sm:px-3 md:px-6 overflow-x-auto scrollbar-hide mobile-scroll-container mobile-space-x-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
-                  className={`flex items-center space-x-2 py-3 md:py-4 border-b-2 font-medium text-sm transition-colors mobile-tab whitespace-nowrap ${
+                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-3 md:py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors mobile-tab whitespace-nowrap mobile-nav-tab ${
                     selectedTab === tab.id
                       ? 'border-navy-600 text-navy-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <tab.icon className="h-5 w-5" />
-                  <span className="hidden sm:inline">{tab.name}</span>
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden xs:inline text-xs sm:text-sm mobile-text-xs">{tab.name}</span>
                 </button>
               ))}
             </nav>
           </div>
 
-          <div className="p-3 md:p-6">
+          <div className="p-2 sm:p-3 md:p-6 mobile-compact-padding">
             {selectedTab === 'overview' && (
-              <div className="space-y-8">
+              <div className="space-y-4 sm:space-y-6 md:space-y-8 mobile-space-y-2">
                 <div>
-                  <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-4 md:mb-6">Asset Allocation</h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                    <div className="space-y-4">
+                  <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mb-3 sm:mb-4 md:mb-6 mobile-text-base">Asset Allocation</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-8 mobile-grid">
+                    <div className="space-y-2 sm:space-y-3 md:space-y-4 mobile-space-y-1">
                       {holdings.map((holding, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg mobile-button">
+                        <div key={index} className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 rounded-lg mobile-button mobile-compact-padding">
                           <div className="flex-1">
-                            <div className="text-sm md:text-base font-medium text-gray-900">{holding.name}</div>
-                            <div className="text-sm text-gray-600">{holding.allocation}% allocation • {holding.risk} risk</div>
+                            <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">{holding.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{holding.allocation}% allocation • {holding.risk} risk</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm md:text-base font-medium text-gray-900">
+                            <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">
                               ${holding.value.toLocaleString()}
                             </div>
-                            <div className="text-sm text-green-600">+{holding.return}%</div>
+                            <div className="text-xs sm:text-sm text-green-600 mobile-text-xs">+{holding.return}%</div>
                           </div>
                         </div>
                       ))}
                     </div>
                     
-                    <div className="bg-navy-50 rounded-lg p-4 md:p-6">
-                      <h4 className="text-sm md:text-base font-medium text-navy-900 mb-4">Performance Metrics</h4>
-                      <div className="space-y-3">
+                    <div className="bg-navy-50 rounded-lg p-3 sm:p-4 md:p-6 mobile-card">
+                      <h4 className="text-xs sm:text-sm md:text-base font-medium text-navy-900 mb-3 sm:mb-4 mobile-text-sm">Performance Metrics</h4>
+                      <div className="space-y-2 sm:space-y-3 mobile-space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Sharpe Ratio</span>
-                          <span className="text-sm font-medium text-navy-900">2.84</span>
+                          <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Sharpe Ratio</span>
+                          <span className="text-xs sm:text-sm font-medium text-navy-900 mobile-text-xs">2.84</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Max Drawdown</span>
-                          <span className="text-sm font-medium text-navy-900">-4.2%</span>
+                          <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Max Drawdown</span>
+                          <span className="text-xs sm:text-sm font-medium text-navy-900 mobile-text-xs">-4.2%</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Volatility</span>
-                          <span className="text-sm font-medium text-navy-900">8.7%</span>
+                          <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Volatility</span>
+                          <span className="text-xs sm:text-sm font-medium text-navy-900 mobile-text-xs">8.7%</span>
                         </div>
                       </div>
                     </div>
@@ -461,32 +461,32 @@ export function InvestorDashboard() {
             )}
 
             {selectedTab === 'holdings' && (
-              <div className="space-y-6">
-                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Detailed Holdings</h3>
-                <div className="overflow-x-auto -mx-3 md:mx-0">
-                  <table className="w-full">
+              <div className="space-y-4 sm:space-y-6 mobile-space-y-2">
+                <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-base">Detailed Holdings</h3>
+                <div className="overflow-x-auto -mx-2 sm:-mx-3 md:mx-0 mobile-scroll-container">
+                  <table className="w-full mobile-table">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Fund Name</th>
-                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Allocation</th>
-                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Value</th>
-                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Return</th>
-                        <th className="text-right py-2 md:py-3 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">Risk</th>
+                        <th className="text-left py-1 sm:py-2 md:py-3 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-text-xs">Fund Name</th>
+                        <th className="text-right py-1 sm:py-2 md:py-3 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-text-xs">Allocation</th>
+                        <th className="text-right py-1 sm:py-2 md:py-3 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-text-xs">Value</th>
+                        <th className="text-right py-1 sm:py-2 md:py-3 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-text-xs">Return</th>
+                        <th className="text-right py-1 sm:py-2 md:py-3 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-hide">Risk</th>
                       </tr>
                     </thead>
                     <tbody>
                       {holdings.map((holding, index) => (
                         <tr key={index} className="border-b border-gray-100">
-                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm font-medium text-gray-900">{holding.name}</td>
-                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right text-gray-600">{holding.allocation}%</td>
-                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right font-medium text-gray-900">
+                          <td className="py-2 sm:py-3 md:py-4 px-1 sm:px-2 md:px-0 text-xs font-medium text-gray-900 mobile-text-xs">{holding.name}</td>
+                          <td className="py-2 sm:py-3 md:py-4 px-1 sm:px-2 md:px-0 text-xs text-right text-gray-600 mobile-text-xs">{holding.allocation}%</td>
+                          <td className="py-2 sm:py-3 md:py-4 px-1 sm:px-2 md:px-0 text-xs text-right font-medium text-gray-900 mobile-text-xs">
                             ${holding.value.toLocaleString()}
                           </td>
-                          <td className="py-3 md:py-4 px-2 md:px-0 text-xs md:text-sm text-right font-medium text-green-600">
+                          <td className="py-2 sm:py-3 md:py-4 px-1 sm:px-2 md:px-0 text-xs text-right font-medium text-green-600 mobile-text-xs">
                             +{holding.return}%
                           </td>
-                          <td className="py-3 md:py-4 px-2 md:px-0 text-right">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <td className="py-2 sm:py-3 md:py-4 px-1 sm:px-2 md:px-0 text-right mobile-hide">
+                            <span className={`px-1 sm:px-2 py-1 rounded-full text-xs font-medium mobile-ultra-compact ${
                               holding.risk === 'Low' ? 'bg-green-100 text-green-800' :
                               holding.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-red-100 text-red-800'
@@ -503,20 +503,20 @@ export function InvestorDashboard() {
             )}
 
             {selectedTab === 'transactions' && (
-              <div className="space-y-6">
-                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Recent Transactions</h3>
-                <div className="space-y-3">
+              <div className="space-y-4 sm:space-y-6 mobile-space-y-2">
+                <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-base">Recent Transactions</h3>
+                <div className="space-y-2 sm:space-y-3 mobile-space-y-1">
                   {recentTransactions.map((transaction, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button">
+                    <div key={index} className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mobile-button mobile-compact-padding">
                       <div className="flex-1">
-                        <div className="text-sm md:text-base font-medium text-gray-900">{transaction.type}</div>
-                        <div className="text-sm text-gray-600">{transaction.fund} • {transaction.date}</div>
+                        <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">{transaction.type}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{transaction.fund} • {transaction.date}</div>
                       </div>
                       <div className="text-right">
-                        <div className={`text-sm md:text-base font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-xs sm:text-sm md:text-base font-medium mobile-text-xs ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                         </div>
-                        <div className="text-sm text-gray-600">{transaction.status}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{transaction.status}</div>
                       </div>
                     </div>
                   ))}
@@ -525,19 +525,19 @@ export function InvestorDashboard() {
             )}
 
             {selectedTab === 'documents' && (
-              <div className="space-y-6">
-                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Investment Documents</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div className="space-y-4 sm:space-y-6 mobile-space-y-2">
+                <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-base">Investment Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 mobile-grid">
                   {documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mobile-button">
-                      <div className="flex items-center space-x-3 flex-1">
-                        <FileText className="h-5 w-5 text-gray-600" />
+                    <div key={index} className="flex items-center justify-between p-2 sm:p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mobile-button mobile-compact-padding">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-1 mobile-space-x-1">
+                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                         <div>
-                          <div className="text-sm md:text-base font-medium text-gray-900">{doc.name}</div>
-                          <div className="text-sm text-gray-600">{doc.type} • {doc.date}</div>
+                          <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">{doc.name}</div>
+                          <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{doc.type} • {doc.date}</div>
                         </div>
                       </div>
-                      <button className="text-navy-600 hover:text-navy-700 font-medium text-xs md:text-sm px-2 md:px-3 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors mobile-button">
+                      <button className="text-navy-600 hover:text-navy-700 font-medium text-xs px-2 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors mobile-button mobile-ultra-compact">
                         Download
                       </button>
                     </div>

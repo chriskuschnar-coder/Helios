@@ -192,29 +192,29 @@ export function AIMarketNarrative() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+    <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-6 mobile-card">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center space-x-2 sm:space-x-3 mobile-space-x-1">
+          <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center">
             <Brain className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-serif text-base md:text-lg font-bold text-navy-900">AI Market Analysis</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-serif text-sm sm:text-base md:text-lg font-bold text-navy-900 mobile-text-sm">AI Market Analysis</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mobile-text-xs">
               Live updates: {liveUpdateCount} • {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <div className="hidden sm:flex items-center space-x-2">
+        <div className="flex items-center space-x-2 sm:space-x-3 mobile-space-x-1">
+          <div className="hidden xs:flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-green-600 font-medium">LIVE</span>
+            <span className="text-xs text-green-600 font-medium mobile-text-xs">LIVE</span>
           </div>
           
-          <div className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-3 py-1 rounded-full border ${getSentimentColor(narrative?.sentiment || 'neutral')}`}>
+          <div className={`flex items-center space-x-1 px-2 py-1 rounded-full border mobile-ultra-compact mobile-space-x-1 ${getSentimentColor(narrative?.sentiment || 'neutral')}`}>
             {getSentimentIcon(narrative?.sentiment || 'neutral')}
-            <span className="text-xs md:text-sm font-medium capitalize">
+            <span className="text-xs font-medium capitalize mobile-text-xs">
               {narrative?.sentiment || 'Analyzing'}
             </span>
           </div>
@@ -222,60 +222,60 @@ export function AIMarketNarrative() {
           <button
             onClick={refreshNarrative}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors mobile-button"
+            className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors mobile-button mobile-compact-padding"
             title="Refresh Analysis"
           >
-            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {narrative && (
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-3 sm:space-y-4 md:space-y-6 mobile-space-y-2">
           <div>
-            <h4 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-3">
+            <h4 className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mb-2 sm:mb-3 mobile-text-sm">
               {narrative.headline}
             </h4>
-            <p className="text-sm md:text-base text-gray-700 leading-relaxed">
+            <p className="text-xs sm:text-sm md:text-base text-gray-700 leading-relaxed mobile-text-xs">
               {narrative.analysis}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mobile-grid">
             <div>
-              <h5 className="text-sm md:text-base font-medium text-gray-900 mb-3">Key Market Signals</h5>
-              <ul className="space-y-2">
+              <h5 className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mb-2 sm:mb-3 mobile-text-xs">Key Market Signals</h5>
+              <ul className="space-y-1 sm:space-y-2 mobile-space-y-1">
                 {narrative.keyPoints.map((point, index) => (
-                  <li key={index} className="flex items-start space-x-2">
+                  <li key={index} className="flex items-start space-x-1 sm:space-x-2 mobile-space-x-1">
                     <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-sm text-gray-700">{point}</span>
+                    <span className="text-xs sm:text-sm text-gray-700 mobile-text-xs">{point}</span>
                   </li>
                 ))}
               </ul>
             </div>
             
-            <div className="bg-gray-50 rounded-lg p-3 md:p-4">
-              <h5 className="text-sm md:text-base font-medium text-gray-900 mb-3">AI Confidence Metrics</h5>
-              <div className="space-y-3">
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3 md:p-4 mobile-card">
+              <h5 className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mb-2 sm:mb-3 mobile-text-xs">AI Confidence Metrics</h5>
+              <div className="space-y-2 sm:space-y-3 mobile-space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Analysis Confidence</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-16 md:w-20 bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Analysis Confidence</span>
+                  <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
+                    <div className="w-12 sm:w-16 md:w-20 bg-gray-200 rounded-full h-2 overflow-hidden">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-1000 ease-in-out" 
                         style={{ width: `${narrative.confidence}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium">{narrative.confidence}%</span>
+                    <span className="text-xs sm:text-sm font-medium mobile-text-xs">{narrative.confidence}%</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Data Sources</span>
-                  <span className="text-sm font-medium">{Math.floor(45 + (Date.now() % 10000) / 1000)} feeds</span>
+                  <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Data Sources</span>
+                  <span className="text-xs sm:text-sm font-medium mobile-text-xs">{Math.floor(45 + (Date.now() % 10000) / 1000)} feeds</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Processing Time</span>
-                  <span className="text-sm font-medium">{(1.8 + Math.random() * 1.2).toFixed(1)}s</span>
+                  <span className="text-xs sm:text-sm text-gray-600 mobile-text-xs">Processing Time</span>
+                  <span className="text-xs sm:text-sm font-medium mobile-text-xs">{(1.8 + Math.random() * 1.2).toFixed(1)}s</span>
                 </div>
               </div>
             </div>

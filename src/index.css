@@ -32,6 +32,150 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* CRITICAL: Mobile Device Detection and Optimization */
+@media (max-width: 480px) {
+  /* Ultra-compact mobile layout */
+  .mobile-card {
+    padding: 12px !important;
+    margin: 8px 0 !important;
+    border-radius: 12px !important;
+  }
+  
+  .mobile-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  
+  .mobile-text-xs {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+  
+  .mobile-text-sm {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .mobile-text-base {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .mobile-text-lg {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+  }
+  
+  .mobile-text-xl {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+  }
+  
+  .mobile-text-2xl {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+  }
+  
+  .mobile-compact-padding {
+    padding: 8px 12px !important;
+  }
+  
+  .mobile-ultra-compact {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Mobile-specific spacing */
+  .mobile-space-y-1 > * + * {
+    margin-top: 4px !important;
+  }
+  
+  .mobile-space-y-2 > * + * {
+    margin-top: 8px !important;
+  }
+  
+  .mobile-space-x-1 > * + * {
+    margin-left: 4px !important;
+  }
+  
+  .mobile-space-x-2 > * + * {
+    margin-left: 8px !important;
+  }
+  
+  /* Hide non-essential elements on mobile */
+  .mobile-hide {
+    display: none !important;
+  }
+  
+  /* Compact tables for mobile */
+  .mobile-table {
+    font-size: 10px !important;
+  }
+  
+  .mobile-table th,
+  .mobile-table td {
+    padding: 4px 2px !important;
+  }
+  
+  /* Mobile-optimized buttons */
+  .mobile-button-compact {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+  }
+  
+  /* Horizontal scroll optimization */
+  .mobile-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .mobile-scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Mobile-specific portfolio value */
+  .mobile-portfolio-value {
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Mobile navigation optimization */
+  .mobile-nav-tab {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    min-width: auto !important;
+  }
+  
+  /* Mobile modal optimization */
+  .mobile-modal {
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 95vh !important;
+  }
+}
+
+/* Phone-specific optimizations */
+@media (max-width: 375px) {
+  .mobile-card {
+    padding: 8px !important;
+    margin: 6px 0 !important;
+  }
+  
+  .mobile-text-xs { font-size: 10px !important; }
+  .mobile-text-sm { font-size: 11px !important; }
+  .mobile-text-base { font-size: 12px !important; }
+  .mobile-text-lg { font-size: 14px !important; }
+  .mobile-text-xl { font-size: 16px !important; }
+  .mobile-text-2xl { font-size: 18px !important; }
+  
+  .mobile-portfolio-value {
+    font-size: 20px !important;
+  }
+}
+
 /* Elite Mobile Animations */
 @keyframes slideInUp {
   from {
