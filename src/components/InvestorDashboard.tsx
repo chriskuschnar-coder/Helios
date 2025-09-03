@@ -777,9 +777,6 @@ export function InvestorDashboard() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
           <div className="bg-white rounded-lg shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
