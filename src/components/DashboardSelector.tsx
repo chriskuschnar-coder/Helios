@@ -19,11 +19,11 @@ export function DashboardSelector() {
 
   // Dashboard switcher header
   const DashboardSwitcher = () => (
-    <div className="nav-container">
-      <div className="premium-container">
+    <div className="nav-container safe-area-top">
+      <div className="luxury-container">
         <div className="flex justify-between items-center h-20">
           <div className="nav-brand">
-            <div className="nav-logo">
+            <div className="nav-logo animate-neural-pulse">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
             <span className="nav-title">
@@ -34,9 +34,9 @@ export function DashboardSelector() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="md:hidden p-1 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors mobile-button mobile-compact-padding"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+            {mobileMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
           </button>
           
           {/* Desktop Navigation */}
@@ -45,7 +45,7 @@ export function DashboardSelector() {
             <div className="nav-tabs">
               <button
                 onClick={() => setSelectedDashboard('investor')}
-                className={`nav-tab ${
+                className={`nav-tab cinematic-transition ${
                   selectedDashboard === 'investor'
                     ? 'active'
                     : ''
@@ -56,7 +56,7 @@ export function DashboardSelector() {
               </button>
               <button
                 onClick={() => setSelectedDashboard('helios')}
-                className={`nav-tab ${
+                className={`nav-tab cinematic-transition ${
                   selectedDashboard === 'helios'
                     ? 'active'
                     : ''
@@ -69,14 +69,14 @@ export function DashboardSelector() {
             
             <div className="flex items-center space-x-6">
               <div className="text-right">
-                <div className="text-sm font-bold text-gradient">
+                <div className="text-sm font-bold text-holographic">
                   ${(account?.balance || 0).toLocaleString()}
                 </div>
                 <div className="text-xs text-white opacity-60">{user?.email}</div>
               </div>
               <button
                 onClick={handleSignOut}
-                className="premium-button text-sm"
+                className="neural-button text-sm"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -96,7 +96,7 @@ export function DashboardSelector() {
                     setSelectedDashboard('investor')
                     setMobileMenuOpen(false)
                   }}
-                  className={`w-full nav-tab ${
+                  className={`w-full nav-tab cinematic-transition ${
                     selectedDashboard === 'investor'
                       ? 'active'
                       : ''
@@ -110,7 +110,7 @@ export function DashboardSelector() {
                     setSelectedDashboard('helios')
                     setMobileMenuOpen(false)
                   }}
-                  className={`w-full nav-tab ${
+                  className={`w-full nav-tab cinematic-transition ${
                     selectedDashboard === 'helios'
                       ? 'active'
                       : ''
@@ -125,7 +125,7 @@ export function DashboardSelector() {
               <div className="border-t border-white/10 pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-bold text-gradient">
+                    <div className="text-sm font-bold text-holographic">
                       ${(account?.balance || 0).toLocaleString()}
                     </div>
                     <div className="text-xs text-white opacity-60">{user?.email}</div>
@@ -135,7 +135,7 @@ export function DashboardSelector() {
                       handleSignOut()
                       setMobileMenuOpen(false)
                     }}
-                    className="premium-button text-sm"
+                    className="neural-button text-sm"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Sign Out</span>
@@ -159,11 +159,13 @@ export function DashboardSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="premium-nav">
+    <>
+      <div className="cinematic-nav">
+        <DashboardSwitcher />
+      </div>
         <DashboardSwitcher />
       </div>
       <InvestorDashboard />
-    </div>
+    </>
   )
 }

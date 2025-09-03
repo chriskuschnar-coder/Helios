@@ -207,14 +207,14 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="glass-card p-6 animate-slide-up">
+    <div className="holographic-card animate-liquid stagger-2">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-danger rounded-xl flex items-center justify-center animate-pulse-glow">
+          <div className="w-12 h-12 bg-danger-gradient rounded-xl flex items-center justify-center animate-neural-pulse">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="premium-heading text-xl">Risk Management</h3>
+            <h3 className="futuristic-heading text-xl">Risk Management</h3>
             <p className="text-sm text-white/60">
               Real-time monitoring • Update #{updateCount} • {new Date().toLocaleTimeString()}
             </p>
@@ -228,20 +228,20 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
         
         <div className="flex items-center space-x-3">
           <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-            riskAlertLevel === 'high' ? 'premium-badge negative' :
+            riskAlertLevel === 'high' ? 'percentage-badge negative' :
             riskAlertLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-            'premium-badge positive'
+            'percentage-badge positive'
           }`}>
             {riskAlertLevel.toUpperCase()} RISK
           </div>
-          <div className="live-indicator">
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse-glow"></div>
+          <div className="ai-thinking">
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-neural-pulse"></div>
             <span className="text-xs text-red-400 font-semibold tracking-wider">MONITORING</span>
           </div>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="premium-button p-2 hover-lift"
+            className="neural-button p-2 hover-lift"
           >
             <RefreshCw className={`h-4 w-4 text-white/80 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -250,46 +250,46 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
 
       {loading ? (
         <div className="space-y-4">
-          <div className="h-32 premium-loading rounded-lg"></div>
-          <div className="h-32 premium-loading rounded-lg"></div>
+          <div className="h-32 quantum-loading rounded-lg"></div>
+          <div className="h-32 quantum-loading rounded-lg"></div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Stress Test Results */}
           <div>
-            <h4 className="premium-heading text-lg mb-6">Stress Test Results</h4>
+            <h4 className="futuristic-heading text-lg mb-6">Stress Test Results</h4>
             <div className="space-y-3">
               {stressTests.map((test, index) => (
                 <div 
                   key={index} 
-                  className="insight-card hover-lift interactive-element group"
+                  className="liquid-card hover-lift interactive-element group hologram-effect animate-morphic"
                   onClick={() => handleStressTestClick(test)}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       {getSeverityIcon(test.severity)}
                       <div>
-                        <h5 className="font-bold text-white group-hover:text-cyan-400 transition-colors duration-300">{test.scenario}</h5>
+                        <h5 className="font-bold text-white group-hover:text-cyan-400 premium-text cinematic-transition">{test.scenario}</h5>
                         <p className="text-sm text-white/70 font-medium">{test.hedge_suggestion}</p>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold metric-value ${test.portfolio_impact > 0 ? 'text-glow' : 'text-red-400'}`}>
+                      <div className={`text-xl font-bold quantum-value ${test.portfolio_impact > 0 ? 'text-quantum-glow' : 'text-red-400'}`}>
                         {test.portfolio_impact > 0 ? '+' : ''}{test.portfolio_impact.toFixed(1)}%
                       </div>
-                      <div className="premium-label">{test.probability.toFixed(0)}% probability</div>
+                      <div className="ai-label">{test.probability.toFixed(0)}% probability</div>
                     </div>
                   </div>
                   
-                  <div className="premium-progress">
+                  <div className="quantum-progress">
                     <div 
-                      className={`premium-progress-fill ${test.portfolio_impact > 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+                      className={`quantum-progress-fill ${test.portfolio_impact > 0 ? 'bg-success-gradient' : 'bg-danger-gradient'}`}
                       style={{ width: `${Math.min(100, Math.abs(test.portfolio_impact) * 5)}%` }}
                     ></div>
                   </div>
                   
-                  <div className="mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="mt-3 opacity-0 group-hover:opacity-100 cinematic-transition transform translate-y-2 group-hover:translate-y-0">
                     <div className="text-xs text-cyan-400 font-bold flex items-center gap-1">
                       Detailed Analysis <ArrowUpRight className="h-3 w-3" />
                     </div>
@@ -301,23 +301,23 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
 
           {/* Risk Alerts */}
           <div>
-            <h4 className="premium-heading text-lg mb-6">Risk Alerts</h4>
+            <h4 className="futuristic-heading text-lg mb-6">Risk Alerts</h4>
             <div className="space-y-3">
               {riskAlerts.map((alert) => (
-                <div key={alert.id} className="insight-card hover-lift">
+                <div key={alert.id} className="liquid-card hover-lift hologram-effect">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start space-x-3">
                       {getSeverityIcon(alert.severity)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-white">{alert.title}</h5>
+                        <h5 className="font-bold text-white premium-text">{alert.title}</h5>
                         <p className="text-sm text-white/80 mt-2 leading-relaxed">{alert.description}</p>
                       </div>
                     </div>
                     
                     <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      alert.severity === 'high' ? 'premium-badge negative' :
+                      alert.severity === 'high' ? 'percentage-badge negative' :
                       alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                      'premium-badge positive'
+                      'percentage-badge positive'
                     }`}>
                       {alert.severity.toUpperCase()}
                     </div>
