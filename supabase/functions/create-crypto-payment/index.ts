@@ -24,8 +24,8 @@ Deno.serve(async (req) => {
       throw new Error('Minimum amount is $10')
     }
     
-    if (!currency || !['btc', 'eth', 'usdt', 'usdc'].includes(currency.toLowerCase())) {
-      throw new Error('Unsupported cryptocurrency')
+    if (!currency || currency.toLowerCase() !== 'btc') {
+      throw new Error('Only Bitcoin (BTC) is supported')
     }
 
     // Get user from JWT token

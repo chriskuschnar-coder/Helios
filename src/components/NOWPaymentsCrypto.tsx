@@ -29,10 +29,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
 
   // Popular cryptocurrencies
   const cryptoOptions = [
-    { code: 'btc', name: 'Bitcoin', symbol: '₿', color: 'text-orange-600' },
-    { code: 'eth', name: 'Ethereum', symbol: 'Ξ', color: 'text-blue-600' },
-    { code: 'usdt', name: 'Tether USDT', symbol: '₮', color: 'text-green-600' },
-    { code: 'usdc', name: 'USD Coin', symbol: '$', color: 'text-blue-500' }
+    { code: 'btc', name: 'Bitcoin', symbol: '₿', color: 'text-orange-600' }
   ]
 
   const createPayment = async () => {
@@ -297,13 +294,13 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-2">
             <Shield className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-blue-900">Payment Instructions</span>
+            <span className="font-medium text-green-900">Bitcoin Payment Features</span>
           </div>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Send from your personal wallet (not an exchange)</li>
+            <li>• <strong>Real Bitcoin Address:</strong> Unique BTC address generated for your transaction</li>
             <li>• Use the exact amount: <strong>{invoice.pay_amount} {invoice.pay_currency.toUpperCase()}</strong></li>
             <li>• Payment will be confirmed automatically on blockchain</li>
-            <li>• Your account balance will update within 10-30 minutes</li>
+            <li>• <strong>Network Fees:</strong> Standard Bitcoin network fees apply</li>
             <li>• Keep this page open until payment is complete</li>
           </ul>
         </div>
@@ -366,20 +363,21 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       {/* Cryptocurrency Selection */}
       <div className="mb-8">
         <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 max-w-xs mx-auto">
           {cryptoOptions.map((crypto) => (
             <button
               key={crypto.code}
               onClick={() => setSelectedCrypto(crypto.code)}
-              className={`p-4 border-2 rounded-lg text-center transition-all ${
+              className={`p-6 border-2 rounded-lg text-center transition-all ${
                 selectedCrypto === crypto.code
                   ? 'border-navy-500 bg-navy-50'
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <div className={`text-2xl mb-2 ${crypto.color}`}>{crypto.symbol}</div>
-              <div className="font-medium text-gray-900 text-sm">{crypto.name}</div>
-              <div className="text-xs text-gray-600 uppercase">{crypto.code}</div>
+              <div className={`text-4xl mb-3 ${crypto.color}`}>{crypto.symbol}</div>
+              <div className="font-bold text-gray-900 text-lg">{crypto.name}</div>
+              <div className="text-sm text-gray-600 uppercase font-medium">{crypto.code}</div>
+              <div className="text-xs text-green-600 mt-2 font-medium">✓ Supported</div>
             </button>
           ))}
         </div>
