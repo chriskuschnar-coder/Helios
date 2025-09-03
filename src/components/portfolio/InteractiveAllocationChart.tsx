@@ -191,27 +191,27 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
   }
 
   return (
-    <div className="allocation-section">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center animate-blue-glow">
+          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
             <PieChart className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="exchange-heading text-xl">Asset Allocation</h3>
-            <p className="exchange-text">Portfolio breakdown and performance metrics</p>
+            <h3 className="text-xl font-bold text-gray-900">Asset Allocation</h3>
+            <p className="text-gray-600">Portfolio breakdown and performance metrics</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
-          <div className="live-indicator">
-            <div className="live-dot"></div>
-            <span className="live-text">LIVE</span>
+          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-blue-600 font-medium">LIVE</span>
           </div>
           <button
             onClick={() => setSelectedView('pie')}
             className={`p-3 rounded-xl transition-all duration-300 ${
-              selectedView === 'pie' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+              selectedView === 'pie' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
             }`}
           >
             <PieChart className="h-4 w-4" />
@@ -219,7 +219,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
           <button
             onClick={() => setSelectedView('bar')}
             className={`p-3 rounded-xl transition-all duration-300 ${
-              selectedView === 'bar' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+              selectedView === 'bar' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
             }`}
           >
             <BarChart3 className="h-4 w-4" />
@@ -227,9 +227,9 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         </div>
       </div>
 
-      <div className="allocation-grid">
+      <div className="grid lg:grid-cols-2 gap-8">
         {/* Chart */}
-        <div className="allocation-chart">
+        <div className="flex flex-col items-center justify-center">
           {selectedView === 'pie' ? (
             <div className="relative">
               <svg width="400" height="400" className="transform transition-all duration-500">
@@ -241,7 +241,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
                   cy="200"
                   r="80"
                   fill="white"
-                  stroke="rgba(37, 99, 235, 0.2)"
+                  stroke="#e5e7eb"
                   strokeWidth="3"
                 />
                 
@@ -250,7 +250,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
                   x="200"
                   y="190"
                   textAnchor="middle"
-                  className="text-sm font-semibold fill-gray-500"
+                  className="text-sm font-medium fill-gray-600"
                 >
                   Total Value
                 </text>
@@ -265,7 +265,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
               </svg>
               
               {hoveredSegment && (
-                <div className="absolute top-4 left-4 bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-md">
+                <div className="absolute top-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
                   {hoveredSegment}
                 </div>
               )}
@@ -275,21 +275,20 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
               {allocationData.map((item, index) => (
                 <div key={index} className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">{item.name}</span>
-                    <span className="text-sm font-bold text-gray-700">{item.percentage}%</span>
+                    <span className="font-medium text-gray-900">{item.name}</span>
+                    <span className="text-sm font-bold text-blue-600">{item.percentage}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                     <div
-                      className="h-4 rounded-full transition-all duration-1000"
+                      className="h-3 rounded-full transition-all duration-1000 bg-blue-600"
                       style={{ 
-                        width: `${item.percentage}%`,
-                        backgroundColor: item.color
+                        width: `${item.percentage}%`
                       }}
                     ></div>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">${item.value.toLocaleString()}</span>
-                    <span className={`font-bold ${item.performance > 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                    <span className="text-gray-600 font-medium">${item.value.toLocaleString()}</span>
+                    <span className={`font-medium ${item.performance > 0 ? 'text-green-600' : 'text-red-500'}`}>
                       {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
                     </span>
                   </div>
@@ -300,47 +299,47 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         </div>
 
         {/* Legend & Details */}
-        <div className="allocation-legend">
-          <h4 className="font-semibold text-gray-900 mb-4">Fund Details</h4>
+        <div className="space-y-4">
+          <h4 className="text-lg font-bold text-gray-900 mb-6">Fund Details</h4>
           
           {allocationData.map((item, index) => (
             <div 
               key={index}
-              className="allocation-item group cursor-pointer"
+              className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-all cursor-pointer group"
               onMouseEnter={() => setHoveredSegment(item.name)}
               onMouseLeave={() => setHoveredSegment(null)}
               onClick={() => handleAllocationClick(item)}
             >
               <div className="flex items-center space-x-3 flex-1">
                 <div 
-                  className="allocation-color"
+                  className="w-4 h-4 rounded"
                   style={{ backgroundColor: item.color }}
                 ></div>
-                <div className="allocation-details">
-                  <div className="allocation-name">{item.name}</div>
-                  <div className="allocation-description">{item.description}</div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{item.name}</div>
+                  <div className="text-sm text-gray-600">{item.description}</div>
                   <div className="flex items-center space-x-2 mt-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.risk === 'Low' ? 'bg-green-100 text-green-800' :
-                      item.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                      item.risk === 'Low' ? 'bg-green-50 text-green-700 border border-green-200' :
+                      item.risk === 'Medium' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                      'bg-red-50 text-red-700 border border-red-200'
                     }`}>
                       {item.risk} Risk
                     </span>
-                    <span className="text-xs text-gray-500">Target: {item.target}%</span>
+                    <span className="text-xs text-gray-600">Target: {item.target}%</span>
                   </div>
                 </div>
               </div>
               
-              <div className="allocation-metrics">
-                <div className="allocation-percentage">{item.percentage}%</div>
-                <div className="allocation-value">${item.value.toLocaleString()}</div>
-                <div className={`allocation-performance ${item.performance > 0 ? 'positive' : 'negative'}`}>
+              <div className="text-right">
+                <div className="text-lg font-bold text-gray-900">{item.percentage}%</div>
+                <div className="text-sm text-gray-600">${item.value.toLocaleString()}</div>
+                <div className={`text-sm font-medium ${item.performance > 0 ? 'text-green-600' : 'text-red-500'}`}>
                   {item.performance > 0 ? '+' : ''}{item.performance.toFixed(1)}%
                 </div>
               </div>
               
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-4">
                 <ArrowUpRight className="h-4 w-4 text-blue-600" />
               </div>
             </div>
