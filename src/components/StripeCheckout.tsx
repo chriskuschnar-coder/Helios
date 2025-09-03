@@ -169,7 +169,13 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         body: JSON.stringify({
           amount: amount * 100, // Convert to cents
           currency: 'usd',
-          user_id: user.id
+          user_id: user.id,
+          metadata: {
+            user_id: user.id,
+            user_email: user.email,
+            investment_amount: amount,
+            purpose: 'hedge_fund_investment'
+          }
         })
       });
 

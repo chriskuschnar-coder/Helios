@@ -16,9 +16,9 @@ Deno.serve(async (req) => {
 
   try {
     console.log('📝 Parsing request body...')
-    const { amount, currency = 'usd', user_id } = await req.json()
+    const { amount, currency = 'usd', user_id, metadata = {} } = await req.json()
     
-    console.log('💰 Payment intent request:', { amount, currency, user_id })
+    console.log('💰 Payment intent request:', { amount, currency, user_id, metadata })
     
     // Validate amount (minimum $1.00)
     if (!amount || amount < 100) {
@@ -36,6 +36,8 @@ Deno.serve(async (req) => {
       currency: currency,
       'automatic_payment_methods[enabled]': 'true',
       'metadata[user_id]': user_id || 'anonymous',
+      'metadata[user_email]': metadata.user_email || '',
+      'metadata[investment_amount]': metadata.investment_amount || '',
       'metadata[purpose]': 'hedge_fund_investment',
       'metadata[investment_type]': 'capital_contribution',
       'metadata[fund_name]': 'Global Market Consulting Fund',
