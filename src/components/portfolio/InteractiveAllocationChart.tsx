@@ -33,54 +33,54 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
     
     if (currentBalance === 0) {
       return [
-        { name: 'Stocks', value: 0, percentage: 0, performance: 0, color: '#3B82F6', target: 60, risk: 'Medium', category: 'stocks', icon: '📈' },
-        { name: 'Crypto', value: 0, percentage: 0, performance: 0, color: '#F59E0B', target: 20, risk: 'High', category: 'crypto', icon: '₿' },
-        { name: 'Bonds', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 15, risk: 'Low', category: 'bonds', icon: '🏛️' },
-        { name: 'Cash', value: 0, percentage: 0, performance: 0, color: '#6B7280', target: 5, risk: 'Low', category: 'cash', icon: '💵' }
+        { name: 'Bitcoin', value: 0, percentage: 0, performance: 0, color: '#F7931A', target: 40, risk: 'High', category: 'crypto', icon: '₿' },
+        { name: 'Ethereum', value: 0, percentage: 0, performance: 0, color: '#627EEA', target: 30, risk: 'High', category: 'crypto', icon: 'Ξ' },
+        { name: 'Altcoins', value: 0, percentage: 0, performance: 0, color: '#8B5CF6', target: 20, risk: 'High', category: 'crypto', icon: '🚀' },
+        { name: 'Trading Cash', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 10, risk: 'Low', category: 'cash', icon: '💵' }
       ]
     }
 
     return [
       {
-        name: 'Stocks',
-        value: currentBalance * 0.60,
-        percentage: 60 + (timeVariation * 3),
-        performance: 14.2 + (timeVariation * 3),
-        color: '#3B82F6',
-        target: 60,
-        risk: 'Medium',
-        category: 'stocks',
-        icon: '📈'
-      },
-      {
-        name: 'Crypto',
-        value: currentBalance * 0.20,
-        percentage: 20 + (timeVariation * 2),
-        performance: 28.7 + (timeVariation * 5),
-        color: '#F59E0B',
-        target: 20,
+        name: 'Bitcoin',
+        value: currentBalance * 0.40,
+        percentage: 40 + (timeVariation * 4),
+        performance: 28.7 + (timeVariation * 8),
+        color: '#F7931A',
+        target: 40,
         risk: 'High',
         category: 'crypto',
         icon: '₿'
       },
       {
-        name: 'Bonds',
-        value: currentBalance * 0.15,
-        percentage: 15 + (timeVariation * 1.5),
-        performance: 6.8 + (timeVariation * 2),
-        color: '#10B981',
-        target: 15,
-        risk: 'Low',
-        category: 'bonds',
-        icon: '🏛️'
+        name: 'Ethereum',
+        value: currentBalance * 0.30,
+        percentage: 30 + (timeVariation * 3),
+        performance: 24.3 + (timeVariation * 6),
+        color: '#627EEA',
+        target: 30,
+        risk: 'High',
+        category: 'crypto',
+        icon: 'Ξ'
       },
       {
-        name: 'Cash',
-        value: currentBalance * 0.05,
-        percentage: 5 + (timeVariation * 0.5),
-        performance: 2.1 + (timeVariation * 0.5),
-        color: '#6B7280',
-        target: 5,
+        name: 'Altcoins',
+        value: currentBalance * 0.20,
+        percentage: 20 + (timeVariation * 2),
+        performance: 35.2 + (timeVariation * 10),
+        color: '#8B5CF6',
+        target: 20,
+        risk: 'High',
+        category: 'crypto',
+        icon: '🚀'
+      },
+      {
+        name: 'Trading Cash',
+        value: currentBalance * 0.10,
+        percentage: 10 + (timeVariation * 1),
+        performance: 4.8 + (timeVariation * 1),
+        color: '#10B981',
+        target: 10,
         risk: 'Low',
         category: 'cash',
         icon: '💵'
