@@ -16,9 +16,6 @@ import { CancelPage } from './components/CancelPage'
 import { FundingSuccessPage } from './components/FundingSuccessPage'
 import { FundingCancelledPage } from './components/FundingCancelledPage'
 import { EnvCheck } from './components/EnvCheck'
-import { DatabaseDiagnostic } from './components/DatabaseDiagnostic'
-import { DatabaseConnectionTest } from './components/DatabaseConnectionTest'
-import { SiteDiagnostics } from './components/SiteDiagnostics'
 
 function AppContent() {
   const { user, loading } = useAuth()
@@ -31,7 +28,6 @@ function AppContent() {
   const isCancelPage = window.location.pathname === '/cancel'
   const isFundingSuccess = window.location.pathname === '/funding-success'
   const isFundingCancelled = window.location.pathname === '/funding-cancelled'
-  const isDatabaseDiagnostic = window.location.pathname === '/database-diagnostic'
 
   if (loading) {
     return (
@@ -49,7 +45,6 @@ function AppContent() {
   if (isCancelPage) return <CancelPage />
   if (isFundingSuccess) return <FundingSuccessPage />
   if (isFundingCancelled) return <FundingCancelledPage />
-  if (isDatabaseDiagnostic) return <DatabaseDiagnostic />
 
   // Show dashboard if user is logged in
   if (user) {

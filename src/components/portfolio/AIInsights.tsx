@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle } from 'lucide-react'
+import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle, ArrowUpRight } from 'lucide-react'
 
 interface AIInsight {
   id: string
@@ -207,19 +207,19 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+    <div className="glass-card p-6 animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Brain className="h-5 w-5 text-purple-600" />
+          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center animate-pulse-glow">
+            <Brain className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="font-serif text-lg font-bold text-navy-900">AI Portfolio Insights</h3>
-            <p className="text-sm text-gray-600">
-              Live ML analysis • #{updateCount} • {new Date().toLocaleTimeString()}
+            <h3 className="premium-heading text-xl">AI Insights</h3>
+            <p className="text-sm text-white/60">
+              Machine learning analysis • Update #{updateCount} • {new Date().toLocaleTimeString()}
             </p>
             {lastMarketEvent && (
-              <p className="text-xs text-orange-600 mt-1">
+              <p className="text-xs text-purple-400 mt-1 font-medium">
                 📊 {lastMarketEvent}
               </p>
             )}
@@ -227,58 +227,60 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
         </div>
         
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-          <span className="text-xs text-purple-600 font-medium">AI ACTIVE</span>
+          <div className="live-indicator">
+            <div className="live-dot"></div>
+            <span className="live-text text-purple-400">AI ACTIVE</span>
+          </div>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="premium-button p-2 hover-lift"
           >
-            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 text-white/80 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
+        <div className="space-y-4">
+          <div className="h-24 premium-loading rounded-lg"></div>
+          <div className="h-24 premium-loading rounded-lg"></div>
+          <div className="h-24 premium-loading rounded-lg"></div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* AI Insights */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-4">Active Insights</h4>
+            <h4 className="premium-heading text-lg mb-6">Active Insights</h4>
             <div className="space-y-3">
               {insights.map((insight) => (
-                <div key={insight.id} className={`p-4 rounded-lg border ${getInsightColor(insight.type)}`}>
+                <div key={insight.id} className="insight-card hover-lift interactive-element">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
                       <div className="flex-1">
-                        <h5 className="font-medium text-gray-900 mb-1">{insight.title}</h5>
-                        <p className="text-sm text-gray-700">{insight.description}</p>
+                        <h5 className="font-bold text-white mb-2">{insight.title}</h5>
+                        <p className="text-sm premium-text leading-relaxed">{insight.description}</p>
                       </div>
                     </div>
                     
                     <div className="flex flex-col items-end space-y-2">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(insight.impact)}`}>
+                      <div className="premium-badge positive">
                         {insight.impact.toUpperCase()} IMPACT
                       </div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-white/60 font-medium">
                         {insight.confidence}% confidence
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-500 font-medium">
                       Timeframe: {insight.timeframe}
                     </div>
                     {insight.actionable && (
-                      <button className="text-sm font-medium text-navy-600 hover:text-navy-700 transition-colors">
-                        Take Action →
+                      <button className="premium-button text-sm flex items-center gap-1">
+                        Take Action <ArrowUpRight className="h-3 w-3" />
                       </button>
                     )}
                   </div>
@@ -289,26 +291,26 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
 
           {/* Market Conditions */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-4">Market Regime Analysis</h4>
+            <h4 className="premium-heading text-lg mb-6">Market Regime Analysis</h4>
             <div className="space-y-3">
               {marketConditions.map((condition, index) => (
-                <div key={index} className="p-4 bg-navy-50 border border-navy-200 rounded-lg">
+                <div key={index} className="metric-card hover-lift">
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-medium text-navy-900">{condition.condition}</h5>
+                    <h5 className="font-bold text-white">{condition.condition}</h5>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-navy-900">{condition.probability}%</div>
-                      <div className="text-xs text-navy-700">Probability</div>
+                      <div className="text-xl font-bold text-gradient">{condition.probability}%</div>
+                      <div className="premium-label">Probability</div>
                     </div>
                   </div>
                   
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-navy-700">Portfolio Impact:</span>
-                      <span className="ml-2 text-navy-900">{condition.impact_on_portfolio}</span>
+                      <span className="text-white/60 font-medium">Portfolio Impact:</span>
+                      <span className="ml-2 text-white font-semibold">{condition.impact_on_portfolio}</span>
                     </div>
                     <div>
-                      <span className="text-navy-700">Recommended Action:</span>
-                      <span className="ml-2 font-medium text-navy-900">{condition.recommended_action}</span>
+                      <span className="text-white/60 font-medium">Recommended Action:</span>
+                      <span className="ml-2 font-bold text-gradient">{condition.recommended_action}</span>
                     </div>
                   </div>
                 </div>
