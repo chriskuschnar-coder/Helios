@@ -25,9 +25,6 @@ export function ResearchTab() {
       
       {/* Quantitative Research Reports */}
       <QuantitativeReports />
-      
-      {/* Interactive Model Playground */}
-      <ModelPlayground />
     </div>
   )
 }
