@@ -850,21 +850,35 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </button>
               </div>
 
-              {/* NOWPayments Crypto Payment Integration */}
-              <NOWPaymentsCrypto 
-                amount={parseInt(investmentAmount.replace(/,/g, ''))}
-                userId={user?.id}
-                onSuccess={(invoice) => {
-                  console.log('✅ NOWPayments payment initiated:', invoice.payment_id)
-                  // Payment will be confirmed via webhook
-                  onClose()
-                }}
-                onError={(error) => {
-                  console.error('❌ NOWPayments payment error:', error)
-                  setError(error)
-                }}
-                onBack={handleBackToFunding}
-              />
+              {/* Safe NOWPayments Crypto Payment Integration */}
+              {user?.id ? (
+                <NOWPaymentsCrypto 
+                  amount={parseInt(investmentAmount.replace(/,/g, '') || '0')}
+                  userId={user.id}
+                  onSuccess={(invoice) => {
+                    console.log('✅ NOWPayments payment initiated:', invoice.payment_id)
+                    // Payment will be confirmed via webhook
+                    onClose()
+                  }}
+                  onError={(error) => {
+                    console.error('❌ NOWPayments payment error:', error)
+                    setError(error)
+                  }}
+                  onBack={handleBackToFunding}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+                  <p className="text-gray-600 mb-4">Please sign in to continue with crypto payment</p>
+                  <button
+                    onClick={onClose}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                  >
+                    Close and Sign In
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

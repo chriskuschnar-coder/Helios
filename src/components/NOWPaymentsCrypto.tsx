@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { Coins, Copy, CheckCircle, AlertCircle, ExternalLink, ArrowLeft, Loader2, RefreshCw } from 'lucide-react'
-import { nowPaymentsClient } from '../lib/nowpayments-client'
 
 interface NOWPaymentsCryptoProps {
   amount: number
@@ -18,6 +17,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
   const [estimatedAmount, setEstimatedAmount] = useState<number | null>(null)
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([])
   const [checkingStatus, setCheckingStatus] = useState(false)
+  const [error, setError] = useState('')
 
   // Popular cryptocurrencies with their display info
   const cryptoOptions = [
@@ -31,17 +31,32 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
     { code: 'matic', name: 'Polygon', symbol: '⬟', color: 'text-purple-500' }
   ]
 
-  // Load available currencies on mount
+  // Load available currencies on mount with error handling
   useEffect(() => {
     const loadCurrencies = async () => {
       try {
-        const currencies = await nowPaymentsClient.getAvailableCurrencies()
+        console.log('🔍 Loading available cryptocurrencies...')
+        
+        // Use a simple fetch instead of the nowPaymentsClient to avoid import issues
+        const response = await fetch('https://api.nowpayments.io/v1/currencies', {
+          headers: {
+            'x-api-key': 'W443X0G-ESJ4VVE-JTQTXYX-7SCDWV6'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        const currencies = data.currencies || []
         setAvailableCurrencies(currencies)
         console.log('✅ Available currencies loaded:', currencies.length)
       } catch (error) {
         console.error('❌ Failed to load currencies:', error)
-        // Use fallback currencies
-        setAvailableCurrencies(['btc', 'eth', 'usdt', 'usdc', 'ltc'])
+        // Use fallback currencies if API fails
+        setAvailableCurrencies(['btc', 'eth', 'usdt', 'usdc', 'ltc', 'ada', 'sol', 'matic'])
+        setError('Using fallback cryptocurrency list')
       }
     }
 
@@ -53,9 +68,24 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
     if (selectedCrypto && amount > 0) {
       const getEstimate = async () => {
         try {
-          const estimate = await nowPaymentsClient.getEstimatedPrice(amount, 'usd', selectedCrypto)
-          setEstimatedAmount(estimate)
-          console.log(`💰 Estimated ${selectedCrypto.toUpperCase()} amount:`, estimate)
+          console.log(`💰 Getting price estimate for ${amount} USD to ${selectedCrypto.toUpperCase()}`)
+          
+          const response = await fetch(
+            `https://api.nowpayments.io/v1/estimate?amount=${amount}&currency_from=usd&currency_to=${selectedCrypto}`,
+            {
+              headers: {
+                'x-api-key': 'W443X0G-ESJ4VVE-JTQTXYX-7SCDWV6'
+              }
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`Estimate API Error: ${response.status}`)
+          }
+
+          const data = await response.json()
+          setEstimatedAmount(data.estimated_amount)
+          console.log(`💰 Estimated ${selectedCrypto.toUpperCase()} amount:`, data.estimated_amount)
         } catch (error) {
           console.error('❌ Failed to get price estimate:', error)
           setEstimatedAmount(null)
@@ -73,6 +103,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
     }
 
     setLoading(true)
+    setError('')
 
     try {
       console.log('🔗 Creating NOWPayments payment for amount:', amount, 'in', selectedCrypto.toUpperCase())
@@ -88,19 +119,39 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         ipn_callback_url: `https://upevugqarcvxnekzddeh.supabase.co/functions/v1/nowpayments-webhook`,
         success_url: `${window.location.origin}/funding-success?payment_id={payment_id}&amount=${amount}`,
         cancel_url: `${window.location.origin}/funding-cancelled`,
-        customer_email: user?.email || '',
         is_fixed_rate: true,
         is_fee_paid_by_user: true
       }
 
-      const newPayment = await nowPaymentsClient.createPayment(paymentParams)
+      console.log('📡 Sending payment creation request...')
+      
+      const response = await fetch('https://api.nowpayments.io/v1/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'W443X0G-ESJ4VVE-JTQTXYX-7SCDWV6'
+        },
+        body: JSON.stringify(paymentParams)
+      })
+
+      console.log('📊 NOWPayments response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ NOWPayments API error:', errorData)
+        throw new Error(errorData.message || `API Error: ${response.status}`)
+      }
+
+      const newPayment = await response.json()
       console.log('✅ NOWPayments payment created:', newPayment.payment_id)
       
       setPayment(newPayment)
       onSuccess(newPayment)
     } catch (error) {
       console.error('❌ NOWPayments creation failed:', error)
-      onError(error instanceof Error ? error.message : 'Failed to create crypto payment')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create crypto payment'
+      setError(errorMessage)
+      onError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -111,7 +162,19 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
 
     setCheckingStatus(true)
     try {
-      const status = await nowPaymentsClient.getPaymentStatus(payment.payment_id)
+      console.log('🔍 Checking payment status for:', payment.payment_id)
+      
+      const response = await fetch(`https://api.nowpayments.io/v1/payment/${payment.payment_id}`, {
+        headers: {
+          'x-api-key': 'W443X0G-ESJ4VVE-JTQTXYX-7SCDWV6'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Status API Error: ${response.status}`)
+      }
+
+      const status = await response.json()
       console.log('🔍 Payment status:', status.payment_status)
       
       if (status.payment_status === 'finished' || status.payment_status === 'confirmed') {
@@ -122,6 +185,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       }
     } catch (error) {
       console.error('❌ Failed to check payment status:', error)
+      setError('Failed to check payment status')
     } finally {
       setCheckingStatus(false)
     }
@@ -174,6 +238,9 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
     availableCurrencies.includes(crypto.code)
   )
 
+  // If no currencies loaded yet, show all options
+  const displayCryptoOptions = availableCryptoOptions.length > 0 ? availableCryptoOptions : cryptoOptions
+
   return (
     <div>
       <div className="mb-6">
@@ -196,13 +263,22 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         </p>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <span className="text-red-900 font-medium">{error}</span>
+          </div>
+        </div>
+      )}
+
       {!payment ? (
         <div>
           {/* Cryptocurrency Selection */}
           <div className="mb-6">
             <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {availableCryptoOptions.map((crypto) => (
+              {displayCryptoOptions.map((crypto) => (
                 <button
                   key={crypto.code}
                   onClick={() => setSelectedCrypto(crypto.code)}
