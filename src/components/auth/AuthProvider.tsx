@@ -131,8 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshAccount = async () => {
+    console.log('🔄 Refreshing account data...')
     if (user) {
       await loadUserAccount(user.id)
+      console.log('✅ Account data refreshed')
     }
   }
 
