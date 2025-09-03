@@ -22,6 +22,7 @@ export function QuantitativeReports() {
   const [selectedReport, setSelectedReport] = useState<ResearchReport | null>(null)
   const [showModal, setShowModal] = useState(false)
 
+  console.log('📚 QuantitativeReports component rendering...')
   const reports: ResearchReport[] = [
     {
       id: 'jan-2025-performance',

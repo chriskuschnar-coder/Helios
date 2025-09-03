@@ -31,6 +31,7 @@ export function MarketRegimeDetector() {
   const [loading, setLoading] = useState(true)
   const [updateCount, setUpdateCount] = useState(0)
 
+  console.log('🧠 MarketRegimeDetector component rendering...')
   const generateRegimeData = (): MarketRegime => {
     const timeVariation = Date.now() % 100000 / 100000
     const regimeIndex = Math.floor(Date.now() / (1000 * 60 * 5)) % 4 // Change every 5 minutes

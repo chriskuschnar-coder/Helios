@@ -7,6 +7,8 @@ import { FactorAnalysis } from './FactorAnalysis'
 import { ModelPlayground } from './ModelPlayground'
 
 export function ResearchTab() {
+  console.log('🔬 ResearchTab component rendering...')
+  
   return (
     <div className="space-y-4 md:space-y-6">
       {/* AI Market Regime Detection - Top Priority */}

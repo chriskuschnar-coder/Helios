@@ -35,6 +35,7 @@ export function FactorAnalysis() {
   const [selectedView, setSelectedView] = useState<'performance' | 'attribution' | 'rotation'>('performance')
   const [updateCount, setUpdateCount] = useState(0)
 
+  console.log('🎯 FactorAnalysis component rendering...')
   const generateFactorData = (): FactorAnalysis => {
     const timeVariation = Date.now() % 100000 / 100000
     

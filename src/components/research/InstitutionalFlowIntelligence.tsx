@@ -35,6 +35,7 @@ export function InstitutionalFlowIntelligence() {
   const [loading, setLoading] = useState(true)
   const [updateCount, setUpdateCount] = useState(0)
 
+  console.log('👥 InstitutionalFlowIntelligence component rendering...')
   const generateFlowData = (): FlowIntelligence => {
     const timeVariation = Date.now() % 100000 / 100000
     const assets = ['BTC', 'ETH', 'SPY', 'QQQ', 'TSLA', 'NVDA', 'AAPL', 'MSFT']

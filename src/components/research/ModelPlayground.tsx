@@ -32,6 +32,7 @@ export function ModelPlayground() {
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null)
   const [isRunning, setIsRunning] = useState(false)
 
+  console.log('🧪 ModelPlayground component rendering...')
   const models = [
     {
       id: 'momentum',

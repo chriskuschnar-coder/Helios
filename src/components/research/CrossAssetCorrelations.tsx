@@ -29,6 +29,7 @@ export function CrossAssetCorrelations() {
   const [selectedView, setSelectedView] = useState<'matrix' | 'alerts' | 'pairs'>('matrix')
   const [updateCount, setUpdateCount] = useState(0)
 
+  console.log('🔗 CrossAssetCorrelations component rendering...')
   const generateCorrelationData = (): CorrelationMatrix => {
     const assets = ['BTC', 'ETH', 'SPY', 'QQQ', 'GOLD', 'DXY', 'VIX', 'TLT']
     const timeVariation = Date.now() % 100000 / 100000
