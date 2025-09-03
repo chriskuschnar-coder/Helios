@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, TrendingUp, TrendingDown, Users, Hash, Eye } from 'lucide-react'
+import { MessageCircle, TrendingUp, TrendingDown, Users, Hash, Eye, RefreshCw } from 'lucide-react'
 
 interface SentimentData {
   platform: string
