@@ -10,9 +10,7 @@ import {
   Plus,
   CreditCard,
   AlertCircle,
-  CheckCircle,
-  RefreshCw,
-  TrendingDown
+  CheckCircle
 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 import { CheckoutButton } from './CheckoutButton'
@@ -483,10 +481,10 @@ export function InvestorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen neural-network-bg safe-area-bottom cinematic-container">
       {/* Pull-to-refresh indicator */}
       {pullDistance > 0 && (
-        <div className="fixed top-0 left-0 right-0 z-40 glass-card flex items-center justify-center transition-all duration-300"
+        <div className="fixed top-0 left-0 right-0 z-40 glass-card flex items-center justify-center cinematic-transition"
              style={{ height: `${pullDistance}px`, opacity: pullDistance / 80 }}>
           <div className={`text-white text-sm font-medium ${isRefreshing ? 'animate-spin' : ''}`}>
             {isRefreshing ? (
@@ -500,20 +498,20 @@ export function InvestorDashboard() {
         </div>
       )}
       
-      <div className="premium-container py-8 md:py-12">
+      <div className="luxury-container py-8 md:py-12">
         {/* Top Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8 md:mb-12 animate-slide-up">
-          <div className="px-6 py-4">
+        <div className="holographic-card mb-8 md:mb-12 stagger-1">
+          <div className="px-8 py-6">
             {/* Mobile: Horizontal scroll tabs */}
-            <nav className="flex space-x-2 md:space-x-4 overflow-x-auto">
+            <nav className="flex space-x-6 md:space-x-10 overflow-x-auto smooth-quantum-scroll">
               {topTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTopTab(tab.id)}
-                  className={`flex items-center space-x-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 whitespace-nowrap ${
+                  className={`flex items-center space-x-3 py-4 px-6 rounded-xl font-semibold text-sm cinematic-transition whitespace-nowrap interactive-element ${
                     selectedTopTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                      ? 'neural-button-primary text-white shadow-neural'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <tab.icon className="h-4 w-4 flex-shrink-0" />
@@ -526,26 +524,26 @@ export function InvestorDashboard() {
 
         {/* Investment Tab Content */}
         {selectedTopTab === 'invest' && (
-          <div className="exchange-grid mb-8 md:mb-12">
+          <div className="neural-grid mb-8 md:mb-12">
             <StripeCheckout className="h-fit" />
-            <div className="exchange-card p-6">
-              <h3 className="exchange-heading text-lg md:text-xl mb-6">Investment Information</h3>
+            <div className="liquid-card">
+              <h3 className="futuristic-heading text-lg md:text-xl mb-6">Investment Information</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-gold" />
-                  <span className="text-sm md:text-base exchange-text">Secure payment processing via Stripe</span>
+                  <CheckCircle className="h-5 w-5 text-quantum-glow" />
+                  <span className="text-sm md:text-base quantum-text">Secure payment processing via Stripe</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-gold" />
-                  <span className="text-sm md:text-base exchange-text">Instant account funding</span>
+                  <CheckCircle className="h-5 w-5 text-quantum-glow" />
+                  <span className="text-sm md:text-base quantum-text">Instant account funding</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-gold" />
-                  <span className="text-sm md:text-base exchange-text">Professional investment management</span>
+                  <CheckCircle className="h-5 w-5 text-quantum-glow" />
+                  <span className="text-sm md:text-base quantum-text">Professional investment management</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-gold" />
-                  <span className="text-sm md:text-base exchange-text">Real-time portfolio tracking</span>
+                  <CheckCircle className="h-5 w-5 text-quantum-glow" />
+                  <span className="text-sm md:text-base quantum-text">Real-time portfolio tracking</span>
                 </div>
               </div>
             </div>
@@ -554,11 +552,11 @@ export function InvestorDashboard() {
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
-          <div className="mb-8 animate-slide-up">
-            <h1 className="exchange-heading text-2xl md:text-3xl mb-4">
+          <div className="mb-8 stagger-2">
+            <h1 className="futuristic-heading text-2xl md:text-3xl mb-4">
               Welcome back, {getFirstName()}
             </h1>
-            <p className="exchange-text text-base">
+            <p className="quantum-text text-base">
               Here's your portfolio performance and investment overview
             </p>
           </div>
@@ -573,43 +571,43 @@ export function InvestorDashboard() {
 
         {/* Performance Summary Cards */}
         {selectedTopTab === 'portfolio' && (
-          <div className="exchange-grid exchange-spacing">
-            <div className="metric-card interactive-element">
+          <div className="neural-grid stagger-3">
+            <div className="quantum-metric interactive-element hologram-effect">
               <div className="flex items-center justify-between mb-3">
-                <span className="exchange-label">Daily P&L</span>
-                <div className="w-8 h-8 bg-gradient-success rounded-full flex items-center justify-center animate-pulse-glow">
+                <span className="ai-label">Daily P&L</span>
+                <div className="w-8 h-8 bg-success-gradient rounded-full flex items-center justify-center animate-neural-pulse">
                   <ArrowUpRight className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <div className="metric-value text-gold">
+              <div className="quantum-value text-quantum-glow">
                 +${portfolioData.dailyPnL.toLocaleString()}
               </div>
-              <div className="exchange-badge positive">
+              <div className="percentage-badge positive">
                 +{portfolioData.dailyPnLPct.toFixed(2)}%
               </div>
             </div>
             
-            <div className="metric-card interactive-element">
+            <div className="quantum-metric interactive-element hologram-effect stagger-1">
               <div className="flex items-center justify-between mb-3">
-                <span className="exchange-label">YTD Return</span>
-                <div className="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center animate-gold-glow">
+                <span className="ai-label">YTD Return</span>
+                <div className="w-8 h-8 bg-primary-gradient rounded-full flex items-center justify-center animate-neural-pulse">
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <div className="metric-value text-gradient">
+              <div className="quantum-value ai-gradient-text">
                 +{portfolioData.yearlyReturn}%
               </div>
               <div className="text-sm text-white/60 font-medium">vs S&P 500</div>
             </div>
             
-            <div className="metric-card interactive-element">
+            <div className="quantum-metric interactive-element hologram-effect stagger-2">
               <div className="flex items-center justify-between mb-3">
-                <span className="exchange-label">Available Cash</span>
-                <div className="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center animate-gold-glow">
+                <span className="ai-label">Available Cash</span>
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center animate-neural-pulse">
                   <Plus className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <div className="metric-value text-gradient">
+              <div className="quantum-value text-holographic">
                 ${account?.available_balance?.toLocaleString() || '0'}
               </div>
               <div className="text-sm text-white/60 font-medium">Ready to invest</div>
@@ -627,7 +625,7 @@ export function InvestorDashboard() {
 
         {/* Advanced Portfolio Analytics */}
         {selectedTopTab === 'portfolio' && (
-          <div className="space-y-8 mb-8 md:mb-12">
+          <div className="neural-grid mb-8 md:mb-12">
             <InteractiveAllocationChart currentBalance={account?.balance || 0} />
             <PerformanceMetrics currentBalance={account?.balance || 0} />
           </div>
@@ -635,7 +633,7 @@ export function InvestorDashboard() {
 
         {/* AI Insights and Risk Management */}
         {selectedTopTab === 'portfolio' && (
-          <div className="exchange-grid mb-8 md:mb-12">
+          <div className="neural-grid mb-8 md:mb-12">
             <AIInsights currentBalance={account?.balance || 0} />
             <RiskDashboard currentBalance={account?.balance || 0} />
           </div>
@@ -667,55 +665,64 @@ export function InvestorDashboard() {
 
         {/* Transactions Tab Content */}
         {selectedTopTab === 'transactions' && (
-          <div className="exchange-card p-6 mb-8 md:mb-12">
-            <h3 className="exchange-heading text-lg md:text-xl mb-6">Transaction History</h3>
+          <div className="liquid-card mb-8 md:mb-12">
+            <h3 className="futuristic-heading text-lg md:text-xl mb-6">Transaction History</h3>
             
             {/* Transaction Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-              <div className="metric-card text-center">
-                <div className="text-lg font-bold text-gold">
+              <div className="quantum-metric text-center">
+                <div className="text-lg font-bold text-quantum-glow">
                   {allTransactions.filter(t => t.type === 'deposit').length}
                 </div>
-                <div className="exchange-label">Deposits</div>
+                <div className="ai-label">Deposits</div>
               </div>
-              <div className="metric-card text-center">
-                <div className="text-lg font-bold text-gold">
+              <div className="quantum-metric text-center">
+                <div className="text-lg font-bold text-quantum-glow">
                   {allTransactions.filter(t => t.type === 'withdrawal').length}
                 </div>
-                <div className="exchange-label">Withdrawals</div>
+                <div className="ai-label">Withdrawals</div>
               </div>
-              <div className="metric-card text-center">
-                <div className="text-lg font-bold text-gradient">
+              <div className="quantum-metric text-center">
+                <div className="text-lg font-bold text-holographic">
                   {allTransactions.filter(t => t.type === 'trade').length}
                 </div>
-                <div className="exchange-label">Trades</div>
+                <div className="ai-label">Trades</div>
               </div>
-              <div className="metric-card text-center">
-                <div className="text-lg font-bold text-gradient">
+              <div className="quantum-metric text-center">
+                <div className="text-lg font-bold text-holographic">
                   {allTransactions.filter(t => t.type === 'fee').length}
                 </div>
-                <div className="exchange-label">Fees</div>
+                <div className="ai-label">Fees</div>
               </div>
-              <div className="metric-card text-center">
-                <div className="text-lg font-bold text-gradient">
+              <div className="quantum-metric text-center">
+                <div className="text-lg font-bold text-holographic">
                   {allTransactions.filter(t => t.type === 'interest').length}
                 </div>
-                <div className="exchange-label">Interest</div>
+                <div className="ai-label">Interest</div>
               </div>
             </div>
             
             {loadingTransactions ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="exchange-loading h-16 rounded-lg"></div>
+                  <div key={i} className="animate-pulse flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded w-24"></div>
+                      </div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  </div>
                 ))}
               </div>
             ) : allTransactions.length > 0 ? (
               <div className="space-y-3">
                 {recentTransactions.map((transaction, index) => (
-                  <div key={index} className="exchange-table-row">
+                  <div key={index} className="quantum-table-row hologram-effect">
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="w-8 h-8 exchange-card rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 glass-card rounded-full flex items-center justify-center">
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div className="flex-1">
@@ -755,7 +762,7 @@ export function InvestorDashboard() {
                 
                 {allTransactions.length > 10 && (
                   <div className="text-center pt-4">
-                    <button className="exchange-button text-sm">
+                    <button className="neural-button text-sm">
                       View All {allTransactions.length} Transactions
                     </button>
                   </div>
@@ -774,16 +781,16 @@ export function InvestorDashboard() {
 
         {/* Navigation Tabs */}
         {selectedTopTab === 'portfolio' && (
-          <div className="exchange-card mb-8 md:mb-12 p-6">
+          <div className="liquid-card mb-8 md:mb-12">
           <div className="border-b border-white/10">
-            <nav className="flex space-x-4 md:space-x-8 px-6 overflow-x-auto">
+            <nav className="flex space-x-4 md:space-x-8 px-6 overflow-x-auto smooth-quantum-scroll">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all duration-300 whitespace-nowrap ${
+                  className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm cinematic-transition whitespace-nowrap ${
                     selectedTab === tab.id
-                      ? 'border-yellow-400 text-gold'
+                      ? 'border-cyan-400 text-quantum-glow'
                       : 'border-transparent text-white/60 hover:text-white/90'
                   }`}
                 >
@@ -798,39 +805,39 @@ export function InvestorDashboard() {
             {selectedTab === 'overview' && (
               <div className="space-y-8">
                 <div>
-                  <h3 className="exchange-heading text-lg md:text-xl mb-6">Asset Allocation</h3>
-                  <div className="exchange-grid">
+                  <h3 className="futuristic-heading text-lg md:text-xl mb-6">Asset Allocation</h3>
+                  <div className="neural-grid">
                     <div className="space-y-4">
                       {holdings.map((holding, index) => (
-                        <div key={index} className="exchange-table-row">
+                        <div key={index} className="quantum-table-row hologram-effect">
                           <div className="flex-1">
                             <div className="text-sm font-medium text-white">{holding.name}</div>
                             <div className="text-xs text-white/60">{holding.allocation}% allocation • {holding.risk} risk</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium text-gradient">
+                            <div className="text-sm font-medium text-holographic">
                               ${holding.value.toLocaleString()}
                             </div>
-                            <div className="text-xs text-gold">+{holding.return}%</div>
+                            <div className="text-xs text-quantum-glow">+{holding.return}%</div>
                           </div>
                         </div>
                       ))}
                     </div>
                     
-                    <div className="exchange-card-dark rounded-lg p-6">
+                    <div className="glass-card-dark rounded-lg p-6">
                       <h4 className="text-base font-medium text-white mb-4">Performance Metrics</h4>
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-sm text-white/60">Sharpe Ratio</span>
-                          <span className="text-sm font-medium text-gradient">2.84</span>
+                          <span className="text-sm font-medium text-holographic">2.84</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-white/60">Max Drawdown</span>
-                          <span className="text-sm font-medium text-gradient">-4.2%</span>
+                          <span className="text-sm font-medium text-holographic">-4.2%</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-white/60">Volatility</span>
-                          <span className="text-sm font-medium text-gradient">8.7%</span>
+                          <span className="text-sm font-medium text-holographic">8.7%</span>
                         </div>
                       </div>
                     </div>
@@ -841,34 +848,34 @@ export function InvestorDashboard() {
 
             {selectedTab === 'holdings' && (
               <div className="space-y-6">
-                <h3 className="exchange-heading text-lg md:text-xl">Detailed Holdings</h3>
-                <div className="exchange-table">
+                <h3 className="futuristic-heading text-lg md:text-xl">Detailed Holdings</h3>
+                <div className="quantum-table">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-black/40">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-white/80">Fund Name</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-white/80">Allocation</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-white/80">Value</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-white/80">Return</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-white/80">Risk</th>
+                      <tr className="quantum-table-header">
+                        <th className="text-left py-3 text-sm font-medium text-white/80">Fund Name</th>
+                        <th className="text-right py-3 text-sm font-medium text-white/80">Allocation</th>
+                        <th className="text-right py-3 text-sm font-medium text-white/80">Value</th>
+                        <th className="text-right py-3 text-sm font-medium text-white/80">Return</th>
+                        <th className="text-right py-3 text-sm font-medium text-white/80">Risk</th>
                       </tr>
                     </thead>
                     <tbody>
                       {holdings.map((holding, index) => (
-                        <tr key={index} className="exchange-table-row">
-                          <td className="py-4 px-4 text-sm font-medium text-white">{holding.name}</td>
-                          <td className="py-4 px-4 text-sm text-right text-white/70">{holding.allocation}%</td>
-                          <td className="py-4 px-4 text-sm text-right font-medium text-gradient">
+                        <tr key={index} className="quantum-table-row">
+                          <td className="py-4 text-sm font-medium text-white">{holding.name}</td>
+                          <td className="py-4 text-sm text-right text-white/70">{holding.allocation}%</td>
+                          <td className="py-4 text-sm text-right font-medium text-holographic">
                             ${holding.value.toLocaleString()}
                           </td>
-                          <td className="py-4 px-4 text-sm text-right font-medium text-gold">
+                          <td className="py-4 text-sm text-right font-medium text-quantum-glow">
                             +{holding.return}%
                           </td>
-                          <td className="py-4 px-4 text-right">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                              holding.risk === 'Low' ? 'exchange-badge positive' :
-                              holding.risk === 'Medium' ? 'exchange-badge neutral' :
-                              'exchange-badge negative'
+                          <td className="py-4 text-right">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              holding.risk === 'Low' ? 'bg-green-100 text-green-800' :
+                              holding.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
                             }`}>
                               {holding.risk}
                             </span>
@@ -883,20 +890,20 @@ export function InvestorDashboard() {
 
             {selectedTab === 'transactions' && (
               <div className="space-y-6">
-                <h3 className="exchange-heading text-lg md:text-xl">Recent Transactions</h3>
+                <h3 className="futuristic-heading text-lg md:text-xl">Recent Transactions</h3>
                 
                 {loadingTransactions ? (
                   <div className="space-y-4">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className="exchange-loading h-16 rounded-lg"></div>
+                      <div key={i} className="quantum-loading h-16 rounded-lg"></div>
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {allTransactions.map((transaction, index) => (
-                      <div key={index} className="exchange-table-row">
+                      <div key={index} className="quantum-table-row hologram-effect">
                         <div className="flex items-center space-x-3 flex-1">
-                          <div className="w-8 h-8 exchange-card rounded-full flex items-center justify-center">
+                          <div className="w-8 h-8 glass-card rounded-full flex items-center justify-center">
                             {getTransactionIcon(transaction.type)}
                           </div>
                           <div className="flex-1">
@@ -935,10 +942,10 @@ export function InvestorDashboard() {
 
             {selectedTab === 'documents' && (
               <div className="space-y-6">
-                <h3 className="exchange-heading text-lg md:text-xl">Investment Documents</h3>
-                <div className="exchange-grid">
+                <h3 className="futuristic-heading text-lg md:text-xl">Investment Documents</h3>
+                <div className="neural-grid">
                   {documents.map((doc, index) => (
-                    <div key={index} className="exchange-table-row">
+                    <div key={index} className="quantum-table-row hologram-effect">
                       <div className="flex items-center space-x-3 flex-1">
                         <FileText className="h-5 w-5 text-white/60" />
                         <div>
@@ -946,7 +953,7 @@ export function InvestorDashboard() {
                           <div className="text-xs text-white/60">{doc.type} • {doc.date}</div>
                         </div>
                       </div>
-                      <button className="exchange-button text-xs">
+                      <button className="neural-button text-xs">
                         Download
                       </button>
                     </div>

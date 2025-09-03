@@ -254,28 +254,33 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
   const volatility = hasActivity ? 8.7 : 0
 
   return (
-    <div className={`chart-container animate-slide-up ${className}`}>
+    <div className={`quantum-chart-container animate-liquid ${className}`}>
+      {/* Data Stream Lines */}
+      <div className="data-stream-line" style={{ top: '20%', left: '0', right: '0' }}></div>
+      <div className="data-stream-line" style={{ top: '40%', left: '0', right: '0' }}></div>
+      <div className="data-stream-line" style={{ top: '60%', left: '0', right: '0' }}></div>
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-gold rounded-xl flex items-center justify-center animate-gold-glow">
+          <div className="w-12 h-12 bg-primary-gradient rounded-xl flex items-center justify-center animate-neural-pulse">
             <BarChart3 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="exchange-heading text-xl">Performance Chart</h3>
+            <h3 className="futuristic-heading text-xl">Performance Chart</h3>
             <p className="text-sm text-white/60">12-month growth trajectory</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="exchange-label">Total Return</div>
-            <div className={`text-lg font-bold ${totalReturn === 0 ? 'text-white/40' : 'text-gold'} metric-value`}>
+            <div className="ai-label">Total Return</div>
+            <div className={`text-lg font-bold ${totalReturn === 0 ? 'text-white/40' : 'text-quantum-glow'} quantum-value`}>
               {totalReturn === 0 ? '0.0%' : `+${totalReturn.toFixed(1)}%`}
             </div>
           </div>
           <div className="text-right">
-            <div className="exchange-label">vs Benchmark</div>
-            <div className={`text-lg font-bold ${outperformance === 0 ? 'text-white/40' : 'text-gradient'} metric-value`}>
+            <div className="ai-label">vs Benchmark</div>
+            <div className={`text-lg font-bold ${outperformance === 0 ? 'text-white/40' : 'text-holographic'} quantum-value`}>
               {outperformance === 0 ? '0.0%' : `+${outperformance.toFixed(1)}%`}
             </div>
           </div>
@@ -290,12 +295,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
       <div className="grid grid-cols-3 gap-8 pt-6 border-t border-white/10">
         <div className="text-center">
           <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-gold-glow ${bestMonth === 0 ? 'bg-white/10' : 'bg-gradient-success'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-neural-pulse ${bestMonth === 0 ? 'bg-white/10' : 'bg-success-gradient'}`}>
               <TrendingUp className={`h-5 w-5 ${bestMonth === 0 ? 'text-white/40' : 'text-white'}`} />
             </div>
           </div>
-          <div className="exchange-label mb-2">Best Month</div>
-          <div className={`text-xl font-bold metric-value ${bestMonth === 0 ? 'text-white/40' : 'text-gold'}`}>
+          <div className="ai-label mb-2">Best Month</div>
+          <div className={`text-xl font-bold quantum-value ${bestMonth === 0 ? 'text-white/40' : 'text-quantum-glow'}`}>
             {bestMonth === 0 ? '0.0%' : `+${bestMonth}%`}
           </div>
           <div className="text-xs text-white/40 mt-1">
@@ -305,12 +310,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
         
         <div className="text-center">
           <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-gold-glow ${avgMonthly === 0 ? 'bg-white/10' : 'bg-gradient-gold'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-neural-pulse ${avgMonthly === 0 ? 'bg-white/10' : 'bg-primary-gradient'}`}>
               <Calendar className={`h-5 w-5 ${avgMonthly === 0 ? 'text-white/40' : 'text-white'}`} />
             </div>
           </div>
-          <div className="exchange-label mb-2">Avg Monthly</div>
-          <div className={`text-xl font-bold metric-value ${avgMonthly === 0 ? 'text-white/40' : 'text-gradient'}`}>
+          <div className="ai-label mb-2">Avg Monthly</div>
+          <div className={`text-xl font-bold quantum-value ${avgMonthly === 0 ? 'text-white/40' : 'text-holographic'}`}>
             {avgMonthly === 0 ? '0.0%' : `+${avgMonthly}%`}
           </div>
           <div className="text-xs text-white/40 mt-1">
@@ -320,12 +325,12 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
         
         <div className="text-center">
           <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-gold-glow ${volatility === 0 ? 'bg-white/10' : 'bg-gradient-gold'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-neural-pulse ${volatility === 0 ? 'bg-white/10' : 'bg-gradient-to-r from-yellow-400 to-orange-500'}`}>
               <BarChart3 className={`h-5 w-5 ${volatility === 0 ? 'text-white/40' : 'text-white'}`} />
             </div>
           </div>
-          <div className="exchange-label mb-2">Volatility</div>
-          <div className={`text-xl font-bold metric-value ${volatility === 0 ? 'text-white/40' : 'text-yellow-400'}`}>
+          <div className="ai-label mb-2">Volatility</div>
+          <div className={`text-xl font-bold quantum-value ${volatility === 0 ? 'text-white/40' : 'text-orange-400'}`}>
             {volatility === 0 ? '0.0%' : `${volatility}%`}
           </div>
           <div className="text-xs text-white/40 mt-1">
