@@ -205,3 +205,4 @@ body {
 /* Ensure the container divs have proper dimensions */
 [class*="Element"] {
   min-height: 40px !important;
+}
