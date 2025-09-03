@@ -190,7 +190,6 @@ Deno.serve(async (req) => {
               outcome_amount: event.outcome_amount || null,
               outcome_currency: event.outcome_currency || null,
               exchange_rate: event.pay_amount ? (paymentAmount / event.pay_amount) : null
-            }
           })
         })
 

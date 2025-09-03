@@ -195,9 +195,6 @@ async function processStripePayment(userId: string, session: any, supabaseUrl: s
           payment_status: session.payment_status,
           amount_total: session.amount_total,
           processed_at: new Date().toISOString()
-        }
-      })
-    })
 
     if (!updatePaymentResponse.ok) {
       const paymentError = await updatePaymentResponse.text()
