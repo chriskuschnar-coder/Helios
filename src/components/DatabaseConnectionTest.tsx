@@ -87,7 +87,30 @@ export function DatabaseConnectionTest() {
       setOverallStatus('issues')
     }
 
-    // Test 4: Real Application Query Test
+    // Test 4: Specifically Check for transaction_hash Column
+    addResult("Transaction Hash Column", "info", "Checking for transaction_hash column specifically...")
+    try {
+      const { data: columnCheck, error: columnError } = await supabaseClient
+        .from('information_schema.columns')
+        .select('column_name, data_type, is_nullable, column_default')
+        .eq('table_name', 'payments')
+        .eq('column_name', 'transaction_hash')
+
+      if (columnError) {
+        addResult("Transaction Hash Column", "error", `Column check failed: ${columnError.message}`, columnError)
+      } else if (columnCheck && columnCheck.length > 0) {
+        addResult("Transaction Hash Column", "success", "transaction_hash column exists!", columnCheck[0])
+      } else {
+        addResult("Transaction Hash Column", "error", "transaction_hash column NOT FOUND", { searched_for: 'transaction_hash', table: 'payments' })
+        
+        // If column doesn't exist, suggest running the migration
+        addResult("Migration Needed", "warning", "Run the add_transaction_hash_to_payments.sql migration to fix this issue")
+      }
+    } catch (err) {
+      addResult("Transaction Hash Column", "error", `Column check error: ${err.message}`)
+    }
+
+    // Test 5: Real Application Query Test
     addResult("Application Query Test", "info", "Testing actual application queries...")
     
     try {
@@ -111,7 +134,7 @@ export function DatabaseConnectionTest() {
       setOverallStatus('issues')
     }
 
-    // Test 5: Insert Test with transaction_hash
+    // Test 6: Insert Test with transaction_hash
     addResult("Insert Test", "info", "Testing insert with transaction_hash...")
     
     try {
@@ -151,7 +174,7 @@ export function DatabaseConnectionTest() {
       setOverallStatus('issues')
     }
 
-    // Test 6: Authentication System
+    // Test 7: Authentication System
     addResult("Authentication Test", "info", "Testing authentication system...")
     
     try {
