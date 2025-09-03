@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle } from 'lucide-react'
+import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle, ArrowUpRight } from 'lucide-react'
 
 interface AIInsight {
   id: string
