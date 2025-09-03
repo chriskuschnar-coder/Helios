@@ -329,7 +329,11 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
             onClick={() => {
               const blockchainUrl = selectedCrypto === 'btc' 
                 ? `https://blockstream.info/address/${invoice.pay_address}`
-                : `https://etherscan.io/address/${invoice.pay_address}`
+                : selectedCrypto === 'eth' 
+                  ? `https://etherscan.io/address/${invoice.pay_address}`
+                  : selectedCrypto === 'usdt' || selectedCrypto === 'usdc'
+                    ? `https://etherscan.io/address/${invoice.pay_address}`
+                    : `https://etherscan.io/address/${invoice.pay_address}`
               window.open(blockchainUrl, '_blank')
             }}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center mx-auto"
