@@ -85,10 +85,10 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         pay_currency: selectedCrypto,
         order_id: orderId,
         order_description: `Global Market Consulting Investment - $${amount.toLocaleString()}`,
-        ipn_callback_url: `${window.location.origin}/api/nowpayments-webhook`,
+        ipn_callback_url: `https://upevugqarcvxnekzddeh.supabase.co/functions/v1/nowpayments-webhook`,
         success_url: `${window.location.origin}/funding-success?payment_id={payment_id}&amount=${amount}`,
         cancel_url: `${window.location.origin}/funding-cancelled`,
-        customer_email: '', // Will be filled from user data
+        customer_email: user?.email || '',
         is_fixed_rate: true,
         is_fee_paid_by_user: true
       }

@@ -195,8 +195,8 @@ class NOWPaymentsClient {
 
 // Environment configuration
 const NOWPAYMENTS_CONFIG: NOWPaymentsConfig = {
-  apiKey: import.meta.env.VITE_NOWPAYMENTS_API_KEY || '',
-  environment: (import.meta.env.VITE_NOWPAYMENTS_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
+  apiKey: import.meta.env.VITE_NOWPAYMENTS_API_KEY || 'W443X0G-ESJ4VVE-JTQTXYX-7SCDWV6',
+  environment: (import.meta.env.VITE_NOWPAYMENTS_ENVIRONMENT as 'sandbox' | 'production') || 'production',
   ipnSecret: import.meta.env.VITE_NOWPAYMENTS_IPN_SECRET
 }
 
