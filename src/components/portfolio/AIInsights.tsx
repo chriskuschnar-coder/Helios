@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Brain, Lightbulb, AlertTriangle, TrendingUp, Target, Zap, RefreshCw, CheckCircle } from 'lucide-react'
+import { Brain, ChevronRight, ChevronDown, TrendingUp, AlertTriangle, Target, CheckCircle, Clock, Lightbulb, ArrowRight } from 'lucide-react'
 
 interface AIInsight {
   id: string
-  type: 'opportunity' | 'risk' | 'rebalance' | 'tax' | 'market'
+  type: 'opportunity' | 'risk' | 'rebalance' | 'market'
   title: string
   description: string
   impact: 'high' | 'medium' | 'low'
@@ -24,15 +24,11 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   const [marketConditions, setMarketConditions] = useState<MarketCondition[]>([])
   const [loading, setLoading] = useState(true)
   const [updateCount, setUpdateCount] = useState(0)
-  const [newsImpact, setNewsImpact] = useState<string[]>([])
+  const [isExpanded, setIsExpanded] = useState(false)
   const [lastMarketEvent, setLastMarketEvent] = useState<string>('')
 
   const generateAIInsights = (): AIInsight[] => {
-    // Real-time market variations
-    const marketVolatility = Math.sin(Date.now() / 20000) * 0.3 + 0.7  // 0.4-1.0 range
-    const newsImpact = Math.cos(Date.now() / 45000) * 0.2 + 0.8        // 0.6-1.0 range
-    const timeVariation = marketVolatility * newsImpact
-    
+    const timeVariation = Math.sin(Date.now() / 30000) * 0.3 + 0.7
     const hasActivity = currentBalance > 0
     
     if (!hasActivity) {
@@ -40,81 +36,60 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
         {
           id: 'welcome-1',
           type: 'opportunity',
-          title: 'Welcome to Quantitative Investing',
-          description: 'Fund your account to begin receiving AI-powered portfolio insights and optimization recommendations.',
+          title: 'Ready to Begin Trading',
+          description: 'Fund your account to start receiving AI-powered insights and trading recommendations.',
           impact: 'high',
           confidence: 100,
           actionable: true,
-          timeframe: 'Immediate'
+          timeframe: 'Now'
         }
       ]
     }
 
     const insightPool = [
       {
-        id: 'momentum-1',
+        id: 'crypto-momentum-1',
         type: 'opportunity' as const,
-        title: 'Momentum Factor Acceleration Detected',
-        description: `Cross-sectional momentum signals show ${(85 + timeVariation * 10).toFixed(0)}% strength. Consider increasing momentum allocation by 5-8% for next 2-3 weeks.`,
+        title: 'Bitcoin Momentum Signal',
+        description: `Strong momentum detected in BTC with ${(85 + timeVariation * 10).toFixed(0)}% probability of continuation. Consider increasing allocation.`,
         impact: 'high' as const,
         confidence: Math.floor(85 + timeVariation * 10),
-        actionable: true,
-        timeframe: '2-3 weeks'
-      },
-      {
-        id: 'rebalance-1',
-        type: 'rebalance' as const,
-        title: 'Technology Overweight Alert',
-        description: `Tech allocation at ${(37 + timeVariation * 3).toFixed(1)}% vs 35% target. Rebalancing could reduce portfolio risk by ${(0.8 + timeVariation * 0.4).toFixed(1)}%.`,
-        impact: 'medium' as const,
-        confidence: Math.floor(78 + timeVariation * 15),
         actionable: true,
         timeframe: '1-2 weeks'
       },
       {
-        id: 'risk-1',
-        type: 'risk' as const,
-        title: 'Volatility Regime Shift Warning',
-        description: `Hidden Markov Model indicates ${(72 + timeVariation * 20).toFixed(0)}% probability of volatility expansion. Consider defensive positioning.`,
-        impact: 'high' as const,
-        confidence: Math.floor(72 + timeVariation * 20),
+        id: 'rebalance-1',
+        type: 'rebalance' as const,
+        title: 'Portfolio Rebalancing Alert',
+        description: `Crypto allocation at ${(42 + timeVariation * 3).toFixed(1)}% vs 40% target. Small adjustment recommended.`,
+        impact: 'medium' as const,
+        confidence: Math.floor(78 + timeVariation * 15),
         actionable: true,
-        timeframe: '5-10 days'
+        timeframe: 'This week'
       },
       {
-        id: 'tax-1',
-        type: 'tax' as const,
-        title: 'Tax Loss Harvesting Opportunity',
-        description: `Unrealized losses in Energy sector (${(-2.3 + timeVariation * 1).toFixed(1)}%) could offset gains. Potential tax savings: $${(1200 + timeVariation * 800).toFixed(0)}.`,
+        id: 'risk-1',
+        type: 'risk' as const,
+        title: 'Volatility Increase Expected',
+        description: `Market indicators suggest ${(72 + timeVariation * 20).toFixed(0)}% chance of increased volatility. Consider protective measures.`,
         impact: 'medium' as const,
-        confidence: Math.floor(88 + timeVariation * 8),
+        confidence: Math.floor(72 + timeVariation * 20),
         actionable: true,
-        timeframe: 'Before year-end'
+        timeframe: '3-5 days'
       },
       {
         id: 'market-1',
         type: 'market' as const,
-        title: 'Fed Policy Shift Impact Analysis',
-        description: `Rate cut probability increased to ${(65 + timeVariation * 25).toFixed(0)}%. Duration risk in bond allocation may create opportunity for +${(1.8 + timeVariation * 1.2).toFixed(1)}% alpha.`,
+        title: 'Altcoin Season Approaching',
+        description: `Technical analysis shows ${(65 + timeVariation * 25).toFixed(0)}% probability of altcoin outperformance vs Bitcoin.`,
         impact: 'high' as const,
         confidence: Math.floor(82 + timeVariation * 12),
         actionable: true,
-        timeframe: 'Next FOMC meeting'
-      },
-      {
-        id: 'opportunity-1',
-        type: 'opportunity' as const,
-        title: 'Statistical Arbitrage Signal',
-        description: `Pairs trading model identifies ${Math.floor(12 + timeVariation * 8)} active opportunities with average expected return of ${(2.4 + timeVariation * 1.5).toFixed(1)}%.`,
-        impact: 'medium' as const,
-        confidence: Math.floor(79 + timeVariation * 15),
-        actionable: true,
-        timeframe: '3-7 days'
+        timeframe: '2-4 weeks'
       }
     ]
 
-    // Rotate through insights based on time
-    const insightIndex = Math.floor(Date.now() / (1000 * 60 * 2)) % insightPool.length // Change every 2 minutes
+    const insightIndex = Math.floor(Date.now() / (1000 * 60 * 2)) % insightPool.length
     return insightPool.slice(insightIndex, insightIndex + 3).concat(insightPool.slice(0, Math.max(0, 3 - (insightPool.length - insightIndex))))
   }
 
@@ -123,22 +98,22 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     
     return [
       {
-        condition: 'Momentum Regime Continuation',
+        condition: 'Crypto Bull Market Continuation',
         probability: Math.floor(75 + timeVariation * 20),
-        impact_on_portfolio: `Positive for momentum allocation (+${(2.1 + timeVariation * 1.5).toFixed(1)}% expected)`,
-        recommended_action: 'Maintain or increase momentum exposure'
+        impact_on_portfolio: `Positive for crypto holdings (+${(3.2 + timeVariation * 1.5).toFixed(1)}% expected)`,
+        recommended_action: 'Maintain or increase crypto exposure'
       },
       {
-        condition: 'Volatility Compression',
+        condition: 'Market Volatility Expansion',
         probability: Math.floor(68 + timeVariation * 25),
-        impact_on_portfolio: `Favorable for carry strategies (+${(1.4 + timeVariation * 0.8).toFixed(1)}% expected)`,
-        recommended_action: 'Consider volatility selling strategies'
+        impact_on_portfolio: `Increased portfolio swings (±${(2.4 + timeVariation * 0.8).toFixed(1)}% daily)`,
+        recommended_action: 'Consider position sizing adjustments'
       },
       {
-        condition: 'Dollar Strength Cycle',
+        condition: 'Institutional Crypto Adoption',
         probability: Math.floor(82 + timeVariation * 15),
-        impact_on_portfolio: `Headwind for international exposure (-${(0.8 + timeVariation * 0.6).toFixed(1)}% drag)`,
-        recommended_action: 'Hedge currency exposure or reduce international allocation'
+        impact_on_portfolio: `Long-term positive for crypto allocation (+${(1.8 + timeVariation * 1.2).toFixed(1)}% monthly)`,
+        recommended_action: 'Hold crypto positions for institutional flow'
       }
     ]
   }
@@ -147,14 +122,13 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     setLoading(true)
     setUpdateCount(prev => prev + 1)
     
-    // Generate market events that affect AI insights
     const marketEvents = [
-      'FOMC minutes release shifts rate expectations',
-      'Earnings season momentum accelerating',
-      'Geopolitical risk premium increasing',
-      'Crypto correlation breakdown detected',
-      'Institutional flow patterns changing',
-      'Volatility regime shift in progress'
+      'Bitcoin ETF flows accelerating',
+      'Ethereum upgrade momentum building', 
+      'Altcoin correlation breakdown detected',
+      'Institutional crypto adoption increasing',
+      'DeFi yield opportunities expanding',
+      'Crypto market structure improving'
     ]
     
     const currentEvent = marketEvents[Math.floor(Date.now() / (1000 * 60 * 2)) % marketEvents.length]
@@ -171,150 +145,221 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
   useEffect(() => {
     refreshData()
     
-    const interval = setInterval(refreshData, 20000) // Update every 20 seconds
+    const interval = setInterval(refreshData, 20000)
     return () => clearInterval(interval)
   }, [currentBalance])
 
   const getInsightIcon = (type: string) => {
     switch (type) {
-      case 'opportunity': return <TrendingUp className="h-5 w-5 text-green-600" />
-      case 'risk': return <AlertTriangle className="h-5 w-5 text-red-600" />
-      case 'rebalance': return <Target className="h-5 w-5 text-blue-600" />
-      case 'tax': return <CheckCircle className="h-5 w-5 text-purple-600" />
-      case 'market': return <Zap className="h-5 w-5 text-orange-600" />
-      default: return <Lightbulb className="h-5 w-5 text-gray-600" />
+      case 'opportunity': return <TrendingUp className="h-4 w-4" />
+      case 'risk': return <AlertTriangle className="h-4 w-4" />
+      case 'rebalance': return <Target className="h-4 w-4" />
+      case 'market': return <Lightbulb className="h-4 w-4" />
+      default: return <CheckCircle className="h-4 w-4" />
     }
   }
 
-  const getInsightColor = (type: string) => {
-    switch (type) {
-      case 'opportunity': return 'border-green-200 bg-green-50'
-      case 'risk': return 'border-red-200 bg-red-50'
-      case 'rebalance': return 'border-blue-200 bg-blue-50'
-      case 'tax': return 'border-purple-200 bg-purple-50'
-      case 'market': return 'border-orange-200 bg-orange-50'
-      default: return 'border-gray-200 bg-gray-50'
-    }
-  }
-
-  const getImpactColor = (impact: string) => {
+  const getImpactDot = (impact: string) => {
     switch (impact) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'high': return 'bg-blue-500'
+      case 'medium': return 'bg-gray-400'
+      case 'low': return 'bg-gray-300'
+      default: return 'bg-gray-300'
     }
+  }
+
+  // Count insights by type for folder preview
+  const insightCounts = {
+    opportunities: insights.filter(i => i.type === 'opportunity').length,
+    risks: insights.filter(i => i.type === 'risk').length,
+    actions: insights.filter(i => i.actionable).length,
+    total: insights.length
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Brain className="h-5 w-5 text-purple-600" />
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300">
+      {/* Folder Header - Clickable */}
+      <div 
+        className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-200"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+              <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI Portfolio Insights</h3>
+              <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                <span>{insightCounts.total} insights available</span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>Live analysis</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="font-serif text-lg font-bold text-navy-900">AI Portfolio Insights</h3>
-            <p className="text-sm text-gray-600">
-              Live ML analysis • #{updateCount} • {new Date().toLocaleTimeString()}
-            </p>
-            {lastMarketEvent && (
-              <p className="text-xs text-orange-600 mt-1">
-                📊 {lastMarketEvent}
-              </p>
-            )}
+          
+          <div className="flex items-center space-x-4">
+            {/* Quick Preview Stats */}
+            <div className="hidden md:flex items-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-gray-600 dark:text-gray-400">{insightCounts.opportunities} opportunities</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span className="text-gray-600 dark:text-gray-400">{insightCounts.actions} actionable</span>
+              </div>
+            </div>
+            
+            {/* Expand/Collapse Icon */}
+            <div className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              {isExpanded ? (
+                <ChevronDown className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              )}
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-          <span className="text-xs text-purple-600 font-medium">AI ACTIVE</span>
-          <button
-            onClick={refreshData}
-            disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+        {/* Market Event Ticker */}
+        {lastMarketEvent && (
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+            <div className="flex items-center space-x-2">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                {lastMarketEvent}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {loading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* AI Insights */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Active Insights</h4>
-            <div className="space-y-3">
-              {insights.map((insight) => (
-                <div key={insight.id} className={`p-4 rounded-lg border ${getInsightColor(insight.type)}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start space-x-3">
-                      {getInsightIcon(insight.type)}
-                      <div className="flex-1">
-                        <h5 className="font-medium text-gray-900 mb-1">{insight.title}</h5>
-                        <p className="text-sm text-gray-700">{insight.description}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col items-end space-y-2">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(insight.impact)}`}>
-                        {insight.impact.toUpperCase()} IMPACT
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {insight.confidence}% confidence
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      Timeframe: {insight.timeframe}
-                    </div>
-                    {insight.actionable && (
-                      <button className="text-sm font-medium text-navy-600 hover:text-navy-700 transition-colors">
-                        Take Action →
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          {loading ? (
+            <div className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-20 bg-gray-200 dark:bg-gray-600 rounded-lg"></div>
+                <div className="h-20 bg-gray-200 dark:bg-gray-600 rounded-lg"></div>
+                <div className="h-20 bg-gray-200 dark:bg-gray-600 rounded-lg"></div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              {/* Active Insights */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-base font-medium text-gray-900 dark:text-white">Active Insights</h4>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Updated {new Date().toLocaleTimeString()}</span>
+                </div>
+                
+                <div className="space-y-3">
+                  {insights.map((insight) => (
+                    <div key={insight.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-all duration-200">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                            {getInsightIcon(insight.type)}
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900 dark:text-white mb-1">{insight.title}</h5>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{insight.description}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end space-y-2">
+                          <div className={`w-3 h-3 rounded-full ${getImpactDot(insight.impact)}`}></div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {insight.confidence}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{insight.timeframe}</span>
+                          </div>
+                          <span className="capitalize">{insight.impact} impact</span>
+                        </div>
+                        {insight.actionable && (
+                          <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center space-x-1">
+                            <span>Take Action</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Market Conditions */}
-          <div>
-            <h4 className="font-medium text-gray-900 mb-4">Market Regime Analysis</h4>
-            <div className="space-y-3">
-              {marketConditions.map((condition, index) => (
-                <div key={index} className="p-4 bg-navy-50 border border-navy-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-medium text-navy-900">{condition.condition}</h5>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-navy-900">{condition.probability}%</div>
-                      <div className="text-xs text-navy-700">Probability</div>
+              {/* Market Conditions */}
+              <div>
+                <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">Market Analysis</h4>
+                <div className="space-y-3">
+                  {marketConditions.map((condition, index) => (
+                    <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-900 dark:text-white">{condition.condition}</h5>
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">{condition.probability}%</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Probability</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start space-x-2">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium min-w-[60px]">Impact:</span>
+                          <span className="text-gray-900 dark:text-white">{condition.impact_on_portfolio}</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <span className="text-gray-600 dark:text-gray-400 font-medium min-w-[60px]">Action:</span>
+                          <span className="text-gray-900 dark:text-white">{condition.recommended_action}</span>
+                        </div>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4">Analysis Summary</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+                      {insightCounts.opportunities}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Opportunities</div>
                   </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-navy-700">Portfolio Impact:</span>
-                      <span className="ml-2 text-navy-900">{condition.impact_on_portfolio}</span>
+                  <div className="text-center">
+                    <div className="text-xl font-semibold text-gray-600 dark:text-gray-400">
+                      {insightCounts.risks}
                     </div>
-                    <div>
-                      <span className="text-navy-700">Recommended Action:</span>
-                      <span className="ml-2 font-medium text-navy-900">{condition.recommended_action}</span>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Risk Alerts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {insightCounts.actions}
                     </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Actionable</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {Math.round(insights.reduce((sum, i) => sum + i.confidence, 0) / insights.length)}%
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Avg Confidence</div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

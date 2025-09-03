@@ -36,7 +36,7 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         { name: 'Bitcoin', value: 0, percentage: 0, performance: 0, color: '#F7931A', target: 40, risk: 'High', category: 'crypto', icon: '₿' },
         { name: 'Ethereum', value: 0, percentage: 0, performance: 0, color: '#627EEA', target: 30, risk: 'High', category: 'crypto', icon: 'Ξ' },
         { name: 'Altcoins', value: 0, percentage: 0, performance: 0, color: '#8B5CF6', target: 20, risk: 'High', category: 'crypto', icon: '🚀' },
-        { name: 'Trading Cash', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 10, risk: 'Low', category: 'cash', icon: '💵' }
+        { name: 'Trading Cash', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 10, risk: 'Low', category: 'trading', icon: '💵' }
       ]
     }
 
@@ -81,8 +81,8 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
         performance: 4.8 + (timeVariation * 1),
         color: '#10B981',
         target: 10,
-        risk: 'Low',
-        category: 'cash',
+        risk: 'Low', 
+        category: 'trading',
         icon: '💵'
       }
     ]
