@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target, ArrowUpRight } from 'lucide-react'
+import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
 interface StressTestResult {
