@@ -335,6 +335,7 @@ body {
 .ticker-container:hover .ticker-scroll {
   animation-play-state: paused;
 }
+
 /* CRITICAL: Stripe Elements CSS for proper mounting and interaction */
 .StripeElement {
   width: 100% !important;
