@@ -188,7 +188,8 @@ Deno.serve(async (req) => {
               payout_hash: event.payout_hash || null,
               outcome_amount: event.outcome_amount || null,
               outcome_currency: event.outcome_currency || null,
-              exchange_rate: event.pay_amount ? (paymentAmount / event.pay_amount) : null
+              exchange_rate: event.pay_amount ? (paymentAmount / event.pay_amount) : null,
+              crypto_transaction_hash: event.payin_hash || event.payout_hash || null
             }
           })
         })
