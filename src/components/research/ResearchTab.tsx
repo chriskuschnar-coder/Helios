@@ -14,7 +14,7 @@ export function ResearchTab() {
       {/* AI Market Regime Detection - Top Priority */}
       <MarketRegimeDetector />
       
-      {/* Institutional Flow Intelligence */}
+      {/* Smart Money Tracker */}
       <InstitutionalFlowIntelligence />
       
       {/* Quantitative Research Reports */}
