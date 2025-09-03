@@ -629,6 +629,13 @@ export function InvestorDashboard() {
           </div>
         )}
 
+        {/* Portfolio Allocation */}
+        {selectedTopTab === 'portfolio' && (
+          <div className="mb-4 md:mb-8">
+            <InteractiveAllocationChart currentBalance={account?.balance || 0} />
+          </div>
+        )}
+
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
           <div className="space-y-3 sm:space-y-4 md:space-y-8 mobile-space-y-2">
