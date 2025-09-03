@@ -79,11 +79,6 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
           </div>
         </button>
       </div>
-    </div>
-  )
-}
-        </span>
-      </div>
       
       <div className="mb-4 sm:mb-6 md:mb-8">
         <h1 className="text-2xl sm:text-3xl md:text-5xl font-light text-gray-900 mb-1 sm:mb-2 font-mono tracking-tight mobile-portfolio-value">
