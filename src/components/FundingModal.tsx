@@ -122,7 +122,7 @@ interface FundingModalProps {
 }
 
 export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
-  const { account, user, markDocumentsCompleted } = useAuth();
+  const { account, user, markDocumentsCompleted, processFunding } = useAuth();
   const [amount, setAmount] = useState(prefilledAmount || 10000);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
