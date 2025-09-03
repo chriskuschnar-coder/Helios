@@ -511,16 +511,6 @@ export function InvestorDashboard() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Top Navigation Tabs */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-8 mobile-card">
-          {/* Live System Status Bar */}
-          <div className="px-3 md:px-6 py-2 bg-green-50 border-b border-green-200">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-green-700 font-medium">LIVE SYSTEM • Update #{liveUpdateIndicator}</span>
-              </div>
-              <span className="text-green-600">Last update: {lastSystemUpdate.toLocaleTimeString()}</span>
-            </div>
-          </div>
           <div className="px-3 md:px-6 py-3 md:py-4">
             {/* Mobile: Horizontal scroll tabs */}
             <nav className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide">
