@@ -159,7 +159,7 @@ export function DashboardSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-white">
       <div className="exchange-nav">
         <DashboardSwitcher />
       </div>

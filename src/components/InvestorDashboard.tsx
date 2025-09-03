@@ -627,7 +627,7 @@ export function InvestorDashboard() {
 
         {/* Advanced Portfolio Analytics */}
         {selectedTopTab === 'portfolio' && (
-          <div className="exchange-grid mb-8 md:mb-12">
+          <div className="space-y-8 mb-8 md:mb-12">
             <InteractiveAllocationChart currentBalance={account?.balance || 0} />
             <PerformanceMetrics currentBalance={account?.balance || 0} />
           </div>

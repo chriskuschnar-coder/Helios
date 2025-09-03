@@ -210,7 +210,7 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
     <div className="exchange-card p-6 animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-danger rounded-xl flex items-center justify-center animate-gold-glow">
+          <div className="w-12 h-12 bg-gradient-danger rounded-xl flex items-center justify-center animate-blue-glow">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -228,22 +228,22 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
         
         <div className="flex items-center space-x-3">
           <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
-            riskAlertLevel === 'high' ? 'exchange-badge negative' :
-            riskAlertLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-            'exchange-badge positive'
+            riskAlertLevel === 'high' ? 'bg-red-100 text-red-800 border-red-200' :
+            riskAlertLevel === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+            'bg-green-100 text-green-800 border-green-200'
           }`}>
             {riskAlertLevel.toUpperCase()} RISK
           </div>
           <div className="live-indicator">
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse-glow"></div>
-            <span className="text-xs text-red-400 font-semibold tracking-wider">MONITORING</span>
+            <div className="live-dot"></div>
+            <span className="live-text">MONITORING</span>
           </div>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="exchange-button p-2 hover-lift"
+            className="exchange-button p-2"
           >
-            <RefreshCw className={`h-4 w-4 text-white/80 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -262,7 +262,7 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
               {stressTests.map((test, index) => (
                 <div 
                   key={index} 
-                  className="insight-card hover-lift interactive-element group cursor-pointer"
+                  className="insight-card group cursor-pointer"
                   onClick={() => handleStressTestClick(test)}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -275,7 +275,7 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold metric-value ${test.portfolio_impact > 0 ? 'text-gold' : 'text-red-400'}`}>
+                      <div className={`text-xl font-bold metric-value ${test.portfolio_impact > 0 ? 'text-blue' : 'text-red-400'}`}>
                         {test.portfolio_impact > 0 ? '+' : ''}{test.portfolio_impact.toFixed(1)}%
                       </div>
                       <div className="exchange-label">{test.probability.toFixed(0)}% probability</div>
@@ -290,7 +290,7 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
                   </div>
                   
                   <div className="mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    <div className="text-xs text-yellow-400 font-bold flex items-center gap-1">
+                    <div className="text-xs text-blue-600 font-bold flex items-center gap-1">
                       Detailed Analysis <ArrowUpRight className="h-3 w-3" />
                     </div>
                   </div>
@@ -304,31 +304,31 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
             <h4 className="exchange-heading text-lg mb-6">Risk Alerts</h4>
             <div className="space-y-3">
               {riskAlerts.map((alert) => (
-                <div key={alert.id} className="insight-card hover-lift">
+                <div key={alert.id} className="insight-card">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start space-x-3">
                       {getSeverityIcon(alert.severity)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-white">{alert.title}</h5>
-                        <p className="text-sm text-white/80 mt-2 leading-relaxed">{alert.description}</p>
+                        <h5 className="font-bold text-gray-900">{alert.title}</h5>
+                        <p className="text-sm text-gray-700 mt-2 leading-relaxed">{alert.description}</p>
                       </div>
                     </div>
                     
                     <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                      alert.severity === 'high' ? 'exchange-badge negative' :
-                      alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                      'exchange-badge positive'
+                      alert.severity === 'high' ? 'bg-red-100 text-red-800 border-red-200' :
+                      alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      'bg-green-100 text-green-800 border-green-200'
                     }`}>
                       {alert.severity.toUpperCase()}
                     </div>
                   </div>
                   
-                  <div className="mt-4 p-4 exchange-card-dark rounded-lg">
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-yellow-400" />
-                      <span className="font-bold text-white">Recommendation:</span>
+                      <Target className="h-4 w-4 text-blue-600" />
+                      <span className="font-bold text-gray-900">Recommendation:</span>
                     </div>
-                    <p className="text-sm mt-1 font-medium text-white/80">{alert.recommendation}</p>
+                    <p className="text-sm mt-1 font-medium text-gray-700">{alert.recommendation}</p>
                   </div>
                 </div>
               ))}

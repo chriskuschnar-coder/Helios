@@ -210,7 +210,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
     <div className="exchange-card p-6 animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-gold rounded-xl flex items-center justify-center animate-gold-glow">
+          <div className="w-12 h-12 bg-gradient-blue rounded-xl flex items-center justify-center animate-blue-glow">
             <Brain className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -234,9 +234,9 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
           <button
             onClick={refreshData}
             disabled={loading}
-            className="exchange-button p-2 hover-lift"
+            className="exchange-button p-2"
           >
-            <RefreshCw className={`h-4 w-4 text-white/80 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -254,7 +254,7 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
             <h4 className="exchange-heading text-lg mb-6">Active Insights</h4>
             <div className="space-y-3">
               {insights.map((insight) => (
-                <div key={insight.id} className="insight-card hover-lift interactive-element">
+                <div key={insight.id} className="insight-card">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
@@ -294,23 +294,23 @@ export function AIInsights({ currentBalance }: { currentBalance: number }) {
             <h4 className="exchange-heading text-lg mb-6">Market Regime Analysis</h4>
             <div className="space-y-3">
               {marketConditions.map((condition, index) => (
-                <div key={index} className="metric-card hover-lift">
+                <div key={index} className="metric-card">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="font-bold text-white">{condition.condition}</h5>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-gradient">{condition.probability}%</div>
+                      <div className="text-xl font-bold text-blue">{condition.probability}%</div>
                       <div className="exchange-label">Probability</div>
                     </div>
                   </div>
                   
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-white/60 font-medium">Portfolio Impact:</span>
-                      <span className="ml-2 text-white font-semibold">{condition.impact_on_portfolio}</span>
+                      <span className="text-gray-600 font-medium">Portfolio Impact:</span>
+                      <span className="ml-2 text-gray-900 font-semibold">{condition.impact_on_portfolio}</span>
                     </div>
                     <div>
-                      <span className="text-white/60 font-medium">Recommended Action:</span>
-                      <span className="ml-2 font-bold text-gradient">{condition.recommended_action}</span>
+                      <span className="text-gray-600 font-medium">Recommended Action:</span>
+                      <span className="ml-2 font-bold text-blue">{condition.recommended_action}</span>
                     </div>
                   </div>
                 </div>
