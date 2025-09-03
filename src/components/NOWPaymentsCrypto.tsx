@@ -31,7 +31,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
   const cryptoOptions = [
     { code: 'btc', name: 'Bitcoin', symbol: '₿', color: 'text-orange-600' },
     { code: 'eth', name: 'Ethereum', symbol: 'Ξ', color: 'text-blue-600' },
-    { code: 'usdterc20', name: 'Tether USDT', symbol: '₮', color: 'text-green-600' },
+    { code: 'usdt', name: 'Tether USDT', symbol: '₮', color: 'text-green-600' },
     { code: 'usdc', name: 'USD Coin', symbol: '$', color: 'text-blue-500' }
   ]
 
@@ -329,7 +329,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
             onClick={() => {
               const blockchainUrl = selectedCrypto === 'btc' 
                 ? `https://blockstream.info/address/${invoice.pay_address}`
-                : selectedCrypto === 'eth' 
+                : selectedCrypto === 'usdt' || selectedCrypto === 'usdc'
                   ? `https://etherscan.io/address/${invoice.pay_address}`
                   : selectedCrypto === 'usdt' || selectedCrypto === 'usdc'
                     ? `https://etherscan.io/address/${invoice.pay_address}`
@@ -385,7 +385,7 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
             >
               <div className={`text-2xl mb-2 ${crypto.color}`}>{crypto.symbol}</div>
               <div className="font-medium text-gray-900 text-sm">{crypto.name}</div>
-              <div className="text-xs text-gray-600 uppercase">{crypto.code}</div>
+              <div className="text-xs text-gray-600 uppercase">{crypto.code === 'usdt' ? 'USDT' : crypto.code}</div>
             </button>
           ))}
         </div>
