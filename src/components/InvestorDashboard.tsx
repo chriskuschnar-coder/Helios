@@ -270,7 +270,9 @@ export function InvestorDashboard() {
 
         {/* Markets Tab Content */}
         {selectedTopTab === 'markets' && (
-          <MarketsTab />
+          <div className="space-y-8">
+            <MarketsTab />
+          </div>
         )}
 
         {/* Research Tab Content */}

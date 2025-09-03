@@ -14,6 +14,15 @@ export function CorrelationMatrix3D() {
   const [isRotating, setIsRotating] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const getCorrelationColor = (value: number) => {
+    const intensity = Math.abs(value)
+    if (value > 0.7) return `rgba(34, 197, 94, ${intensity})` // Strong positive - green
+    if (value > 0.3) return `rgba(59, 130, 246, ${intensity})` // Moderate positive - blue
+    if (value > -0.3) return `rgba(156, 163, 175, ${intensity})` // Neutral - gray
+    if (value > -0.7) return `rgba(249, 115, 22, ${intensity})` // Moderate negative - orange
+    return `rgba(239, 68, 68, ${intensity})` // Strong negative - red
+  }
+
   const generateCorrelationData = (): CorrelationData => {
     const assets = ['BTC', 'ETH', 'SPY', 'QQQ', 'GLD', 'TLT', 'DXY', 'OIL']
     const matrix: number[][] = []
@@ -92,15 +101,6 @@ export function CorrelationMatrix3D() {
 
     return () => clearInterval(interval)
   }, [isRotating])
-
-  const getCorrelationColor = (value: number) => {
-    const intensity = Math.abs(value)
-    if (value > 0.7) return `rgba(34, 197, 94, ${intensity})` // Strong positive - green
-    if (value > 0.3) return `rgba(59, 130, 246, ${intensity})` // Moderate positive - blue
-    if (value > -0.3) return `rgba(156, 163, 175, ${intensity})` // Neutral - gray
-    if (value > -0.7) return `rgba(249, 115, 22, ${intensity})` // Moderate negative - orange
-    return `rgba(239, 68, 68, ${intensity})` // Strong negative - red
-  }
 
   const resetRotation = () => {
     setRotation({ x: 0, y: 0 })
