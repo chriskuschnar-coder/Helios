@@ -17,9 +17,6 @@ export function ResearchTab() {
       {/* Institutional Flow Intelligence */}
       <InstitutionalFlowIntelligence />
       
-      {/* Factor Analysis */}
-      <FactorAnalysis />
-      
       {/* Quantitative Research Reports */}
       <QuantitativeReports />
     </div>
