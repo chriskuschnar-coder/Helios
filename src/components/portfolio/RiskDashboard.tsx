@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target } from 'lucide-react'
+import { Shield, AlertTriangle, TrendingDown, BarChart3, RefreshCw, Target, ArrowUpRight } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
 interface StressTestResult {
@@ -207,19 +207,19 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
   }
 
   return (
-    <div className="fintech-card animate-slide-up">
+    <div className="exchange-card p-6 animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-danger-gradient rounded-xl flex items-center justify-center pulse-glow">
+          <div className="w-12 h-12 bg-gradient-danger rounded-xl flex items-center justify-center animate-blue-glow">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 text-premium">Risk Management</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="exchange-heading text-xl">Risk Management</h3>
+            <p className="text-sm text-white/60">
               Real-time monitoring • Update #{updateCount} • {new Date().toLocaleTimeString()}
             </p>
             {lastRiskEvent && (
-              <p className="text-xs text-red-500 mt-1 font-medium">
+              <p className="text-xs text-red-400 mt-1 font-medium">
                 ⚠️ {lastRiskEvent}
               </p>
             )}
@@ -227,21 +227,21 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-            riskAlertLevel === 'high' ? 'bg-red-100 text-red-800' :
-            riskAlertLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
+          <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
+            riskAlertLevel === 'high' ? 'bg-red-100 text-red-800 border-red-200' :
+            riskAlertLevel === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+            'bg-green-100 text-green-800 border-green-200'
           }`}>
             {riskAlertLevel.toUpperCase()} RISK
           </div>
-          <div className="flex items-center space-x-2 glass px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-700 font-semibold">MONITORING</span>
+          <div className="live-indicator">
+            <div className="live-dot"></div>
+            <span className="live-text">MONITORING</span>
           </div>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="glass-button p-2 hover-lift"
+            className="exchange-button p-2"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -249,42 +249,42 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-gray-200 rounded-lg"></div>
-          <div className="h-32 bg-gray-200 rounded-lg"></div>
+        <div className="space-y-4">
+          <div className="h-32 exchange-loading rounded-lg"></div>
+          <div className="h-32 exchange-loading rounded-lg"></div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Stress Test Results */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Stress Test Results</h4>
+            <h4 className="exchange-heading text-lg mb-6">Stress Test Results</h4>
             <div className="space-y-3">
               {stressTests.map((test, index) => (
                 <div 
                   key={index} 
-                  className={`p-5 rounded-xl border-2 ${getSeverityColor(test.severity)} hover-lift interactive-element group transition-all duration-300 stagger-${(index % 3) + 1}`}
+                  className="insight-card group cursor-pointer"
                   onClick={() => handleStressTestClick(test)}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       {getSeverityIcon(test.severity)}
                       <div>
-                        <h5 className="font-bold group-hover:text-blue-900 text-premium">{test.scenario}</h5>
-                        <p className="text-sm opacity-80 font-medium">{test.hedge_suggestion}</p>
+                        <h5 className="font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">{test.scenario}</h5>
+                        <p className="text-sm text-white/70 font-medium">{test.hedge_suggestion}</p>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold animate-count-up ${test.portfolio_impact > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-xl font-bold metric-value ${test.portfolio_impact > 0 ? 'text-blue' : 'text-red-400'}`}>
                         {test.portfolio_impact > 0 ? '+' : ''}{test.portfolio_impact.toFixed(1)}%
                       </div>
-                      <div className="text-xs opacity-80 font-medium">{test.probability.toFixed(0)}% probability</div>
+                      <div className="exchange-label">{test.probability.toFixed(0)}% probability</div>
                     </div>
                   </div>
                   
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div className="exchange-progress">
                     <div 
-                      className={`h-3 rounded-full transition-all duration-1000 ${test.portfolio_impact > 0 ? 'bg-success-gradient' : 'bg-danger-gradient'}`}
+                      className={`exchange-progress-fill ${test.portfolio_impact > 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
                       style={{ width: `${Math.min(100, Math.abs(test.portfolio_impact) * 5)}%` }}
                     ></div>
                   </div>
@@ -301,34 +301,34 @@ export function RiskDashboard({ currentBalance }: { currentBalance: number }) {
 
           {/* Risk Alerts */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Risk Alerts</h4>
+            <h4 className="exchange-heading text-lg mb-6">Risk Alerts</h4>
             <div className="space-y-3">
               {riskAlerts.map((alert) => (
-                <div key={alert.id} className={`p-5 rounded-xl border-2 ${getSeverityColor(alert.severity)} hover-lift transition-all duration-300`}>
+                <div key={alert.id} className="insight-card">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start space-x-3">
                       {getSeverityIcon(alert.severity)}
                       <div className="flex-1">
-                        <h5 className="font-bold text-premium">{alert.title}</h5>
-                        <p className="text-sm opacity-90 mt-2 leading-relaxed">{alert.description}</p>
+                        <h5 className="font-bold text-gray-900">{alert.title}</h5>
+                        <p className="text-sm text-gray-700 mt-2 leading-relaxed">{alert.description}</p>
                       </div>
                     </div>
                     
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      alert.severity === 'high' ? 'bg-red-100 text-red-800' :
-                      alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                      alert.severity === 'high' ? 'bg-red-100 text-red-800 border-red-200' :
+                      alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      'bg-green-100 text-green-800 border-green-200'
                     }`}>
                       {alert.severity.toUpperCase()}
                     </div>
                   </div>
                   
-                  <div className="mt-4 p-3 glass rounded-lg">
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-2">
                       <Target className="h-4 w-4 text-blue-600" />
                       <span className="font-bold text-gray-900">Recommendation:</span>
                     </div>
-                    <p className="text-sm mt-1 font-medium">{alert.recommendation}</p>
+                    <p className="text-sm mt-1 font-medium text-gray-700">{alert.recommendation}</p>
                   </div>
                 </div>
               ))}
