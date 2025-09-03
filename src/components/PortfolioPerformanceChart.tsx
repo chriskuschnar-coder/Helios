@@ -78,8 +78,8 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
 
     // Generate realistic portfolio growth data over 12 months
     const months = [
-      'Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024',
-      'Jul 2024', 'Aug 2024', 'Sep 2024', 'Oct 2024', 'Nov 2024', 'Dec 2024', 'Jan 2025'
+      'Sep 2024', 'Oct 2024', 'Nov 2024', 'Dec 2024', 'Jan 2025', 'Feb 2025',
+      'Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025'
     ]
     
     // Starting from initial investment and growing to current balance
@@ -88,19 +88,19 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
     
     // Generate realistic growth curve with some volatility
     const portfolioValues = [
-      initialInvestment,      // Jan 2024 - Initial investment
-      258500,                 // Feb 2024 - +3.4%
-      267200,                 // Mar 2024 - +6.9%
-      275800,                 // Apr 2024 - +10.3%
-      269400,                 // May 2024 - +7.8% (small dip)
-      284600,                 // Jun 2024 - +13.8%
-      295200,                 // Jul 2024 - +18.1%
-      302800,                 // Aug 2024 - +21.1%
-      298500,                 // Sep 2024 - +19.4% (correction)
-      315700,                 // Oct 2024 - +26.3%
-      328900,                 // Nov 2024 - +31.6%
-      342100,                 // Dec 2024 - +36.8%
-      finalBalance           // Jan 2025 - Current
+      initialInvestment,      // Sep 2024 - Initial investment
+      258500,                 // Oct 2024 - +3.4%
+      267200,                 // Nov 2024 - +6.9%
+      275800,                 // Dec 2024 - +10.3%
+      269400,                 // Jan 2025 - +7.8% (small dip)
+      284600,                 // Feb 2025 - +13.8%
+      295200,                 // Mar 2025 - +18.1%
+      302800,                 // Apr 2025 - +21.1%
+      298500,                 // May 2025 - +19.4% (correction)
+      315700,                 // Jun 2025 - +26.3%
+      328900,                 // Jul 2025 - +31.6%
+      342100,                 // Aug 2025 - +36.8%
+      finalBalance           // Sep 2025 - Current (today)
     ]
     
     // Benchmark (S&P 500) for comparison - more modest growth
@@ -296,7 +296,7 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
             {bestMonth === 0 ? '0.0%' : `+${bestMonth}%`}
           </div>
           <div className="text-xs text-gray-500">
-            {bestMonth === 0 ? 'No trading yet' : 'October 2024'}
+            {bestMonth === 0 ? 'No trading yet' : 'June 2025'}
           </div>
         </div>
         
