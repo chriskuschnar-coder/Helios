@@ -967,9 +967,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   <ul className="text-sm text-gray-600 space-y-1">
                     <li>• <strong>Amount to send:</strong> 
                       {selectedCrypto === 'bitcoin' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 106250).toFixed(6)} BTC`}
-                      {selectedCrypto === 'ethereum' && \` ${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
-                      {selectedCrypto === 'usdt' && \` ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT (ERC-20 only)`}
-                      {selectedCrypto === 'solana' && \` ${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
+                      {selectedCrypto === 'ethereum' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 3195).toFixed(4)} ETH`}
+                      {selectedCrypto === 'usdt' && ` ${parseInt(investmentAmount.replace(/,/g, '')).toLocaleString()} USDT (ERC-20 only)`}
+                      {selectedCrypto === 'solana' && ` ${(parseInt(investmentAmount.replace(/,/g, '')) / 245).toFixed(2)} SOL`}
                     </li>
                     <li>• Processing time: 10-60 minutes after network confirmation</li>
                     <li>• Minimum 1 network confirmation required</li>
