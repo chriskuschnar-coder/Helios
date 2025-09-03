@@ -841,22 +841,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             </div>
           ) : showCryptoPayment ? (
             <div>
-              <div className="mb-6">
-                <button
-                  onClick={handleBackToFunding}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  ← Back to Payment Methods
-                </button>
-              </div>
-
-              {/* Safe NOWPayments Crypto Payment Integration */}
               {user?.id ? (
                 <NOWPaymentsCrypto 
                   amount={parseInt(investmentAmount.replace(/,/g, '') || '0')}
                   userId={user.id}
-                  onSuccess={(invoice) => {
-                    console.log('✅ NOWPayments payment initiated:', invoice.payment_id)
+                  onSuccess={(payment) => {
+                    console.log('✅ NOWPayments payment initiated:', payment)
                     // Payment will be confirmed via webhook
                     onClose()
                   }}
