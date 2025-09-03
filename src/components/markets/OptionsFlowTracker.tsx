@@ -102,17 +102,21 @@ export function OptionsFlowTracker() {
     assets.map(asset => ({ ...asset, category: category as any }))
   )
 
-    }
-    const traders = [
-      'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
-      'OPTIVER_GAMMA', 'VIRTU_EXECUTION', 'TWO_SIGMA_QUANT', 'RENAISSANCE_TECH',
-      'BRIDGEWATER_MACRO', 'MILLENNIUM_PARTNERS', 'DE_SHAW_SYSTEMATIC', 'AQR_CAPITAL'
-    ]
-    
-    const now = Date.now()
-    const timeVariation = (now % 100000) / 100000
-    
-                       symbol === 'AAPL' ? 225 : symbol === 'BTC' ? 106250 : 150 + Math.random() * 200
+  const generateOptionsFlow = (): OptionsFlow[] => {
+    return Array.from({ length: 25 }, (_, i) => {
+      const asset = allAssets[Math.floor(Math.random() * allAssets.length)]
+      const symbol = asset.symbol
+      const basePrice = asset.basePrice
+      const isCall = Math.random() > 0.45
+      
+      const traders = [
+        'GOLDMAN_DESK_7', 'CITADEL_ALPHA', 'JANE_STREET_MM', 'SUSQUEHANNA_FLOW', 
+        'OPTIVER_GAMMA', 'VIRTU_EXECUTION', 'TWO_SIGMA_QUANT', 'RENAISSANCE_TECH',
+        'BRIDGEWATER_MACRO', 'MILLENNIUM_PARTNERS', 'DE_SHAW_SYSTEMATIC', 'AQR_CAPITAL'
+      ]
+      
+      const now = Date.now()
+      const timeVariation = (now % 100000) / 100000
       
       const strike = basePrice * (0.95 + Math.random() * 0.1) // ±5% from current price
       const volume = Math.floor(500 + Math.random() * 5000 + (timeVariation * 2000))
