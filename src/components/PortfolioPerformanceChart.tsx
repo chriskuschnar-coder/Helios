@@ -254,80 +254,74 @@ export function PortfolioPerformanceChart({ currentBalance, className = '' }: Po
   const volatility = hasActivity ? 8.7 : 0
 
   return (
-    <div className={`chart-wrapper animate-fade-scale ${className}`}>
+    <div className={`bg-white rounded-xl shadow-lg border border-gray-100 p-6 ${className}`}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-primary-gradient rounded-xl flex items-center justify-center pulse-glow">
-            <BarChart3 className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+            <BarChart3 className="h-5 w-5 text-navy-600" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 text-premium">Performance Chart</h3>
-            <p className="text-sm text-gray-500">12-month growth trajectory</p>
+            <h3 className="font-serif text-lg font-bold text-navy-900">Portfolio Performance</h3>
+            <p className="text-sm text-gray-600">12-month growth trajectory</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Total Return</div>
-            <div className={`text-lg font-bold ${totalReturn === 0 ? 'text-gray-400' : 'text-green-600'} animate-count-up`}>
+            <div className="text-sm text-gray-600">Total Return</div>
+            <div className={`font-bold ${totalReturn === 0 ? 'text-gray-400' : 'text-green-600'}`}>
               {totalReturn === 0 ? '0.0%' : `+${totalReturn.toFixed(1)}%`}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500 uppercase tracking-wide">vs Benchmark</div>
-            <div className={`text-lg font-bold ${outperformance === 0 ? 'text-gray-400' : 'text-purple-600'} animate-count-up`}>
+            <div className="text-sm text-gray-600">vs Benchmark</div>
+            <div className={`font-bold ${outperformance === 0 ? 'text-gray-400' : 'text-navy-600'}`}>
               {outperformance === 0 ? '0.0%' : `+${outperformance.toFixed(1)}%`}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="h-80 mb-8 rounded-xl overflow-hidden">
+      <div className="h-80 mb-6">
         <Line data={chartData} options={options} />
       </div>
 
-      <div className="grid grid-cols-3 gap-8 pt-6 border-t border-gray-200">
+      <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-100">
         <div className="text-center">
-          <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bestMonth === 0 ? 'bg-gray-100' : 'bg-success-gradient'}`}>
-              <TrendingUp className={`h-5 w-5 ${bestMonth === 0 ? 'text-gray-400' : 'text-white'}`} />
-            </div>
+          <div className="flex items-center justify-center mb-2">
+            <TrendingUp className={`h-5 w-5 ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`} />
           </div>
-          <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Best Month</div>
-          <div className={`text-xl font-bold animate-count-up ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`}>
+          <div className="text-sm text-gray-600 mb-1">Best Month</div>
+          <div className={`font-bold ${bestMonth === 0 ? 'text-gray-400' : 'text-green-600'}`}>
             {bestMonth === 0 ? '0.0%' : `+${bestMonth}%`}
           </div>
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-xs text-gray-500">
             {bestMonth === 0 ? 'No trading yet' : 'June 2025'}
           </div>
         </div>
         
         <div className="text-center">
-          <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${avgMonthly === 0 ? 'bg-gray-100' : 'bg-primary-gradient'}`}>
-              <Calendar className={`h-5 w-5 ${avgMonthly === 0 ? 'text-gray-400' : 'text-white'}`} />
-            </div>
+          <div className="flex items-center justify-center mb-2">
+            <Calendar className={`h-5 w-5 ${avgMonthly === 0 ? 'text-gray-400' : 'text-navy-600'}`} />
           </div>
-          <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Avg Monthly</div>
-          <div className={`text-xl font-bold animate-count-up ${avgMonthly === 0 ? 'text-gray-400' : 'text-purple-600'}`}>
+          <div className="text-sm text-gray-600 mb-1">Avg Monthly</div>
+          <div className={`font-bold ${avgMonthly === 0 ? 'text-gray-400' : 'text-navy-900'}`}>
             {avgMonthly === 0 ? '0.0%' : `+${avgMonthly}%`}
           </div>
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-xs text-gray-500">
             {avgMonthly === 0 ? 'No trading yet' : 'Consistent growth'}
           </div>
         </div>
         
         <div className="text-center">
-          <div className="flex items-center justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${volatility === 0 ? 'bg-gray-100' : 'bg-gradient-to-r from-yellow-400 to-orange-500'}`}>
-              <BarChart3 className={`h-5 w-5 ${volatility === 0 ? 'text-gray-400' : 'text-white'}`} />
-            </div>
+          <div className="flex items-center justify-center mb-2">
+            <BarChart3 className={`h-5 w-5 ${volatility === 0 ? 'text-gray-400' : 'text-gold-600'}`} />
           </div>
-          <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Volatility</div>
-          <div className={`text-xl font-bold animate-count-up ${volatility === 0 ? 'text-gray-400' : 'text-orange-500'}`}>
+          <div className="text-sm text-gray-600 mb-1">Volatility</div>
+          <div className={`font-bold ${volatility === 0 ? 'text-gray-400' : 'text-gold-600'}`}>
             {volatility === 0 ? '0.0%' : `${volatility}%`}
           </div>
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-xs text-gray-500">
             {volatility === 0 ? 'No trading yet' : 'Annualized'}
           </div>
         </div>

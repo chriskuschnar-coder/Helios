@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, Calendar, BarChart3, Target, Award, Activity, RefreshCw, ArrowUpRight } from 'lucide-react'
+import { TrendingUp, Calendar, BarChart3, Target, Award, Activity, RefreshCw } from 'lucide-react'
 import { MetricDetailModal } from './MetricDetailModal'
 
 interface PerformanceData {
@@ -351,32 +351,32 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
   const periods = ['1M', '3M', '6M', '1Y', 'YTD']
 
   return (
-    <div className="fintech-card animate-slide-up">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-success-gradient rounded-xl flex items-center justify-center pulse-glow">
-            <Award className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <Award className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 text-premium">Performance Analytics</h3>
-            <p className="text-sm text-gray-500">
-              Real-time analysis • Last update: {lastNewsUpdate.toLocaleTimeString()}
-            </p>
-            <p className="text-xs text-blue-600 mt-1 font-medium">
-              Update #{updateCount}
+            <h3 className="font-serif text-lg font-bold text-navy-900">Performance Metrics</h3>
+            <p className="text-sm text-gray-600">
+              Live updates every 15s • #{updateCount} • {lastNewsUpdate.toLocaleTimeString()}
             </p>
           </div>
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 glass px-3 py-1 rounded-full">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-700 font-semibold">LIVE</span>
-          </div>
+          {marketEvents.length > 0 && (
+            <div className="hidden md:block text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full max-w-xs truncate">
+              📰 {marketEvents[0]}
+            </div>
+          )}
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-xs text-green-600 font-medium">LIVE</span>
           <button
             onClick={refreshData}
             disabled={loading}
-            className="glass-button p-2 hover-lift"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -384,15 +384,15 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
       </div>
 
       {/* Period Selector */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-wrap gap-2 mb-6">
         {periods.map(period => (
           <button
             key={period}
             onClick={() => setSelectedPeriod(period as any)}
-            className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 interactive-element ${
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
               selectedPeriod === period
-                ? 'bg-primary-gradient text-white shadow-medium'
-                : 'glass hover:bg-white/20'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {period}
@@ -407,43 +407,48 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
       ) : (
         <div className="space-y-6">
           {/* Performance Metrics Grid */}
-          <div className="metric-grid">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {performanceData.map((metric, index) => (
               <div 
                 key={index} 
-                className={`metric-card interactive-element group stagger-${(index % 3) + 1}`}
+                className="bg-gray-50 rounded-lg p-4 hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all cursor-pointer group"
                 onClick={() => handleMetricClick(metric.metric, metric)}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="metric-label group-hover:text-blue-600">{metric.metric}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">{metric.metric}</span>
                   {getTrendIcon(metric.trend)}
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
-                    <div className="metric-value">
+                    <div className="text-lg font-bold text-gray-900">
                       {metric.metric.includes('Rate') || metric.metric.includes('Return') || metric.metric.includes('Drawdown') || metric.metric.includes('Volatility') 
                         ? `${metric.current.toFixed(1)}%` 
                         : metric.current.toFixed(2)}
                     </div>
+                    <div className="text-xs text-gray-600">Portfolio</div>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-500">
-                      vs {metric.metric.includes('Rate') || metric.metric.includes('Return') || metric.metric.includes('Drawdown') || metric.metric.includes('Volatility') 
-                        ? `${metric.benchmark.toFixed(1)}%` 
-                        : metric.benchmark.toFixed(2)}
+                    <div>
+                      <div className="text-sm text-gray-600">
+                        Benchmark: {metric.metric.includes('Rate') || metric.metric.includes('Return') || metric.metric.includes('Drawdown') || metric.metric.includes('Volatility') 
+                          ? `${metric.benchmark.toFixed(1)}%` 
+                          : metric.benchmark.toFixed(2)}
+                      </div>
                     </div>
-                    <div className={`percentage-badge ${metric.percentile > 75 ? 'positive' : 'negative'}`}>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPercentileColor(metric.percentile)}`}>
                       {metric.percentile.toFixed(0)}th %ile
                     </div>
                   </div>
                 </div>
                 
-                <div className="mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                  <div className="text-xs text-blue-600 font-semibold flex items-center gap-1">
-                    View Details <ArrowUpRight className="h-3 w-3" />
-                  </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  {metric.description}
+                </div>
+                
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-xs text-blue-600 font-medium">Click for details →</div>
                 </div>
               </div>
             ))}
@@ -451,30 +456,30 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
 
           {/* Time Series Performance */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Period Analysis</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Period-by-Period Performance</h4>
             <div className="space-y-3">
               {timeSeriesData.map((data, index) => (
-                <div key={index} className={`flex items-center justify-between p-4 glass rounded-xl hover-lift stagger-${(index % 3) + 1}`}>
-                  <div className="font-semibold text-gray-900">{data.period}</div>
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="font-medium text-gray-900">{data.period}</div>
                   
                   <div className="flex items-center space-x-6">
                     <div className="text-right">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide">Portfolio</div>
-                      <div className={`font-bold text-sm ${data.portfolio > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className="text-sm text-gray-600">Portfolio</div>
+                      <div className={`font-medium ${data.portfolio > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {data.portfolio > 0 ? '+' : ''}{data.portfolio.toFixed(1)}%
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide">Benchmark</div>
-                      <div className={`font-bold text-sm ${data.benchmark > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className="text-sm text-gray-600">Benchmark</div>
+                      <div className={`font-medium ${data.benchmark > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {data.benchmark > 0 ? '+' : ''}{data.benchmark.toFixed(1)}%
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide">Alpha</div>
-                      <div className={`font-bold text-sm ${data.alpha > 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                      <div className="text-sm text-gray-600">Alpha</div>
+                      <div className={`font-bold ${data.alpha > 0 ? 'text-navy-600' : 'text-red-600'}`}>
                         {data.alpha > 0 ? '+' : ''}{data.alpha.toFixed(1)}%
                       </div>
                     </div>
@@ -485,44 +490,47 @@ export function PerformanceMetrics({ currentBalance }: { currentBalance: number 
           </div>
 
           {/* Performance Summary */}
-          <div className="glass rounded-xl p-6 border-gradient">
-            <h4 className="text-lg font-bold text-gray-900 mb-6 text-premium">Performance Summary ({selectedPeriod})</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-navy-50 rounded-lg p-6">
+            <h4 className="font-medium text-navy-900 mb-4">Performance Summary ({selectedPeriod})</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gradient animate-count-up">
+                <div className="text-2xl font-bold text-navy-900">
                   +{timeSeriesData.reduce((sum, d) => sum + d.alpha, 0).toFixed(1)}%
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Total Alpha</div>
+                <div className="text-sm text-navy-700">Total Alpha</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gradient animate-count-up">
+                <div className="text-2xl font-bold text-navy-900">
                   {(timeSeriesData.filter(d => d.alpha > 0).length / timeSeriesData.length * 100).toFixed(0)}%
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Alpha Periods</div>
+                <div className="text-sm text-navy-700">Alpha Periods</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gradient animate-count-up">
+                <div className="text-2xl font-bold text-navy-900">
                   {Math.max(...timeSeriesData.map(d => d.alpha)).toFixed(1)}%
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Best Period</div>
+                <div className="text-sm text-navy-700">Best Period</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gradient animate-count-up">
+                <div className="text-2xl font-bold text-navy-900">
                   {(timeSeriesData.reduce((sum, d) => sum + d.alpha, 0) / timeSeriesData.length).toFixed(1)}%
                 </div>
-                <div className="text-sm text-gray-600 font-medium">Avg Alpha</div>
+                <div className="text-sm text-navy-700">Avg Alpha</div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {showMetricModal && selectedMetric && (
-        <MetricDetailModal
-          metric={selectedMetric}
-          onClose={() => setShowMetricModal(false)}
-        />
-      )}
+      
+      {/* Metric Detail Modal */}
+      <MetricDetailModal
+        metric={selectedMetric}
+        isOpen={showMetricModal}
+        onClose={() => {
+          setShowMetricModal(false)
+          setSelectedMetric(null)
+        }}
+      />
     </div>
   )
 }
