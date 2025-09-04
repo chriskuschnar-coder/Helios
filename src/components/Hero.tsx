@@ -1,4 +1,4 @@
-import { ArrowRight, Play, TrendingUp, Zap, Eye, Brain, Shield } from 'lucide-react'
+import { ArrowRight, Play, TrendingUp } from 'lucide-react'
 
 export function Hero() {
   return (
@@ -16,60 +16,33 @@ export function Hero() {
           <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
         {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-70"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-5xl mx-auto">
-          {/* Opening Hook */}
-          <div className="mb-8">
-            <p className="text-xl md:text-2xl text-gray-300 mb-4 leading-relaxed">
-              Every day, <span className="text-gold-400 font-bold">$7.5 trillion</span> moves through global markets.
-            </p>
-            <p className="text-lg md:text-xl text-gray-300 mb-6">
-              The firms capturing this value aren't smarter than you - 
-              <span className="text-white font-semibold"> they just have better machines.</span>
-            </p>
-            <p className="text-lg md:text-xl text-gray-300">
-              Until now, that technology cost <span className="text-red-400 font-bold">$100 million</span> to build.
-            </p>
-          </div>
-
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight">
-            We built it for you.
+        <div className="max-w-4xl mx-auto">
+          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            Quantitative Excellence
           </h1>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-            <button className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-10 py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center space-x-3 hover:scale-105 shadow-2xl">
-              <Zap className="h-6 w-6" />
-              <span>Access HELIOS</span>
-              <ArrowRight className="h-6 w-6" />
+          <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Advanced mathematical models and systematic strategies delivering 
+            superior risk-adjusted returns for sophisticated investors through 
+            institutional-grade quantitative research.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <button className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2 hover:scale-105 shadow-lg">
+              <TrendingUp className="h-5 w-5" />
+              <span>View Performance</span>
+              <ArrowRight className="h-5 w-5" />
             </button>
             
-            <button className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-10 py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center space-x-3">
-              <Play className="h-6 w-6" />
-              <span>See The Machine</span>
+            <button className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2">
+              <Play className="h-5 w-5" />
+              <span>Learn More</span>
             </button>
-          </div>
-
-          {/* Key Stats */}
-          <div className="grid md:grid-cols-3 gap-8 mt-16">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-gold-400 mb-2">250K+</div>
-              <div className="text-white font-medium">Events/Second</div>
-              <div className="text-gray-400 text-sm">Market data processed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-gold-400 mb-2">14</div>
-              <div className="text-white font-medium">AI Systems</div>
-              <div className="text-gray-400 text-sm">Working in parallel</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-gold-400 mb-2">24/7</div>
-              <div className="text-white font-medium">Autonomous</div>
-              <div className="text-gray-400 text-sm">Never sleeps</div>
-            </div>
           </div>
         </div>
       </div>
