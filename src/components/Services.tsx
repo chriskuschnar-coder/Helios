@@ -1,33 +1,6 @@
 import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp } from 'lucide-react'
 
 export function Services() {
-  const services = [
-    {
-      icon: Brain,
-      title: 'Alpha Fund',
-      description: 'Quantitative momentum strategies with 35-45% annual target returns and <10% volatility.',
-      features: ['$250K minimum', '2% management fee', '20% performance fee', '6-month lock-up']
-    },
-    {
-      icon: Shield,
-      title: 'Market Neutral',
-      description: 'Statistical arbitrage and relative value strategies for consistent risk-adjusted returns.',
-      features: ['15-20% annual target', '3% max drawdown', 'Family office focused', 'Quarterly liquidity']
-    },
-    {
-      icon: TrendingUp,
-      title: 'Momentum Portfolio',
-      description: 'High-conviction quantitative signals with up to 3x leverage during optimal conditions.',
-      features: ['60-80% annual target', '15-20% volatility', 'Sophisticated investors', 'Dynamic leverage']
-    },
-    {
-      icon: Zap,
-      title: 'Risk Management',
-      description: 'Advanced portfolio construction using modern portfolio theory and multi-factor models.',
-      features: ['VaR modeling', 'Stress testing', 'Factor attribution', 'Real-time monitoring']
-    }
-  ]
-
   return (
     <>
       {/* Investment Products Section */}
@@ -199,29 +172,6 @@ export function Services() {
                       </div>
                     </li>
                   </ul>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
-                  <div className="text-gray-600">Events/Second</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">99.97%</div>
-                  <div className="text-gray-600">System Uptime</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
-                  <div className="text-gray-600">Daily Data</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">500+</div>
-                  <div className="text-gray-600">Real-time Factors</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </>
