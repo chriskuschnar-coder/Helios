@@ -542,24 +542,24 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
 
                 {/* Preset Amount Buttons */}
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
-                  {[5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000].map((preset) => (
+                <div className="grid grid-cols-5 gap-3 mb-8">
+                  {presetAmounts.map((preset) => (
                     <button
                       key={preset}
                       onClick={() => handlePresetAmountSelect(preset)}
-                      className="py-3 px-2 border-2 border-gray-200 rounded-xl text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all text-sm"
+                      className="py-4 px-4 border-2 border-gray-200 rounded-xl text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
-                      ${preset >= 1000000 ? (preset / 1000000).toFixed(preset % 1000000 === 0 ? 0 : 1) + 'M' : preset.toLocaleString()}
+                      ${preset.toLocaleString()}
                     </button>
                   ))}
                   <button
                     onClick={() => {
-                      const customAmount = prompt('Enter custom amount (minimum $5,000):');
-                      if (customAmount && !isNaN(parseInt(customAmount)) && parseInt(customAmount) >= 5000) {
+                      const customAmount = prompt('Enter custom amount:');
+                      if (customAmount && !isNaN(parseInt(customAmount))) {
                         handlePresetAmountSelect(parseInt(customAmount));
                       }
                     }}
-                    className="py-3 px-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all text-sm"
+                    className="py-4 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all"
                   >
                     Custom
                   </button>

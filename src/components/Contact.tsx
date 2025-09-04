@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock } from 'lucide-react'
 
-export default function Contact() {
+export function Contact() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    company: '',
     message: ''
   })
 
@@ -22,118 +23,167 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="py-20 bg-white">
+    <section id="contact" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
             Get in Touch
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Ready to discuss your investment goals? Contact our team for a confidential consultation.
+            Ready to discuss your investment goals? Our team is here to provide personalized 
+            guidance and answer any questions about our strategies.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
+          {/* Contact Information */}
           <div>
-            <h3 className="font-serif text-2xl font-bold text-navy-900 mb-6">
+            <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8">
               Contact Information
             </h3>
             
             <div className="space-y-6">
-              <div className="flex items-start">
-                <Mail className="w-6 h-6 text-gold-600 mt-1 mr-4" />
+              <div className="flex items-start space-x-4">
+                <div className="bg-navy-100 p-3 rounded-lg">
+                  <MapPin className="w-6 h-6 text-navy-600" />
+                </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Email</h4>
-                  <p className="text-gray-600">contact@globalmarketsconsulting.com</p>
+                  <h4 className="font-semibold text-navy-900 mb-1">Office Address</h4>
+                  <p className="text-gray-600">
+                    200 South Biscayne Boulevard<br />
+                    Suite 2800<br />
+                    Miami, FL 33131
+                  </p>
                 </div>
               </div>
-              
-              <div className="flex items-start">
-                <Phone className="w-6 h-6 text-gold-600 mt-1 mr-4" />
+
+              <div className="flex items-start space-x-4">
+                <div className="bg-navy-100 p-3 rounded-lg">
+                  <Phone className="w-6 h-6 text-navy-600" />
+                </div>
                 <div>
                   <h4 className="font-semibold text-navy-900 mb-1">Phone</h4>
-                  <p className="text-gray-600">+1 (555) 123-4567</p>
+                  <p className="text-gray-600">(305) 555-0123</p>
                 </div>
               </div>
-              
-              <div className="flex items-start">
-                <MapPin className="w-6 h-6 text-gold-600 mt-1 mr-4" />
+
+              <div className="flex items-start space-x-4">
+                <div className="bg-navy-100 p-3 rounded-lg">
+                  <Mail className="w-6 h-6 text-navy-600" />
+                </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Office</h4>
+                  <h4 className="font-semibold text-navy-900 mb-1">Email</h4>
+                  <p className="text-gray-600">info@globalmarket.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="bg-navy-100 p-3 rounded-lg">
+                  <Clock className="w-6 h-6 text-navy-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-navy-900 mb-1">Business Hours</h4>
                   <p className="text-gray-600">
-                    123 Financial District<br />
-                    New York, NY 10004
+                    Monday - Friday: 9:00 AM - 6:00 PM EST<br />
+                    Saturday: 10:00 AM - 2:00 PM EST
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 p-6 bg-gray-50 rounded-xl">
-              <h4 className="font-semibold text-navy-900 mb-3">Office Hours</h4>
-              <div className="space-y-2 text-gray-600">
-                <p>Monday - Friday: 8:00 AM - 6:00 PM EST</p>
-                <p>Saturday: 9:00 AM - 2:00 PM EST</p>
-                <p>Sunday: Closed</p>
-              </div>
+            <div className="mt-8 p-6 bg-navy-50 rounded-xl">
+              <h4 className="font-semibold text-navy-900 mb-2">Investment Minimums</h4>
+              <p className="text-gray-600 text-sm">
+                Our strategies are designed for qualified investors with minimum investments 
+                starting at $100,000. Please contact us to discuss your specific requirements 
+                and investment objectives.
+              </p>
             </div>
           </div>
 
+          {/* Contact Form */}
           <div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                />
-              </div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 className="font-serif text-2xl font-bold text-navy-900 mb-6">
+                Schedule a Consultation
+              </h3>
               
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                    Company/Organization
+                  </label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
+                    placeholder="Your company name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    Message *
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    required
+                    rows={4}
+                    value={formData.message}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent resize-none"
+                    placeholder="Tell us about your investment goals and how we can help..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-navy-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-navy-700 transition-colors duration-200"
+                >
+                  Send Message
+                </button>
+              </form>
+
+              <div className="mt-6 text-center text-sm text-gray-500">
+                We typically respond within 24 hours during business days.
               </div>
-              
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  rows={5}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                  placeholder="Tell us about your investment goals and how we can help..."
-                />
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-gold-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gold-700 transition-colors duration-200 flex items-center justify-center"
-              >
-                <Send className="w-5 h-5 mr-2" />
-                Send Message
-              </button>
-            </form>
+            </div>
           </div>
         </div>
       </div>
