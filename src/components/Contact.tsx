@@ -66,25 +66,22 @@ export function Contact() {
           muted
           loop
           playsInline
-          onLoadedData={handleVideoLoad}
-          onError={handleVideoError}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ 
-            opacity: videoLoaded && !videoError ? 1 : 0,
-            transition: 'opacity 1s ease-in-out'
+          className="absolute inset-0 w-full h-full object-cover opacity-80"
+          onError={(e) => {
+            console.log('Video failed to load, using fallback background')
+            e.currentTarget.style.display = 'none'
           }}
         >
-          <source src="https://videos.pexels.com/video-files/6345016/6345016-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/6345016/6345016-sd_640_360_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-hd_1920_1080_30fps.mp4" type="video/mp4" />
         </video>
         
-        {/* Fallback background if video fails */}
-        {(videoError || !videoLoaded) && (
-          <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-gray-900"></div>
-        )}
+        {/* Enhanced fallback background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-blue-900 to-indigo-900"></div>
         
-        {/* Dark overlay for text readability - always present */}
-        <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
+        {/* Animated gradient overlay for visual interest */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40 z-10"></div>
       </div>
 
       {/* Content */}
