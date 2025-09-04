@@ -31,24 +31,29 @@ export function Services() {
   return (
     <>
       {/* Investment Products Section */}
-      <section id="services" className="relative bg-gradient-to-br from-navy-900 via-slate-800 to-gray-900 overflow-hidden">
-        {/* Professional Static Background */}
+      <section id="services" className="relative bg-white overflow-hidden">
+        {/* Video Background */}
         <div className="absolute inset-0 w-full h-full">
-          {/* Animated geometric patterns */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-20 w-32 h-32 border border-white rounded-full animate-pulse"></div>
-            <div className="absolute top-40 right-32 w-24 h-24 border border-white rounded-lg rotate-45 animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-32 left-32 w-28 h-28 border border-white rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute bottom-20 right-20 w-20 h-20 border border-white rounded-lg rotate-12 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-          </div>
-          
-          {/* Professional overlay gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40"></div>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              const errorCode = e.currentTarget.error?.code
+              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+            }}
+          >
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="relative z-10 text-center mb-16">
+          <div className="text-center mb-16">
             <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
