@@ -14,8 +14,24 @@ export function Performance() {
   const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
 
   return (
-    <section id="performance" className="py-20 bg-navy-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="performance" className="relative py-20 bg-navy-900 overflow-hidden">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="https://videos.pexels.com/video-files/29828545/12578739_1920_1080_30fps.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-navy-900 bg-opacity-80"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             Proven Track Record of Investment Success
@@ -26,7 +42,7 @@ export function Performance() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 lg:p-12">
+        <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-8 lg:p-12 border border-white border-opacity-20">
           <div className="flex justify-center mb-8">
             <div className="bg-gray-100 rounded-lg p-1">
               {periods.map((period) => (
@@ -80,7 +96,7 @@ export function Performance() {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-6">
+          <div className="bg-gray-50 bg-opacity-80 backdrop-blur-sm rounded-xl p-6 border border-gray-200 border-opacity-50">
             <h4 className="font-serif text-lg font-bold text-navy-900 mb-4">
               Multi-Account Performance Summary
             </h4>
@@ -106,7 +122,7 @@ export function Performance() {
         </div>
 
         {/* Quantitative Metrics */}
-        <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
+        <div className="mt-16 bg-white bg-opacity-95 backdrop-blur-sm border border-white border-opacity-30 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
             Professional Performance Metrics
           </h3>
