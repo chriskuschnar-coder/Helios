@@ -1,102 +1,97 @@
-export default function About() {
+import { Award, Globe, Users, Target, Brain, Zap, Shield, BarChart3 } from 'lucide-react'
+
+export function About() {
+  const features = [
+    {
+      icon: Brain,
+      title: 'Quantitative Architecture',
+      description: '$2.8M investment in proprietary quantitative research and infrastructure development.'
+    },
+    {
+      icon: Zap,
+      title: 'Market Microstructure',
+      description: 'Processing 50,000+ tick-level events per second across primary liquidity venues.'
+    },
+    {
+      icon: Shield,
+      title: 'Risk Management',
+      description: 'Advanced VaR modeling with Monte Carlo simulation and real-time stress testing.'
+    },
+    {
+      icon: BarChart3,
+      title: 'Proven Performance',
+      description: 'Consistent profitability across 4 institutional accounts with 287% average growth.'
+    }
+  ]
+
   return (
-    <section id="about" className="relative py-20 bg-gray-50 overflow-hidden">
-      {/* Background Video */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-white bg-opacity-85"></div>
-      </div>
-      
+    <section id="about" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative z-10 text-center mb-16">
+        <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-            About Global Market Consulting
+            Proven Investment Excellence Through Advanced Analytics
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A premier investment management firm delivering institutional-grade strategies 
-            and risk management for sophisticated investors seeking consistent alpha generation.
+            Led by a team of seasoned professionals with backgrounds in finance, mathematics, and technology, 
+            we combine academic research with practical market insights to drive investment success. 
+            Our proven track record demonstrates consistent value creation for our clients.
           </p>
         </div>
 
-        <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h3 className="font-serif text-2xl font-bold text-navy-900 mb-6">
-              Our Investment Philosophy
-            </h3>
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-navy-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-navy-900 mb-2">Systematic Approach</h4>
-                  <p className="text-gray-600">
-                    Our quantitative models analyze thousands of data points to identify 
-                    market inefficiencies and generate consistent alpha across market cycles.
-                  </p>
-                </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          {features.map((feature, index) => (
+            <div key={index} className="text-center group">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-navy-100 rounded-full mb-4 group-hover:bg-navy-200 transition-colors duration-200">
+                <feature.icon className="h-8 w-8 text-navy-600" />
               </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-navy-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-navy-900 mb-2">Risk Management</h4>
-                  <p className="text-gray-600">
-                    Advanced risk controls and position sizing ensure capital preservation 
-                    while maximizing risk-adjusted returns through all market conditions.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-navy-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-navy-900 mb-2">Institutional Execution</h4>
-                  <p className="text-gray-600">
-                    Professional-grade execution and reporting provide transparency 
-                    and accountability that institutional investors demand.
-                  </p>
-                </div>
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
+                {feature.title}
+              </h3>
+              <p className="text-gray-600">
+                {feature.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-navy-50 rounded-2xl p-8 lg:p-12">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-6">
+                Advanced Quantitative Models
+              </h3>
+              <div className="space-y-4 text-gray-700">
+                <p>
+                  <strong>VPIN Implementation:</strong> Proprietary Volume-Synchronized Probability 
+                  of Informed Trading framework with machine learning enhancement calibrated on 
+                  119,000+ trade samples.
+                </p>
+                <p>
+                  <strong>Hidden Markov Models:</strong> Four-state regime detection with Gaussian 
+                  emissions for real-time market state identification and probabilistic forecasting.
+                </p>
+                <p>
+                  <strong>Statistical Arbitrage:</strong> Ornstein-Uhlenbeck process calibration 
+                  with cointegration testing via Johansen methodology for pairs trading strategies.
+                </p>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h3 className="font-serif text-xl font-bold text-navy-900 mb-6">
-              Firm Overview
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                <span className="text-gray-600">Assets Under Management</span>
-                <span className="font-bold text-navy-900">$4.2M</span>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg p-6 text-center">
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
+                <div className="text-gray-600">Events/Second</div>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                <span className="text-gray-600">Inception Date</span>
-                <span className="font-bold text-navy-900">January 2023</span>
+              <div className="bg-white rounded-lg p-6 text-center">
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">99.97%</div>
+                <div className="text-gray-600">System Uptime</div>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                <span className="text-gray-600">Investment Minimum</span>
-                <span className="font-bold text-navy-900">$100,000</span>
+              <div className="bg-white rounded-lg p-6 text-center">
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
+                <div className="text-gray-600">Daily Data</div>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                <span className="text-gray-600">Management Fee</span>
-                <span className="font-bold text-navy-900">2.0%</span>
-              </div>
-              <div className="flex justify-between items-center py-3">
-                <span className="text-gray-600">Performance Fee</span>
-                <span className="font-bold text-navy-900">20%</span>
+              <div className="bg-white rounded-lg p-6 text-center">
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">500+</div>
+                <div className="text-gray-600">Real-time Factors</div>
               </div>
             </div>
           </div>
