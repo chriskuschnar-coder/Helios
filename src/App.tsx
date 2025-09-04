@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { AuthProvider, useAuth } from './components/auth/AuthProvider'
+import { StripeElementsProvider } from './components/StripeElementsProvider'
+import { LoginForm } from './components/auth/LoginForm'
+import { SignupForm } from './components/auth/SignupForm'
+import { DashboardSelector } from './components/DashboardSelector'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { About } from './components/About'
@@ -6,104 +11,85 @@ import { Services } from './components/Services'
 import { Performance } from './components/Performance'
 import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
-import { LoginForm } from './components/auth/LoginForm'
-import { SignupForm } from './components/auth/SignupForm'
-import { AuthProvider, useAuth } from './components/auth/AuthProvider'
-import { DashboardSelector } from './components/DashboardSelector'
+import { SuccessPage } from './components/SuccessPage'
+import { CancelPage } from './components/CancelPage'
 import { FundingSuccessPage } from './components/FundingSuccessPage'
 import { FundingCancelledPage } from './components/FundingCancelledPage'
-import { CancelPage } from './components/CancelPage'
-import { SuccessPage } from './components/SuccessPage'
+import { EnvCheck } from './components/EnvCheck'
 
 function AppContent() {
   const { user, loading } = useAuth()
-  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing')
+  const [showLogin, setShowLogin] = useState(false)
+  const [showSignup, setShowSignup] = useState(false)
 
-  // Check URL for special pages
-  useEffect(() => {
-    const path = window.location.pathname
-    const search = window.location.search
-    
-    if (path === '/funding-success' || search.includes('session_id')) {
-      // Don't change view - let the success page handle this
-      return
-    }
-    
-    if (path === '/funding-cancelled' || path === '/cancel') {
-      // Don't change view - let the cancel page handle this
-      return
-    }
-    
-    if (path === '/success') {
-      // Don't change view - let the success page handle this
-      return
-    }
-  }, [])
+  // Check URL for success/cancel pages
+  const urlParams = new URLSearchParams(window.location.search)
+  const isSuccessPage = urlParams.has('session_id') || window.location.pathname === '/success'
+  const isCancelPage = window.location.pathname === '/cancel'
+  const isFundingSuccess = window.location.pathname === '/funding-success'
+  const isFundingCancelled = window.location.pathname === '/funding-cancelled'
 
-  // Handle special pages based on URL
-  const path = window.location.pathname
-  const search = window.location.search
-  
-  if (path === '/funding-success' || search.includes('session_id')) {
-    return <FundingSuccessPage />
-  }
-  
-  if (path === '/funding-cancelled' || path === '/cancel') {
-    return <FundingCancelledPage />
-  }
-  
-  if (path === '/success') {
-    return <SuccessPage />
-  }
-
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">Checking your session</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
   }
 
-  // If user is authenticated, show dashboard
+  // Show success/cancel pages
+  if (isSuccessPage) return <SuccessPage />
+  if (isCancelPage) return <CancelPage />
+  if (isFundingSuccess) return <FundingSuccessPage />
+  if (isFundingCancelled) return <FundingCancelledPage />
+
+  // Show dashboard if user is logged in
   if (user) {
     return <DashboardSelector />
   }
 
-  // Show login form
-  if (currentView === 'login') {
+  // Show login/signup forms
+  if (showLogin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <LoginForm
-          onSuccess={() => setCurrentView('dashboard')}
-          onSwitchToSignup={() => setCurrentView('signup')}
+        <LoginForm 
+          onSuccess={() => {
+            setShowLogin(false)
+            // User state will update automatically via AuthProvider
+          }}
+          onSwitchToSignup={() => {
+            setShowLogin(false)
+            setShowSignup(true)
+          }}
         />
       </div>
     )
   }
 
-  // Show signup form
-  if (currentView === 'signup') {
+  if (showSignup) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <SignupForm
-          onSuccess={() => setCurrentView('dashboard')}
-          onSwitchToLogin={() => setCurrentView('login')}
+        <SignupForm 
+          onSuccess={() => {
+            setShowSignup(false)
+            // User state will update automatically via AuthProvider
+          }}
+          onSwitchToLogin={() => {
+            setShowSignup(false)
+            setShowLogin(true)
+          }}
         />
       </div>
     )
   }
 
-  // Show landing page
+  // Show public website
   return (
     <div className="min-h-screen bg-white">
-      <Header onNavigateToLogin={() => setCurrentView('login')} />
+      <Header onNavigateToLogin={() => setShowLogin(true)} />
       <Hero />
       <About />
       <Services />
@@ -116,9 +102,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <StripeElementsProvider>
+      <AuthProvider>
+        <EnvCheck />
+        <AppContent />
+      </AuthProvider>
+    </StripeElementsProvider>
   )
 }
 

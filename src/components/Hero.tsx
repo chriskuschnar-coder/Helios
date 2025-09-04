@@ -1,130 +1,98 @@
-import { useState } from 'react'
+import { ArrowRight, Shield, TrendingUp, Users, BarChart3 } from 'lucide-react'
 
-export function Performance() {
-  const [selectedPeriod, setSelectedPeriod] = useState('Live')
-
-  const periods = ['Live', '2024', 'Inception']
-  
-  const performanceData = {
-    'Live': { return: '22.4%', sharpe: '3.12', drawdown: '3.8%', winRate: '76%', period: '2025 YTD' },
-    '2024': { return: '342%', sharpe: '2.94', drawdown: '5.7%', winRate: '74%', period: 'Full Year' },
-    'Inception': { return: '1,247%', sharpe: '2.89', drawdown: '6.8%', winRate: '73%', period: 'Since Launch' }
-  }
-
-  const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
-
+export function Hero() {
   return (
-    <section id="performance" className="py-20 bg-navy-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
-            Proven Track Record of Investment Success
-          </h2>
-          <p className="text-xl text-navy-200 max-w-3xl mx-auto">
-            Our transparent performance history demonstrates consistent value creation for clients 
-            through disciplined investment strategies and professional risk management across all market conditions.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-8 lg:p-12">
-          <div className="flex justify-center mb-8">
-            <div className="bg-gray-100 rounded-lg p-1">
-              {periods.map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 ${
-                    selectedPeriod === period
-                      ? 'bg-navy-600 text-white'
-                      : 'text-gray-600 hover:text-navy-600'
-                  }`}
-                >
-                  {period}
-                </button>
-              ))}
+    <section id="home" className="pt-16 bg-gradient-to-br from-navy-50 to-white safe-area-top">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <h1 className="font-serif text-3xl md:text-4xl lg:text-6xl font-bold text-navy-900 leading-tight mb-4 md:mb-6">
+              Quantitative Investment
+              <span className="text-gold-600"> Excellence</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
+              Global Market Consulting delivers revolutionary quantitative strategies through 
+              advanced market microstructure analysis, processing 50,000+ tick-level events 
+              per second for superior risk-adjusted returns.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8 md:mb-12">
+              <a href="/portal" className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 inline-flex items-center justify-center mobile-button active:scale-95">
+                Client Portal
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+              <a href="#about" className="bg-white hover:bg-gray-50 text-navy-600 border border-navy-200 px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 text-center mobile-button active:scale-95">
+                Learn More
+              </a>
             </div>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
-                {currentData.return}
+            
+            <div className="grid grid-cols-3 gap-4 md:gap-8">
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <Shield className="h-6 w-6 md:h-8 md:w-8 text-navy-600" />
+                </div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">$4.2M</div>
+                <div className="text-xs md:text-sm text-gray-600">Assets Under Management</div>
               </div>
-              <div className="text-gray-600 font-medium">
-                {selectedPeriod === 'Live' ? 'Monthly Return' : 'Annual Return'}
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-gold-600" />
+                </div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">22.4%</div>
+                <div className="text-xs md:text-sm text-gray-600">Monthly Return (2025)</div>
               </div>
-              <div className="text-sm text-gray-500">
-                {selectedPeriod === 'Live' ? 'YTD Average' : currentData.period}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-navy-900 mb-2">
-                {currentData.sharpe}
-              </div>
-              <div className="text-gray-600 font-medium">Sharpe Ratio</div>
-              <div className="text-sm text-gray-500">Risk-adjusted</div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-gold-600 mb-2">
-                {currentData.drawdown}
-              </div>
-              <div className="text-gray-600 font-medium">Max Drawdown</div>
-              <div className="text-sm text-gray-500">Capital preservation</div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
-                {currentData.winRate}
-              </div>
-              <div className="text-gray-600 font-medium">Win Rate</div>
-              <div className="text-sm text-gray-500">8,400+ trades</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h4 className="font-serif text-lg font-bold text-navy-900 mb-4">
-              Multi-Account Performance Summary
-            </h4>
-            <div className="grid md:grid-cols-4 gap-6">
-              <div>
-                <div className="text-2xl font-bold text-navy-900 mb-1">6</div>
-                <div className="text-gray-600">Institutional Accounts</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-navy-900 mb-1">$4.2M</div>
-                <div className="text-gray-600">Assets Under Management</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
-                <div className="text-gray-600">Profitable Accounts</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
-                <div className="text-gray-600">Account Blow-ups</div>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-navy-600" />
+                </div>
+                <div className="font-serif text-lg md:text-2xl font-bold text-navy-900">3.12</div>
+                <div className="text-xs md:text-sm text-gray-600">Sharpe Ratio</div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Quantitative Metrics */}
-        <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
-          <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-            Professional Performance Metrics
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
-              <div className="text-gray-700 font-medium">Principal Losses</div>
-              <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
-              <div className="text-gray-700 font-medium">Profit Factor</div>
-              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
-              <div className="text-gray-700 font-medium">System Uptime</div>
-              <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
+          
+          <div className="relative">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 border border-gray-100 mobile-card">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Live Performance Metrics</h3>
+                  <span className="text-sm md:text-base text-green-600 font-semibold">+287% Annual</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm md:text-base text-gray-600">Win Rate</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-600 h-2 rounded-full" style={{ width: '76%' }}></div>
+                      </div>
+                      <span className="text-sm font-medium">76%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm md:text-base text-gray-600">Max Drawdown</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-navy-600 h-2 rounded-full" style={{ width: '3.8%' }}></div>
+                      </div>
+                      <span className="text-sm font-medium">3.8%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm md:text-base text-gray-600">Profit Factor</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2">
+                        <div className="bg-gold-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+                      </div>
+                      <span className="text-sm font-medium">3.4:1</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="text-center">
+                    <div className="text-sm md:text-base text-gray-600">12,800+ Trades Executed</div>
+                    <div className="text-xs text-gray-500 mt-1">Consistent Capital Preservation</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
