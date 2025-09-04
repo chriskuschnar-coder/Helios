@@ -8,8 +8,6 @@ export function Contact() {
     company: '',
     message: ''
   })
-  const [videoLoaded, setVideoLoaded] = useState(false)
-  const [videoError, setVideoError] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,64 +22,24 @@ export function Contact() {
     })
   }
 
-  const handleVideoLoad = () => {
-    console.log('✅ Contact video loaded successfully')
-    setVideoLoaded(true)
-  }
-
-  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const videoEl = e.currentTarget
-    const err = videoEl.error
-
-    if (err) {
-      switch (err.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          console.error('❌ Contact video load aborted by user')
-          break
-        case MediaError.MEDIA_ERR_NETWORK:
-          console.error('❌ Contact video failed: network error')
-          break
-        case MediaError.MEDIA_ERR_DECODE:
-          console.error('❌ Contact video failed: decode error (corrupt or unsupported codec)')
-          break
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          console.error('❌ Contact video failed: format or source not supported')
-          break
-        default:
-          console.error('❌ Contact video failed: unknown error', err)
-      }
-    } else {
-      console.error('❌ Contact video failed: no error details available')
-    }
-    
-    setVideoError(true)
-  }
-
   return (
     <section id="contact" className="relative py-20 bg-gray-50 overflow-hidden">
-      {/* Video Background */}
+      {/* Professional Background */}
       <div className="absolute inset-0 w-full h-full z-0">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
-          onError={(e) => {
-            console.log('Video failed to load, using fallback background')
-            e.currentTarget.style.display = 'none'
-          }}
-        >
-          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3571264/3571264-hd_1920_1080_30fps.mp4" type="video/mp4" />
-        </video>
+        {/* Professional City Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-slate-800 to-gray-900"></div>
         
-        {/* Enhanced fallback background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-blue-900 to-indigo-900"></div>
+        {/* Animated geometric patterns */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-32 h-32 border border-white rounded-full animate-pulse"></div>
+          <div className="absolute top-40 right-32 w-24 h-24 border border-white rounded-lg rotate-45 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-32 left-32 w-28 h-28 border border-white rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute bottom-20 right-20 w-20 h-20 border border-white rounded-lg rotate-12 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        </div>
         
-        {/* Animated gradient overlay for visual interest */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60 z-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40 z-10"></div>
+        {/* Professional overlay gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/60 z-10"></div>
       </div>
 
       {/* Content */}
