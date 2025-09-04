@@ -268,28 +268,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     console.log('🔐 signIn called:', { email, password: '***' })
     
-    // Handle demo user immediately without Supabase call
-    if (email === 'demo@globalmarket.com' && password === 'demo123456') {
-      console.log('✅ Demo login detected - using local demo mode')
-      setUser({
-        id: 'demo-user-id',
-        email: 'demo@globalmarket.com',
-        full_name: 'Demo User',
-        documents_completed: true,
-        documents_completed_at: '2024-01-01T00:00:00Z'
-      })
-      setAccount({
-        id: 'demo-account-id',
-        balance: 7850,
-        available_balance: 7850,
-        total_deposits: 8000,
-        total_withdrawals: 150,
-        currency: 'USD',
-        status: 'active'
-      })
-      return { error: null }
-    }
-
     try {
       console.log('🔍 Attempting Supabase authentication...')
       const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -300,9 +278,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('❌ Supabase sign in error:', error.message)
 
-        // If it's invalid credentials and not the demo user, show helpful message
+        // Handle demo user as fallback only if Supabase fails AND it's the exact demo credentials
+        if (error.message.includes('Invalid login credentials') && 
+            email === 'demo@globalmarket.com' && 
+            password === 'demo123456') {
+          console.log('✅ Demo login fallback - Supabase unavailable')
+          setUser({
+            id: 'demo-user-id',
+            email: 'demo@globalmarket.com',
+            full_name: 'Demo User',
+            documents_completed: true,
+            documents_completed_at: '2024-01-01T00:00:00Z'
+          })
+          setAccount({
+            id: 'demo-account-id',
+            balance: 7850,
+            available_balance: 7850,
+            total_deposits: 8000,
+            total_withdrawals: 150,
+            currency: 'USD',
+            status: 'active'
+          })
+          return { error: null }
+        }
+        
         if (error.message.includes('Invalid login credentials')) {
-          return { error: { message: 'Invalid login credentials' } }
+          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
         }
         
         return { error: { message: error.message } }
