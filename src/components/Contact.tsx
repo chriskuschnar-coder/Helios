@@ -44,9 +44,9 @@ export function Contact() {
             e.currentTarget.style.display = 'none'
           }}
         >
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-sd_640_360_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3184405/3184405-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3184405/3184405-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3184405/3184405-sd_640_360_25fps.mp4" type="video/mp4" />
         </video>
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-black bg-opacity-50" style={{ zIndex: 10 }}></div>
