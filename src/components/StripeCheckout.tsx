@@ -127,7 +127,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0
-    setAmount(Math.max(100, value))
+    setAmount(Math.max(5000, value))
   }
 
   const createPaymentIntent = async () => {
@@ -136,8 +136,8 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       return
     }
 
-    if (amount < 100) {
-      setError('Minimum investment amount is $100');
+    if (amount < 5000) {
+      setError('Minimum investment amount is $5,000');
       return
     }
 
@@ -326,7 +326,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           <DollarSign className="h-8 w-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Investment Amount</h3>
-        <p className="text-gray-600">Make an investment in our hedge fund with flexible amounts starting from $100</p>
+        <p className="text-gray-600">Make an investment in our hedge fund with flexible amounts starting from $5,000</p>
       </div>
 
       {/* Amount Input */}
@@ -342,16 +342,16 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
             onChange={handleAmountChange}
             className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent text-lg font-semibold"
             placeholder="Enter amount"
-            min="100"
-            step="100"
+            min="5000"
+            step="1000"
           />
         </div>
-        <p className="text-xs text-gray-500 mt-1">Minimum investment: $100</p>
+        <p className="text-xs text-gray-500 mt-1">Minimum investment: $5,000</p>
       </div>
 
       {/* Quick Amount Buttons */}
       <div className="grid grid-cols-4 gap-2 mb-6">
-        {[1000, 5000, 10000, 25000].map((quickAmount) => (
+        {[5000, 10000, 25000, 50000].map((quickAmount) => (
           <button
             key={quickAmount}
             onClick={() => setAmount(quickAmount)}
@@ -386,7 +386,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       <button
         onClick={createPaymentIntent}
-        disabled={!user || amount < 100 || creatingPayment}
+        disabled={!user || amount < 5000 || creatingPayment}
         className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors text-lg flex items-center justify-center"
       >
         {creatingPayment ? (
