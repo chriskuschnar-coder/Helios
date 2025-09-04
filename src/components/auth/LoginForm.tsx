@@ -20,20 +20,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setLoading(true)
     setError('')
 
-    console.log('🔐 Login form submitted with:', { email, password: '***' })
 
     try {
       const result = await signIn(email, password)
       
       if (result.error) {
-        console.log('❌ Login failed:', result.error.message)
         setError(result.error.message)
       } else {
-        console.log('✅ Login successful, calling onSuccess')
         onSuccess?.()
       }
     } catch (err) {
-      console.error('❌ Login error:', err)
+      console.error('Login error:', err)
       setError('Connection error - please try again')
     } finally {
       setLoading(false)
@@ -147,10 +144,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       <div className="mt-6 md:mt-8 p-3 md:p-4 bg-navy-50 rounded-lg">
         <h3 className="font-medium text-navy-900 mb-2">Account Access</h3>
         <p className="text-xs md:text-sm text-navy-700 mb-2">
-          Sign in with your registered account credentials.
+          Create an account or sign in with your registered credentials.
         </p>
         <p className="text-xs text-navy-600">
-          Don't have an account? Click "Sign up" above to create one.
+          Demo account: demo@globalmarket.com / demo123456
         </p>
       </div>
     </div>
