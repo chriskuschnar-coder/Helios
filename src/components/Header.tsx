@@ -40,7 +40,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
               onClick={onNavigateToLogin}
               className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-3 rounded-xl font-bold transition-all duration-200 hover:scale-105 shadow-lg"
             >
-              Enter Nautilus
+              Client Portal
             </button>
           </div>
 
@@ -49,9 +49,11 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 hover:text-navy-600"
-            >
+          <div className="w-10 h-10 bg-navy-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">GMC</span>
+          </div>
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            Global Markets Consulting
           </div>
         </div>
 
@@ -76,7 +78,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 }}
                 className="block w-full text-left px-3 py-2 text-gold-600 hover:text-gold-700 font-bold"
               >
-                Enter Nautilus
+                Client Portal
               </button>
             </div>
           </div>
