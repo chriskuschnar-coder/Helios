@@ -2,21 +2,20 @@ import { ArrowRight, Play, TrendingUp } from 'lucide-react'
 
 export function Hero() {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-navy-900 via-slate-800 to-gray-900">
+      {/* Professional Static Background */}
       <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
-        </video>
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+        {/* Animated geometric patterns */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 border border-white rounded-full animate-pulse" style={{ animationDuration: '4s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-48 h-48 border border-white rounded-lg rotate-45 animate-pulse" style={{ animationDelay: '1s', animationDuration: '5s' }}></div>
+          <div className="absolute bottom-1/4 left-1/3 w-56 h-56 border border-white rounded-full animate-pulse" style={{ animationDelay: '2s', animationDuration: '6s' }}></div>
+          <div className="absolute bottom-1/3 right-1/3 w-40 h-40 border border-white rounded-lg rotate-12 animate-pulse" style={{ animationDelay: '0.5s', animationDuration: '3s' }}></div>
+        </div>
+        
+        {/* Professional overlay gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/50"></div>
       </div>
 
       {/* Content */}
