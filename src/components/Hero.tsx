@@ -6,18 +6,14 @@ export default function Hero() {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Video */}
+      {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
+        <img 
+          src="https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
+          alt="Financial trading background"
           className="w-full h-full object-cover"
-          onLoadedData={() => setIsVideoLoaded(true)}
-        >
-          <source src="https://images.pexels.com/videos/3195394/pexels-video-3195394.mp4" type="video/mp4" />
-        </video>
+          onLoad={() => setIsVideoLoaded(true)}
+        />
         <div className="absolute inset-0 bg-navy-900 bg-opacity-25"></div>
       </div>
 
