@@ -167,48 +167,26 @@ export function Contact() {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent resize-none"
                     placeholder="Tell us about your investment goals and how we can help..."
-                  className="w-full bg-navy-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-navy-700 transition-colors duration-200"
-            const videoEl = e.currentTarget as HTMLVideoElement
-            const err = videoEl.error
+                  />
+                </div>
 
-            if (err) {
-              switch (err.code) {
-                case MediaError.MEDIA_ERR_ABORTED:
-                  console.error("Contact video loading failed: fetching aborted by user")
-                  break
-                case MediaError.MEDIA_ERR_NETWORK:
-                  console.error("Contact video loading failed: network error")
-                  break
-                case MediaError.MEDIA_ERR_DECODE:
-                  console.error("Contact video loading failed: video decode error")
-                  break
-                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                  console.error("Contact video loading failed: format or source not supported")
-                  break
-                default:
-                  console.error("Contact video loading failed: unknown error code", err.code)
-              }
-            } else {
-              console.error("Contact video loading failed: no error details")
-            }
-            
-            // Hide video and show fallback background
-            videoEl.style.display = 'none'
-            const parentEl = videoEl.parentElement
-            if (parentEl) {
-              parentEl.style.background = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
-            }
+                <button
+                  type="submit"
+                  className="w-full bg-navy-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-navy-700 transition-colors duration-200"
+                >
+                  Send Message
+                </button>
               </form>
 
-          <source src="/videos/contact.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-sd_640_360_25fps.mp4" type="video/mp4" />
+              <div className="mt-6 text-center text-sm text-gray-500">
+                We typically respond within 24 hours during business days.
+              </div>
             </div>
           </div>
-        <div className="absolute inset-0 bg-black bg-opacity-60 z-10"></div>
+        </div>
       </div>
     </section>
-  )
   )
 }
