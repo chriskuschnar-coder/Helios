@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 export function Performance() {
+  const [selectedPeriod, setSelectedPeriod] = useState('Live')
 
   const periods = ['Live', '2024', 'Inception']
   
@@ -107,7 +108,6 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-            Professional Performance Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
