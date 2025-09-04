@@ -141,11 +141,29 @@ export function Services() {
           </div>
 
           <div className="relative z-10 bg-white bg-opacity-95 rounded-2xl p-8 lg:p-12 border border-gray-200 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
+            <div className="relative bg-white rounded-2xl p-8 lg:p-12 border border-gray-200 overflow-hidden">
+              {/* Dubai Marina Video Background */}
+              <div className="absolute inset-0 w-full h-full">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                >
+                  <source src="https://videos.pexels.com/video-files/30198247/30198247-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+                  <source src="https://videos.pexels.com/video-files/30198247/30198247-hd_1920_1080_25fps.mp4" type="video/mp4" />
+                </video>
+                {/* Light overlay for text readability */}
+                <div className="absolute inset-0 bg-white bg-opacity-85"></div>
+              </div>
+              
               <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
+                <span className="relative z-10">
                 Proprietary Quantitative Framework
+                </span>
               </h3>
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="relative z-10 grid md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl p-6">
                   <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
                     Statistical Arbitrage Models
