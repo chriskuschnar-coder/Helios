@@ -5,17 +5,13 @@ export default function Hero() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false)
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Video */}
-          autoPlay
     <section 
       id="home" 
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
       style={{
-        backgroundImage: 'linear-gradient(rgba(16, 42, 67, 0.7), rgba(16, 42, 67, 0.7)), url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg")'
+        backgroundImage: 'linear-gradient(rgba(16, 42, 67, 0.4), rgba(16, 42, 67, 0.4)), url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg")'
       }}
     >
-
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16">
         <div className="max-w-4xl mx-auto">
@@ -66,7 +62,5 @@ export default function Hero() {
         </div>
       </div>
     </section>
-  )
-}
   )
 }
