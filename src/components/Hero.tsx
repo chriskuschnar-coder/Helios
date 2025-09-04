@@ -45,27 +45,6 @@ export function Hero() {
               <span>Learn More</span>
             </button>
           </div>
-
-          {/* Key Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-              <div className="text-3xl font-bold text-gold-400 mb-2">342%</div>
-              <div className="text-white font-medium">2024 Returns</div>
-              <div className="text-gray-300 text-sm">Net of all fees</div>
-            </div>
-            
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-              <div className="text-3xl font-bold text-gold-400 mb-2">2.94</div>
-              <div className="text-white font-medium">Sharpe Ratio</div>
-              <div className="text-gray-300 text-sm">Risk-adjusted</div>
-            </div>
-            
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-              <div className="text-3xl font-bold text-gold-400 mb-2">$4.2M</div>
-              <div className="text-white font-medium">Assets Under Management</div>
-              <div className="text-gray-300 text-sm">Institutional accounts</div>
-            </div>
-          </div>
         </div>
       </div>
 
