@@ -167,8 +167,8 @@ export function Contact() {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent resize-none"
                     placeholder="Tell us about your investment goals and how we can help..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent"
                   />
                 </div>
 
@@ -179,6 +179,10 @@ export function Contact() {
                   Send Message
                 </button>
               </form>
+
+              <div className="mt-6 text-center text-sm text-gray-500">
+                We typically respond within 24 hours during business days.
+              </div>
             </div>
           </div>
         </div>
