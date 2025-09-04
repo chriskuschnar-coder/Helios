@@ -108,8 +108,20 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-            Professional Investment Management
-          </h3>
+        <div className="mt-16">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+              Our Investment Strategies
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Disciplined approaches designed to deliver consistent returns while protecting your capital
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
@@ -127,10 +139,6 @@ export function Performance() {
               <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
           </div>
-          <p className="text-gray-600 text-center mt-8">
-            Our professional investment strategies combine rigorous research with practical market experience 
-            to deliver consistent returns while protecting your capital through proven risk management techniques.
-          </p>
         </div>
       </div>
     </section>
