@@ -35,12 +35,18 @@ export function About() {
           playsInline
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover"
-          onLoadStart={() => console.log('Video loading started')}
-          onCanPlay={() => console.log('Video can play')}
-          onError={(e) => console.error('Video error:', e)}
+          onLoadStart={() => console.log('About video loading started')}
+          onCanPlay={() => console.log('About video can play')}
+          onError={(e) => {
+            console.error('About video error:', e)
+            // Hide video container on error
+            e.currentTarget.style.display = 'none'
+          }}
+          onLoadedData={() => console.log('About video data loaded')}
+          style={{ backgroundColor: '#1a202c' }}
         >
-          <source src="https://videos.pexels.com/video-files/3141208/3141208-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3141208/3141208-sd_640_360_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-sd_640_360_25fps.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         {/* Dark overlay for text readability */}
