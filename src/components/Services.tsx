@@ -21,6 +21,7 @@ export function Performance() {
             Proven Track Record of Investment Success
           </h2>
           <p className="text-xl text-navy-200 max-w-3xl mx-auto">
+          </h2>
             Our transparent performance history demonstrates consistent value creation for clients 
             through disciplined investment strategies and professional risk management across all market conditions.
           </p>
@@ -108,20 +109,8 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-        <div className="mt-16">
-          <div className="text-center">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-              Our Investment Strategies
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Disciplined approaches designed to deliver consistent returns while protecting your capital
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+          </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
