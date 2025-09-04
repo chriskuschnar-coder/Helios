@@ -66,9 +66,9 @@ export function Services() {
 
           <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             {services.map((service, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 group hover:shadow-xl transition-all duration-300">
+              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 group hover:shadow-xl hover:bg-white/90 transition-all duration-300">
                 <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center group-hover:bg-navy-200 transition-all duration-200">
+                  <div className="w-12 h-12 bg-navy-100/80 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover:bg-navy-200/80 transition-all duration-200">
                     <service.icon className="h-6 w-6 text-navy-600" />
                   </div>
                 </div>
