@@ -40,7 +40,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
               onClick={onNavigateToLogin}
               className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-3 rounded-xl font-bold transition-all duration-200 hover:scale-105 shadow-lg"
             >
-              Client Portal
+              Enter Nautilus
             </button>
           </div>
 
@@ -76,7 +76,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 }}
                 className="block w-full text-left px-3 py-2 text-gold-600 hover:text-gold-700 font-bold"
               >
-                Client Portal
+                Enter Nautilus
               </button>
             </div>
           </div>

@@ -21,30 +21,30 @@ export function Hero() {
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Opening Hook */}
           <div className="mb-8">
-            <p className="text-lg md:text-xl lg:text-2xl text-gray-200 mb-4 leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-200 mb-4 leading-relaxed">
               Every day, <span className="text-gold-400 font-bold">$7.5 trillion</span> moves through global markets.
             </p>
-            <p className="text-base md:text-lg lg:text-xl text-gray-300 mb-6 leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-300 mb-6">
               The firms capturing this value aren't smarter than you - 
               <br className="hidden md:block" />
               <span className="text-white font-semibold">they just have better machines.</span>
             </p>
-            <p className="text-lg md:text-xl lg:text-2xl text-gold-400 font-bold leading-relaxed">
+            <p className="text-xl md:text-2xl text-gold-400 font-bold">
               Until now, that technology cost $100 million to build.
             </p>
           </div>
 
-          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-8 leading-tight">
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-tight">
             We built it for you.
           </h1>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <button className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-10 py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center space-x-3 hover:scale-105 shadow-2xl">
               <Zap className="h-6 w-6" />
-              <span>Client Portal</span>
+              <span>Enter Nautilus</span>
               <ArrowRight className="h-6 w-6" />
             </button>
             
