@@ -1,5 +1,71 @@
 import { useState } from 'react'
 
+export function Hero() {
+  const [selectedPeriod, setSelectedPeriod] = useState('Live')
+
+  const periods = ['Live', '2024', 'Inception']
+  
+  const performanceData = {
+    'Live': { return: '22.4%', sharpe: '3.12', drawdown: '3.8%', winRate: '76%', period: '2025 YTD' },
+    '2024': { return: '342%', sharpe: '2.94', drawdown: '5.7%', winRate: '74%', period: 'Full Year' },
+    'Inception': { return: '1,247%', sharpe: '2.89', drawdown: '6.8%', winRate: '73%', period: 'Since Launch' }
+  }
+
+  const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
+
+  return (
+    <section id="home" className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 overflow-hidden">
+      {/* Background Pattern */}
+      <div className={`absolute inset-0 bg-[url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")]`}></div>
+      
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            Quantitative Excellence in
+            <span className="block text-gold-400">Investment Management</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-navy-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Advanced mathematical models and systematic strategies delivering superior 
+            risk-adjusted returns for sophisticated investors through cutting-edge quantitative research.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <a
+              href="#performance"
+              className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              View Performance
+            </a>
+            <a
+              href="#contact"
+              className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300"
+            >
+              Schedule Consultation
+            </a>
+          </div>
+          
+          {/* Key Metrics */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-gold-400 mb-2">342%</div>
+              <div className="text-navy-200 font-medium">2024 Returns</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-gold-400 mb-2">2.94</div>
+              <div className="text-navy-200 font-medium">Sharpe Ratio</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-gold-400 mb-2">$4.2M</div>
+              <div className="text-navy-200 font-medium">Assets Under Management</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function Performance() {
   const [selectedPeriod, setSelectedPeriod] = useState('Live')
 
@@ -108,7 +174,7 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-        <div className={`absolute inset-0 bg-[url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")]`}></div>
+            Professional Performance Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
