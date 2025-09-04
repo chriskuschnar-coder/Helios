@@ -130,80 +130,99 @@ export function Services() {
           </div>
 
           <div className="bg-gray-50 rounded-2xl p-8 lg:p-12 border border-gray-200">
-          <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
-            <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
-              Proprietary Quantitative Framework
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-xl p-6">
-                <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
-                  Statistical Arbitrage Models
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Ornstein-Uhlenbeck Process</div>
-                      <div className="text-sm text-gray-600">Mean reversion modeling with stochastic differential equations</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Johansen Cointegration</div>
-                      <div className="text-sm text-gray-600">Statistical pairs identification through vector error correction</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Dynamic Hedge Ratios</div>
-                      <div className="text-sm text-gray-600">Principal component analysis for multi-factor risk exposure</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Fair Value Estimation</div>
-                      <div className="text-sm text-gray-600">Mean reversion strategies around theoretical price levels</div>
-                    </div>
-                  </li>
-                <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-6">
+            <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
+              <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
+                Proprietary Quantitative Framework
+              </h3>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-xl p-6">
+                  <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
+                    Statistical Arbitrage Models
+                  </h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Ornstein-Uhlenbeck Process</div>
+                        <div className="text-sm text-gray-600">Mean reversion modeling with stochastic differential equations</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Johansen Cointegration</div>
+                        <div className="text-sm text-gray-600">Statistical pairs identification through vector error correction</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Dynamic Hedge Ratios</div>
+                        <div className="text-sm text-gray-600">Principal component analysis for multi-factor risk exposure</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Fair Value Estimation</div>
+                        <div className="text-sm text-gray-600">Mean reversion strategies around theoretical price levels</div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-white rounded-xl p-6">
+                  <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
+                    Professional Execution Strategies
+                  </h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Smart Order Timing</div>
+                        <div className="text-sm text-gray-600">Avoiding trades when large players might move against us, protecting your returns</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Cost-Efficient Trading</div>
+                        <div className="text-sm text-gray-600">Minimizing trading costs through intelligent order placement and timing strategies</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Market Maker Tracking</div>
+                        <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                      <div>
+                        <div className="font-medium text-navy-900">Optimal Order Placement</div>
+                        <div className="text-sm text-gray-600">Strategic positioning to minimize market impact and maximize execution quality</div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <div className="bg-white rounded-xl p-6">
-                <div className="space-y-4 text-gray-700">
-                  Professional Execution Strategies
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Smart Order Timing</div>
-                      <div className="text-sm text-gray-600">Avoiding trades when large players might move against us, protecting your returns</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Cost-Efficient Trading</div>
-                      <div className="text-sm text-gray-600">Minimizing trading costs through intelligent order placement and timing strategies</div>
-                    </div>
+              <div className="grid md:grid-cols-4 gap-6 mt-8">
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
                   <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
                   <div className="text-gray-600">Events/Second</div>
-                    <div>
+                </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                      <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
+                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">99.9%</div>
                   <div className="text-gray-600">System Uptime</div>
-                  </li>
+                </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
                   <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
                   <div className="text-gray-600">Daily Data</div>
-                      <div className="font-medium text-navy-900">Optimal Order Placement</div>
+                </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                    </div>
+                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">847</div>
                   <div className="text-gray-600">Real-time Factors</div>
-                </ul>
+                </div>
               </div>
             </div>
           </div>
