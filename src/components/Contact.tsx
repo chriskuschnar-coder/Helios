@@ -54,7 +54,7 @@ export function Contact() {
                   console.error("Contact video loading failed: unknown error code", err.code)
               }
             } else {
-              console.error("Contact video loading failed: no error details")
+              console.error("Contact video loading failed: error event occurred without specific MediaError details. Check network connection or video source integrity.")
             }
             
             // Hide video and show fallback background
