@@ -87,9 +87,9 @@ export function Services() {
             onCanPlay={() => console.log('Video can play')}
             onError={(e) => console.error('Video loading failed:', e.nativeEvent.target.error?.code || 'Unknown error')}
           >
-            <source src="https://videos.pexels.com/video-files/7685826/7685826-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/7685826/7685826-hd_1920_1080_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/7685826/7685826-sd_960_540_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/29828545/12618516_2560_1440_30fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/29828545/12618516_1920_1080_30fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/29828545/12618516_1280_720_30fps.mp4" type="video/mp4" />
           </video>
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-navy-900 bg-opacity-85"></div>
