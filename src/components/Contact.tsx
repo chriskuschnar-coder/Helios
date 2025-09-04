@@ -32,31 +32,6 @@ export function Contact() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          onError={(e) => {
-            const videoEl = e.currentTarget as HTMLVideoElement
-            const err = videoEl.error
-
-            if (err) {
-              switch (err.code) {
-                case MediaError.MEDIA_ERR_ABORTED:
-                  console.error('Contact video loading aborted by user')
-                  break
-                case MediaError.MEDIA_ERR_NETWORK:
-                  console.error('Contact video failed: network error')
-                  break
-                case MediaError.MEDIA_ERR_DECODE:
-                  console.error('Contact video failed: decode error (corrupt or unsupported codec)')
-                  break
-                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                  console.error('Contact video failed: format or source not supported')
-                  break
-                default:
-                  console.error('Contact video failed: unknown error code', err.code)
-              }
-            } else {
-              console.error('Contact video failed: no error details available (possible network or CORS issue)')
-            }
-          }}
         >
           <source src="https://videos.pexels.com/video-files/6345016/6345016-uhd_2560_1440_25fps.mp4" type="video/mp4" />
           <source src="https://videos.pexels.com/video-files/6345016/6345016-hd_1920_1080_25fps.mp4" type="video/mp4" />
