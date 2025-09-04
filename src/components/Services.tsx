@@ -1,214 +1,127 @@
-import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
 
-export function Services() {
-  const services = [
-    {
-      icon: Brain,
-      title: 'Alpha Fund',
-      description: 'Quantitative momentum strategies with 35-45% annual target returns and <10% volatility.',
-      features: ['$250K minimum', '2% management fee', '20% performance fee', '6-month lock-up']
-    },
-    {
-      icon: Shield,
-      title: 'Market Neutral',
-      description: 'Statistical arbitrage and relative value strategies for consistent risk-adjusted returns.',
-      features: ['15-20% annual target', '3% max drawdown', 'Family office focused', 'Quarterly liquidity']
-    },
-    {
-      icon: TrendingUp,
-      title: 'Momentum Portfolio',
-      description: 'High-conviction quantitative signals with up to 3x leverage during optimal conditions.',
-      features: ['60-80% annual target', '15-20% volatility', 'Sophisticated investors', 'Dynamic leverage']
-    },
-    {
-      icon: Zap,
-      title: 'Risk Management',
-      description: 'Advanced portfolio construction using modern portfolio theory and multi-factor models.',
-      features: ['VaR modeling', 'Stress testing', 'Factor attribution', 'Real-time monitoring']
-    }
-  ]
+export function Performance() {
+  const [selectedPeriod, setSelectedPeriod] = useState('Live')
+
+  const periods = ['Live', '2024', 'Inception']
+  
+  const performanceData = {
+    'Live': { return: '22.4%', sharpe: '3.12', drawdown: '3.8%', winRate: '76%', period: '2025 YTD' },
+    '2024': { return: '342%', sharpe: '2.94', drawdown: '5.7%', winRate: '74%', period: 'Full Year' },
+    'Inception': { return: '1,247%', sharpe: '2.89', drawdown: '6.8%', winRate: '73%', period: 'Since Launch' }
+  }
+
+  const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
 
   return (
-    <>
-      {/* Investment Products Section */}
-      <section id="services" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-              Quantitative Investment Products
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Sophisticated mathematical models designed for institutional investors 
-              and qualified individuals seeking superior risk-adjusted returns through 
-              systematic market inefficiency exploitation.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            {services.map((service, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 group hover:shadow-xl transition-shadow duration-300">
-                <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center group-hover:bg-navy-200 transition-colors duration-200">
-                    <service.icon className="h-6 w-6 text-navy-600" />
-                  </div>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-navy-900 mb-3 text-center">
-                  {service.title}
-                </h3>
-                <p className="text-gray-600 mb-4 text-center">
-                  {service.description}
-                </p>
-                <ul className="space-y-2">
-                  {service.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
-                      <div className="w-1.5 h-1.5 bg-gold-600 rounded-full mr-2"></div>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+    <section id="performance" className="py-20 bg-navy-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
+            Proven Track Record of Investment Success
+          </h2>
+          <p className="text-xl text-navy-200 max-w-3xl mx-auto">
+            Our transparent performance history demonstrates consistent value creation for clients 
+            through disciplined investment strategies and professional risk management across all market conditions.
+          </p>
         </div>
-      </section>
 
-      {/* Advanced Market Microstructure Analytics Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-              Advanced Market Microstructure Analytics
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our proprietary quantitative models implement cutting-edge academic research 
-              for systematic alpha generation and superior risk management through mathematical precision.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Brain className="h-8 w-8 text-navy-900" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
-                VPIN Analysis
-              </h3>
-              <p className="text-gray-600">
-                Volume-Synchronized Probability of Informed Trading with machine learning 
-                enhancement calibrated on 119,000+ trade samples for toxic flow identification 
-                and adverse selection prevention.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Target className="h-8 w-8 text-navy-900" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
-                Kyle's Lambda
-              </h3>
-              <p className="text-gray-600">
-                Dynamic price impact modeling with Hasbrouck decomposition for 
-                optimal execution algorithms, achieving 52% slippage reduction 
-                versus time-weighted average price benchmarks.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <BarChart3 className="h-8 w-8 text-navy-900" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
-                Regime Detection
-              </h3>
-              <p className="text-gray-600">
-                Four-state Hidden Markov Models with Baum-Welch parameter estimation 
-                for real-time market state identification and probabilistic forecasting 
-                across momentum and mean-reversion regimes.
-              </p>
+        <div className="bg-white rounded-2xl p-8 lg:p-12">
+          <div className="flex justify-center mb-8">
+            <div className="bg-gray-100 rounded-lg p-1">
+              {periods.map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 ${
+                    selectedPeriod === period
+                      ? 'bg-navy-600 text-white'
+                      : 'text-gray-600 hover:text-navy-600'
+                  }`}
+                >
+                  {period}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Proprietary Quantitative Framework */}
-          <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
-            <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
-              Proprietary Quantitative Framework
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-xl p-6">
-                <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
-                  Statistical Arbitrage Models
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Ornstein-Uhlenbeck Process</div>
-                      <div className="text-sm text-gray-600">Mean reversion modeling with stochastic differential equations</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Johansen Cointegration</div>
-                      <div className="text-sm text-gray-600">Statistical pairs identification through vector error correction</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Dynamic Hedge Ratios</div>
-                      <div className="text-sm text-gray-600">Principal component analysis for multi-factor risk exposure</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Fair Value Estimation</div>
-                      <div className="text-sm text-gray-600">Mean reversion strategies around theoretical price levels</div>
-                    </div>
-                  </li>
-                </ul>
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="text-center">
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
+                {currentData.return}
               </div>
-              <div className="bg-white rounded-xl p-6">
-                <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
-                  Professional Execution Strategies
-                </h4>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Smart Order Timing</div>
-                      <div className="text-sm text-gray-600">Avoiding trades when large players might move against us, protecting your returns</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Cost-Efficient Trading</div>
-                      <div className="text-sm text-gray-600">Minimizing trading costs through intelligent order placement and timing strategies</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Market Position Monitoring</div>
-                      <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
-                    <div>
-                      <div className="font-medium text-navy-900">Optimal Order Placement</div>
-                      <div className="text-sm text-gray-600">Ensuring your trades get the best possible execution through strategic order placement</div>
-                    </div>
-                  </li>
-                </ul>
+              <div className="text-gray-600 font-medium">
+                {selectedPeriod === 'Live' ? 'Monthly Return' : 'Annual Return'}
               </div>
+              <div className="text-sm text-gray-500">
+                {selectedPeriod === 'Live' ? 'YTD Average' : currentData.period}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="font-serif text-4xl font-bold text-navy-900 mb-2">
+                {currentData.sharpe}
+              </div>
+              <div className="text-gray-600 font-medium">Sharpe Ratio</div>
+              <div className="text-sm text-gray-500">Risk-adjusted</div>
+            </div>
+            <div className="text-center">
+              <div className="font-serif text-4xl font-bold text-gold-600 mb-2">
+                {currentData.drawdown}
+              </div>
+              <div className="text-gray-600 font-medium">Max Drawdown</div>
+              <div className="text-sm text-gray-500">Capital preservation</div>
+            </div>
+            <div className="text-center">
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
+                {currentData.winRate}
+              </div>
+              <div className="text-gray-600 font-medium">Win Rate</div>
+              <div className="text-sm text-gray-500">8,400+ trades</div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h4 className="font-serif text-lg font-bold text-navy-900 mb-4">
+              Multi-Account Performance Summary
+            </h4>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">6</div>
+                <div className="text-gray-600">Institutional Accounts</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">$4.2M</div>
+                <div className="text-gray-600">Assets Under Management</div>
+                Avoiding trades when large players might move against us, protecting your returns
+                <div className="text-gray-600">Profitable Accounts</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
+                <div className="text-gray-600">Account Blow-ups</div>
+              </div>
+            </div>
+          </div>
+                Cost-Efficient Trading
+
+        {/* Quantitative Metrics */}
+                Minimizing trading costs through intelligent order placement and timing strategies
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
+                Smart Order Timing
+              <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
+                Market Position Monitoring
+              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
+            </div>
+                Tracking how market makers position themselves to anticipate price movements
+              <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 }

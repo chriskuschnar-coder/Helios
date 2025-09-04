@@ -1,66 +1,130 @@
-import { TrendingUp, ArrowRight, Shield, Award } from 'lucide-react'
+import { useState } from 'react'
 
-export function Hero() {
+export function Performance() {
+  const [selectedPeriod, setSelectedPeriod] = useState('Live')
+
+  const periods = ['Live', '2024', 'Inception']
+  
+  const performanceData = {
+    'Live': { return: '22.4%', sharpe: '3.12', drawdown: '3.8%', winRate: '76%', period: '2025 YTD' },
+    '2024': { return: '342%', sharpe: '2.94', drawdown: '5.7%', winRate: '74%', period: 'Full Year' },
+    'Inception': { return: '1,247%', sharpe: '2.89', drawdown: '6.8%', winRate: '73%', period: 'Since Launch' }
+  }
+
+  const currentData = performanceData[selectedPeriod as keyof typeof performanceData]
+
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-navy-900" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px'
-        }}></div>
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="text-center">
-          <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 bg-gold-600 rounded-full flex items-center justify-center">
-              <TrendingUp className="h-10 w-10 text-navy-900" />
-            </div>
-          </div>
-          
-          <h1 className="font-serif text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Quantitative Excellence in
-            <span className="block text-gold-400">Investment Management</span>
-          </h1>
-          
-          <p className="text-xl lg:text-2xl text-navy-200 mb-8 max-w-4xl mx-auto leading-relaxed">
-            Advanced mathematical models and systematic strategies delivering superior 
-            risk-adjusted returns for sophisticated investors through institutional-grade 
-            portfolio management and cutting-edge market microstructure analytics.
+    <section id="performance" className="py-20 bg-navy-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
+            Proven Track Record of Investment Success
+          </h2>
+          <p className="text-xl text-navy-200 max-w-3xl mx-auto">
+            Our transparent performance history demonstrates consistent value creation for clients 
+            through disciplined investment strategies and professional risk management across all market conditions.
           </p>
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-            <button className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center gap-3 group">
-              Start Your Investment Journey
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300">
-              View Performance Track Record
-            </button>
+        <div className="bg-white rounded-2xl p-8 lg:p-12">
+          <div className="flex justify-center mb-8">
+            <div className="bg-gray-100 rounded-lg p-1">
+              {periods.map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`px-6 py-2 rounded-md font-medium transition-colors duration-200 ${
+                    selectedPeriod === period
+                      ? 'bg-navy-600 text-white'
+                      : 'text-gray-600 hover:text-navy-600'
+                  }`}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="text-center">
-              <div className="w-12 h-12 bg-navy-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-6 w-6 text-gold-400" />
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
+                {currentData.return}
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">SEC Registered</h3>
-              <p className="text-navy-200">Fully compliant investment advisor with institutional-grade oversight</p>
+              <div className="text-gray-600 font-medium">
+                {selectedPeriod === 'Live' ? 'Monthly Return' : 'Annual Return'}
+              </div>
+              <div className="text-sm text-gray-500">
+                {selectedPeriod === 'Live' ? 'YTD Average' : currentData.period}
+              </div>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-navy-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Award className="h-6 w-6 text-gold-400" />
+              <div className="font-serif text-4xl font-bold text-navy-900 mb-2">
+                {currentData.sharpe}
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">Proven Track Record</h3>
-              <p className="text-navy-200">342% returns in 2024 with superior risk management across all strategies</p>
+              <div className="text-gray-600 font-medium">Sharpe Ratio</div>
+              <div className="text-sm text-gray-500">Risk-adjusted</div>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-navy-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-6 w-6 text-gold-400" />
+              <div className="font-serif text-4xl font-bold text-gold-600 mb-2">
+                {currentData.drawdown}
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">Quantitative Edge</h3>
-              <p className="text-navy-200">Proprietary algorithms processing 50,000+ market events per second</p>
+              <div className="text-gray-600 font-medium">Max Drawdown</div>
+              <div className="text-sm text-gray-500">Capital preservation</div>
+            </div>
+            <div className="text-center">
+              <div className="font-serif text-4xl font-bold text-green-600 mb-2">
+                {currentData.winRate}
+              </div>
+              <div className="text-gray-600 font-medium">Win Rate</div>
+              <div className="text-sm text-gray-500">8,400+ trades</div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h4 className="font-serif text-lg font-bold text-navy-900 mb-4">
+              Multi-Account Performance Summary
+            </h4>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">6</div>
+                <div className="text-gray-600">Institutional Accounts</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">$4.2M</div>
+                <div className="text-gray-600">Assets Under Management</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
+                <div className="text-gray-600">Profitable Accounts</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-navy-900 mb-1">0</div>
+                <div className="text-gray-600">Account Blow-ups</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quantitative Metrics */}
+        <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
+          <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
+            Professional Performance Metrics
+          </h3>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
+              <div className="text-gray-700 font-medium">Principal Losses</div>
+              <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
+              <div className="text-gray-700 font-medium">Profit Factor</div>
+              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
+              <div className="text-gray-700 font-medium">System Uptime</div>
+              <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
           </div>
         </div>
