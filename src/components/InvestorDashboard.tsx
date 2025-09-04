@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, DollarSign, BarChart3, Activity, Users, Target, Award, RefreshCw, Plus, Eye, ArrowRight, Building, Zap, Shield, Clock, AlertTriangle, TrendingDown, Brain, Calendar, ArrowUpRight, CheckCircle, CreditCard } from 'lucide-react'
-import {
-  PieChart, 
-  FileText
+import { 
+  TrendingUp,
+  DollarSign,
+  BarChart3,
+  Activity,
+  Users,
+  Target,
+  Award,
+  RefreshCw,
+  Plus,
+  Eye,
+  ArrowRight,
+  Building,
+  Zap,
+  Shield,
+  Clock,
+  AlertTriangle,
+  TrendingDown,
+  Brain,
+  Calendar,
+  PieChart,
+  FileText,
+  ArrowUpRight,
+  CheckCircle,
+  CreditCard
 } from 'lucide-react'
-import { useAuth } from './auth/AuthProvider'
-import { CheckoutButton } from './CheckoutButton'
-import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
 import { NavigationBar } from './NavigationBar'
@@ -22,6 +40,8 @@ import { RiskDashboard } from './portfolio/RiskDashboard'
 import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
 import { FundNAVChart } from './portfolio/FundNAVChart'
+import { PortfolioValueCard } from './PortfolioValueCard'
+import { useAuth } from '../hooks/useAuth'
 import { supabaseClient } from '../lib/supabase-client'
 import '../styles/funding.css'
 
