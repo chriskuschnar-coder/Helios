@@ -108,7 +108,6 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-            <span className="block text-gold-400">Investment Management</span>
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
@@ -128,8 +127,6 @@ export function Performance() {
             </div>
           </div>
         </div>
-        {/* Light overlay to make video more prominent while keeping text readable */}
-        <div className="absolute inset-0 bg-black bg-opacity-25"></div>
       </div>
     </section>
   )
