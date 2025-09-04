@@ -85,7 +85,7 @@ export function Services() {
             className="absolute inset-0 w-full h-full object-cover"
             onLoadStart={() => console.log('Video loading started')}
             onCanPlay={() => console.log('Video can play')}
-            onError={(e) => console.error('Video error:', e)}
+            onError={(e) => console.error('Video loading failed:', e.nativeEvent.target.error?.code || 'Unknown error')}
           >
             <source src="https://videos.pexels.com/video-files/7685826/7685826-uhd_2560_1440_25fps.mp4" type="video/mp4" />
             <source src="https://videos.pexels.com/video-files/7685826/7685826-hd_1920_1080_25fps.mp4" type="video/mp4" />
