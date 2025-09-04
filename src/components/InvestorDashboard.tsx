@@ -6,15 +6,6 @@ import {
   PieChart, 
   FileText, 
   DollarSign,
-  ArrowUpRight,
-  Activity,
-  Plus,
-  CreditCard,
-  AlertCircle,
-  CheckCircle,
-  RefreshCw,
-  TrendingDown
-} from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 import { CheckoutButton } from './CheckoutButton'
 import { PortfolioValueCard } from './PortfolioValueCard'
