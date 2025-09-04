@@ -1,30 +1,35 @@
 import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp } from 'lucide-react'
 
-export function Services() {
+          className="absolute inset-0 w-full h-full object-cover z-0"
   return (
     <>
       {/* Investment Products Section */}
+            // Hide video on error and show fallback background
+            e.currentTarget.style.display = 'none'
       <section id="services" className="relative bg-white overflow-hidden">
+          onLoadStart={() => console.log('Video loading started')}
+          onCanPlay={() => console.log('Video can play')}
+          onLoadedData={() => console.log('Video loaded successfully')}
         {/* Video Background */}
-        <div className="absolute inset-0 w-full h-full">
-          <video
+          <source src="https://videos.pexels.com/video-files/3196036/3196036-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3196036/3196036-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3196036/3196036-sd_640_360_25fps.mp4" type="video/mp4" />
             autoPlay
-            muted
-            loop
+        {/* Dark overlay for text readability - ensure it's above video */}
+        <div className="absolute inset-0 bg-black bg-opacity-60 z-10"></div>
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               const errorCode = e.currentTarget.error?.code
-              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+          <h2 className="relative z-20 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             }}
           >
-            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <p className="relative z-20 text-xl text-gray-200 max-w-3xl mx-auto">
             <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
           </video>
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
