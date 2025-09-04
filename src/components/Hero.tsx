@@ -3,20 +3,14 @@ import { ArrowRight, Play, TrendingUp } from 'lucide-react'
 export function Hero() {
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
-        </video>
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+      {/* Clean gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900"></div>
+      
+      {/* Animated overlay */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-navy-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       {/* Content */}

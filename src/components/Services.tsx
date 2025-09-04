@@ -5,38 +5,27 @@ export function Services() {
     <>
       {/* Investment Products Section */}
       <section id="services" className="relative bg-white overflow-hidden">
-        {/* Video Background */}
-        <div className="absolute inset-0 w-full h-full">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              const errorCode = e.currentTarget.error?.code
-              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
-            }}
-          >
-            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          </video>
-          {/* Dark overlay for text readability */}
+        {/* Clean gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900"></div>
+        
+        {/* Animated overlay */}
+        <div className="absolute inset-0">
           <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+          <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-gold-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-navy-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '3s' }}></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
-            <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
+            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
-            <p className="relative z-10 text-xl text-gray-200 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto">
               Sophisticated mathematical models designed for institutional investors 
               and qualified individuals seeking superior risk-adjusted returns through 
               systematic market inefficiency exploitation.
             </p>
           </div>
-
         </div>
       </section>
 
@@ -172,10 +161,12 @@ export function Services() {
                       </div>
                     </li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </>
-  )
-}
   )
 }
