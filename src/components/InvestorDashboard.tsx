@@ -41,7 +41,7 @@ import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
 import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioValueCard } from './PortfolioValueCard'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from './auth/AuthProvider'
 import { supabaseClient } from '../lib/supabase-client'
 import '../styles/funding.css'
 
