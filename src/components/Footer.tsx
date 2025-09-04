@@ -6,34 +6,34 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
-            <h3 className="font-serif text-xl font-bold mb-4">HELIOS</h3>
+            <h3 className="font-serif text-xl font-bold mb-4">Global Market Consulting</h3>
             <p className="text-navy-200 mb-4">
-              Where code becomes capital. Where algorithms build empires. 
-              Where your future runs on autopilot.
+              Empowering investors to navigate complex markets with confidence through 
+              cutting-edge quantitative strategies and superior risk-adjusted returns.
             </p>
             <div className="text-sm text-navy-300">
-              <div>Institutional-Grade Technology</div>
-              <div>Military-Grade Security</div>
+              <div>SEC Registered Investment Advisor</div>
+              <div>SIPC Member</div>
             </div>
           </div>
           
           <div>
-            <h4 className="font-semibold mb-4">HELIOS Systems</h4>
+            <h4 className="font-semibold mb-4">Investment Products</h4>
             <ul className="space-y-2 text-navy-200">
-              <li><a href="#" className="hover:text-white transition-colors">Infrastructure</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Intelligence</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Execution</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Learning System</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Alpha Fund</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Market Neutral</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Momentum Portfolio</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Risk Management</a></li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold mb-4">Technology</h4>
+            <h4 className="font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-navy-200">
-              <li><a href="#" className="hover:text-white transition-colors">Pattern Recognition</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Market Microstructure</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Execution Algorithms</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Risk Management</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Performance Reports</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Research Papers</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Market Commentary</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Educational Content</a></li>
             </ul>
           </div>
           
@@ -54,7 +54,7 @@ export function Footer() {
         <div className="border-t border-navy-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-sm text-navy-300 mb-4 md:mb-0">
-              © 2025 HELIOS Technologies LLC. All rights reserved.
+              © 2025 Global Market Consulting LLC. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm text-navy-300">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
