@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { TrendingUp, DollarSign, BarChart3, Activity, Users, Target, Award, RefreshCw, Plus, Eye, ArrowRight, Building, Zap, Shield, Clock, AlertTriangle, TrendingDown, Brain, Calendar } from 'lucide-react'
 import {
+  TrendingUp, 
   BarChart3, 
   PieChart, 
   FileText, 
