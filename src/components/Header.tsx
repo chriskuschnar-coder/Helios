@@ -50,8 +50,6 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 hover:text-navy-600"
             >
-                <span className="text-white font-bold text-lg">GMC</span>
-              </div>
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
