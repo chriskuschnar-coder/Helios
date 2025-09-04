@@ -109,6 +109,8 @@ export function Performance() {
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
             <span className="block text-gold-400">Investment Management</span>
+          </h3>
+          <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
               <div className="text-gray-700 font-medium">Principal Losses</div>
@@ -124,6 +126,8 @@ export function Performance() {
               <div className="text-gray-700 font-medium">System Uptime</div>
               <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
+          </div>
+        </div>
         {/* Light overlay to make video more prominent while keeping text readable */}
         <div className="absolute inset-0 bg-black bg-opacity-25"></div>
       </div>
