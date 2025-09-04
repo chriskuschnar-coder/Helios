@@ -155,13 +155,11 @@ export function Services() {
                   <source src="https://videos.pexels.com/video-files/30198247/30198247-hd_1920_1080_25fps.mp4" type="video/mp4" />
                 </video>
                 {/* Light overlay for text readability */}
-                <div className="absolute inset-0 bg-white bg-opacity-85"></div>
+                <div className="absolute inset-0 bg-white bg-opacity-75"></div>
               </div>
               
-              <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
-                <span className="relative z-10">
+              <h3 className="relative z-10 font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
                 Proprietary Quantitative Framework
-                </span>
               </h3>
               <div className="relative z-10 grid md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl p-6">
