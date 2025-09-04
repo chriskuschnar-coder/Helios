@@ -131,3 +131,24 @@ export function Performance() {
     </section>
   )
 }
+
+function Home() {
+  return (
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="https://www.pexels.com/video/8201410/download/" type="video/mp4" />
+        </video>
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+      </div>
+    </section>
+  )
+}
