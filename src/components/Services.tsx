@@ -1,33 +1,6 @@
 import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp } from 'lucide-react'
 
 export function Services() {
-  const services = [
-    {
-      icon: Brain,
-      title: 'Alpha Fund',
-      description: 'Quantitative momentum strategies with 35-45% annual target returns and <10% volatility.',
-      features: ['$250K minimum', '2% management fee', '20% performance fee', '6-month lock-up']
-    },
-    {
-      icon: Shield,
-      title: 'Market Neutral',
-      description: 'Statistical arbitrage and relative value strategies for consistent risk-adjusted returns.',
-      features: ['15-20% annual target', '3% max drawdown', 'Family office focused', 'Quarterly liquidity']
-    },
-    {
-      icon: TrendingUp,
-      title: 'Momentum Portfolio',
-      description: 'High-conviction quantitative signals with up to 3x leverage during optimal conditions.',
-      features: ['60-80% annual target', '15-20% volatility', 'Sophisticated investors', 'Dynamic leverage']
-    },
-    {
-      icon: Zap,
-      title: 'Risk Management',
-      description: 'Advanced portfolio construction using modern portfolio theory and multi-factor models.',
-      features: ['VaR modeling', 'Stress testing', 'Factor attribution', 'Real-time monitoring']
-    }
-  ]
-
   return (
     <>
       {/* Investment Products Section */}
@@ -40,30 +13,43 @@ export function Services() {
             loop
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
             onError={(e) => {
               const errorCode = e.currentTarget.error?.code
-              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+              console.error('Video failed to load:', errorCode)
+              e.currentTarget.style.display = 'none'
             }}
+            onLoadStart={() => {
+              console.log('Video loading started')
+              e.currentTarget.style.opacity = '0'
+            }}
+            onCanPlay={() => {
+              console.log('Video can play')
+              e.currentTarget.style.opacity = '1'
+            }}
+            onLoadedData={() => {
+              console.log('Video loaded successfully')
+              e.currentTarget.play().catch(err => console.log('Autoplay prevented:', err))
+            }}
+            preload="metadata"
           >
-            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/8201410/8201410-sd_640_360_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/3196036/3196036-hd_1920_1080_25fps.mp4" type="video/mp4" />
           </video>
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>
-
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
-            <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
+            <h2 className="relative z-20 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
-            <p className="relative z-10 text-xl text-gray-200 max-w-3xl mx-auto">
+            <p className="relative z-20 text-xl text-gray-200 max-w-3xl mx-auto">
               Sophisticated mathematical models designed for institutional investors 
               and qualified individuals seeking superior risk-adjusted returns through 
               systematic market inefficiency exploitation.
             </p>
           </div>
-
         </div>
       </section>
 
@@ -199,25 +185,6 @@ export function Services() {
                       </div>
                     </li>
                   </ul>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
-                  <div className="text-gray-600">Events/Second</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">99.97%</div>
-                  <div className="text-gray-600">System Uptime</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
-                  <div className="text-gray-600">Daily Data</div>
-                </div>
-                <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">500+</div>
-                  <div className="text-gray-600">Real-time Factors</div>
                 </div>
               </div>
             </div>
