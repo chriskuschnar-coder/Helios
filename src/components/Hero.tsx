@@ -6,27 +6,31 @@ export default function Hero() {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop"
-          alt="Financial trading background"
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
           className="w-full h-full object-cover"
-          onLoad={() => setIsVideoLoaded(true)}
-        />
-        <div className="absolute inset-0 bg-navy-900 bg-opacity-25"></div>
+          onLoadedData={() => setIsVideoLoaded(true)}
+        >
+          <source src="https://images.pexels.com/videos/3195394/pexels-video-3195394.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-navy-900 bg-opacity-40"></div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-            Professional Investment Management
+            Institutional Investment Excellence
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Institutional-grade quantitative strategies delivering consistent alpha 
-            through systematic risk management and advanced portfolio optimization.
+            Advanced quantitative strategies and systematic risk management 
+            delivering consistent alpha for sophisticated investors.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
