@@ -45,8 +45,8 @@ export function About() {
           onLoadedData={() => console.log('About video data loaded')}
           style={{ backgroundColor: '#1a202c' }}
         >
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-sd_640_360_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3141208/3141208-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3141208/3141208-sd_640_360_25fps.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         {/* Dark overlay for text readability */}
