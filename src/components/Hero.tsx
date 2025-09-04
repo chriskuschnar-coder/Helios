@@ -11,16 +11,12 @@ export function Hero() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-          }}
         >
-          <source src="https://videos.pexels.com/video-files/3129957/3129957-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
-        {/* Fallback gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-gray-900"></div>
         {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
       </div>
 
       {/* Content */}

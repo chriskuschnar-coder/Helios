@@ -32,16 +32,24 @@ export function Services() {
     <>
       {/* Investment Products Section */}
       <section id="services" className="relative bg-white overflow-hidden">
-        {/* Professional gradient background */}
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-navy-900 via-blue-900 to-gray-900">
-          {/* Animated geometric elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-            <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-navy-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gray-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
-          </div>
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              const errorCode = e.currentTarget.error?.code
+              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+            }}
+          >
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
           {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
