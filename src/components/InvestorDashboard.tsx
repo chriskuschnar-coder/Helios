@@ -1,28 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from './auth/AuthProvider'
-import { 
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  Activity,
-  Users,
-  Target,
-  Award,
-  RefreshCw,
-  Plus,
-  Eye,
-  ArrowRight,
-  Building,
-  Zap,
-  Shield,
-  Clock,
-  AlertTriangle,
-  TrendingDown,
-  Brain,
-  Calendar,
-  PieChart,
+import { TrendingUp, DollarSign, BarChart3, Activity, Users, Target, Award, RefreshCw, Plus, Eye, ArrowRight, Building, Zap, Shield, Clock, AlertTriangle, TrendingDown, Brain, Calendar, ArrowUpRight, CheckCircle, CreditCard } from 'lucide-react'
+import {
+  PieChart, 
   FileText
 } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
+import { CheckoutButton } from './CheckoutButton'
+import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
 import { NavigationBar } from './NavigationBar'
