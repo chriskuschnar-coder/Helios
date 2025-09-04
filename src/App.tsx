@@ -108,16 +108,20 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8">
+import { Hero } from './components/Hero'
+import { About } from './components/About'
+import { Services } from './components/Services'
+import { Performance } from './components/Performance'
+import { Contact } from './components/Contact'
+import { Footer } from './components/Footer'
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
-import Hero from './components/Hero'
-import About from './components/About'
-import Services from './components/Services'
-import Performance from './components/Performance'
-import Contact from './components/Contact'
-import Footer from './components/Footer'
+              <div className="text-gray-700 font-medium">Principal Losses</div>
+              <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
+              <div className="text-gray-700 font-medium">Profit Factor</div>
               <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
