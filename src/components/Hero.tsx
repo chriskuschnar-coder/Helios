@@ -118,21 +118,9 @@ export function Performance() {
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
               <div className="text-gray-700 font-medium">Profit Factor</div>
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="https://www.pexels.com/video/8201410/download/" type="video/mp4" />
-        </video>
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
-      </div>
+              <div className="text-sm text-gray-600 mt-1">Gross Profit vs Gross Loss</div>
+            </div>
+            <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
               <div className="text-gray-700 font-medium">System Uptime</div>
               <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
