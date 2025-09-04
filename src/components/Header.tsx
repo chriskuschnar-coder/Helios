@@ -12,8 +12,6 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Strategies', href: '#services' },
-    { name: 'Performance', href: '#performance' },
-    { name: 'Contact', href: '#contact' },
   ]
 
   return (
