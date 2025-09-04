@@ -64,12 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.warn('Session check error:', error)
         } else if (session?.user) {
+          console.log('✅ Found existing session for:', session.user.email)
           setUser({
             id: session.user.id,
             email: session.user.email || '',
             full_name: session.user.user_metadata?.full_name
           })
           await loadUserAccount(session.user.id)
+        } else {
+          console.log('ℹ️ No existing session found')
         }
       } catch (err) {
         console.warn('Session check failed:', err)
@@ -79,6 +82,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkSession()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email)
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name
+          })
+          await loadUserAccount(session.user.id)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setAccount(null)
+          setSubscription(null)
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const loadUserAccount = async (userId: string) => {
@@ -207,12 +232,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔐 Attempting sign in for:', email)
+      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       })
 
       if (error) {
+        console.error('❌ Sign in error:', error)
+        
         if (error.message.includes('Invalid login credentials')) {
           return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
         }
@@ -221,13 +250,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: data.user.user_metadata?.full_name,
-          documents_completed: false
-        })
-        await loadUserAccount(data.user.id)
+        console.log('✅ Sign in successful for:', data.user.email)
+        // User state will be updated via onAuthStateChange
         return { error: null }
       }
 
@@ -240,6 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
+      console.log('📝 Attempting sign up for:', email)
+      
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -249,6 +275,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
+        console.error('❌ Sign up error:', error)
+        
         if (error.message.includes('User already registered')) {
           return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
         }
@@ -265,15 +293,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: metadata?.full_name,
-          documents_completed: false
-        })
-        
-        await loadUserAccount(data.user.id)
-        
+        console.log('✅ Sign up successful for:', data.user.email)
+        // User state will be updated via onAuthStateChange
         return { error: null }
       }
 
@@ -286,17 +307,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Signing out user')
       const { error } = await supabaseClient.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
+      } else {
+        console.log('✅ Sign out successful')
       }
     } catch (err) {
       console.error('Sign out failed:', err)
-    } finally {
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
     }
+    // User state will be cleared via onAuthStateChange
   }
 
   const value = {

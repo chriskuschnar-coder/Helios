@@ -20,7 +20,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setLoading(true)
     setError('')
 
-
     try {
       const result = await signIn(email, password)
       
@@ -142,13 +141,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       </div>
 
       <div className="mt-6 md:mt-8 p-3 md:p-4 bg-navy-50 rounded-lg">
-        <h3 className="font-medium text-navy-900 mb-2">Account Access</h3>
+        <h3 className="font-medium text-navy-900 mb-2">Demo Account</h3>
         <p className="text-xs md:text-sm text-navy-700 mb-2">
-          Create an account or sign in with your registered credentials.
+          Test the platform with our demo account:
         </p>
-        <p className="text-xs text-navy-600">
-          Demo account: demo@globalmarket.com / demo123456
-        </p>
+        <div className="bg-white rounded p-2 border border-navy-200">
+          <p className="text-xs text-navy-800 font-mono">
+            Email: demo@globalmarket.com<br />
+            Password: demo123456
+          </p>
+        </div>
       </div>
     </div>
   )
