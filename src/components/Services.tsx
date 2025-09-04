@@ -92,7 +92,9 @@ export function Performance() {
               <div>
                 <div className="text-2xl font-bold text-navy-900 mb-1">$4.2M</div>
                 <div className="text-gray-600">Assets Under Management</div>
-                Avoiding trades when large players might move against us, protecting your returns
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
                 <div className="text-gray-600">Profitable Accounts</div>
               </div>
               <div>
@@ -101,22 +103,27 @@ export function Performance() {
               </div>
             </div>
           </div>
-                Cost-Efficient Trading
+        </div>
 
         {/* Quantitative Metrics */}
-                Minimizing trading costs through intelligent order placement and timing strategies
+        <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
+          <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
+            Professional Performance Metrics
+          </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
-                Smart Order Timing
+              <div className="text-gray-700 font-medium">Principal Losses</div>
               <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
-                Market Position Monitoring
+              <div className="text-gray-700 font-medium">Profit Factor</div>
               <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
-                Tracking how market makers position themselves to anticipate price movements
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
+              <div className="text-gray-700 font-medium">System Uptime</div>
               <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
           </div>
