@@ -172,10 +172,12 @@ export function Services() {
                       </div>
                     </li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </>
-  )
-}
   )
 }
