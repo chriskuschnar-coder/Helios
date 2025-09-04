@@ -48,8 +48,8 @@ export function Contact() {
             }
           }}
         >
-          <source src="https://videos.pexels.com/video-files/8572408/8572408-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8572408/8572408-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3196036/3196036-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3196036/3196036-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-black bg-opacity-60"></div>
