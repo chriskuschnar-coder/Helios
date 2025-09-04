@@ -108,7 +108,8 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
-              <a href="#login" onClick={(e) => { e.preventDefault(); window.location.href = '/'; }} className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 inline-flex items-center justify-center mobile-button active:scale-95">
+            Quantitative Metrics
+          </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
