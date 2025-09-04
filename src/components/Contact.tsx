@@ -8,6 +8,8 @@ export function Contact() {
     company: '',
     message: ''
   })
+  const [videoLoaded, setVideoLoaded] = useState(false)
+  const [videoError, setVideoError] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,9 +24,61 @@ export function Contact() {
     })
   }
 
+  const handleVideoLoad = () => {
+    console.log('✅ Contact video loaded successfully')
+    setVideoLoaded(true)
+  }
+
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const videoEl = e.currentTarget
+    const err = videoEl.error
+
+    if (err) {
+      switch (err.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          console.error('❌ Contact video load aborted by user')
+          break
+        case MediaError.MEDIA_ERR_NETWORK:
+          console.error('❌ Contact video failed: network error')
+          break
+        case MediaError.MEDIA_ERR_DECODE:
+          console.error('❌ Contact video failed: decode error (corrupt or unsupported codec)')
+          break
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          console.error('❌ Contact video failed: format or source not supported')
+          break
+        default:
+          console.error('❌ Contact video failed: unknown error', err)
+      }
+    } else {
+      console.error('❌ Contact video failed: no error details available')
+    }
+    
+    setVideoError(true)
+  }
+
   return (
     <section id="contact" className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 w-full h-full z-0">
+          <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          onLoadedData={handleVideoLoad}
+          onError={handleVideoError}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ 
+            opacity: videoLoaded && !videoError ? 1 : 0,
+            transition: 'opacity 1s ease-in-out'
+          }}
+        >
+          <source src="https://videos.pexels.com/video-files/6345016/6345016-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/6345016/6345016-sd_640_360_25fps.mp4" type="video/mp4" />
+        </video>
+        </div>
+        
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
             Get in Touch
@@ -167,48 +221,30 @@ export function Contact() {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent resize-none"
                     placeholder="Tell us about your investment goals and how we can help..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
                   className="w-full bg-navy-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-navy-700 transition-colors duration-200"
-            const videoEl = e.currentTarget as HTMLVideoElement
-            const err = videoEl.error
-
-            if (err) {
-              switch (err.code) {
-                case MediaError.MEDIA_ERR_ABORTED:
-                  console.error("Contact video loading failed: fetching aborted by user")
-                  break
-                case MediaError.MEDIA_ERR_NETWORK:
-                  console.error("Contact video loading failed: network error")
-                  break
-                case MediaError.MEDIA_ERR_DECODE:
-                  console.error("Contact video loading failed: video decode error")
-                  break
-                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                  console.error("Contact video loading failed: format or source not supported")
-                  break
-                default:
-                  console.error("Contact video loading failed: unknown error code", err.code)
-              }
-            } else {
-              console.error("Contact video loading failed: no error details")
-            }
-            
-            // Hide video and show fallback background
-            videoEl.style.display = 'none'
-            const parentEl = videoEl.parentElement
-            if (parentEl) {
-              parentEl.style.background = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
-            }
+                >
+                  Send Message
+                </button>
               </form>
-
-          <source src="/videos/contact.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8566709/8566709-sd_640_360_25fps.mp4" type="video/mp4" />
             </div>
           </div>
-        <div className="absolute inset-0 bg-black bg-opacity-60 z-10"></div>
+        </div>
+        
+        {/* Fallback background if video fails */}
+        {(videoError || !videoLoaded) && (
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-gray-900"></div>
+        )}
+        
+        {/* Dark overlay for text readability - always present */}
+        <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
       </div>
     </section>
-  )
   )
 }
