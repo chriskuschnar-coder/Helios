@@ -25,41 +25,13 @@ export function About() {
   ]
 
   return (
-    <section id="about" className="relative py-20 overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover"
-          onLoadStart={() => console.log('About video loading started')}
-          onCanPlay={() => console.log('About video can play')}
-          onError={(e) => {
-            console.error('About video error:', e)
-            // Hide video container on error
-            e.currentTarget.style.display = 'none'
-          }}
-          onLoadedData={() => console.log('About video data loaded')}
-          style={{ backgroundColor: '#1a202c' }}
-        >
-          <source src="https://videos.pexels.com/video-files/3141208/3141208-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3141208/3141208-sd_640_360_25fps.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-70"></div>
-      </div>
-
-      {/* Content */}
+    <section id="about" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
             Proven Investment Excellence Through Advanced Analytics
           </h2>
-          <p className="relative z-10 text-xl text-gray-200 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Led by a team of seasoned professionals with backgrounds in finance, mathematics, and technology, 
             we combine academic research with practical market insights to drive investment success. 
             Our proven track record demonstrates consistent value creation for our clients.
@@ -68,27 +40,27 @@ export function About() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {features.map((feature, index) => (
-            <div key={index} className="relative z-10 text-center group">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-full mb-4 group-hover:bg-opacity-30 transition-all duration-200">
-                <feature.icon className="h-8 w-8 text-white" />
+            <div key={index} className="text-center group">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-navy-100 rounded-full mb-4 group-hover:bg-navy-200 transition-all duration-200">
+                <feature.icon className="h-8 w-8 text-navy-600" />
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
                 {feature.title}
               </h3>
-              <p className="text-gray-200">
+              <p className="text-gray-600">
                 {feature.description}
               </p>
             </div>
           ))}
         </div>
 
-        <div className="relative z-10 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-8 lg:p-12 border border-white border-opacity-20">
+        <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200 shadow-lg">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="font-serif text-2xl lg:text-3xl font-bold text-white mb-6">
+              <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-6">
                 Advanced Quantitative Models
               </h3>
-              <div className="space-y-4 text-gray-200">
+              <div className="space-y-4 text-gray-700">
                 <p>
                   <strong>VPIN Implementation:</strong> Proprietary Volume-Synchronized Probability 
                   of Informed Trading framework with machine learning enhancement calibrated on 
@@ -105,21 +77,21 @@ export function About() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 text-center border border-white border-opacity-30">
-                <div className="font-serif text-3xl font-bold text-white mb-2">50K+</div>
-                <div className="text-gray-200">Events/Second</div>
+              <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
+                <div className="text-navy-700">Events/Second</div>
               </div>
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 text-center border border-white border-opacity-30">
-                <div className="font-serif text-3xl font-bold text-gold-400 mb-2">99.97%</div>
-                <div className="text-gray-200">System Uptime</div>
+              <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">99.97%</div>
+                <div className="text-navy-700">System Uptime</div>
               </div>
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 text-center border border-white border-opacity-30">
-                <div className="font-serif text-3xl font-bold text-white mb-2">2.4TB</div>
-                <div className="text-gray-200">Daily Data</div>
+              <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
+                <div className="text-navy-700">Daily Data</div>
               </div>
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 text-center border border-white border-opacity-30">
-                <div className="font-serif text-3xl font-bold text-gold-400 mb-2">500+</div>
-                <div className="text-gray-200">Real-time Factors</div>
+              <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">500+</div>
+                <div className="text-navy-700">Real-time Factors</div>
               </div>
             </div>
           </div>
