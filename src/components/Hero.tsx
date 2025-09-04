@@ -112,14 +112,14 @@ export function Performance() {
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">2.8:1</div>
+              <div className="text-gray-700 font-medium">Profit Factor</div>
+              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
+            </div>
+            <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
               <div className="text-gray-700 font-medium">Principal Losses</div>
               <div className="text-sm text-gray-600 mt-1">Consistent Capital Preservation</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
-              <div className="text-gray-700 font-medium">Profit Factor</div>
-              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
