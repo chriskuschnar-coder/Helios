@@ -32,11 +32,25 @@ export function Contact() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            console.error('Dubai Marina video failed to load')
+            e.currentTarget.style.display = 'none'
+          }}
         >
           <source src="https://videos.pexels.com/video-files/30213649/30213649-uhd_2560_1440_25fps.mp4" type="video/mp4" />
           <source src="https://videos.pexels.com/video-files/30213649/30213649-hd_1920_1080_25fps.mp4" type="video/mp4" />
           <source src="https://videos.pexels.com/video-files/30213649/30213649-sd_640_360_25fps.mp4" type="video/mp4" />
         </video>
+        {/* Fallback gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-navy-900 to-gray-900">
+          {/* Animated city skyline effect */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-navy-800 to-transparent opacity-60"></div>
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+            <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-navy-400 rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute bottom-1/4 left-1/2 w-40 h-40 bg-gray-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+          </div>
+        </div>
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-black bg-opacity-60"></div>
       </div>

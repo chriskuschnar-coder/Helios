@@ -11,12 +11,18 @@ export function Hero() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            console.error('Hero video failed to load')
+            e.currentTarget.style.display = 'none'
+          }}
         >
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://player.vimeo.com/external/434045526.sd.mp4?s=c27eecc69a27dbc4ff2b87d38afc35f1a9e7c02d&profile_id=164&oauth2_token_id=57447761" type="video/mp4" />
+          <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4" />
         </video>
+        {/* Fallback gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-gray-900"></div>
         {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
       </div>
 
       {/* Content */}
