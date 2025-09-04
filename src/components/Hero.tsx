@@ -18,7 +18,7 @@ export default function Hero() {
         >
           <source src="https://images.pexels.com/videos/3195394/pexels-video-3195394.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-navy-900 bg-opacity-10"></div>
+        <div className="absolute inset-0 bg-navy-900 bg-opacity-25"></div>
       </div>
 
       {/* Content */}
