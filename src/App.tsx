@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SupabaseConnectionCheck } from './components/SupabaseConnectionCheck'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { About } from './components/About'
@@ -8,9 +9,16 @@ import { InvestmentPlatform } from './components/InvestmentPlatform'
 
 export default function App() {
   const [showInvestmentPlatform, setShowInvestmentPlatform] = useState(false)
+  const [showConnectionCheck, setShowConnectionCheck] = useState(false)
 
   const handleNavigateToLogin = () => {
     setShowInvestmentPlatform(true)
+  }
+
+  // Check if we should show connection check (for debugging)
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('debug') === 'supabase') {
+    return <SupabaseConnectionCheck />
   }
 
   if (showInvestmentPlatform) {
