@@ -24,9 +24,9 @@ export function Contact() {
 
   return (
     <section id="contact" className="relative py-20 bg-gray-50 overflow-hidden">
-      {/* Professional Background */}
+      {/* Professional Static Background */}
       <div className="absolute inset-0 w-full h-full z-0">
-        {/* Professional City Background */}
+        {/* Professional gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-slate-800 to-gray-900"></div>
         
         {/* Animated geometric patterns */}
