@@ -1,4 +1,85 @@
-import { useState } from 'react'
+import { ArrowRight, Play, TrendingUp } from 'lucide-react'
+
+export function Hero() {
+  return (
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8201410/8201410-hd_1920_1080_25fps.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            Quantitative Excellence in
+            <span className="block text-gold-400">Investment Management</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Advanced mathematical models and systematic strategies delivering 
+            superior risk-adjusted returns for sophisticated investors through 
+            institutional-grade quantitative research.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <button className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2 hover:scale-105 shadow-lg">
+              <TrendingUp className="h-5 w-5" />
+              <span>View Performance</span>
+              <ArrowRight className="h-5 w-5" />
+            </button>
+            
+            <button className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2">
+              <Play className="h-5 w-5" />
+              <span>Learn More</span>
+            </button>
+          </div>
+
+          {/* Key Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+              <div className="text-3xl font-bold text-gold-400 mb-2">342%</div>
+              <div className="text-white font-medium">2024 Returns</div>
+              <div className="text-gray-300 text-sm">Net of all fees</div>
+            </div>
+            
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+              <div className="text-3xl font-bold text-gold-400 mb-2">2.94</div>
+              <div className="text-white font-medium">Sharpe Ratio</div>
+              <div className="text-gray-300 text-sm">Risk-adjusted</div>
+            </div>
+            
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+              <div className="text-3xl font-bold text-gold-400 mb-2">$4.2M</div>
+              <div className="text-white font-medium">Assets Under Management</div>
+              <div className="text-gray-300 text-sm">Institutional accounts</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="animate-bounce">
+          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export function Performance() {
   const [selectedPeriod, setSelectedPeriod] = useState('Live')
@@ -108,6 +189,7 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
+            Professional Performance Metrics
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
@@ -118,7 +200,7 @@ export function Performance() {
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">3.4:1</div>
               <div className="text-gray-700 font-medium">Profit Factor</div>
-              <div className="text-sm text-gray-600 mt-1">Gross Profit vs Gross Loss</div>
+              <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
@@ -127,27 +209,6 @@ export function Performance() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  )
-}
-
-function Home() {
-  return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="https://www.pexels.com/video/8201410/download/" type="video/mp4" />
-        </video>
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
       </div>
     </section>
   )
