@@ -31,7 +31,7 @@ export function Services() {
   return (
     <>
       {/* Investment Products Section */}
-      <section id="services" className="relative py-20 bg-white overflow-hidden">
+      <section id="services" className="relative bg-white overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 w-full h-full">
           <video
@@ -39,7 +39,7 @@ export function Services() {
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               const errorCode = e.currentTarget.error?.code
               console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
@@ -52,7 +52,7 @@ export function Services() {
           <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
