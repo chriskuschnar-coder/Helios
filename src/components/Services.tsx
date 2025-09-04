@@ -31,13 +31,41 @@ export function Services() {
   return (
     <>
       {/* Investment Products Section */}
-      <section id="services" className="py-20 bg-gray-50">
+      <section id="services" className="relative py-20 overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute inset-0 w-full h-full object-cover"
+            onLoadStart={() => console.log('Services video loading started')}
+            onCanPlay={() => console.log('Services video can play')}
+            onError={(e) => {
+              console.error('Services video error:', e)
+              // Hide video container on error
+              e.currentTarget.style.display = 'none'
+            }}
+            onLoadedData={() => console.log('Services video data loaded')}
+            style={{ backgroundColor: '#1a202c' }}
+          >
+            <source src="https://videos.pexels.com/video-files/3141208/3141208-hd_1920_1080_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/3141208/3141208-sd_640_360_25fps.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black bg-opacity-70"></div>
+        </div>
+
+        {/* Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+            <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="relative z-10 text-xl text-gray-200 max-w-3xl mx-auto">
               Sophisticated mathematical models designed for institutional investors 
               and qualified individuals seeking superior risk-adjusted returns through 
               systematic market inefficiency exploitation.
@@ -46,21 +74,21 @@ export function Services() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             {services.map((service, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 group hover:shadow-xl transition-shadow duration-300">
+              <div key={index} className="relative z-10 bg-white bg-opacity-20 backdrop-blur-sm rounded-xl shadow-lg border border-white border-opacity-30 p-6 group hover:bg-opacity-30 hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center group-hover:bg-navy-200 transition-colors duration-200">
-                    <service.icon className="h-6 w-6 text-navy-600" />
+                  <div className="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-200">
+                    <service.icon className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-navy-900 mb-3 text-center">
+                <h3 className="font-serif text-xl font-bold text-white mb-3 text-center">
                   {service.title}
                 </h3>
-                <p className="text-gray-600 mb-4 text-center">
+                <p className="text-gray-200 mb-4 text-center">
                   {service.description}
                 </p>
                 <ul className="space-y-2">
                   {service.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
+                    <li key={featureIndex} className="flex items-center text-sm text-gray-200">
                       <div className="w-1.5 h-1.5 bg-gold-600 rounded-full mr-2"></div>
                       {feature}
                     </li>
@@ -73,7 +101,7 @@ export function Services() {
       </section>
 
       {/* Advanced Market Microstructure Analytics Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
