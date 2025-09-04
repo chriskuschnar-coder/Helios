@@ -30,8 +30,8 @@ export function Services() {
 
   return (
     <>
-      {/* Investment Products Section */}
-      <section id="services" className="relative py-20 bg-gray-50 overflow-hidden">
+      {/* Investment Products Section with Video Background */}
+      <section id="services" className="relative py-20 overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 w-full h-full">
           <video
@@ -48,8 +48,8 @@ export function Services() {
           <div className="absolute inset-0 bg-black bg-opacity-70"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative z-10 text-center mb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
             <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
@@ -60,7 +60,7 @@ export function Services() {
             </p>
           </div>
 
-          <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             {services.map((service, index) => (
               <div key={index} className="bg-white bg-opacity-95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-6 group hover:shadow-xl hover:bg-opacity-100 transition-all duration-300">
                 <div className="flex justify-center mb-4">
