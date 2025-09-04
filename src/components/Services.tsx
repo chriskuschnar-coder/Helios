@@ -39,7 +39,7 @@ export function Services() {
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain"
             onError={(e) => {
               const errorCode = e.currentTarget.error?.code
               console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
