@@ -23,33 +23,51 @@ export function Contact() {
   }
 
   return (
-    <section id="contact" className="py-20 bg-gray-50">
+    <section id="contact" className="relative py-20 overflow-hidden">
+      {/* Dubai Marina Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="https://videos.pexels.com/video-files/30213649/30213649-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/30213649/30213649-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/30213649/30213649-sd_640_360_25fps.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+      </div>
+
+      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+        <div className="relative z-10 text-center mb-16">
+          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             Get in Touch
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-200 max-w-3xl mx-auto">
             Ready to discuss your investment goals? Our team is here to provide personalized 
             guidance and answer any questions about our strategies.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="relative z-10 grid lg:grid-cols-2 gap-12">
           {/* Contact Information */}
           <div>
-            <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8">
+            <h3 className="font-serif text-2xl font-bold text-white mb-8">
               Contact Information
             </h3>
             
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
-                <div className="bg-navy-100 p-3 rounded-lg">
-                  <MapPin className="w-6 h-6 text-navy-600" />
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg backdrop-blur-sm">
+                  <MapPin className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Office Address</h4>
-                  <p className="text-gray-600">
+                  <h4 className="font-semibold text-white mb-1">Office Address</h4>
+                  <p className="text-gray-200">
                     200 South Biscayne Boulevard<br />
                     Suite 2800<br />
                     Miami, FL 33131
@@ -58,32 +76,32 @@ export function Contact() {
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="bg-navy-100 p-3 rounded-lg">
-                  <Phone className="w-6 h-6 text-navy-600" />
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg backdrop-blur-sm">
+                  <Phone className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Phone</h4>
-                  <p className="text-gray-600">(305) 555-0123</p>
+                  <h4 className="font-semibold text-white mb-1">Phone</h4>
+                  <p className="text-gray-200">(305) 555-0123</p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="bg-navy-100 p-3 rounded-lg">
-                  <Mail className="w-6 h-6 text-navy-600" />
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg backdrop-blur-sm">
+                  <Mail className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Email</h4>
-                  <p className="text-gray-600">info@globalmarket.com</p>
+                  <h4 className="font-semibold text-white mb-1">Email</h4>
+                  <p className="text-gray-200">info@globalmarket.com</p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="bg-navy-100 p-3 rounded-lg">
-                  <Clock className="w-6 h-6 text-navy-600" />
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg backdrop-blur-sm">
+                  <Clock className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-navy-900 mb-1">Business Hours</h4>
-                  <p className="text-gray-600">
+                  <h4 className="font-semibold text-white mb-1">Business Hours</h4>
+                  <p className="text-gray-200">
                     Monday - Friday: 9:00 AM - 6:00 PM EST<br />
                     Saturday: 10:00 AM - 2:00 PM EST
                   </p>
@@ -91,9 +109,9 @@ export function Contact() {
               </div>
             </div>
 
-            <div className="mt-8 p-6 bg-navy-50 rounded-xl">
-              <h4 className="font-semibold text-navy-900 mb-2">Investment Minimums</h4>
-              <p className="text-gray-600 text-sm">
+            <div className="mt-8 p-6 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm border border-white border-opacity-20">
+              <h4 className="font-semibold text-white mb-2">Investment Minimums</h4>
+              <p className="text-gray-200 text-sm">
                 Our strategies are designed for qualified investors with minimum investments 
                 starting at $100,000. Please contact us to discuss your specific requirements 
                 and investment objectives.
@@ -103,7 +121,7 @@ export function Contact() {
 
           {/* Contact Form */}
           <div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
+            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white border-opacity-30">
               <h3 className="font-serif text-2xl font-bold text-navy-900 mb-6">
                 Schedule a Consultation
               </h3>
