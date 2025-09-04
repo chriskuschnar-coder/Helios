@@ -33,12 +33,23 @@ export function Contact() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
-            const errorCode = e.currentTarget.error?.code
-            console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+            const target = e.currentTarget as HTMLVideoElement
+            const error = target.error
+            if (error) {
+              const errorMessages = {
+                1: 'MEDIA_ERR_ABORTED - Video loading was aborted',
+                2: 'MEDIA_ERR_NETWORK - Network error occurred',
+                3: 'MEDIA_ERR_DECODE - Video decoding error',
+                4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Video format not supported'
+              }
+              console.error('Video loading failed:', errorMessages[error.code] || `Unknown error code: ${error.code}`)
+            } else {
+              console.error('Video loading failed: No error details available')
+            }
           }}
         >
-          <source src="https://videos.pexels.com/video-files/3196284/3196284-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3196284/3196284-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8572408/8572408-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8572408/8572408-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-black bg-opacity-60"></div>
