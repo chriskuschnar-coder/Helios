@@ -31,25 +31,46 @@ export function Contact() {
           muted
           loop
           playsInline
-          preload="metadata"
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ zIndex: 0 }}
-          onLoadedData={(e) => {
-            console.log('Contact video loaded successfully')
-            e.currentTarget.play().catch(console.error)
-          }}
           onError={(e) => {
-            const errorCode = e.currentTarget.error?.code
-            console.error('Contact video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
-            e.currentTarget.style.display = 'none'
+            const videoEl = e.currentTarget as HTMLVideoElement
+            const err = videoEl.error
+
+            if (err) {
+              switch (err.code) {
+                case MediaError.MEDIA_ERR_ABORTED:
+                  console.error("Contact video loading failed: fetching aborted by user")
+                  break
+                case MediaError.MEDIA_ERR_NETWORK:
+                  console.error("Contact video loading failed: network error")
+                  break
+                case MediaError.MEDIA_ERR_DECODE:
+                  console.error("Contact video loading failed: video decode error")
+                  break
+                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                  console.error("Contact video loading failed: format or source not supported")
+                  break
+                default:
+                  console.error("Contact video loading failed: unknown error code", err.code)
+              }
+            } else {
+              console.error("Contact video loading failed: no error details")
+            }
+            
+            // Hide video and show fallback background
+            videoEl.style.display = 'none'
+            const parentEl = videoEl.parentElement
+            if (parentEl) {
+              parentEl.style.background = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
+            }
           }}
         >
-          <source src="https://videos.pexels.com/video-files/3184405/3184405-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3184405/3184405-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/3184405/3184405-sd_640_360_25fps.mp4" type="video/mp4" />
+          <source src="/videos/contact.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8566709/8566709-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/8566709/8566709-sd_640_360_25fps.mp4" type="video/mp4" />
         </video>
         {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black bg-opacity-50" style={{ zIndex: 10 }}></div>
+        <div className="absolute inset-0 bg-black bg-opacity-60 z-10"></div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ zIndex: 20 }}>
