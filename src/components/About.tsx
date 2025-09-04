@@ -1,4 +1,4 @@
-import { Eye, Brain, Zap, Shield, Server, Target, Activity, TrendingUp } from 'lucide-react'
+import { Eye, Brain, Zap, Shield, Server, Target, Activity, TrendingUp, ArrowRight } from 'lucide-react'
 
 export function About() {
   const systems = [
