@@ -21,7 +21,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-navy-600" />
             <span className="font-serif text-xl font-bold text-navy-900">
-              Global Market Consulting
+              HELIOS
             </span>
           </div>
 
@@ -38,9 +38,9 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
             ))}
             <button
               onClick={onNavigateToLogin}
-              className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+              className="bg-gold-600 hover:bg-gold-700 text-black px-8 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 shadow-lg"
             >
-              Client Portal
+              Access HELIOS
             </button>
           </div>
 
@@ -74,9 +74,9 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                   onNavigateToLogin?.()
                   setIsMenuOpen(false)
                 }}
-                className="block w-full text-left px-3 py-2 text-navy-600 hover:text-navy-700 font-medium"
+                className="block w-full text-left px-3 py-2 text-gold-600 hover:text-gold-700 font-bold"
               >
-                Client Portal
+                Access HELIOS
               </button>
             </div>
           </div>
