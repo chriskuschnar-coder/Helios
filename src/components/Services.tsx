@@ -192,7 +192,7 @@ export function Services() {
                     <li className="flex items-start">
                       <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                       <div>
-                        <div className="font-medium text-navy-900">Market Maker Tracking</div>
+                        <div className="font-medium text-navy-900">Market Maker Positioning</div>
                         <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
                       </div>
                     </li>
@@ -200,19 +200,20 @@ export function Services() {
                       <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
                       <div>
                         <div className="font-medium text-navy-900">Optimal Order Placement</div>
-                        <div className="text-sm text-gray-600">Strategic positioning to minimize market impact and maximize execution quality</div>
+                        <div className="text-sm text-gray-600">Advanced algorithms for optimal trade execution and market impact minimization</div>
                       </div>
                     </li>
                   </ul>
                 </div>
               </div>
-              <div className="grid md:grid-cols-4 gap-6 mt-8">
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
                   <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
                   <div className="text-gray-600">Events/Second</div>
                 </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">99.9%</div>
+                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">99.97%</div>
                   <div className="text-gray-600">System Uptime</div>
                 </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
@@ -220,7 +221,7 @@ export function Services() {
                   <div className="text-gray-600">Daily Data</div>
                 </div>
                 <div className="bg-white rounded-lg p-6 text-center border border-gray-200 shadow-sm">
-                  <div className="font-serif text-3xl font-bold text-navy-900 mb-2">847</div>
+                  <div className="font-serif text-3xl font-bold text-gold-400 mb-2">500+</div>
                   <div className="text-gray-600">Real-time Factors</div>
                 </div>
               </div>
