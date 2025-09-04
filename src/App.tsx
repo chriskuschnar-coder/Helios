@@ -108,8 +108,8 @@ export function Performance() {
         {/* Quantitative Metrics */}
         <div className="mt-16 bg-white border border-gray-200 rounded-2xl p-8 lg:p-12">
           <h3 className="font-serif text-2xl font-bold text-navy-900 mb-8 text-center">
+import { Hero } from './components/Hero'
           </h3>
-      {/* <Hero /> */}
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-gold-400 mb-2">Zero</div>
@@ -122,7 +122,7 @@ export function Performance() {
               <div className="text-sm text-gray-600 mt-1">Winners vs Losers</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gold-400 mb-2">99.97%</div>
+        <Hero />
               <div className="text-gray-700 font-medium">System Uptime</div>
               <div className="text-sm text-gray-600 mt-1">Reliable Operations</div>
             </div>
