@@ -292,14 +292,7 @@ export function InvestorDashboard() {
       }
     }
     
-    // Sort b
-          )
-        }
-        )
-      }
-    }
-  }
-}y date (newest first)
+    // Sort by date (newest first)
     return transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }
   
