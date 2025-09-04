@@ -68,9 +68,25 @@ export function Services() {
       </section>
 
       {/* Advanced Market Microstructure Analytics Section */}
-      <section className="py-20 bg-white">
+      <section className="relative py-20 bg-white overflow-hidden">
+        {/* Dubai Marina Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="https://videos.pexels.com/video-files/30198247/30198247-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/30198247/30198247-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
+          {/* Light overlay for text readability */}
+          <div className="absolute inset-0 bg-white bg-opacity-80"></div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="relative z-10 text-center mb-16">
             <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
               Advanced Market Microstructure Analytics
             </h2>
@@ -80,7 +96,7 @@ export function Services() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="relative z-10 grid md:grid-cols-3 gap-8 mb-16">
             <div className="text-center group">
               <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Brain className="h-8 w-8 text-navy-900" />
@@ -124,12 +140,30 @@ export function Services() {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-8 lg:p-12 border border-gray-200">
-            <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
+          <div className="relative z-10 bg-white bg-opacity-95 rounded-2xl p-8 lg:p-12 border border-gray-200 backdrop-blur-sm">
+            <div className="relative bg-white rounded-2xl p-8 lg:p-12 border border-gray-200 overflow-hidden">
+              {/* Dubai Marina Video Background */}
+              <div className="absolute inset-0 w-full h-full">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                >
+                  <source src="https://videos.pexels.com/video-files/30198247/30198247-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+                  <source src="https://videos.pexels.com/video-files/30198247/30198247-hd_1920_1080_25fps.mp4" type="video/mp4" />
+                </video>
+                {/* Light overlay for text readability */}
+                <div className="absolute inset-0 bg-white bg-opacity-85"></div>
+              </div>
+              
               <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
+                <span className="relative z-10">
                 Proprietary Quantitative Framework
+                </span>
               </h3>
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="relative z-10 grid md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl p-6">
                   <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
                     Statistical Arbitrage Models
