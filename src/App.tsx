@@ -13,8 +13,12 @@ export default function App() {
     setShowInvestmentPlatform(true)
   }
 
+  const handleBackToHome = () => {
+    setShowInvestmentPlatform(false)
+  }
+
   if (showInvestmentPlatform) {
-    return <InvestmentPlatform />
+    return <InvestmentPlatform onBackToHome={handleBackToHome} />
   }
 
   return (

@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
-import { TrendingUp, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { TrendingUp, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle, ArrowLeft, X } from 'lucide-react'
 
 interface SignupFormProps {
   onSuccess?: () => void
   onSwitchToLogin?: () => void
+  onBackToHome?: () => void
 }
 
-export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) => {
+export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin, onBackToHome }) => {
   const { signUp } = useAuth()
   const [formData, setFormData] = useState({
     fullName: '',
@@ -81,6 +82,23 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+      {/* Back to Home Button */}
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={onBackToHome}
+          className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </button>
+        <button
+          onClick={onBackToHome}
+          className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center">

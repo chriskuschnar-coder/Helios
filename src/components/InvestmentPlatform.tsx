@@ -4,7 +4,11 @@ import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
 
-function AuthenticatedApp() {
+interface AuthenticatedAppProps {
+  onBackToHome?: () => void
+}
+
+function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
 
@@ -28,6 +32,7 @@ function AuthenticatedApp() {
               // User will be automatically logged in after successful signup
             }}
             onSwitchToLogin={() => setShowSignup(false)}
+            onBackToHome={onBackToHome}
           />
         ) : (
           <LoginForm 
@@ -35,6 +40,7 @@ function AuthenticatedApp() {
               // User will be automatically redirected to dashboard
             }}
             onSwitchToSignup={() => setShowSignup(true)}
+            onBackToHome={onBackToHome}
           />
         )}
       </div>
@@ -44,10 +50,14 @@ function AuthenticatedApp() {
   return <DashboardSelector />
 }
 
-export function InvestmentPlatform() {
+interface InvestmentPlatformProps {
+  onBackToHome?: () => void
+}
+
+export function InvestmentPlatform({ onBackToHome }: InvestmentPlatformProps) {
   return (
     <AuthProvider>
-      <AuthenticatedApp />
+      <AuthenticatedApp onBackToHome={onBackToHome} />
     </AuthProvider>
   )
 }
