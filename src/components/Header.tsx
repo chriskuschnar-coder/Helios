@@ -21,7 +21,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-navy-600" />
             <span className="font-serif text-xl font-bold text-navy-900">
-              Nautilus
+              HELIOS
             </span>
           </div>
 
@@ -38,9 +38,9 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
             ))}
             <button
               onClick={onNavigateToLogin}
-              className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-3 rounded-xl font-bold transition-all duration-200 hover:scale-105 shadow-lg"
+              className="bg-gold-600 hover:bg-gold-700 text-black px-8 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 shadow-lg"
             >
-              Client Portal
+              Access HELIOS
             </button>
           </div>
 
@@ -76,7 +76,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 }}
                 className="block w-full text-left px-3 py-2 text-gold-600 hover:text-gold-700 font-bold"
               >
-                Client Portal
+                Access HELIOS
               </button>
             </div>
           </div>

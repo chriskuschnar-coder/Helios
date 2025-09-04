@@ -1,157 +1,209 @@
-import { Award, Globe, Users, Target, Brain, Zap, Shield, BarChart3, TrendingUp, Activity } from 'lucide-react'
+import { Eye, Brain, Zap, Shield, Server, Target, Activity, TrendingUp } from 'lucide-react'
 
 export function About() {
-  const metrics = [
+  const systems = [
     {
-      icon: Zap,
-      title: '250,000',
-      subtitle: 'Events/Second',
-      description: 'Real-time market data processing across all major exchanges and dark pools.'
+      icon: Eye,
+      title: 'THE INFRASTRUCTURE',
+      subtitle: 'Global Market Dominance System',
+      features: [
+        'Connected to every major liquidity source simultaneously',
+        'Processing quarter-million market events per second', 
+        'Seeing market depth that retail platforms hide',
+        'Military-grade redundancy across multiple data centers'
+      ],
+      translation: 'We have eyes everywhere, all the time.',
+      color: 'from-blue-600 to-cyan-600'
     },
     {
       icon: Brain,
-      title: '14',
-      subtitle: 'AI Systems',
-      description: 'Parallel processing engines analyzing patterns, momentum, and market structure.'
+      title: 'THE INTELLIGENCE',
+      subtitle: 'Proprietary Pattern Recognition Engine',
+      features: [
+        '14 parallel processing systems working in concert',
+        'Institutional-grade market microstructure analysis',
+        'Adaptive algorithms that evolve every hour',
+        'Multi-layer validation preventing false signals'
+      ],
+      translation: 'We think faster than any human ever could.',
+      color: 'from-purple-600 to-pink-600'
     },
     {
-      icon: Shield,
-      title: '99.97%',
-      subtitle: 'System Uptime',
-      description: 'Military-grade redundancy with failover systems across 4 continents.'
+      icon: Zap,
+      title: 'THE EXECUTION',
+      subtitle: 'Hedge Fund Trading Desk in a Box',
+      features: [
+        'Position sizing algorithms used by trillion-dollar funds',
+        'Advanced order routing that hides our intentions',
+        'Risk management rules from the world\'s top performers',
+        'Profit protection systems that lock in gains automatically'
+      ],
+      translation: 'We trade like the professionals, not the public.',
+      color: 'from-orange-600 to-red-600'
     },
     {
-      icon: BarChart3,
-      title: '$2.4TB',
-      subtitle: 'Daily Data',
-      description: 'Institutional-grade market intelligence processed every trading day.'
+      icon: Target,
+      title: 'THE LEARNING SYSTEM',
+      subtitle: 'Self-Optimizing Performance Engine',
+      features: [
+        'Every decision tracked, measured, and improved',
+        'Pattern library that grows stronger daily',
+        'Threshold optimization that adapts to market conditions',
+        'Neural pathways that remember what works'
+      ],
+      translation: 'Tomorrow\'s version is smarter than today\'s.',
+      color: 'from-green-600 to-emerald-600'
+    }
+  ]
+
+  const advantages = [
+    {
+      title: 'Speed Advantage',
+      description: 'Millisecond execution vs. human minutes',
+      icon: Zap
+    },
+    {
+      title: 'Scale Advantage', 
+      description: 'Monitor everything, miss nothing',
+      icon: Activity
+    },
+    {
+      title: 'Intelligence Advantage',
+      description: '14 PhDs worth of analysis, instantly',
+      icon: Brain
+    },
+    {
+      title: 'Discipline Advantage',
+      description: 'Zero emotion, pure mathematics',
+      icon: Shield
+    },
+    {
+      title: 'Time Advantage',
+      description: 'Makes money while you sleep, vacation, live',
+      icon: TrendingUp
     }
   ]
 
   return (
-    <section id="about" className="py-20 bg-gray-50">
+    <section id="about" className="py-20 bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-serif text-4xl lg:text-5xl font-bold text-navy-900 mb-6">
-            What We've Built
+        {/* Header */}
+        <div className="text-center mb-20">
+          <h2 className="font-serif text-4xl lg:text-5xl font-bold text-white mb-6">
+            WHAT WE'VE BUILT
           </h2>
-          <p className="text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            This isn't about trading anymore. It's about owning the infrastructure that controls the game.
+          <p className="text-2xl lg:text-3xl text-gold-400 font-bold mb-4">
+            The Black Box That Prints Money
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {metrics.map((metric, index) => (
-            <div key={index} className="text-center group bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-navy-100 rounded-full mb-6 group-hover:bg-navy-200 transition-all duration-200">
-                <metric.icon className="h-10 w-10 text-navy-600" />
+        {/* Four Core Systems */}
+        <div className="space-y-20 mb-32">
+          {systems.map((system, index) => (
+            <div key={index} className="relative">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className={`${index % 2 === 1 ? 'lg:order-2' : ''}`}>
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className={`w-16 h-16 bg-gradient-to-r ${system.color} rounded-2xl flex items-center justify-center`}>
+                      <system.icon className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        {system.title}
+                      </h3>
+                      <h4 className="text-2xl lg:text-3xl font-bold text-white">
+                        {system.subtitle}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-4 mb-8">
+                    {system.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-gold-400 rounded-full mt-3 flex-shrink-0"></div>
+                        <span className="text-gray-300 text-lg leading-relaxed">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+                    <p className="text-gold-400 font-bold text-xl italic">
+                      Translation: {system.translation}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                  <div className={`bg-gradient-to-r ${system.color} rounded-3xl p-8 text-center`}>
+                    <system.icon className="h-24 w-24 text-white mx-auto mb-6" />
+                    <div className="text-6xl font-bold text-white mb-4">
+                      {index === 0 ? '250K' : index === 1 ? '14' : index === 2 ? '∞' : 'AI'}
+                    </div>
+                    <div className="text-white font-medium text-lg">
+                      {index === 0 ? 'Events/Second' : index === 1 ? 'AI Systems' : index === 2 ? 'Execution Speed' : 'Learning'}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-serif text-3xl font-bold text-navy-900 mb-2">
-                {metric.title}
-              </h3>
-              <h4 className="text-lg font-bold text-gold-600 mb-4">
-                {metric.subtitle}
-              </h4>
-              <p className="text-gray-600 leading-relaxed">
-                {metric.description}
-              </p>
             </div>
           ))}
         </div>
 
-        {/* The Vision Section */}
-        <div className="bg-gradient-to-r from-navy-900 via-black to-navy-900 rounded-3xl p-12 lg:p-16 border border-gold-600 shadow-2xl">
-          <div className="text-center mb-12">
-            <h3 className="font-serif text-4xl lg:text-5xl font-bold text-white mb-6">
-              THE VISION
-            </h3>
-            <h4 className="text-3xl font-bold text-gold-400 mb-8">
-              Your Financial Empire
-            </h4>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              This isn't about trading anymore. It's about owning the infrastructure that controls the game.
+        {/* Unfair Advantages Section */}
+        <div className="bg-gray-900 rounded-3xl p-12 border border-gray-800 mb-20">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-4xl lg:text-5xl font-bold text-white mb-6">
+              WHY US: The Unfair Advantages
+            </h2>
+            <p className="text-2xl text-gold-400 font-bold mb-4">
+              We're Not Selling You Software.
+            </p>
+            <p className="text-2xl text-white font-bold">
+              We're Selling You a Seat at the Institutional Table.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
-            <div className="bg-white bg-opacity-10 rounded-2xl p-8 backdrop-blur-sm border border-white border-opacity-20">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mb-6">
-                <Brain className="h-8 w-8 text-navy-900" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {advantages.map((advantage, index) => (
+              <div key={index} className="bg-black rounded-2xl p-8 border border-gray-700 hover:border-gold-400 transition-all duration-300 group">
+                <div className="w-12 h-12 bg-gold-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <advantage.icon className="h-6 w-6 text-black" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  {advantage.title}
+                </h3>
+                <p className="text-gray-300 text-lg leading-relaxed">
+                  {advantage.description}
+                </p>
               </div>
-              <h5 className="text-xl font-bold text-white mb-4">Institutional Intelligence</h5>
-              <p className="text-gray-300 leading-relaxed">
-                Access the same quantitative models and market intelligence that power the world's largest hedge funds.
-              </p>
-            </div>
-
-            <div className="bg-white bg-opacity-10 rounded-2xl p-8 backdrop-blur-sm border border-white border-opacity-20">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mb-6">
-                <Activity className="h-8 w-8 text-navy-900" />
-              </div>
-              <h5 className="text-xl font-bold text-white mb-4">24/7 Execution</h5>
-              <p className="text-gray-300 leading-relaxed">
-                Your capital works around the clock, capturing opportunities across global markets while you focus on life.
-              </p>
-            </div>
-
-            <div className="bg-white bg-opacity-10 rounded-2xl p-8 backdrop-blur-sm border border-white border-opacity-20">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mb-6">
-                <TrendingUp className="h-8 w-8 text-navy-900" />
-              </div>
-              <h5 className="text-xl font-bold text-white mb-4">Compound Growth</h5>
-              <p className="text-gray-300 leading-relaxed">
-                Mathematical precision in capital allocation creates exponential wealth accumulation over time.
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="inline-block bg-gold-600 rounded-2xl p-8">
-              <h6 className="text-2xl font-bold text-navy-900 mb-4">
-                Welcome to Nautilus
-              </h6>
-              <div className="space-y-2 text-navy-900 font-semibold text-lg">
-                <p>Where code becomes capital.</p>
-                <p>Where algorithms build empires.</p>
-                <p>Where your future runs on autopilot.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Performance Metrics */}
-        <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200 shadow-lg">
-          <div className="text-center mb-12">
-            <h3 className="font-serif text-3xl font-bold text-navy-900 mb-4">
-              The Numbers Don't Lie
+        {/* The Vision Section */}
+        <div className="text-center">
+          <h2 className="font-serif text-4xl lg:text-5xl font-bold text-white mb-8">
+            THE VISION: Your Financial Empire
+          </h2>
+          <p className="text-2xl text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed">
+            This isn't about trading anymore. It's about owning the infrastructure that controls the game.
+          </p>
+          
+          <div className="bg-gradient-to-r from-gold-600 to-gold-400 rounded-3xl p-12 mb-12">
+            <h3 className="font-serif text-5xl lg:text-6xl font-bold text-black mb-8">
+              Welcome to HELIOS
             </h3>
-            <p className="text-xl text-gray-600">
-              Real performance from real capital in real markets
-            </p>
+            <div className="space-y-4 text-black text-xl lg:text-2xl font-medium">
+              <p>Where code becomes capital.</p>
+              <p>Where algorithms build empires.</p>
+              <p>Where your future runs on autopilot.</p>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-green-600 mb-2">342%</div>
-              <div className="text-gray-600 font-medium">Annual Returns</div>
-              <div className="text-sm text-gray-500 mt-1">2024 Performance</div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-navy-900 mb-2">2.94</div>
-              <div className="text-gray-600 font-medium">Sharpe Ratio</div>
-              <div className="text-sm text-gray-500 mt-1">Risk-Adjusted</div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-gold-600 mb-2">5.7%</div>
-              <div className="text-gray-600 font-medium">Max Drawdown</div>
-              <div className="text-sm text-gray-500 mt-1">Capital Protection</div>
-            </div>
-            <div className="text-center">
-              <div className="font-serif text-4xl font-bold text-green-600 mb-2">Zero</div>
-              <div className="text-gray-600 font-medium">Account Failures</div>
-              <div className="text-sm text-gray-500 mt-1">100% Success Rate</div>
-            </div>
-          </div>
+          <button className="bg-white hover:bg-gray-100 text-black px-12 py-6 rounded-2xl font-bold text-2xl transition-all duration-300 hover:scale-105 shadow-2xl">
+            Enter HELIOS
+            <ArrowRight className="h-6 w-6 ml-3 inline" />
+          </button>
         </div>
       </div>
     </section>
