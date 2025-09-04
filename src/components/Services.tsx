@@ -15,14 +15,14 @@ export function Performance() {
 
   return (
     <section id="performance" className="py-20 bg-navy-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
             Proven Track Record of Investment Success
-          </p>
+          </h2>
           <p className="text-xl text-navy-200 max-w-3xl mx-auto">
-            Our transparent performance history demonstrates consistent value creation for clients 
             through disciplined investment strategies and professional risk management across all market conditions.
-          </p>
+          </h2>
         </div>
 
         <div className="bg-white rounded-2xl p-8 lg:p-12">
