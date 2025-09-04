@@ -7,22 +7,17 @@ export default function Hero() {
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Video */}
-      <div className="absolute inset-0 z-0">
-        <video
           autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-          onLoadedData={() => setIsVideoLoaded(true)}
-        >
-          <source src="https://images.pexels.com/videos/3195394/pexels-video-3195394.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-navy-900 bg-opacity-40"></div>
-      </div>
+    <section 
+      id="home" 
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(16, 42, 67, 0.7), rgba(16, 42, 67, 0.7)), url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg")'
+      }}
+    >
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
             Institutional Investment Excellence
