@@ -73,35 +73,13 @@ export function Services() {
       </section>
 
       {/* Advanced Market Microstructure Analytics Section */}
-      <section className="relative py-20 bg-white overflow-hidden">
-        {/* Video Background */}
-        <div className="absolute inset-0 w-full h-full z-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
-            onLoadStart={() => console.log('Video loading started')}
-            onCanPlay={() => console.log('Video can play')}
-            onError={(e) => console.error('Video loading failed:', e.currentTarget.error?.code || 'Unknown error')}
-          >
-            <source src="https://videos.pexels.com/video-files/3183150/3183150-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/3183150/3183150-hd_1920_1080_25fps.mp4" type="video/mp4" />
-            <source src="https://videos.pexels.com/video-files/3183150/3183150-medium_1280_720_25fps.mp4" type="video/mp4" />
-          </video>
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-navy-900 bg-opacity-85"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
               Advanced Market Microstructure Analytics
             </h2>
-            <p className="text-xl text-white max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Our proprietary quantitative models implement cutting-edge academic research 
               for systematic alpha generation and superior risk management through mathematical precision.
             </p>
@@ -112,10 +90,10 @@ export function Services() {
               <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Brain className="h-8 w-8 text-navy-900" />
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
                 VPIN Analysis
               </h3>
-              <p className="text-gray-200">
+              <p className="text-gray-600">
                 Volume-Synchronized Probability of Informed Trading with machine learning 
                 enhancement calibrated on 119,000+ trade samples for toxic flow identification 
                 and adverse selection prevention.
@@ -126,10 +104,10 @@ export function Services() {
               <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Target className="h-8 w-8 text-navy-900" />
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
                 Kyle's Lambda
               </h3>
-              <p className="text-gray-200">
+              <p className="text-gray-600">
                 Dynamic price impact modeling with Hasbrouck decomposition for 
                 optimal execution algorithms, achieving 52% slippage reduction 
                 versus time-weighted average price benchmarks.
@@ -140,10 +118,10 @@ export function Services() {
               <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <BarChart3 className="h-8 w-8 text-navy-900" />
               </div>
-              <h3 className="font-serif text-xl font-bold text-white mb-2">
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
                 Regime Detection
               </h3>
-              <p className="text-gray-200">
+              <p className="text-gray-600">
                 Four-state Hidden Markov Models with Baum-Welch parameter estimation 
                 for real-time market state identification and probabilistic forecasting 
                 across momentum and mean-reversion regimes.
@@ -151,7 +129,8 @@ export function Services() {
             </div>
           </div>
 
-          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-8 lg:p-12 border border-white border-opacity-30">
+          <div className="bg-gray-50 rounded-2xl p-8 lg:p-12 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
               <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
                 Proprietary Quantitative Framework
               </h3>
@@ -247,6 +226,7 @@ export function Services() {
                 </div>
               </div>
             </div>
+          </div>
         </div>
       </section>
     </>
