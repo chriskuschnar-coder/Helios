@@ -1,115 +1,214 @@
-import { TrendingUp, Shield, BarChart3, Target, Zap, Award } from 'lucide-react'
+import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp } from 'lucide-react'
 
-export default function Services() {
+export function Services() {
+  const services = [
+    {
+      icon: Brain,
+      title: 'Alpha Fund',
+      description: 'Quantitative momentum strategies with 35-45% annual target returns and <10% volatility.',
+      features: ['$250K minimum', '2% management fee', '20% performance fee', '6-month lock-up']
+    },
+    {
+      icon: Shield,
+      title: 'Market Neutral',
+      description: 'Statistical arbitrage and relative value strategies for consistent risk-adjusted returns.',
+      features: ['15-20% annual target', '3% max drawdown', 'Family office focused', 'Quarterly liquidity']
+    },
+    {
+      icon: TrendingUp,
+      title: 'Momentum Portfolio',
+      description: 'High-conviction quantitative signals with up to 3x leverage during optimal conditions.',
+      features: ['60-80% annual target', '15-20% volatility', 'Sophisticated investors', 'Dynamic leverage']
+    },
+    {
+      icon: Zap,
+      title: 'Risk Management',
+      description: 'Advanced portfolio construction using modern portfolio theory and multi-factor models.',
+      features: ['VaR modeling', 'Stress testing', 'Factor attribution', 'Real-time monitoring']
+    }
+  ]
+
   return (
-    <section id="services" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-            Investment Strategies & Services
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Sophisticated quantitative strategies designed to generate consistent alpha 
-            while managing downside risk through systematic portfolio optimization.
-          </p>
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow duration-300">
-            <div className="w-16 h-16 bg-navy-600 rounded-xl flex items-center justify-center mb-6">
-              <TrendingUp className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="font-serif text-xl font-bold text-navy-900 mb-4">
-              Quantitative Alpha Generation
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Systematic strategies that exploit market inefficiencies through advanced 
-              mathematical models and machine learning algorithms.
+    <>
+      {/* Investment Products Section */}
+      <section id="services" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+              Quantitative Investment Products
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Sophisticated mathematical models designed for institutional investors 
+              and qualified individuals seeking superior risk-adjusted returns through 
+              systematic market inefficiency exploitation.
             </p>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Cross-sectional momentum strategies
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Statistical arbitrage models
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Mean reversion algorithms
-              </li>
-            </ul>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow duration-300">
-            <div className="w-16 h-16 bg-navy-600 rounded-xl flex items-center justify-center mb-6">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="font-serif text-xl font-bold text-navy-900 mb-4">
-              Advanced Risk Management
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Institutional-grade risk controls and portfolio optimization techniques 
-              to preserve capital while maximizing risk-adjusted returns.
-            </p>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Dynamic position sizing
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Volatility targeting
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Drawdown protection
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow duration-300">
-            <div className="w-16 h-16 bg-navy-600 rounded-xl flex items-center justify-center mb-6">
-              <BarChart3 className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="font-serif text-xl font-bold text-navy-900 mb-4">
-              Portfolio Optimization
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Continuous portfolio rebalancing using modern portfolio theory 
-              and factor-based allocation models.
-            </p>
-            <ul className="space-y-2 text-gray-600">
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Factor-based allocation
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Correlation analysis
-              </li>
-              <li className="flex items-center">
-                <div className="w-2 h-2 bg-navy-600 rounded-full mr-3"></div>
-                Regime detection
-              </li>
-            </ul>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            {services.map((service, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 group hover:shadow-xl transition-shadow duration-300">
+                <div className="flex justify-center mb-4">
+                  <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center group-hover:bg-navy-200 transition-colors duration-200">
+                    <service.icon className="h-6 w-6 text-navy-600" />
+                  </div>
+                </div>
+                <h3 className="font-serif text-xl font-bold text-navy-900 mb-3 text-center">
+                  {service.title}
+                </h3>
+                <p className="text-gray-600 mb-4 text-center">
+                  {service.description}
+                </p>
+                <ul className="space-y-2">
+                  {service.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
+                      <div className="w-1.5 h-1.5 bg-gold-600 rounded-full mr-2"></div>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div className="mt-16 bg-navy-900 rounded-2xl p-8 lg:p-12 text-center">
-          <h3 className="font-serif text-2xl lg:text-3xl font-bold text-white mb-4">
-            Ready to Get Started?
-          </h3>
-          <p className="text-xl text-navy-200 mb-8 max-w-2xl mx-auto">
-            Join sophisticated investors who trust our quantitative approach 
-            to generate consistent alpha in all market conditions.
-          </p>
-          <button className="bg-gold-600 hover:bg-gold-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors duration-200">
-            Schedule Consultation
-          </button>
+      {/* Advanced Market Microstructure Analytics Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+              Advanced Market Microstructure Analytics
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our proprietary quantitative models implement cutting-edge academic research 
+              for systematic alpha generation and superior risk management through mathematical precision.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Brain className="h-8 w-8 text-navy-900" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
+                VPIN Analysis
+              </h3>
+              <p className="text-gray-600">
+                Volume-Synchronized Probability of Informed Trading with machine learning 
+                enhancement calibrated on 119,000+ trade samples for toxic flow identification 
+                and adverse selection prevention.
+              </p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Target className="h-8 w-8 text-navy-900" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
+                Kyle's Lambda
+              </h3>
+              <p className="text-gray-600">
+                Dynamic price impact modeling with Hasbrouck decomposition for 
+                optimal execution algorithms, achieving 52% slippage reduction 
+                versus time-weighted average price benchmarks.
+              </p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <BarChart3 className="h-8 w-8 text-navy-900" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-navy-900 mb-2">
+                Regime Detection
+              </h3>
+              <p className="text-gray-600">
+                Four-state Hidden Markov Models with Baum-Welch parameter estimation 
+                for real-time market state identification and probabilistic forecasting 
+                across momentum and mean-reversion regimes.
+              </p>
+            </div>
+          </div>
+
+          {/* Proprietary Quantitative Framework */}
+          <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200">
+            <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-8 text-center">
+              Proprietary Quantitative Framework
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-white rounded-xl p-6">
+                <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
+                  Statistical Arbitrage Models
+                </h4>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Ornstein-Uhlenbeck Process</div>
+                      <div className="text-sm text-gray-600">Mean reversion modeling with stochastic differential equations</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Johansen Cointegration</div>
+                      <div className="text-sm text-gray-600">Statistical pairs identification through vector error correction</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Dynamic Hedge Ratios</div>
+                      <div className="text-sm text-gray-600">Principal component analysis for multi-factor risk exposure</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Fair Value Estimation</div>
+                      <div className="text-sm text-gray-600">Mean reversion strategies around theoretical price levels</div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-white rounded-xl p-6">
+                <h4 className="font-serif text-xl font-bold text-navy-900 mb-4">
+                  Professional Execution Strategies
+                </h4>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Smart Order Timing</div>
+                      <div className="text-sm text-gray-600">Avoiding trades when large players might move against us, protecting your returns</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Cost-Efficient Trading</div>
+                      <div className="text-sm text-gray-600">Minimizing trading costs through intelligent order placement and timing strategies</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Market Position Monitoring</div>
+                      <div className="text-sm text-gray-600">Tracking how market makers position themselves to anticipate price movements</div>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-gold-600 rounded-full mt-2 mr-3"></div>
+                    <div>
+                      <div className="font-medium text-navy-900">Optimal Order Placement</div>
+                      <div className="text-sm text-gray-600">Ensuring your trades get the best possible execution through strategic order placement</div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }
