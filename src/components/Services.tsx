@@ -31,20 +31,40 @@ export function Services() {
   return (
     <>
       {/* Investment Products Section */}
-      <section id="services" className="py-20 bg-white">
+      <section id="services" className="relative py-20 bg-white overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              const errorCode = e.currentTarget.error?.code
+              console.error('Video loading failed:', errorCode ? `Error code: ${errorCode}` : 'Unknown error')
+            }}
+          >
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/5028622/5028622-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
+            <h2 className="relative z-10 font-serif text-3xl lg:text-4xl font-bold text-white mb-4">
               Quantitative Investment Products
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="relative z-10 text-xl text-gray-200 max-w-3xl mx-auto">
               Sophisticated mathematical models designed for institutional investors 
               and qualified individuals seeking superior risk-adjusted returns through 
               systematic market inefficiency exploitation.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             {services.map((service, index) => (
               <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 group hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-center mb-4">
