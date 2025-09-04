@@ -64,31 +64,6 @@ export function Services() {
             </p>
           </div>
 
-          <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            {services.map((service, index) => (
-              <div key={index} className="p-6 group transition-all duration-300">
-                <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-all duration-200">
-                    <service.icon className="h-6 w-6 text-navy-600" />
-                  </div>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-navy-900 mb-3 text-center">
-                  {service.title}
-                </h3>
-                <p className="text-gray-600 mb-4 text-center">
-                  {service.description}
-                </p>
-                <ul className="space-y-2">
-                  {service.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
-                      <div className="w-1.5 h-1.5 bg-navy-600 rounded-full mr-2"></div>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
