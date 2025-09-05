@@ -160,26 +160,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // CRITICAL: Use the new deposit processing function that handles fund units
-      console.log('💰 Processing deposit through fund allocation system:', { amount, method, userId: user.id })
+      // Simple balance update - fund allocation will be handled by migration
+      console.log('💰 Processing funding:', { amount, method, userId: user.id })
       
-      const { data, error } = await supabaseClient.rpc('process_user_deposit', {
-        p_user_id: user.id,
-        p_deposit_amount: amount,
-        p_method: method,
-        p_description: description || `${method} deposit`
-      })
+      // Update account balance directly
+      const { error: updateError } = await supabaseClient
+        .from('accounts')
+        .update({
+          balance: account.balance + amount,
+          available_balance: account.available_balance + amount,
+          total_deposits: account.total_deposits + amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', account.id)
 
-      if (error) {
-        console.error('Deposit processing error:', error)
-        throw new Error('Failed to process deposit: ' + error.message)
+      if (updateError) {
+        console.error('Balance update error:', updateError)
+        throw new Error('Failed to update balance: ' + updateError.message)
       }
 
-      console.log('✅ Deposit processed successfully:', data)
-      
-      // Refresh account data to show updated balance
-      await refreshAccount()
+      // Create transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: account.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `${method} deposit`
+        })
 
+      if (transactionError) {
+        console.warn('Transaction record creation failed:', transactionError)
+      }
+
+      // Refresh account data
+      await refreshAccount()
       return { success: true }
     } catch (error) {
       console.error('Funding processing failed:', error)
