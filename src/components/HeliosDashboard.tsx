@@ -4,6 +4,7 @@ import TickerTape from './TickerTape'
 import { TradingViewBTCChart } from './TradingViewBTCChart'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { FundingModal } from './FundingModal'
+import { ExternalLink, ArrowRight, Activity, TrendingUp } from 'lucide-react'
 import '../styles/funding.css'
 
 interface DashboardData {
@@ -72,106 +73,19 @@ export function HeliosDashboard() {
   const { user, account, refreshAccount } = useAuth()
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [data, setData] = useState<DashboardData | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
+
+  const handleRedirectToLiveTerminal = () => {
+    setRedirecting(true)
+    // Open the live Helios terminal in a new tab
+    window.open('https://helios.luminarygrow.com/', '_blank')
+    setRedirecting(false)
+  }
 
   // Mock data that matches the Python version exactly
   const generateMockData = (): DashboardData => {
     const currentBalance = account?.balance || 0
     const totalDeposits = account?.total_deposits || 0
-    const netDeposits = totalDeposits - (account?.total_withdrawals || 0)
-    
-    // Calculate real P&L
-    const totalPnL = currentBalance - netDeposits
-    const dailyPnL = netDeposits > 0 ? totalPnL / 365 : 0
-    
-    return {
-    account: {
-      balance: currentBalance,
-      equity: currentBalance + (netDeposits > 0 ? 5.177 : 0),
-      margin: 0,
-      free_margin: currentBalance,
-      profit: netDeposits > 0 ? 50.40 : 0,
-      initial_balance: netDeposits
-    },
-    positions: netDeposits > 0 ? [
-      {
-        ticket: 'BTC001',
-        symbol: 'BTCUSD',
-        type: 'BUY',
-        volume: 0.25,
-        price_open: 106000.00,
-        price_current: 106010.00,
-        profit: 2.50,
-        profit_pct: 0.0094,
-        time: '14:25:30',
-        sl: 105500.00,
-        tp: 107000.00
-      },
-      {
-        ticket: 'ETH002',
-        symbol: 'ETHUSD',
-        type: 'SELL',
-        volume: 2.5,
-        price_open: 3200.00,
-        price_current: 3192.00,
-        profit: 20.00,
-        profit_pct: 0.25,
-        time: '13:45:12'
-      }
-    ] : [],
-    metrics: {
-      win_rate: netDeposits > 0 ? 76.4 : 0,
-      profit_factor: netDeposits > 0 ? 3.40 : 0,
-      sharpe_ratio: netDeposits > 0 ? 2.84 : 0,
-      max_drawdown: netDeposits > 0 ? 4.2 : 0,
-      avg_win: netDeposits > 0 ? 285.50 : 0,
-      avg_loss: netDeposits > 0 ? 142.30 : 0,
-      sortino_ratio: netDeposits > 0 ? 3.12 : 0,
-      calmar_ratio: netDeposits > 0 ? 2.89 : 0,
-      information_ratio: netDeposits > 0 ? 1.67 : 0,
-      total_trades: netDeposits > 0 ? 847 : 0
-    },
-    risk_metrics: {
-      var_daily: netDeposits > 0 ? 1250.00 : 0,
-      var_weekly: netDeposits > 0 ? 2800.00 : 0,
-      var_monthly: netDeposits > 0 ? 5600.00 : 0,
-      leverage: netDeposits > 0 ? 2.4 : 0,
-      exposure_net: netDeposits > 0 ? 33000.00 : 0,
-      position_concentration: netDeposits > 0 ? 15.8 : 0
-    },
-    execution_metrics: {
-      avg_slippage: netDeposits > 0 ? 0.0012 : 0,
-      fill_rate: netDeposits > 0 ? 98.5 : 0,
-      vwap_performance: netDeposits > 0 ? 0.15 : 0,
-      execution_cost: netDeposits > 0 ? 0.0025 : 0
-    },
-    active_signals: netDeposits > 0 ? [
-      {
-        time: new Date().toLocaleTimeString(),
-        symbol: 'BTCUSDT',
-        type: 'BUY',
-        strategy: 'Trend Following',
-        confidence: 85
-      },
-      {
-        time: new Date().toLocaleTimeString(),
-        symbol: 'ETHUSD',
-        type: 'SELL',
-        strategy: 'Mean Reversion',
-        confidence: 72
-      }
-    ] : [],
-    chart_data: {
-      timestamps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      balance: netDeposits > 0 ? [netDeposits, netDeposits * 1.01, netDeposits * 1.025, netDeposits * 1.032, netDeposits * 1.048, netDeposits * 1.052, netDeposits * 1.06, netDeposits * 1.058, currentBalance, currentBalance] : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      equity: netDeposits > 0 ? [netDeposits, netDeposits * 1.01, netDeposits * 1.025, netDeposits * 1.032, netDeposits * 1.048, netDeposits * 1.052, netDeposits * 1.06, netDeposits * 1.058, currentBalance + 5, currentBalance + 5] : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    }
-    }
-  }
-
-  useEffect(() => {
-    setData(generateMockData())
-  }, [account])
 
   const openFunding = (amount: number | null = null) => {
     setPrefilledAmount(amount)
@@ -190,23 +104,10 @@ export function HeliosDashboard() {
     console.log('Proceeding to payment:', { amount, method })
   }
 
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg font-semibold mb-2">Loading HELIOS CAPITAL...</div>
-          <div className="text-sm text-gray-400">Initializing trading systems</div>
-        </div>
-      </div>
-    )
-  }
-
-  // Calculate derived values
-  const dailyPnl = data.account.balance - data.account.initial_balance
-  const dailyPnlPct = (dailyPnl / data.account.initial_balance) * 100
-  const initialInvestment = 8000
-  const totalGrowth = data.account.balance - initialInvestment
-  const growthPct = (totalGrowth / initialInvestment) * 100
+  const currentBalance = account?.balance || 0
+  const totalDeposits = account?.total_deposits || 0
+  const netDeposits = totalDeposits - (account?.total_withdrawals || 0)
+  const hasActivity = currentBalance > 0
 
   return (
     <div className="min-h-screen bg-gray-900 safe-area-bottom">
