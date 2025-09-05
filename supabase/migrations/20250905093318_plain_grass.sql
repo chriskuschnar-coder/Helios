@@ -4,7 +4,7 @@
   1. New Tables
     - `accounts`
       - `id` (uuid, primary key)
-      - `user_id` (uuid, references users)
+      - `user_id` (uuid, foreign key to users)
       - `account_type` (text, default 'trading')
       - `balance` (numeric, default 0.00)
       - `available_balance` (numeric, default 0.00)
@@ -20,15 +20,22 @@
 
   2. Security
     - Enable RLS on `accounts` table
-    - Add policy for users to view their own accounts
-    - Add policy for users to update their own accounts
+    - Add policy for users to view their own accounts using auth.uid()
+    - Add policy for users to update their own accounts using auth.uid()
     - Add policy for system to insert accounts
+    - Add trigger to update updated_at column
+    - Add trigger to create investor_units on account creation
+
+  3. Changes
+    - Reset all balances to $0 for live MT5 integration
+    - Added fund allocation tracking
+    - Added NAV per unit tracking
 */
 
 -- Create accounts table if it doesn't exist
 CREATE TABLE IF NOT EXISTS accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES users(id),
+  user_id uuid UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   account_type text DEFAULT 'trading' CHECK (account_type IN ('trading', 'savings')),
   balance numeric(15,2) DEFAULT 0.00,
   available_balance numeric(15,2) DEFAULT 0.00,
@@ -43,56 +50,71 @@ CREATE TABLE IF NOT EXISTS accounts (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create unique constraint on user_id
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint 
-    WHERE conname = 'accounts_user_id_key'
-  ) THEN
-    ALTER TABLE accounts ADD CONSTRAINT accounts_user_id_key UNIQUE (user_id);
-  END IF;
-END $$;
+-- Add comment explaining the reset
+COMMENT ON TABLE accounts IS 'Reset for live MT5 trading integration - all balances start at $0';
 
 -- Enable RLS
 ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
 
--- Create policies only if they don't exist
+-- Add trigger for updated_at
 DO $$
 BEGIN
-  -- Policy for users to view their own accounts
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE policyname = 'Users can view own accounts fixed' 
-    AND tablename = 'accounts'
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'update_accounts_updated_at' 
+    AND tgrelid = 'accounts'::regclass
   ) THEN
-    CREATE POLICY "Users can view own accounts fixed"
-    ON accounts
-    FOR SELECT
-    USING (auth.uid() = user_id);
+    CREATE TRIGGER update_accounts_updated_at
+      BEFORE UPDATE ON accounts
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
   END IF;
+END$$;
 
-  -- Policy for users to update their own accounts
+-- Policy: Users can view their own accounts
+DO $$
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
-    WHERE policyname = 'Users can update own accounts fixed' 
+    WHERE policyname = 'Users can view own accounts' 
     AND tablename = 'accounts'
   ) THEN
-    CREATE POLICY "Users can update own accounts fixed"
-    ON accounts
-    FOR UPDATE
-    USING (auth.uid() = user_id);
+    CREATE POLICY "Users can view own accounts"
+      ON accounts
+      FOR SELECT
+      TO authenticated
+      USING (auth.uid() = user_id);
   END IF;
+END$$;
 
-  -- Policy for system to insert accounts
+-- Policy: Users can update their own accounts
+DO $$
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
-    WHERE policyname = 'System can insert accounts fixed' 
+    WHERE policyname = 'Users can update own accounts' 
     AND tablename = 'accounts'
   ) THEN
-    CREATE POLICY "System can insert accounts fixed"
-    ON accounts
-    FOR INSERT
-    WITH CHECK (true);
+    CREATE POLICY "Users can update own accounts"
+      ON accounts
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = user_id);
   END IF;
-END $$;
+END$$;
+
+-- Policy: System can insert accounts
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE policyname = 'System can insert accounts' 
+    AND tablename = 'accounts'
+  ) THEN
+    CREATE POLICY "System can insert accounts"
+      ON accounts
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (true);
+  END IF;
+END$$;

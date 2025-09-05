@@ -17,14 +17,15 @@
 
   2. Security
     - Enable RLS on `users` table
-    - Add policy for users to read their own data
+    - Add policy for users to read their own data using auth.uid()
+    - Add policy for users to update their own data using auth.uid()
     - Add policy for system to insert users
-    - Add policy for users to update their own data
+    - Add trigger to update updated_at column
 */
 
 -- Create users table if it doesn't exist
 CREATE TABLE IF NOT EXISTS users (
-  id uuid PRIMARY KEY REFERENCES auth.users(id),
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
   full_name text,
   phone text,
@@ -40,42 +41,74 @@ CREATE TABLE IF NOT EXISTS users (
 -- Enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- Create policies only if they don't exist
+-- Create update trigger function if it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Add trigger for updated_at
 DO $$
 BEGIN
-  -- Policy for users to read their own data
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'update_users_updated_at' 
+    AND tgrelid = 'users'::regclass
+  ) THEN
+    CREATE TRIGGER update_users_updated_at
+      BEFORE UPDATE ON users
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END$$;
+
+-- Policy: Users can view their own data
+DO $$
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
-    WHERE policyname = 'Users can read own data' 
+    WHERE policyname = 'Users can view own data' 
     AND tablename = 'users'
   ) THEN
-    CREATE POLICY "Users can read own data"
-    ON users
-    FOR SELECT
-    USING (auth.uid() = id);
+    CREATE POLICY "Users can view own data"
+      ON users
+      FOR SELECT
+      TO public
+      USING (auth.uid() = id);
   END IF;
+END$$;
 
-  -- Policy for system to insert users
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE policyname = 'System can insert users' 
-    AND tablename = 'users'
-  ) THEN
-    CREATE POLICY "System can insert users"
-    ON users
-    FOR INSERT
-    WITH CHECK (true);
-  END IF;
-
-  -- Policy for users to update their own data
+-- Policy: Users can update their own data
+DO $$
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
     WHERE policyname = 'Users can update own data' 
     AND tablename = 'users'
   ) THEN
     CREATE POLICY "Users can update own data"
-    ON users
-    FOR UPDATE
-    USING (auth.uid() = id);
+      ON users
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = id);
   END IF;
-END $$;
+END$$;
+
+-- Policy: System can insert users
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE policyname = 'System can insert users' 
+    AND tablename = 'users'
+  ) THEN
+    CREATE POLICY "System can insert users"
+      ON users
+      FOR INSERT
+      TO public
+      WITH CHECK (true);
+  END IF;
+END$$;
