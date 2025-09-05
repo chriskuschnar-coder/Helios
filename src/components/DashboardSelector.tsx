@@ -57,13 +57,13 @@ export function DashboardSelector() {
                 onClick={() => setSelectedDashboard('helios')}
                 className={`flex items-center space-x-1 lg:space-x-2 px-2 lg:px-4 py-2 rounded-md font-medium transition-colors mobile-button text-sm lg:text-base ${
                   selectedDashboard === 'helios'
-                    ? 'bg-blue-600 text-white shadow-sm'
+                    ? 'bg-gray-900 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Activity className="h-4 w-4" />
-                <span className="hidden lg:inline">HELIOS Terminal</span>
-                <span className="lg:hidden">HELIOS</span>
+                <span className="hidden lg:inline">Helios Trading</span>
+                <span className="lg:hidden">Helios</span>
               </button>
             </div>
             
@@ -112,12 +112,12 @@ export function DashboardSelector() {
                   }}
                   className={`w-full flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-colors mobile-button mobile-compact-padding mobile-space-x-1 ${
                     selectedDashboard === 'helios'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-gray-900 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                 >
                   <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="text-sm sm:text-base mobile-text-sm">HELIOS Terminal</span>
+                  <span className="text-sm sm:text-base mobile-text-sm">Helios Trading</span>
                 </button>
               </div>
               
