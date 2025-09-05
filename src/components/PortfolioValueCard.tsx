@@ -34,29 +34,29 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
       </div>
       
       <div className="mb-4 sm:mb-6 md:mb-8">
-        <h1 className="text-2xl sm:text-3xl md:text-5xl font-light text-gray-900 mb-1 sm:mb-2 font-mono tracking-tight mobile-portfolio-value">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-light text-gray-900 mb-1 sm:mb-2 font-mono tracking-tight mobile-portfolio-value">
           ${currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </h1>
-        <div className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm md:text-base font-medium mobile-text-xs mobile-space-x-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm font-medium mobile-text-xs mobile-space-x-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           <span>{isPositive ? '+' : ''}${Math.abs(dailyChange).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           <span className="opacity-80">({isPositive ? '+' : ''}{dailyChangePct.toFixed(2)}%)</span>
         </div>
       </div>
       
-      <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 md:gap-4 mobile-space-y-1">
+      <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 mobile-space-y-1">
         <button 
           onClick={() => onFundPortfolio()}
-          className="flex-1 bg-black hover:bg-gray-800 text-white px-3 sm:px-4 md:px-6 py-3 md:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
+          className="flex-1 bg-black hover:bg-gray-800 text-white px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
         >
-          <Plus className="h-4 w-4" />
-          <span className="text-xs sm:text-sm md:text-base mobile-text-xs">Fund Portfolio</span>
+          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="text-xs sm:text-sm mobile-text-xs">Fund Portfolio</span>
         </button>
         <button 
           onClick={onWithdraw}
-          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-3 sm:px-4 md:px-6 py-3 md:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
+          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
         >
-          <TrendingDown className="h-4 w-4" />
-          <span className="text-xs sm:text-sm md:text-base mobile-text-xs">Withdraw</span>
+          <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="text-xs sm:text-sm mobile-text-xs">Withdraw</span>
         </button>
       </div>
     </div>

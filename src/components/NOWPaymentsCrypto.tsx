@@ -214,78 +214,78 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         </div>
 
         {/* Payment Details Card */}
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+        <div className="bg-white border-2 border-gray-200 rounded-lg sm:rounded-xl p-4 sm:p-6">
           <div className="text-center mb-6">
-            <div className={`text-4xl mb-2 ${selectedCryptoData?.color}`}>
+            <div className={`text-2xl sm:text-3xl md:text-4xl mb-2 ${selectedCryptoData?.color}`}>
               {selectedCryptoData?.symbol}
             </div>
-            <h3 className="text-xl font-bold text-gray-900">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
               Send {invoice.pay_amount} {invoice.pay_currency.toUpperCase()}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Worth ${invoice.price_amount.toLocaleString()} USD
             </p>
           </div>
 
           {/* QR Code */}
-          <div className="text-center mb-6">
-            <div className="inline-block p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="inline-block p-2 sm:p-4 bg-white border border-gray-200 rounded-lg">
               <img 
                 src={qrCodeUrl} 
                 alt="Payment QR Code"
-                className="w-48 h-48 mx-auto"
+                className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mx-auto"
                 onError={(e) => {
                   // Hide QR code if it fails to load
                   e.currentTarget.style.display = 'none'
                 }}
               />
             </div>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-xs sm:text-sm text-gray-600 mt-2">
               Scan with your crypto wallet
             </p>
           </div>
 
           {/* Payment Address */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               {selectedCryptoData?.name} Address
             </label>
-            <div className="flex items-center space-x-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <code className="flex-1 text-sm font-mono text-gray-900 break-all">
+            <div className="flex items-center space-x-2 p-2 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <code className="flex-1 text-xs sm:text-sm font-mono text-gray-900 break-all">
                 {invoice.pay_address}
               </code>
               <button
                 onClick={() => copyToClipboard(invoice.pay_address, 'address')}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-1 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors"
                 title="Copy address"
               >
                 {copied === 'address' ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 ) : (
-                  <Copy className="h-4 w-4 text-gray-600" />
+                  <Copy className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
                 )}
               </button>
             </div>
           </div>
 
           {/* Amount to Send */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Exact Amount to Send
             </label>
-            <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <code className="flex-1 text-lg font-mono font-bold text-gray-900">
+            <div className="flex items-center space-x-2 p-2 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <code className="flex-1 text-sm sm:text-lg font-mono font-bold text-gray-900">
                 {invoice.pay_amount} {invoice.pay_currency.toUpperCase()}
               </code>
               <button
                 onClick={() => copyToClipboard(invoice.pay_amount.toString(), 'amount')}
-                className="p-2 hover:bg-yellow-100 rounded-lg transition-colors"
+                className="p-1 sm:p-2 hover:bg-yellow-100 rounded-lg transition-colors"
                 title="Copy amount"
               >
                 {copied === 'amount' ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 ) : (
-                  <Copy className="h-4 w-4 text-yellow-600" />
+                  <Copy className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
                 )}
               </button>
             </div>
@@ -296,12 +296,12 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
         </div>
 
         {/* Payment Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2 mb-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-blue-900">Payment Instructions</span>
+            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <span className="text-sm sm:text-base font-medium text-blue-900">Payment Instructions</span>
           </div>
-          <ul className="text-sm text-blue-700 space-y-1">
+          <ul className="text-xs sm:text-sm text-blue-700 space-y-1">
             <li>• Send from your personal wallet (not an exchange)</li>
             <li>• Use the exact amount: <strong>{invoice.pay_amount} {invoice.pay_currency.toUpperCase()}</strong></li>
             <li>• Payment will be confirmed automatically on blockchain</li>
@@ -312,12 +312,12 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
 
         {/* Status Monitoring */}
         {checkingStatus && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center space-x-2 mb-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="font-medium text-gray-900">Monitoring Payment</span>
+              <span className="text-sm sm:text-base font-medium text-gray-900">Monitoring Payment</span>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               We're monitoring the blockchain for your payment. You'll be notified automatically when it's confirmed.
             </p>
           </div>
@@ -336,10 +336,10 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
                     : `https://etherscan.io/address/${invoice.pay_address}`
               window.open(blockchainUrl, '_blank')
             }}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center mx-auto"
+            className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center mx-auto"
           >
             View on Blockchain Explorer
-            <ExternalLink className="h-4 w-4 ml-1" />
+            <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
           </button>
         </div>
       </div>
@@ -360,31 +360,31 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       </div>
 
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Coins className="h-8 w-8 text-navy-600" />
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Coins className="h-6 w-6 sm:h-8 sm:w-8 text-navy-600" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Cryptocurrency Payment</h3>
-        <p className="text-gray-600">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-2">Cryptocurrency Payment</h3>
+        <p className="text-sm sm:text-base text-gray-600">
           Secure crypto payment processing for ${amount.toLocaleString()}
         </p>
       </div>
 
       {/* Cryptocurrency Selection */}
       <div className="mb-8">
-        <h4 className="font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <h4 className="text-sm sm:text-base font-medium text-gray-900 mb-4">Select Cryptocurrency</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
           {cryptoOptions.map((crypto) => (
             <button
               key={crypto.code}
               onClick={() => setSelectedCrypto(crypto.code)}
-              className={`p-4 border-2 rounded-lg text-center transition-all ${
+              className={`p-3 sm:p-4 border-2 rounded-lg text-center transition-all ${
                 selectedCrypto === crypto.code
                   ? 'border-navy-500 bg-navy-50'
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <div className={`text-2xl mb-2 ${crypto.color}`}>{crypto.symbol}</div>
-              <div className="font-medium text-gray-900 text-sm">{crypto.name}</div>
+              <div className={`text-xl sm:text-2xl mb-1 sm:mb-2 ${crypto.color}`}>{crypto.symbol}</div>
+              <div className="font-medium text-gray-900 text-xs sm:text-sm">{crypto.name}</div>
               <div className="text-xs text-gray-600 uppercase">{crypto.code === 'usdt' ? 'USDT' : crypto.code}</div>
             </button>
           ))}
@@ -392,12 +392,12 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       </div>
 
       {/* NOWPayments Features */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <Coins className="h-5 w-5 text-green-600" />
-          <span className="font-medium text-green-900">NOWPayments Features</span>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6 mb-6">
+        <div className="flex items-center space-x-2 mb-3 sm:mb-4">
+          <Coins className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+          <span className="text-sm sm:text-base font-medium text-green-900">NOWPayments Features</span>
         </div>
-        <ul className="text-sm text-green-700 space-y-2">
+        <ul className="text-xs sm:text-sm text-green-700 space-y-1 sm:space-y-2">
           <li>• <strong>Real Payment Addresses:</strong> Unique address generated for your transaction</li>
           <li>• <strong>Blockchain Monitoring:</strong> Automatic confirmation via blockchain</li>
           <li>• <strong>Fixed Rate:</strong> Price locked for 10 minutes</li>
@@ -409,16 +409,16 @@ export function NOWPaymentsCrypto({ amount, userId, onSuccess, onError, onBack }
       <button
         onClick={createPayment}
         disabled={!selectedCrypto || loading}
-        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
+        className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg text-sm sm:text-base font-semibold transition-colors flex items-center justify-center"
       >
         {loading ? (
           <>
-            <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 sm:w-5 sm:h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             Creating Payment Address...
           </>
         ) : (
           <>
-            <Coins className="w-5 h-5 mr-2" />
+            <Coins className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Generate {selectedCrypto.toUpperCase()} Payment Address
           </>
         )}
