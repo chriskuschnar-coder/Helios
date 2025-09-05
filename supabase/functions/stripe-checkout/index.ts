@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.email)
 
     // Get Stripe secret key
-    const stripeSecretKey = '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'
+    const stripeSecretKey = 'sk_live_YOUR_NEW_SECRET_KEY_HERE'
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured')
     }
