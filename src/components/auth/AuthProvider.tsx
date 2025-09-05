@@ -108,6 +108,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
+      // Ensure investor_units exists for this user
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (session) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+        
+        // Auto-create investor_units if missing
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-create-investor-units`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': anonKey
+            },
+            body: JSON.stringify({ user_id: userId })
+          })
+        } catch (error) {
+          console.warn('Auto-create investor units failed:', error)
+        }
+      }
+
       const { data: accountData, error: accountError } = await supabaseClient
         .from('accounts')
         .select('*')
@@ -159,6 +183,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      // STEP 1: Process deposit allocation through fund units
+      console.log('💰 Processing deposit allocation:', { amount, method })
+      
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      // Call deposit allocation function
+      const allocationResponse = await fetch(`${supabaseUrl}/functions/v1/process-deposit-allocation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          deposit_amount: amount,
+          payment_method: method,
+          reference_id: description
+        })
+      })
+
+      if (!allocationResponse.ok) {
+        const error = await allocationResponse.json()
+        throw new Error(error.error || 'Failed to process deposit allocation')
+      }
+
+      const allocationResult = await allocationResponse.json()
+      console.log('✅ Deposit allocation successful:', allocationResult)
+
+      // STEP 2: Create transaction record for tracking
       // Add transaction record
       const { error: transactionError } = await supabaseClient
         .from('transactions')
@@ -169,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: method,
           amount: amount,
           status: 'completed',
-          description: description || `${method} deposit`
+          description: description || `${method} deposit - ${allocationResult.units_allocated.toFixed(4)} units allocated`
         })
 
       if (transactionError) {
@@ -177,25 +239,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Failed to record transaction')
       }
 
-      // Update account balance
-      if (account) {
-        const { error: updateError } = await supabaseClient
-          .from('accounts')
-          .update({
-            balance: account.balance + amount,
-            available_balance: account.available_balance + amount,
-            total_deposits: account.total_deposits + amount
-          })
-          .eq('id', account.id)
-
-        if (updateError) {
-          console.error('Account update error:', updateError)
-          throw new Error('Failed to update account balance')
-        }
-
-        // Refresh account data
-        await refreshAccount()
-      }
+      // Refresh account data to show updated balance
+      await refreshAccount()
 
       return { success: true }
     } catch (error) {
