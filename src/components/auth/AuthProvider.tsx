@@ -108,46 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
-      // STEP 1: Ensure user has investor_units record (sync existing users)
-      const { data: existingUnits, error: unitsCheckError } = await supabaseClient
-        .from('investor_units')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-
-      // If no investor_units record exists, create one
-      if (unitsCheckError && unitsCheckError.code === 'PGRST116') {
-        console.log('🔄 Creating investor_units record for existing user:', userId)
-        
-        // Get user's account first
-        const { data: userAccount } = await supabaseClient
-          .from('accounts')
-          .select('id')
-          .eq('user_id', userId)
-          .single()
-
-        if (userAccount) {
-          const { error: createUnitsError } = await supabaseClient
-            .from('investor_units')
-            .insert({
-              user_id: userId,
-              account_id: userAccount.id,
-              units_held: 0,
-              avg_purchase_nav: 1000.0000,
-              total_invested: 0,
-              current_value: 0,
-              unrealized_pnl: 0
-            })
-
-          if (createUnitsError) {
-            console.warn('Failed to create investor_units:', createUnitsError)
-          } else {
-            console.log('✅ Investor_units record created for existing user')
-          }
-        }
-      }
-
-      // STEP 2: Load account data
+      // Load account data
       const { data: accountData, error: accountError } = await supabaseClient
         .from('accounts')
         .select('*')
@@ -160,7 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccount(accountData)
       }
 
-      // STEP 3: Load user profile data
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
