@@ -15,7 +15,7 @@ A professional hedge fund platform featuring both a public corporate website and
 ### Investor Portal
 - **Secure Authentication**: NextAuth.js with credential-based login
 - **Investor Dashboard**: Traditional investment overview with portfolio analytics
-- **HELIOS Terminal**: Live trading terminal access (https://helios.luminarygrow.com/)
+- **HELIOS Terminal**: Live trading terminal access (https://globalmarketsconsulting.com/helios)
 - **Fund Integration**: All users access the same fund account terminal
 - **Real-time Data**: Live MT5 integration with NAV updates
 - **Payment Processing**: Stripe and crypto payment integration
@@ -68,7 +68,7 @@ A professional hedge fund platform featuring both a public corporate website and
 ## HELIOS Terminal Integration
 
 ### Single Fund Account Access
-- All users access the same HELIOS terminal at https://helios.luminarygrow.com/
+- All users access the same HELIOS terminal at https://globalmarketsconsulting.com/helios
 - Users see their proportional share of the fund performance
 - No individual trading accounts - everyone invests in the main fund
 - Real-time MT5 data integration for live performance tracking
