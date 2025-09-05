@@ -21,7 +21,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-navy-600" />
             <span className="font-serif text-xl font-bold text-navy-900">
-              Global Market Consulting
+              GMC
             </span>
           </div>
 
