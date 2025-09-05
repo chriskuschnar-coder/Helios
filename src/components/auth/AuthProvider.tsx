@@ -362,7 +362,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Sign out failed:', err)
     }
-    // User state will be cleared via onAuthStateChange
+    
+    // Immediately clear user state (don't wait for auth state change)
+    setUser(null)
+    setAccount(null)
+    setSubscription(null)
+    
+    // Also clear any localStorage data
+    try {
+      localStorage.removeItem('supabase.auth.token')
+      localStorage.clear()
+    } catch (err) {
+      console.warn('Failed to clear localStorage:', err)
+    }
   }
 
   const value = {
