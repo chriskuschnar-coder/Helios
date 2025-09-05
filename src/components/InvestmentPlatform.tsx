@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
-import { LoginForm } from './auth/LoginForm'
-import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
 
 interface AuthenticatedAppProps {
@@ -12,7 +10,6 @@ interface AuthenticatedAppProps {
 
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
-  const [showSignup, setShowSignup] = useState(false)
   const [showSignup, setShowSignup] = useState(false)
 
   if (loading) {
@@ -26,14 +23,13 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
-  // Show login/signup forms when no user is authenticated
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
           <SignupForm 
             onSuccess={() => {
-              // User will be automatically redirected to dashboard after signup
+              // User will be automatically logged in after successful signup
             }}
             onSwitchToLogin={() => setShowSignup(false)}
             onBackToHome={onBackToHome}
@@ -41,7 +37,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         ) : (
           <LoginForm 
             onSuccess={() => {
-              // User will be automatically redirected to dashboard after login
+              // User will be automatically redirected to dashboard
             }}
             onSwitchToSignup={() => setShowSignup(true)}
             onBackToHome={onBackToHome}
@@ -51,33 +47,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
-  // Show dashboard only after successful authentication
-  // Show login/signup forms when no user is authenticated
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        {showSignup ? (
-          <SignupForm 
-            onSuccess={() => {
-              // User will be automatically redirected to dashboard after signup
-            }}
-            onSwitchToLogin={() => setShowSignup(false)}
-            onBackToHome={onBackToHome}
-          />
-        ) : (
-          <LoginForm 
-            onSuccess={() => {
-              // User will be automatically redirected to dashboard after login
-            }}
-            onSwitchToSignup={() => setShowSignup(true)}
-            onBackToHome={onBackToHome}
-          />
-        )}
-      </div>
-    )
-  }
-
-  // Show dashboard only after successful authentication
   return <DashboardSelector />
 }
 
