@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { ArrowRight, Play, TrendingUp } from 'lucide-react'
 
 export function Hero() {
