@@ -4,23 +4,23 @@ export function About() {
   const features = [
     {
       icon: Brain,
-      title: 'Quantitative Architecture',
-      description: '$2.8M investment in proprietary quantitative research and infrastructure development.'
+      title: 'Real-time Helios Tracking',
+      description: 'Live portfolio monitoring with instant updates as market conditions change.'
     },
     {
       icon: Zap,
-      title: 'Market Microstructure',
-      description: 'Processing 50,000+ tick-level events per second across primary liquidity venues.'
+      title: 'Automated Fund Allocation',
+      description: 'Your investments are automatically converted into fund units based on current NAV.'
     },
     {
       icon: Shield,
-      title: 'Risk Management',
-      description: 'Advanced VaR modeling with Monte Carlo simulation and real-time stress testing.'
+      title: 'Secure Infrastructure',
+      description: 'Built on Supabase with bank-level security and full regulatory compliance.'
     },
     {
       icon: BarChart3,
-      title: 'Proven Performance',
-      description: 'Consistent profitability across 4 institutional accounts with 287% average growth.'
+      title: 'Transparent Reporting',
+      description: 'Clear, detailed reporting so you always know exactly where you stand.'
     }
   ]
 
@@ -29,12 +29,12 @@ export function About() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-navy-900 mb-4">
-            Proven Investment Excellence Through Advanced Analytics
+            Who We Are
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Led by a team of seasoned professionals with backgrounds in finance, mathematics, and technology, 
-            we combine academic research with practical market insights to drive investment success. 
-            Our proven track record demonstrates consistent value creation for our clients.
+            Global Market Consulting is a modern investment firm focused on giving investors 
+            of all sizes access to institutional-grade strategies. We combine technology and 
+            expertise to make investing simple, transparent, and efficient.
           </p>
         </div>
 
@@ -58,40 +58,56 @@ export function About() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-6">
-                Advanced Quantitative Models
+                Simple, Transparent, Connected
               </h3>
-              <div className="space-y-4 text-gray-700">
-                <p>
-                  <strong>VPIN Implementation:</strong> Proprietary Volume-Synchronized Probability 
-                  of Informed Trading framework with machine learning enhancement calibrated on 
-                  119,000+ trade samples.
-                </p>
-                <p>
-                  <strong>Hidden Markov Models:</strong> Four-state regime detection with Gaussian 
-                  emissions for real-time market state identification and probabilistic forecasting.
-                </p>
-                <p>
-                  <strong>Statistical Arbitrage:</strong> Ornstein-Uhlenbeck process calibration 
-                  with cointegration testing via Johansen methodology for pairs trading strategies.
-                </p>
+              <div className="space-y-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-8 h-8 bg-gold-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-navy-900 mb-2">Sign Up</h4>
+                    <p className="text-gray-700">Create your investor account quickly and securely.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <div className="w-8 h-8 bg-gold-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-navy-900 mb-2">Fund Your Portfolio</h4>
+                    <p className="text-gray-700">Deposit funds and watch them automatically converted into fund units based on the latest NAV.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <div className="w-8 h-8 bg-gold-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-navy-900 mb-2">Monitor & Grow</h4>
+                    <p className="text-gray-700">Track your investments in real time. View your portfolio, equity, and daily performance effortlessly.</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
-                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">50K+</div>
-                <div className="text-navy-700">Events/Second</div>
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">Live</div>
+                <div className="text-navy-700">Portfolio Updates</div>
               </div>
               <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
-                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">99.97%</div>
-                <div className="text-navy-700">System Uptime</div>
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">Auto</div>
+                <div className="text-navy-700">Fund Allocation</div>
               </div>
               <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
-                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">2.4TB</div>
-                <div className="text-navy-700">Daily Data</div>
+                <div className="font-serif text-3xl font-bold text-navy-900 mb-2">24/7</div>
+                <div className="text-navy-700">Monitoring</div>
               </div>
               <div className="bg-navy-50 rounded-lg p-6 text-center border border-navy-200">
-                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">500+</div>
-                <div className="text-navy-700">Real-time Factors</div>
+                <div className="font-serif text-3xl font-bold text-gold-600 mb-2">100%</div>
+                <div className="text-navy-700">Transparent</div>
               </div>
             </div>
           </div>

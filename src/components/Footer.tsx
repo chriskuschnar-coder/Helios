@@ -54,7 +54,7 @@ export function Footer() {
         <div className="border-t border-navy-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-sm text-navy-300 mb-4 md:mb-0">
-              © 2025 Global Market Consulting LLC. All rights reserved.
+              © 2025 Global Market Consulting — Clear, Transparent, Professional Investing.
             </div>
             <div className="flex space-x-6 text-sm text-navy-300">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
