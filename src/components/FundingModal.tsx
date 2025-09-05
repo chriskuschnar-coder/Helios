@@ -32,6 +32,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [copiedField, setCopiedField] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState('');
   const [error, setError] = useState('');
+  const [creatingPayment, setCreatingPayment] = useState(false);
 
   if (!isOpen) return null;
 
