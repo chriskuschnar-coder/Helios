@@ -200,7 +200,7 @@ export function FundNAVChart() {
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Fund NAV History</h3>
             <p className="text-sm text-gray-600">
-              Net Asset Value per unit • Daily updates from MT5
+              Net Asset Value per unit • Daily updates from Helios
             </p>
           </div>
         </div>

@@ -49,7 +49,7 @@ export function LiveTradingPositions({ currentBalance }: { currentBalance: numbe
       }
     }
 
-    // Generate realistic trading positions
+    // Generate realistic Helios trading positions
     const positions: TradingPosition[] = [
       {
         ticket: 'MT5001',
@@ -113,7 +113,7 @@ export function LiveTradingPositions({ currentBalance }: { currentBalance: numbe
     setLoading(true)
     setUpdateCount(prev => prev + 1)
     
-    // In production, this would fetch from mt5_data_feed table
+    // In production, this would fetch from Helios trading data
     // For now, generate realistic data
     await new Promise(resolve => setTimeout(resolve, 300))
     setMT5Data(generateMT5Data())
@@ -123,7 +123,7 @@ export function LiveTradingPositions({ currentBalance }: { currentBalance: numbe
   useEffect(() => {
     refreshData()
     
-    // Update every 10 seconds to simulate live MT5 data
+    // Update every 10 seconds to simulate live Helios data
     const interval = setInterval(refreshData, 10000)
     return () => clearInterval(interval)
   }, [currentBalance])
@@ -140,7 +140,7 @@ export function LiveTradingPositions({ currentBalance }: { currentBalance: numbe
           <div>
             <h3 className="font-serif text-lg font-bold text-navy-900">Live Trading Positions</h3>
             <p className="text-sm text-gray-600">
-              MT5 Data Feed • Update #{updateCount} • {new Date().toLocaleTimeString()}
+              Helios Data Feed • Update #{updateCount} • {new Date().toLocaleTimeString()}
             </p>
           </div>
         </div>
@@ -148,7 +148,7 @@ export function LiveTradingPositions({ currentBalance }: { currentBalance: numbe
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-green-600 font-medium">LIVE MT5</span>
+            <span className="text-xs text-green-600 font-medium">LIVE HELIOS</span>
           </div>
           <button
             onClick={refreshData}

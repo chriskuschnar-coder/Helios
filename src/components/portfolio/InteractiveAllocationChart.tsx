@@ -33,10 +33,10 @@ export function InteractiveAllocationChart({ currentBalance }: ChartProps) {
     
     if (currentBalance === 0) {
       return [
-        { name: 'Bitcoin', value: 0, percentage: 0, performance: 0, color: '#F7931A', target: 40, risk: 'High', category: 'crypto', icon: '₿' },
-        { name: 'Ethereum', value: 0, percentage: 0, performance: 0, color: '#627EEA', target: 30, risk: 'High', category: 'crypto', icon: 'Ξ' },
-        { name: 'Altcoins', value: 0, percentage: 0, performance: 0, color: '#8B5CF6', target: 20, risk: 'High', category: 'crypto', icon: '🚀' },
-        { name: 'Trading Cash', value: 0, percentage: 0, performance: 0, color: '#10B981', target: 10, risk: 'Low', category: 'trading', icon: '💵' }
+        { name: 'Bitcoin', value: 0, percentage: 40, performance: 0, color: '#F7931A', target: 40, risk: 'High', category: 'crypto', icon: '₿' },
+        { name: 'Ethereum', value: 0, percentage: 30, performance: 0, color: '#627EEA', target: 30, risk: 'High', category: 'crypto', icon: 'Ξ' },
+        { name: 'Altcoins', value: 0, percentage: 20, performance: 0, color: '#8B5CF6', target: 20, risk: 'High', category: 'crypto', icon: '🚀' },
+        { name: 'Trading Cash', value: 0, percentage: 10, performance: 0, color: '#10B981', target: 10, risk: 'Low', category: 'trading', icon: '💵' }
       ]
     }
 
