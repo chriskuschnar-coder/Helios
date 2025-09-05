@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useAuth } from './auth/AuthProvider'
 import { 
   TrendingUp,
   DollarSign,
@@ -41,7 +42,6 @@ import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
 import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioValueCard } from './PortfolioValueCard'
-import { useAuth } from './auth/AuthProvider'
 import { supabaseClient } from '../lib/supabase-client'
 import '../styles/funding.css'
 

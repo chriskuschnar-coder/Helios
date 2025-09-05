@@ -108,6 +108,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
+      // STEP 1: Ensure user has investor_units record (sync existing users)
+      const { data: existingUnits, error: unitsCheckError } = await supabaseClient
+        .from('investor_units')
+        .select('id')
+        .eq('user_id', userId)
+        .single()
+
+      // If no investor_units record exists, create one
+      if (unitsCheckError && unitsCheckError.code === 'PGRST116') {
+        console.log('🔄 Creating investor_units record for existing user:', userId)
+        
+        // Get user's account first
+        const { data: userAccount } = await supabaseClient
+          .from('accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .single()
+
+        if (userAccount) {
+          const { error: createUnitsError } = await supabaseClient
+            .from('investor_units')
+            .insert({
+              user_id: userId,
+              account_id: userAccount.id,
+              units_held: 0,
+              avg_purchase_nav: 1000.0000,
+              total_invested: 0,
+              current_value: 0,
+              unrealized_pnl: 0
+            })
+
+          if (createUnitsError) {
+            console.warn('Failed to create investor_units:', createUnitsError)
+          } else {
+            console.log('✅ Investor_units record created for existing user')
+          }
+        }
+      }
+
+      // STEP 2: Load account data
       const { data: accountData, error: accountError } = await supabaseClient
         .from('accounts')
         .select('*')
@@ -120,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccount(accountData)
       }
 
+      // STEP 3: Load user profile data
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
@@ -159,43 +200,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Add transaction record
-      const { error: transactionError } = await supabaseClient
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          account_id: account.id,
-          type: 'deposit',
-          method: method,
-          amount: amount,
-          status: 'completed',
-          description: description || `${method} deposit`
-        })
+      // CRITICAL: Use the new deposit processing function that handles fund units
+      console.log('💰 Processing deposit through fund allocation system:', { amount, method, userId: user.id })
+      
+      const { data, error } = await supabaseClient.rpc('process_user_deposit', {
+        p_user_id: user.id,
+        p_deposit_amount: amount,
+        p_method: method,
+        p_description: description || `${method} deposit`
+      })
 
-      if (transactionError) {
-        console.error('Transaction error:', transactionError)
-        throw new Error('Failed to record transaction')
+      if (error) {
+        console.error('Deposit processing error:', error)
+        throw new Error('Failed to process deposit: ' + error.message)
       }
 
-      // Update account balance
-      if (account) {
-        const { error: updateError } = await supabaseClient
-          .from('accounts')
-          .update({
-            balance: account.balance + amount,
-            available_balance: account.available_balance + amount,
-            total_deposits: account.total_deposits + amount
-          })
-          .eq('id', account.id)
-
-        if (updateError) {
-          console.error('Account update error:', updateError)
-          throw new Error('Failed to update account balance')
-        }
-
-        // Refresh account data
-        await refreshAccount()
-      }
+      console.log('✅ Deposit processed successfully:', data)
+      
+      // Refresh account data to show updated balance
+      await refreshAccount()
 
       return { success: true }
     } catch (error) {
