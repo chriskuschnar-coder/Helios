@@ -268,10 +268,10 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   <div>
-                    <h3 className="font-semibold text-blue-900">Investment Amount</h3>
-                    <p className="text-blue-700">${amount.toLocaleString()}</p>
+                    <h3 className="text-sm sm:text-base font-semibold text-blue-900">Investment Amount</h3>
+                    <p className="text-sm sm:text-base text-blue-700">${amount.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -295,28 +295,28 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {/* Account Status Header */}
-              <div className="grid grid-cols-3 gap-6 mb-8 p-6 bg-gray-50 rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg sm:rounded-xl">
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
                     Current Capital
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     ${(account?.balance || 0).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
                     Available Capital
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     ${(account?.available_balance || 0).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
                     Investor Status
                   </div>
-                  <div className="text-2xl font-bold text-yellow-600">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">
                     Qualified
                   </div>
                 </div>
@@ -324,11 +324,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
               {/* Investment Amount Section */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Investment Amount</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Investment Amount</h3>
                 
                 {/* Amount Input */}
                 <div className="relative mb-6">
-                  <div className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl font-semibold">
+                  <div className="absolute left-4 sm:left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg sm:text-xl font-semibold">
                     USD
                   </div>
                   <input
@@ -336,19 +336,20 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     value={investmentAmount}
                     onChange={handleAmountChange}
                     placeholder="0.00"
-                    className="w-full pl-20 pr-6 py-6 text-3xl font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all"
+                    className="w-full pl-16 sm:pl-20 pr-4 sm:pr-6 py-4 sm:py-6 text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all"
                   />
                 </div>
 
                 {/* Preset Amount Buttons */}
-                <div className="grid grid-cols-5 gap-3 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
                   {presetAmounts.map((preset) => (
                     <button
                       key={preset}
                       onClick={() => handlePresetAmountSelect(preset)}
-                      className="py-4 px-4 border-2 border-gray-200 rounded-xl text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
+                      className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
-                      ${preset.toLocaleString()}
+                      <span className="hidden sm:inline">${preset.toLocaleString()}</span>
+                      <span className="sm:hidden">${preset >= 1000 ? (preset/1000) + 'K' : preset}</span>
                     </button>
                   ))}
                   <button
@@ -358,7 +359,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                         handlePresetAmountSelect(parseInt(customAmount));
                       }
                     }}
-                    className="py-4 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all"
+                    className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all"
                   >
                     Custom
                   </button>
@@ -367,23 +368,23 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
 
               {/* Payment Methods */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {paymentMethods.map((method) => (
                     <button
                       key={method.id}
                       onClick={() => handlePaymentMethodSelect(method.id)}
-                      className={`p-4 border-2 rounded-xl text-left transition-all ${
+                      className={`p-3 sm:p-4 border-2 rounded-lg sm:rounded-xl text-left transition-all ${
                         selectedPaymentMethod === method.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
-                      <div className="flex items-center space-x-3 mb-2">
-                        <method.icon className="h-6 w-6 text-gray-600" />
-                        <span className="font-semibold text-gray-900">{method.name}</span>
+                      <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
+                        <method.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                        <span className="text-sm sm:text-base font-semibold text-gray-900">{method.name}</span>
                       </div>
-                      <div className="text-sm text-gray-600">{method.description}</div>
+                      <div className="text-xs sm:text-sm text-gray-600">{method.description}</div>
                       <div className="text-xs text-green-600 font-medium mt-1">{method.fee}</div>
                     </button>
                   ))}
@@ -391,13 +392,13 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {/* Security Features */}
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center space-x-3 text-sm text-gray-600">
-                  <Shield className="w-4 h-4 text-green-600" />
+              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                   <span>SIPC Protected up to $500,000</span>
                 </div>
-                <div className="flex items-center space-x-3 text-sm text-gray-600">
-                  <Award className="w-4 h-4 text-green-600" />
+                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
+                  <Award className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                   <span>SEC Registered Investment Advisor</span>
                 </div>
               </div>
@@ -415,10 +416,19 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               <button
                 onClick={handleProceedWithPayment}
                 disabled={!investmentAmount || !selectedPaymentMethod || creatingPayment}
-                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center"
+                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors flex items-center justify-center"
               >
-                Proceed to Payment
-                <ArrowRight className="w-5 h-5 ml-2" />
+                {creatingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                    <span className="text-sm sm:text-base">Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm sm:text-base">Proceed to Payment</span>
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                  </>
+                )}
               </button>
             </div>
           ) : showWireInstructions ? (

@@ -118,71 +118,71 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+      <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
         <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Secure Payment Processing</span>
-          <Lock className="h-4 w-4 text-blue-600" />
+          <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+          <span className="text-sm sm:text-base font-medium text-blue-900">Secure Payment Processing</span>
+          <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
         </div>
-        <p className="text-sm text-blue-700">
+        <p className="text-xs sm:text-sm text-blue-700">
           Your payment information is encrypted and secure. Uses Supabase + Stripe integration.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             Cardholder Name
           </label>
           <input
             type="text"
             value={cardDetails.name}
             onChange={(e) => handleCardChange('name', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Full name on card"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             Card Number
           </label>
           <input
             type="text"
             value={cardDetails.number}
             onChange={(e) => handleCardChange('number', formatCardNumber(e.target.value))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+            className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
             placeholder="4242 4242 4242 4242"
             maxLength={19}
             required
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Expiry Date
             </label>
             <input
               type="text"
               value={cardDetails.expiry}
               onChange={(e) => handleCardChange('expiry', formatExpiry(e.target.value))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
               placeholder="MM/YY"
               maxLength={5}
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               CVC
             </label>
             <input
               type="text"
               value={cardDetails.cvc}
               onChange={(e) => handleCardChange('cvc', e.target.value.replace(/\D/g, '').substring(0, 4))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
               placeholder="123"
               maxLength={4}
               required
@@ -191,19 +191,19 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         </div>
       </div>
 
-      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+      <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700">Investment Amount:</span>
-          <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
+          <span className="text-xs sm:text-sm text-gray-700">Investment Amount:</span>
+          <span className="text-sm sm:text-base font-bold text-gray-900">${amount.toLocaleString()}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-sm">Processing fee (2.9% + $0.30):</span>
-          <span className="text-gray-600 text-sm">${processingFee.toFixed(2)}</span>
+          <span className="text-gray-600 text-xs sm:text-sm">Processing fee (2.9% + $0.30):</span>
+          <span className="text-gray-600 text-xs sm:text-sm">${processingFee.toFixed(2)}</span>
         </div>
         <div className="border-t border-gray-200 pt-2 mt-2">
           <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-900">Total charge:</span>
-            <span className="font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
+            <span className="text-sm sm:text-base font-medium text-gray-900">Total charge:</span>
+            <span className="text-sm sm:text-base font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -211,7 +211,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 sm:py-4 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center justify-center"
       >
         {loading ? (
           <>
@@ -228,11 +228,11 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
       
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
         <div className="flex items-center space-x-2 mb-1">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-900 text-sm">Live Payment Processing</span>
+          <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
+          <span className="font-medium text-yellow-900 text-xs sm:text-sm">Live Mode</span>
         </div>
         <p className="text-xs text-yellow-700">
-          <strong>Live Mode:</strong> Real payments will be processed. Use your actual credit card.
+          <strong>Live Payment:</strong> Real charges will be processed through Stripe
         </p>
       </div>
     </form>
