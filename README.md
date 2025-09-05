@@ -1,6 +1,6 @@
 # Global Market Consulting - Hedge Fund Website
 
-A professional, full-stack Next.js website for Global Market Consulting, featuring both a public corporate website and a secure investor portal.
+A professional hedge fund platform featuring both a public corporate website and secure investor portal with integrated HELIOS trading terminal.
 
 ## Features
 
@@ -14,18 +14,21 @@ A professional, full-stack Next.js website for Global Market Consulting, featuri
 
 ### Investor Portal
 - **Secure Authentication**: NextAuth.js with credential-based login
-- **Protected Dashboard**: Account summaries, performance metrics, and document access
-- **Role-based Access**: Different access levels for investors and administrators
-- **Document Management**: PDF reports, compliance documents, and investor letters
+- **Investor Dashboard**: Traditional investment overview with portfolio analytics
+- **HELIOS Terminal**: Live trading terminal access (https://helios.luminarygrow.com/)
+- **Fund Integration**: All users access the same fund account terminal
+- **Real-time Data**: Live MT5 integration with NAV updates
+- **Payment Processing**: Stripe and crypto payment integration
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 with App Router
+- **Framework**: React with Vite
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS with custom design system
-- **Database**: Prisma with SQLite (easily configurable for PostgreSQL)
-- **Authentication**: NextAuth.js
-- **UI Components**: Custom components with Headless UI
+- **Database**: Supabase with PostgreSQL
+- **Authentication**: Supabase Auth
+- **Payments**: Stripe + NOWPayments (crypto)
+- **Trading**: HELIOS Terminal Integration
 - **Icons**: Lucide React
 
 ## Getting Started
@@ -35,25 +38,21 @@ A professional, full-stack Next.js website for Global Market Consulting, featuri
    npm install
    ```
 
-2. **Set up Environment Variables**
-   Copy `.env.local` and update with your values:
+2. **Environment Variables**
+   Set up your `.env` file:
    ```bash
-   # Database
-   DATABASE_URL="file:./dev.db"
+   # Supabase
+   VITE_SUPABASE_URL="your-supabase-url"
+   VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
    
-   # NextAuth.js
-   NEXTAUTH_SECRET="your-secret-key-here"
-   NEXTAUTH_URL="http://localhost:3000"
-   
-   # Stripe (optional)
-   STRIPE_SECRET_KEY="sk_test_..."
-   STRIPE_PUBLISHABLE_KEY="pk_test_..."
+   # Stripe
+   VITE_STRIPE_PUBLISHABLE_KEY="your-stripe-publishable-key"
    ```
 
-3. **Initialize Database**
+3. **Database Setup**
    ```bash
-   npm run db:generate
-   npm run db:push
+   # Run Supabase migrations
+   # Migrations are in supabase/migrations/
    ```
 
 4. **Run Development Server**
@@ -62,15 +61,33 @@ A professional, full-stack Next.js website for Global Market Consulting, featuri
    ```
 
 5. **Access the Application**
-   - Public website: http://localhost:3000
-   - Investor portal: http://localhost:3000/portal (requires authentication)
+   - Public website: http://localhost:5173
+   - Investor portal: Login required
+   - HELIOS Terminal: Accessible after funding account
+
+## HELIOS Terminal Integration
+
+### Single Fund Account Access
+- All users access the same HELIOS terminal at https://helios.luminarygrow.com/
+- Users see their proportional share of the fund performance
+- No individual trading accounts - everyone invests in the main fund
+- Real-time MT5 data integration for live performance tracking
+
+### Fund Structure
+- **Fund AUM**: $4.2M total assets under management
+- **User Allocation**: Each user owns a percentage based on their investment
+- **NAV Tracking**: Daily net asset value updates from MT5 trading system
+- **Performance Sharing**: All users benefit from the same trading performance
 
 ## Database Schema
 
-The application includes a comprehensive database schema with:
-- **User Management**: Users, accounts, sessions with role-based access
-- **Investment Tracking**: Investment records with performance metrics
-- **Authentication**: NextAuth.js integration with Prisma adapter
+### Core Tables
+- **users**: User authentication and profile data
+- **accounts**: Individual user account balances and deposits
+- **investor_units**: Fund unit allocation tracking (like mutual fund shares)
+- **fund_nav**: Daily NAV updates from MT5 trading system
+- **fund_transactions**: Subscription/redemption tracking
+- **mt5_data_feed**: Live trading data from Python MT5 bot
 
 ## Design System
 
@@ -86,42 +103,40 @@ The application includes a comprehensive database schema with:
 ## Security Features
 
 - **Protected Routes**: All portal routes require authentication
-- **Role-based Access**: Different permissions for investors vs. administrators
+- **Row Level Security**: Supabase RLS for data isolation
 - **Secure Forms**: CSRF protection and input validation
-- **Data Encryption**: Passwords hashed with bcrypt
+- **Payment Security**: Stripe and NOWPayments integration
 
 ## Deployment
 
 The application is ready to deploy to:
-- **Vercel**: Optimized for Next.js deployment
-- **Netlify**: Static site generation support
-- **Railway/Render**: Full-stack deployment with database
+- **Bolt Hosting**: Optimized deployment
+- **Netlify**: Static site with Supabase backend
+- **Vercel**: Full-stack deployment
 
 ### Environment Setup for Production
-1. Set up a PostgreSQL database
-2. Update `DATABASE_URL` in environment variables
-3. Set secure `NEXTAUTH_SECRET`
-4. Configure Stripe keys if using payment features
-
-## Custom Dashboard Integration
-
-The investor dashboard is currently using placeholder data. To integrate your custom dashboard:
-
-1. Replace the placeholder data fetching in `InvestorDashboard.tsx`
-2. Update the API routes to connect with your data sources
-3. Modify the dashboard components to match your specific requirements
+1. Set up Supabase project and configure environment variables
+2. Run database migrations
+3. Configure Stripe webhook endpoints
+4. Set up MT5 data feed integration
 
 ## Development Commands
 
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
-npm run start        # Start production server
+npm run preview      # Preview production build
 npm run lint         # Run ESLint
-npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema to database
-npm run db:studio    # Open Prisma Studio
 ```
+
+## MT5 Integration
+
+The platform is designed to receive live trading data from an MT5 Python bot:
+
+1. **MT5 Bot**: Sends account data to `/functions/v1/mt5-data-processor`
+2. **NAV Calculation**: Automatic NAV per unit calculation
+3. **User Updates**: All investor allocations updated in real-time
+4. **Dashboard Sync**: User dashboards show updated values immediately
 
 ## Support
 
