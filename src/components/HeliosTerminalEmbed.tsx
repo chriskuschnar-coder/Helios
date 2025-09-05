@@ -34,7 +34,7 @@ export function HeliosTerminalEmbed({ userBalance, onFundAccount }: HeliosTermin
   }
 
   const openDirectTerminal = () => {
-    window.open('https://globalmarketsconsulting.com/helios', '_blank', 'width=1920,height=1080,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no')
+    window.open('/helios', '_blank', 'width=1920,height=1080,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no')
   }
 
   // Check if user has sufficient balance to access terminal
@@ -145,7 +145,7 @@ export function HeliosTerminalEmbed({ userBalance, onFundAccount }: HeliosTermin
       <div className="relative">
         <iframe
           id="helios-terminal"
-          src="https://globalmarketsconsulting.com/helios"
+          src="/helios"
           className="w-full h-[800px] border-0"
           title="HELIOS Trading Terminal - Global Market Consulting Fund"
           onLoad={handleLoad}
@@ -192,7 +192,7 @@ export function HeliosTerminalEmbed({ userBalance, onFundAccount }: HeliosTermin
                 </button>
                 
                 <a
-                  href="https://globalmarketsconsulting.com/helios"
+                  href="/helios"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"

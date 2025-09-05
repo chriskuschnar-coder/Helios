@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELIOS Trading Terminal - Global Market Consulting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            background: #0f172a; 
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .terminal-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 60px 1fr 200px;
+            height: 100vh;
+            gap: 1px;
+            background: #1e293b;
+        }
+        .terminal-panel {
+            background: #0f172a;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 2px;
+        }
+        .price-up { color: #10b981; }
+        .price-down { color: #ef4444; }
+        .price-neutral { color: #6b7280; }
+        
+        @keyframes pulse-green {
+            0%, 100% { background-color: rgba(16, 185, 129, 0.1); }
+            50% { background-color: rgba(16, 185, 129, 0.3); }
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.1); }
+            50% { background-color: rgba(239, 68, 68, 0.3); }
+        }
+        
+        .trade-flash-green {
+            animation: pulse-green 0.5s ease-in-out;
+        }
+        
+        .trade-flash-red {
+            animation: pulse-red 0.5s ease-in-out;
+        }
+        
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-grid">
+        <!-- Header Bar -->
+        <div class="terminal-panel col-span-3 flex items-center justify-between px-6">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="text-white font-bold text-lg">HELIOS</span>
+                </div>
+                <div class="text-gray-400 text-sm">Global Market Consulting Fund</div>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="live-indicator text-green-400 text-sm font-medium">
+                    <div class="live-dot"></div>
+                    LIVE TRADING
+                </div>
+                <div class="text-white font-mono" id="current-time"></div>
+                <div class="text-gray-400">
+                    Fund AUM: <span class="text-white font-bold">$4.2M</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left Panel - Watchlist & Positions -->
+        <div class="terminal-panel">
+            <div class="h-full flex flex-col">
+                <!-- Watchlist Header -->
+                <div class="p-4 border-b border-gray-700">
+                    <h3 class="text-white font-semibold mb-3">Market Watchlist</h3>
+                    <div class="space-y-2" id="watchlist">
+                        <!-- Watchlist items will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Open Positions -->
+                <div class="flex-1 p-4 overflow-y-auto scrollbar-thin">
+                    <h3 class="text-white font-semibold mb-3">Open Positions</h3>
+                    <div class="space-y-2" id="positions">
+                        <!-- Positions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chart Area -->
+        <div class="terminal-panel">
+            <div class="h-full flex flex-col">
+                <!-- Chart Header -->
+                <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <h3 class="text-white font-bold text-lg" id="chart-symbol">BTCUSD</h3>
+                        <div class="text-green-400 font-mono text-lg" id="chart-price">$106,250.00</div>
+                        <div class="text-green-400 text-sm" id="chart-change">+2.4%</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">1M</button>
+                        <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">5M</button>
+                        <button class="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">15M</button>
+                        <button class="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">1H</button>
+                    </div>
+                </div>
+                
+                <!-- Chart Canvas -->
+                <div class="flex-1 p-4">
+                    <canvas id="trading-chart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Order Book & Trade History -->
+        <div class="terminal-panel">
+            <div class="h-full flex flex-col">
+                <!-- Order Book -->
+                <div class="p-4 border-b border-gray-700">
+                    <h3 class="text-white font-semibold mb-3">Order Book</h3>
+                    <div class="space-y-1">
+                        <!-- Asks -->
+                        <div class="text-xs text-gray-400 mb-1">ASKS</div>
+                        <div id="order-book-asks" class="space-y-0.5">
+                            <!-- Order book asks will be populated -->
+                        </div>
+                        
+                        <!-- Spread -->
+                        <div class="py-2 text-center">
+                            <div class="text-yellow-400 font-mono text-sm" id="spread">Spread: $2.50</div>
+                        </div>
+                        
+                        <!-- Bids -->
+                        <div class="text-xs text-gray-400 mb-1">BIDS</div>
+                        <div id="order-book-bids" class="space-y-0.5">
+                            <!-- Order book bids will be populated -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Trades -->
+                <div class="flex-1 p-4 overflow-y-auto scrollbar-thin">
+                    <h3 class="text-white font-semibold mb-3">Recent Trades</h3>
+                    <div class="space-y-1" id="recent-trades">
+                        <!-- Recent trades will be populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panel - Fund Performance & Analytics -->
+        <div class="terminal-panel col-span-3">
+            <div class="h-full flex">
+                <!-- Fund Performance -->
+                <div class="flex-1 p-4 border-r border-gray-700">
+                    <h3 class="text-white font-semibold mb-3">Fund Performance</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="text-center">
+                            <div class="text-green-400 font-mono text-xl font-bold" id="fund-return">+22.4%</div>
+                            <div class="text-gray-400 text-xs">YTD Return</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-blue-400 font-mono text-xl font-bold" id="fund-sharpe">2.84</div>
+                            <div class="text-gray-400 text-xs">Sharpe Ratio</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-yellow-400 font-mono text-xl font-bold" id="fund-drawdown">-4.2%</div>
+                            <div class="text-gray-400 text-xs">Max Drawdown</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-purple-400 font-mono text-xl font-bold" id="fund-winrate">76%</div>
+                            <div class="text-gray-400 text-xs">Win Rate</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Live Analytics -->
+                <div class="flex-1 p-4 border-r border-gray-700">
+                    <h3 class="text-white font-semibold mb-3">Live Analytics</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-400">Daily P&L</div>
+                            <div class="text-green-400 font-mono" id="daily-pnl">+$12,450</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">Open P&L</div>
+                            <div class="text-green-400 font-mono" id="open-pnl">+$8,230</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">Margin Used</div>
+                            <div class="text-blue-400 font-mono" id="margin-used">23.5%</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">Risk Level</div>
+                            <div class="text-yellow-400 font-mono" id="risk-level">Low</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Market News -->
+                <div class="flex-1 p-4">
+                    <h3 class="text-white font-semibold mb-3">Market News</h3>
+                    <div class="space-y-2 text-sm" id="market-news">
+                        <!-- News items will be populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Live data simulation
+        let priceData = {
+            BTCUSD: { price: 106250, change: 2.4, volume: 2.4 },
+            ETHUSD: { price: 3195, change: 4.2, volume: 1.8 },
+            XAUUSD: { price: 2685.50, change: 0.9, volume: 0.8 },
+            EURUSD: { price: 1.0845, change: -0.2, volume: 3.2 },
+            GBPUSD: { price: 1.2634, change: 0.1, volume: 1.9 }
+        };
+
+        let positions = [
+            { symbol: 'XAUUSD', type: 'BUY', size: 2.5, entry: 2685.50, current: 2687.20, pnl: 425 },
+            { symbol: 'EURUSD', type: 'SELL', size: 5.0, entry: 1.0845, current: 1.0838, pnl: 350 },
+            { symbol: 'GBPUSD', type: 'BUY', size: 3.0, entry: 1.2634, current: 1.2641, pnl: 210 }
+        ];
+
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+
+        // Generate live price movements
+        function updatePrices() {
+            Object.keys(priceData).forEach(symbol => {
+                const data = priceData[symbol];
+                const variation = (Math.random() - 0.5) * 0.002; // ±0.2% variation
+                data.price *= (1 + variation);
+                data.change += variation * 100;
+            });
+            
+            // Update chart price
+            const btc = priceData.BTCUSD;
+            document.getElementById('chart-price').textContent = `$${btc.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('chart-change').textContent = `${btc.change > 0 ? '+' : ''}${btc.change.toFixed(2)}%`;
+            document.getElementById('chart-change').className = btc.change > 0 ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
+        }
+
+        // Populate watchlist
+        function populateWatchlist() {
+            const watchlist = document.getElementById('watchlist');
+            watchlist.innerHTML = '';
+            
+            Object.entries(priceData).forEach(([symbol, data]) => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-2 hover:bg-gray-800 rounded cursor-pointer';
+                item.innerHTML = `
+                    <div>
+                        <div class="text-white text-sm font-medium">${symbol}</div>
+                        <div class="text-gray-400 text-xs">Vol: ${data.volume}B</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-white font-mono text-sm">$${data.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="${data.change > 0 ? 'text-green-400' : 'text-red-400'} text-xs">
+                            ${data.change > 0 ? '+' : ''}${data.change.toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+                watchlist.appendChild(item);
+            });
+        }
+
+        // Populate positions
+        function populatePositions() {
+            const positionsEl = document.getElementById('positions');
+            positionsEl.innerHTML = '';
+            
+            positions.forEach(pos => {
+                const item = document.createElement('div');
+                item.className = `p-3 bg-gray-800 rounded border-l-4 ${pos.pnl > 0 ? 'border-green-400' : 'border-red-400'}`;
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-white font-medium">${pos.symbol}</div>
+                        <div class="text-xs ${pos.type === 'BUY' ? 'text-green-400' : 'text-red-400'} bg-gray-700 px-2 py-1 rounded">
+                            ${pos.type}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <div class="text-gray-400">Size</div>
+                            <div class="text-white font-mono">${pos.size}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">Entry</div>
+                            <div class="text-white font-mono">${pos.entry}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">Current</div>
+                            <div class="text-white font-mono">${pos.current}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-400">P&L</div>
+                            <div class="${pos.pnl > 0 ? 'text-green-400' : 'text-red-400'} font-mono">
+                                ${pos.pnl > 0 ? '+' : ''}$${pos.pnl}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                positionsEl.appendChild(item);
+            });
+        }
+
+        // Generate order book data
+        function populateOrderBook() {
+            const asksEl = document.getElementById('order-book-asks');
+            const bidsEl = document.getElementById('order-book-bids');
+            
+            asksEl.innerHTML = '';
+            bidsEl.innerHTML = '';
+            
+            const currentPrice = priceData.BTCUSD.price;
+            
+            // Generate asks (sell orders)
+            for (let i = 0; i < 8; i++) {
+                const price = currentPrice + (i + 1) * 10;
+                const size = Math.random() * 5 + 0.1;
+                const item = document.createElement('div');
+                item.className = 'flex justify-between text-xs font-mono';
+                item.innerHTML = `
+                    <span class="text-red-400">${price.toFixed(2)}</span>
+                    <span class="text-gray-400">${size.toFixed(3)}</span>
+                `;
+                asksEl.appendChild(item);
+            }
+            
+            // Generate bids (buy orders)
+            for (let i = 0; i < 8; i++) {
+                const price = currentPrice - (i + 1) * 10;
+                const size = Math.random() * 5 + 0.1;
+                const item = document.createElement('div');
+                item.className = 'flex justify-between text-xs font-mono';
+                item.innerHTML = `
+                    <span class="text-green-400">${price.toFixed(2)}</span>
+                    <span class="text-gray-400">${size.toFixed(3)}</span>
+                `;
+                bidsEl.appendChild(item);
+            }
+        }
+
+        // Generate recent trades
+        function populateRecentTrades() {
+            const tradesEl = document.getElementById('recent-trades');
+            const trades = [];
+            
+            for (let i = 0; i < 20; i++) {
+                const price = priceData.BTCUSD.price + (Math.random() - 0.5) * 100;
+                const size = Math.random() * 2 + 0.01;
+                const side = Math.random() > 0.5 ? 'buy' : 'sell';
+                const time = new Date(Date.now() - Math.random() * 300000);
+                
+                trades.push({ price, size, side, time });
+            }
+            
+            trades.sort((a, b) => b.time - a.time);
+            
+            tradesEl.innerHTML = '';
+            trades.forEach(trade => {
+                const item = document.createElement('div');
+                item.className = `flex justify-between text-xs font-mono py-0.5 ${trade.side === 'buy' ? 'trade-flash-green' : 'trade-flash-red'}`;
+                item.innerHTML = `
+                    <span class="${trade.side === 'buy' ? 'text-green-400' : 'text-red-400'}">
+                        ${trade.price.toFixed(2)}
+                    </span>
+                    <span class="text-gray-400">${trade.size.toFixed(3)}</span>
+                    <span class="text-gray-500">${trade.time.toLocaleTimeString().slice(0, 5)}</span>
+                `;
+                tradesEl.appendChild(item);
+            });
+        }
+
+        // Populate market news
+        function populateMarketNews() {
+            const newsEl = document.getElementById('market-news');
+            const news = [
+                { time: '14:32', text: 'Bitcoin ETF inflows reach $800M daily record', impact: 'bullish' },
+                { time: '13:45', text: 'Fed officials signal potential policy shift', impact: 'neutral' },
+                { time: '12:18', text: 'Institutional crypto adoption accelerating', impact: 'bullish' },
+                { time: '11:55', text: 'Gold breaks key resistance at $2,690', impact: 'bullish' },
+                { time: '10:30', text: 'EUR/USD testing major support levels', impact: 'bearish' }
+            ];
+            
+            newsEl.innerHTML = '';
+            news.forEach(item => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'flex items-start space-x-2 py-1';
+                newsItem.innerHTML = `
+                    <div class="text-gray-500 text-xs font-mono">${item.time}</div>
+                    <div class="text-gray-300 text-xs flex-1">${item.text}</div>
+                    <div class="w-2 h-2 rounded-full ${
+                        item.impact === 'bullish' ? 'bg-green-400' : 
+                        item.impact === 'bearish' ? 'bg-red-400' : 'bg-yellow-400'
+                    }"></div>
+                `;
+                newsEl.appendChild(newsItem);
+            });
+        }
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('trading-chart').getContext('2d');
+            
+            // Generate realistic price data
+            const labels = [];
+            const data = [];
+            const currentPrice = priceData.BTCUSD.price;
+            
+            for (let i = 100; i >= 0; i--) {
+                const time = new Date(Date.now() - i * 60000); // 1 minute intervals
+                labels.push(time.toLocaleTimeString().slice(0, 5));
+                
+                const variation = (Math.random() - 0.5) * 200;
+                data.push(currentPrice + variation);
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'BTCUSD',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#374151' },
+                            ticks: { color: '#9ca3af', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: '#374151' },
+                            ticks: { 
+                                color: '#9ca3af',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        // Update fund performance metrics
+        function updateFundMetrics() {
+            const timeVariation = Math.sin(Date.now() / 30000) * 0.01;
+            
+            // Update fund performance with live variations
+            const baseReturn = 22.4;
+            const currentReturn = baseReturn + (timeVariation * 2);
+            document.getElementById('fund-return').textContent = `+${currentReturn.toFixed(1)}%`;
+            
+            const baseSharpe = 2.84;
+            const currentSharpe = baseSharpe + (timeVariation * 0.1);
+            document.getElementById('fund-sharpe').textContent = currentSharpe.toFixed(2);
+            
+            // Update daily P&L
+            const basePnL = 12450;
+            const currentPnL = basePnL + (timeVariation * 1000);
+            document.getElementById('daily-pnl').textContent = `+$${currentPnL.toFixed(0)}`;
+            
+            // Update open P&L
+            const baseOpenPnL = 8230;
+            const currentOpenPnL = baseOpenPnL + (timeVariation * 500);
+            document.getElementById('open-pnl').textContent = `+$${currentOpenPnL.toFixed(0)}`;
+        }
+
+        // Initialize terminal
+        function initTerminal() {
+            updateTime();
+            populateWatchlist();
+            populatePositions();
+            populateOrderBook();
+            populateRecentTrades();
+            populateMarketNews();
+            updateFundMetrics();
+            
+            // Initialize chart after a short delay
+            setTimeout(initChart, 100);
+        }
+
+        // Start live updates
+        function startLiveUpdates() {
+            // Update time every second
+            setInterval(updateTime, 1000);
+            
+            // Update prices every 3 seconds
+            setInterval(() => {
+                updatePrices();
+                populateWatchlist();
+                updateFundMetrics();
+            }, 3000);
+            
+            // Update order book every 2 seconds
+            setInterval(populateOrderBook, 2000);
+            
+            // Update recent trades every 5 seconds
+            setInterval(populateRecentTrades, 5000);
+            
+            // Update positions every 10 seconds
+            setInterval(() => {
+                // Update position P&L based on current prices
+                positions.forEach(pos => {
+                    const currentPrice = priceData[pos.symbol]?.price || pos.current;
+                    const priceDiff = currentPrice - pos.entry;
+                    pos.current = currentPrice;
+                    pos.pnl = pos.type === 'BUY' ? priceDiff * pos.size * 100 : -priceDiff * pos.size * 100;
+                });
+                populatePositions();
+            }, 10000);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initTerminal();
+            startLiveUpdates();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Chart will auto-resize due to responsive: true
+        });
+    </script>
+</body>
+</html>
