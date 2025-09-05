@@ -10,7 +10,7 @@ import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
 import { useAuth } from './auth/AuthProvider';
 import { Loader2 } from 'lucide-react';
 
-const stripePromise = loadStripe('pk_live_YOUR_NEW_PUBLISHABLE_KEY_HERE');
+const stripePromise = loadStripe('pk_live_51S2OIF3aD6OJYuckOW7RhBZ9xG0fHNkFSKCYVeRBjFMeusz0P9tSIvRyja7LY55HHhuhrgc5UZR6v78SrM9CE25300XPf5I5z4');
 
 // Payment form component for the modal
 function ModalCheckoutForm({ amount, onSuccess, onError }: { amount: number, onSuccess: (result: any) => void, onError: (error: string) => void }) {
@@ -293,10 +293,10 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       }
 
       const { client_secret } = await response.json();
+      console.log('✅ Payment intent created, client secret received');
       setClientSecret(client_secret);
       setShowFundingPage(false);
       setShowPaymentForm(true);
-      console.log('✅ Payment intent created successfully');
       
     } catch (error) {
       console.error('❌ Payment intent creation failed:', error);
@@ -336,6 +336,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     setShowBankTransfer(false);
     setShowCryptoPayment(false);
     setShowFundingPage(true);
+    setError('');
   };
 
   const handlePaymentSuccess = (result: any) => {
@@ -362,9 +363,6 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const handlePaymentError = (error: string) => {
     console.error('❌ Payment error:', error);
     setError(error);
-    // Don't close the payment form - let user try again
-    // setShowPaymentForm(false);
-    // setClientSecret(null);
   };
 
   const paymentMethods = [
@@ -439,11 +437,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             <div>
               <div className="mb-6">
                 <button
-                  onClick={() => {
-                    setShowPaymentForm(false);
-                    setClientSecret(null);
-                    setShowFundingPage(true);
-                  }}
+                  onClick={handleBackToFunding}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
                   ← Back to Investment Amount
@@ -461,7 +455,24 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               </div>
 
               {clientSecret ? (
-                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' as const } }}>
+                <Elements 
+                  stripe={stripePromise} 
+                  options={{ 
+                    clientSecret, 
+                    appearance: { 
+                      theme: 'stripe' as const,
+                      variables: {
+                        colorPrimary: '#1e40af',
+                        colorBackground: '#ffffff',
+                        colorText: '#1f2937',
+                        colorDanger: '#dc2626',
+                        fontFamily: 'system-ui, sans-serif',
+                        spacingUnit: '4px',
+                        borderRadius: '8px',
+                      },
+                    } 
+                  }}
+                >
                   {error && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                       <div className="flex items-center space-x-2">
