@@ -58,6 +58,76 @@ export function InvestorDashboard() {
   const [loadingTransactions, setLoadingTransactions] = useState(true)
   const [liveUpdateIndicator, setLiveUpdateIndicator] = useState(0)
   const [lastSystemUpdate, setLastSystemUpdate] = useState<Date>(new Date())
+  const [fundNavData, setFundNavData] = useState<any>(null)
+  const [investorUnitsData, setInvestorUnitsData] = useState<any>(null)
+
+  // Load fund NAV and investor units data
+  useEffect(() => {
+    const loadFundData = async () => {
+      if (!user) return
+
+      try {
+        // Get latest fund NAV
+        const { data: navData, error: navError } = await supabaseClient
+          .from('fund_nav')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (!navError && navData) {
+          setFundNavData(navData)
+        }
+
+        // Get user's investor units
+        const { data: unitsData, error: unitsError } = await supabaseClient
+          .from('investor_units')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (!unitsError && unitsData) {
+          setInvestorUnitsData(unitsData)
+        }
+      } catch (error) {
+        console.warn('Failed to load fund data:', error)
+      }
+    }
+
+    loadFundData()
+
+    // Set up real-time subscriptions for live updates
+    const fundNavSubscription = supabaseClient
+      .channel('fund_nav_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'fund_nav' },
+        (payload) => {
+          console.log('📈 Fund NAV updated:', payload.new)
+          setFundNavData(payload.new)
+          // Refresh account data when NAV changes
+          refreshAccount()
+        }
+      )
+      .subscribe()
+
+    const investorUnitsSubscription = supabaseClient
+      .channel('investor_units_changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'investor_units', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          console.log('💎 Investor units updated:', payload.new)
+          setInvestorUnitsData(payload.new)
+          // Refresh account data when units change
+          refreshAccount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      fundNavSubscription.unsubscribe()
+      investorUnitsSubscription.unsubscribe()
+    }
+  }, [user, refreshAccount])
 
   // Extract first name from user data
   const getFirstName = () => {
