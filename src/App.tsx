@@ -16,7 +16,7 @@ export default function App() {
     // Small delay to show loading state
     setTimeout(() => {
       setPlatformLoading(false)
-    setShowInvestmentPlatform(true)
+      setShowInvestmentPlatform(true)
     }, 500)
   }
 

@@ -13,8 +13,21 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [forceShowAuth, setForceShowAuth] = useState(false)
 
-  if (loading) {
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ Auth loading timeout - forcing auth forms to show')
+        setForceShowAuth(true)
+      }, 5000) // 5 second timeout
+      
+      return () => clearTimeout(timeout)
+    }
+  }, [loading])
+
+  if (loading && !forceShowAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -24,18 +37,25 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <div className="mt-4 text-sm text-gray-500">
             If this takes too long, try refreshing the page
           </div>
+          <button
+            onClick={() => setForceShowAuth(true)}
+            className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            Continue to Login →
+          </button>
         </div>
       </div>
     )
   }
 
-  if (!user) {
+  if (!user || forceShowAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
           <SignupForm 
             onSuccess={() => {
               // User will be automatically logged in after successful signup
+              setForceShowAuth(false)
             }}
             onSwitchToLogin={() => setShowSignup(false)}
             onBackToHome={onBackToHome}
@@ -44,6 +64,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <LoginForm 
             onSuccess={() => {
               // User will be automatically redirected to dashboard
+              setForceShowAuth(false)
             }}
             onSwitchToSignup={() => setShowSignup(true)}
             onBackToHome={onBackToHome}

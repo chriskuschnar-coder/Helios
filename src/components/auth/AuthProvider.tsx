@@ -60,10 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       try {
         console.log('🔍 Checking existing session...')
+        setLoading(true)
         const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
           console.warn('⚠️ Session check error:', error)
+          setLoading(false)
         } else if (session?.user) {
           console.log('✅ Found existing session for:', session.user.email)
           setUser({
@@ -72,14 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             full_name: session.user.user_metadata?.full_name
           })
           await loadUserAccount(session.user.id)
+          setLoading(false)
         } else {
           console.log('ℹ️ No existing session found')
+          setLoading(false)
         }
       } catch (err) {
         console.error('❌ Session check failed:', err)
-      } finally {
-        console.log('✅ Auth loading complete')
         setLoading(false)
+      } finally {
+        console.log('✅ Auth loading complete - ensuring loading is false')
+        setTimeout(() => setLoading(false), 100) // Ensure loading is cleared
       }
     }
 
@@ -97,10 +102,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             full_name: session.user.user_metadata?.full_name
           })
           await loadUserAccount(session.user.id)
+          setLoading(false)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setAccount(null)
           setSubscription(null)
+          setLoading(false)
         }
       }
     )
@@ -143,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (accountError) {
         console.warn('⚠️ Account load error:', accountError)
+        // Don't throw error, just continue without account data
       } else {
         console.log('✅ Account loaded:', accountData.id)
         setAccount(accountData)
@@ -165,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error('❌ Account load failed:', err)
+      // Don't let account loading errors prevent the app from working
     }
   }
 
