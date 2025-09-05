@@ -25,8 +25,8 @@ Deno.serve(async (req) => {
       throw new Error('Minimum amount is $1.00 (100 cents)')
     }
 
-    // Use your live Stripe secret key
-    const stripeSecretKey = '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'
+    // Get Stripe secret key from environment or use the provided key
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_live_51•••••itV'
     
     console.log('🔑 Using LIVE Stripe key for payment intent')
 

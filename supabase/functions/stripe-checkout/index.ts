@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
     const user = await userResponse.json()
     console.log('User authenticated:', user.email)
 
-    // Get Stripe secret key
-    const stripeSecretKey = 'sk_live_YOUR_NEW_SECRET_KEY_HERE'
+    // Get Stripe secret key from environment or use the provided key
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_live_51•••••itV'
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured')
     }
