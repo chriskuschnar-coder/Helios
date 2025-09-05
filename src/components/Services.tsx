@@ -113,18 +113,6 @@ export function Services() {
                 Join Global Market Consulting and take advantage of a professional, transparent 
                 investment platform. See your portfolio grow and manage your investments with confidence.
               </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <button className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2 hover:scale-105 shadow-lg">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>Create Account</span>
-                </button>
-                
-                <button className="border-2 border-navy-600 text-navy-600 hover:bg-navy-600 hover:text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2">
-                  <Brain className="h-5 w-5" />
-                  <span>Request More Information</span>
-                </button>
-              </div>
             </div>
 
             <div className="bg-gray-50 rounded-xl p-6">
