@@ -108,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
-      // Load account data
       const { data: accountData, error: accountError } = await supabaseClient
         .from('accounts')
         .select('*')
@@ -160,26 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Simple balance update - fund allocation will be handled by migration
-      console.log('💰 Processing funding:', { amount, method, userId: user.id })
-      
-      // Update account balance directly
-      const { error: updateError } = await supabaseClient
-        .from('accounts')
-        .update({
-          balance: account.balance + amount,
-          available_balance: account.available_balance + amount,
-          total_deposits: account.total_deposits + amount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', account.id)
-
-      if (updateError) {
-        console.error('Balance update error:', updateError)
-        throw new Error('Failed to update balance: ' + updateError.message)
-      }
-
-      // Create transaction record
+      // Add transaction record
       const { error: transactionError } = await supabaseClient
         .from('transactions')
         .insert({
@@ -193,11 +173,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
 
       if (transactionError) {
-        console.warn('Transaction record creation failed:', transactionError)
+        console.error('Transaction error:', transactionError)
+        throw new Error('Failed to record transaction')
       }
 
-      // Refresh account data
-      await refreshAccount()
+      // Update account balance
+      if (account) {
+        const { error: updateError } = await supabaseClient
+          .from('accounts')
+          .update({
+            balance: account.balance + amount,
+            available_balance: account.available_balance + amount,
+            total_deposits: account.total_deposits + amount
+          })
+          .eq('id', account.id)
+
+        if (updateError) {
+          console.error('Account update error:', updateError)
+          throw new Error('Failed to update account balance')
+        }
+
+        // Refresh account data
+        await refreshAccount()
+      }
+
       return { success: true }
     } catch (error) {
       console.error('Funding processing failed:', error)

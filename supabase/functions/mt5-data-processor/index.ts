@@ -174,49 +174,45 @@ Deno.serve(async (req) => {
       const investors = await investorsResponse.json()
       
       for (const investor of investors) {
-        // Only update investors who have units (skip empty accounts)
-        if (investor.units_held > 0) {
-          const newValue = investor.units_held * newNavPerUnit
-          const unrealizedPnL = newValue - investor.total_invested
-          
-          // Update investor units record
-          await fetch(`${supabaseUrl}/rest/v1/investor_units?id=eq.${investor.id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseServiceKey,
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              current_value: newValue,
-              unrealized_pnl: unrealizedPnL,
-              last_nav_update: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
+        const newValue = investor.units_held * newNavPerUnit
+        const unrealizedPnL = newValue - investor.total_invested
+        
+        // Update investor units record
+        await fetch(`${supabaseUrl}/rest/v1/investor_units?id=eq.${investor.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            current_value: newValue,
+            unrealized_pnl: unrealizedPnL,
+            last_nav_update: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           })
+        })
 
-          // Update main accounts table for dashboard display
-          await fetch(`${supabaseUrl}/rest/v1/accounts?id=eq.${investor.account_id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseServiceKey,
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              balance: newValue,
-              available_balance: newValue,
-              nav_per_unit: newNavPerUnit,
-              updated_at: new Date().toISOString()
-            })
+        // Update main accounts table for dashboard display
+        await fetch(`${supabaseUrl}/rest/v1/accounts?id=eq.${investor.account_id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            balance: newValue,
+            available_balance: newValue,
+            nav_per_unit: newNavPerUnit,
+            updated_at: new Date().toISOString()
           })
-        }
+        })
       }
       
-      const activeInvestors = investors.filter(inv => inv.units_held > 0).length
-      console.log(`✅ Updated ${activeInvestors} active investor allocations (${investors.length} total accounts)`)
+      console.log(`✅ Updated ${investors.length} investor allocations`)
     }
 
     // STEP 5: Mark MT5 data as processed
