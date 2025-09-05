@@ -15,7 +15,7 @@ A professional hedge fund platform featuring both a public corporate website and
 ### Investor Portal
 - **Secure Authentication**: NextAuth.js with credential-based login
 - **Investor Dashboard**: Traditional investment overview with portfolio analytics
-- **HELIOS Terminal**: Live trading terminal access (/helios)
+- **HELIOS Terminal**: Live trading terminal access (https://globalmarketsconsulting.com/helios)
 - **Fund Integration**: All users access the same fund account terminal
 - **Real-time Data**: Live MT5 integration with NAV updates
 - **Payment Processing**: Stripe and crypto payment integration
@@ -63,12 +63,12 @@ A professional hedge fund platform featuring both a public corporate website and
 5. **Access the Application**
    - Public website: http://localhost:5173
    - Investor portal: Login required
-   - HELIOS Terminal: http://localhost:5173/helios
+   - HELIOS Terminal: Accessible after funding account
 
 ## HELIOS Terminal Integration
 
 ### Single Fund Account Access
-- All users access the same HELIOS terminal at /helios
+- All users access the same HELIOS terminal at https://globalmarketsconsulting.com/helios
 - Users see their proportional share of the fund performance
 - No individual trading accounts - everyone invests in the main fund
 - Real-time MT5 data integration for live performance tracking
