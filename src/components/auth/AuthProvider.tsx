@@ -59,10 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log('🔍 Checking existing session...')
         const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
-          console.warn('Session check error:', error)
+          console.warn('⚠️ Session check error:', error)
         } else if (session?.user) {
           console.log('✅ Found existing session for:', session.user.email)
           setUser({
@@ -75,8 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('ℹ️ No existing session found')
         }
       } catch (err) {
-        console.warn('Session check failed:', err)
+        console.error('❌ Session check failed:', err)
       } finally {
+        console.log('✅ Auth loading complete')
         setLoading(false)
       }
     }
@@ -108,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserAccount = async (userId: string) => {
     try {
+      console.log('📊 Loading user account for:', userId)
       // Ensure investor_units exists for this user
       const { supabaseClient } = await import('../../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
@@ -128,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({ user_id: userId })
           })
         } catch (error) {
-          console.warn('Auto-create investor units failed:', error)
+          console.warn('⚠️ Auto-create investor units failed:', error)
         }
       }
 
@@ -139,8 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (accountError) {
-        console.warn('Account load error:', accountError)
+        console.warn('⚠️ Account load error:', accountError)
       } else {
+        console.log('✅ Account loaded:', accountData.id)
         setAccount(accountData)
       }
 
@@ -152,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (!userError && userData) {
+        console.log('✅ User profile loaded')
         setUser(prev => prev ? {
           ...prev,
           documents_completed: userData.documents_completed,
@@ -159,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } : null)
       }
     } catch (err) {
-      console.warn('Account load failed:', err)
+      console.error('❌ Account load failed:', err)
     }
   }
 

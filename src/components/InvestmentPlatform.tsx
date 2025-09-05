@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
+import { Loader2 } from 'lucide-react'
 
 interface AuthenticatedAppProps {
   onBackToHome?: () => void
@@ -11,13 +12,18 @@ interface AuthenticatedAppProps {
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <Loader2 className="h-12 w-12 text-navy-600 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Client Portal</h3>
+          <p className="text-gray-600">Connecting to your account...</p>
+          <div className="mt-4 text-sm text-gray-500">
+            If this takes too long, try refreshing the page
+          </div>
         </div>
       </div>
     )
