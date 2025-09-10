@@ -23,12 +23,14 @@ import {
   FileText,
   ArrowUpRight,
   CheckCircle,
-  CreditCard
+  CreditCard,
+  Menu,
+  X
 } from 'lucide-react'
 import { FundingModal } from './FundingModal'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
 import { NavigationBar } from './NavigationBar'
-import { StripeCheckout } from './StripeCheckout'
+import { FundingDashboard } from './funding/FundingDashboard'
 import { SubscriptionStatus } from './SubscriptionStatus'
 import { MarketsTab } from './markets/MarketsTab'
 import { ResearchTab } from './research/ResearchTab'
@@ -444,7 +446,7 @@ export function InvestorDashboard() {
     { id: 'markets', name: 'Markets', icon: TrendingUp },
     { id: 'research', name: 'Research', icon: FileText },
     { id: 'transactions', name: 'Transactions', icon: Activity },
-    { id: 'invest', name: 'Invest', icon: CreditCard }
+    { id: 'funding', name: 'Funding', icon: CreditCard }
   ]
 
   const openFunding = (amount: number | null = null) => {
@@ -543,9 +545,9 @@ export function InvestorDashboard() {
         </div>
 
         {/* Investment Tab Content */}
-        {selectedTopTab === 'invest' && (
+        {selectedTopTab === 'funding' && (
           <div className="grid md:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
-            <StripeCheckout className="h-fit" />
+            <FundingDashboard className="h-fit" />
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
               <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-4">Investment Information</h3>
               <div className="space-y-4">
