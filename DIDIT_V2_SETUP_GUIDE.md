@@ -2,7 +2,7 @@
 
 ## 🔧 Environment Variables Required
 
-Set this in your **Supabase Edge Functions** environment:
+Set these in your **Supabase Edge Functions** environment:
 
 ```bash
 DIDIT_API_KEY=your_actual_didit_api_key_here
@@ -47,6 +47,9 @@ curl -X POST "https://upevugqarcvxnekzddeh.supabase.co/functions/v1/didit-create
   -H "apikey: YOUR_SUPABASE_ANON_KEY" \
   -d '{
     "user_id": "77a1c31c-c52e-4ee4-bb7f-13a4c56375fc",
+    "email": "blopbap@yahoo.com",
+    "first_name": "Blop",
+    "last_name": "Bap",
     "return_url": "https://yoursite.com/kyc/callback"
   }'
 ```
@@ -84,6 +87,9 @@ const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`,
   },
   body: JSON.stringify({
     user_id: user.id,
+    email: user.email,
+    first_name: firstName,
+    last_name: lastName,
     return_url: `${window.location.origin}/kyc/callback`
   })
 })

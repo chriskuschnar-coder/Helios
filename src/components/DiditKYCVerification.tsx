@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Shield, CheckCircle, AlertCircle, Loader2, X, Eye, FileText, Camera, Clock, ArrowRight } from 'lucide-react'
+import React, { useState } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, X, FileText, Camera, Clock, ArrowRight } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface DiditKYCVerificationProps {
@@ -7,78 +7,13 @@ interface DiditKYCVerificationProps {
   onClose: () => void
 }
 
-interface KYCStatus {
-  user_id: string
-  kyc_status: string
-  is_verified: boolean
-  can_fund: boolean
-  verification_details: any
-  message: string
-}
-
 export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [kycStatus, setKycStatus] = useState<KYCStatus | null>(null)
   const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [checkingStatus, setCheckingStatus] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
-
-  // Check existing KYC status on mount
-  useEffect(() => {
-    checkKYCStatus()
-  }, [])
-
-  const checkKYCStatus = async () => {
-    if (!user) return
-
-    try {
-      setCheckingStatus(true)
-      console.log('🔍 Checking KYC status for user:', user.id)
-
-      const { supabaseClient } = await import('../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (!session) {
-        throw new Error('No active session')
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/check-kyc-status`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to check KYC status')
-      }
-
-      const statusData = await response.json()
-      console.log('📊 KYC status received:', statusData)
-      setKycStatus(statusData)
-
-      // If already verified, complete immediately
-      if (statusData.is_verified) {
-        console.log('✅ User already verified, completing flow')
-        setTimeout(() => {
-          onVerificationComplete()
-        }, 1000)
-      }
-    } catch (error) {
-      console.error('❌ KYC status check failed:', error)
-      setError(error instanceof Error ? error.message : 'Failed to check verification status')
-    } finally {
-      setCheckingStatus(false)
-    }
-  }
+  const [isVerified, setIsVerified] = useState(false)
 
   const startVerification = async () => {
     if (!user) {
@@ -90,7 +25,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     setError('')
 
     try {
-      console.log('🚀 Starting Didit verification for user:', user.id)
+      console.log('🚀 Starting Didit v2 verification for user:', user.id)
 
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
@@ -102,6 +37,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
+      // Extract user name from metadata or email
+      const fullName = user.full_name || user.email.split('@')[0]
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0] || 'User'
+      const lastName = nameParts.slice(1).join(' ') || 'Name'
+
       const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
         method: 'POST',
         headers: {
@@ -112,45 +53,21 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         },
         body: JSON.stringify({
           user_id: user.id,
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
           return_url: `${window.location.origin}/kyc/callback`
         })
       })
 
-      console.log('📊 Didit session creation response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      })
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Didit session creation failed:', {
-          status: response.status,
-          error: errorData,
-          user_id: user.id
-        })
+        console.error('❌ Didit session creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create verification session')
       }
 
       const sessionData = await response.json()
-      console.log('✅ Didit session created:', sessionData)
-
-      // Check if user is already verified
-      if (sessionData.already_verified) {
-        console.log('✅ User already verified, completing flow')
-        setKycStatus({
-          user_id: user.id,
-          kyc_status: 'verified',
-          is_verified: true,
-          can_fund: true,
-          verification_details: null,
-          message: 'Already verified'
-        })
-        setTimeout(() => {
-          onVerificationComplete()
-        }, 1000)
-        return
-      }
+      console.log('✅ Didit v2 session created:', sessionData)
 
       setVerificationUrl(sessionData.client_url)
       setSessionId(sessionData.session_id)
@@ -171,12 +88,18 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     
     const pollInterval = setInterval(async () => {
       try {
-        await checkKYCStatus()
-        
-        // If verification is complete, stop polling
-        if (kycStatus?.is_verified) {
+        // Check if user's KYC status has been updated
+        const { supabaseClient } = await import('../lib/supabase-client')
+        const { data: userData, error } = await supabaseClient
+          .from('users')
+          .select('kyc_status')
+          .eq('id', user?.id)
+          .single()
+
+        if (!error && userData?.kyc_status === 'verified') {
           console.log('✅ Verification complete, stopping polling')
           clearInterval(pollInterval)
+          setIsVerified(true)
           setTimeout(() => {
             onVerificationComplete()
           }, 2000)
@@ -193,34 +116,8 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     }, 10 * 60 * 1000)
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return <CheckCircle className="h-8 w-8 text-green-600" />
-      case 'rejected':
-        return <AlertCircle className="h-8 w-8 text-red-600" />
-      case 'pending':
-        return <Clock className="h-8 w-8 text-yellow-600" />
-      default:
-        return <Shield className="h-8 w-8 text-blue-600" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return 'bg-green-50 border-green-200 text-green-800'
-      case 'rejected':
-        return 'bg-red-50 border-red-200 text-red-800'
-      case 'pending':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800'
-      default:
-        return 'bg-blue-50 border-blue-200 text-blue-800'
-    }
-  }
-
   // If user is already verified, show success state
-  if (kycStatus?.is_verified) {
+  if (isVerified) {
     return (
       <div className="text-center py-8">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -306,40 +203,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         </ul>
       </div>
 
-      {/* Current Status */}
-      {kycStatus && (
-        <div className={`p-6 rounded-xl border mb-8 ${getStatusColor(kycStatus.kyc_status)}`}>
-          <div className="flex items-center space-x-3 mb-4">
-            {getStatusIcon(kycStatus.kyc_status)}
-            <div>
-              <h4 className="font-semibold">Verification Status</h4>
-              <p className="text-sm opacity-80">{kycStatus.message}</p>
-            </div>
-          </div>
-          
-          {kycStatus.verification_details && (
-            <div className="text-sm space-y-2">
-              <div className="flex justify-between">
-                <span>Provider:</span>
-                <span className="font-medium capitalize">{kycStatus.verification_details.provider}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status:</span>
-                <span className="font-medium capitalize">{kycStatus.verification_details.status}</span>
-              </div>
-              {kycStatus.verification_details.created_at && (
-                <div className="flex justify-between">
-                  <span>Started:</span>
-                  <span className="font-medium">
-                    {new Date(kycStatus.verification_details.created_at).toLocaleString()}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
@@ -358,18 +221,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         <div className="text-center">
           <button
             onClick={startVerification}
-            disabled={loading || checkingStatus || kycStatus?.is_verified}
+            disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
           >
             {loading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
                 Creating Verification Session...
-              </>
-            ) : checkingStatus ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Checking Status...
               </>
             ) : (
               <>

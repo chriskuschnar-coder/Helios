@@ -54,20 +54,18 @@ Deno.serve(async (req) => {
     console.log('✅ User authenticated:', user.email)
 
     // Parse request data
-    const { user_id, return_url } = await req.json()
-    const userId = user_id || user.id
+    const { user_id, email, first_name, last_name, return_url } = await req.json()
 
-    // Extract user name from metadata or email
-    const fullName = user.user_metadata?.full_name || user.email.split('@')[0]
-    const nameParts = fullName.split(' ')
-    const firstName = nameParts[0] || 'User'
-    const lastName = nameParts.slice(1).join(' ') || 'Name'
+    // Validate required fields
+    if (!user_id || !email || !first_name || !last_name) {
+      throw new Error('Missing required fields: user_id, email, first_name, last_name')
+    }
 
     console.log('📝 Creating Didit v2 session for user:', {
-      userId,
-      email: user.email,
-      firstName,
-      lastName
+      user_id,
+      email,
+      first_name,
+      last_name
     })
 
     // STEP 1: Create Didit v2 verification session
@@ -75,10 +73,10 @@ Deno.serve(async (req) => {
       workflow: "kYC", // Your Didit workflow name - update this to match your actual workflow
       callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
       applicant: {
-        external_id: userId,
-        email: user.email,
-        first_name: firstName,
-        last_name: lastName
+        external_id: user_id,
+        email: email,
+        first_name: first_name,
+        last_name: last_name
       },
       return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
     }
@@ -156,7 +154,7 @@ Deno.serve(async (req) => {
 
     // Store session in compliance_records
     const complianceRecord = {
-      user_id: userId,
+      user_id: user_id,
       provider: 'didit',
       verification_type: 'identity',
       status: 'pending',
@@ -166,7 +164,7 @@ Deno.serve(async (req) => {
         client_url: clientUrl,
         workflow: 'kYC',
         created_at: new Date().toISOString(),
-        user_email: user.email,
+        user_email: email,
         applicant_data: sessionPayload.applicant
       },
       expires_at: sessionData.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
