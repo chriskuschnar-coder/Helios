@@ -72,8 +72,8 @@ const InvestorDashboard: React.FC = () => {
 
   const portfolioSections = [
     {
-      id: 'overview',
-      title: 'Portfolio Overview',
+      id: 'portfolio-value',
+      title: 'Portfolio Value',
       icon: BarChart3,
       component: () => (
         <div className="space-y-6">
@@ -150,12 +150,6 @@ const InvestorDashboard: React.FC = () => {
         {/* Tab Content */}
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
-            {/* Portfolio Value Card - Always visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-            />
-            
             {/* Portfolio sections in expandable folders */}
             {portfolioSections.map((section) => (
               <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
