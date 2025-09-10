@@ -14,6 +14,23 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
   const hasCompletedDocuments = user?.documents_completed
   const isKYCVerified = user?.kyc_status === 'verified'
 
+  const handleProceedToPayment = () => {
+    // Check if user has already completed documents AND KYC verification
+    if (user?.documents_completed && user?.kyc_status === 'verified') {
+      // Both documents and KYC complete - go straight to funding page
+      setShowEmptyState(false);
+      setShowFundingPage(true);
+    } else if (user?.documents_completed && user?.kyc_status !== 'verified') {
+      // Documents complete but KYC not verified - go to KYC verification
+      setShowEmptyState(false);
+      setShowKYCVerification(true);
+    } else {
+      // First time investor - show document signing
+      setShowEmptyState(false);
+      setShowDocumentSigning(true);
+    }
+  };
+
   return (
     <div className="text-center py-12">
       <div className="mb-8">
