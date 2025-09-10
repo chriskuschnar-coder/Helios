@@ -24,26 +24,6 @@ export function About() {
     }
   ]
 
-  const teamMembers = [
-    {
-      name: 'Dr. Sarah Chen, CFA',
-      title: 'Chief Investment Officer',
-      background: 'Former Goldman Sachs Managing Director with 15+ years in systematic trading. PhD in Financial Mathematics from Stanford.',
-      expertise: 'Quantitative strategies, derivatives, risk management'
-    },
-    {
-      name: 'Michael Rodriguez, PhD',
-      title: 'Head of Research',
-      background: 'Ex-Two Sigma Principal with expertise in machine learning applications to finance. MIT PhD in Econometrics.',
-      expertise: 'Statistical modeling, market microstructure, algorithmic trading'
-    },
-    {
-      name: 'James Liu, CFA',
-      title: 'Portfolio Manager',
-      background: 'Former Bridgewater Associate with deep macro experience. Wharton MBA, CFA charterholder.',
-      expertise: 'Global macro, currency markets, portfolio construction'
-    }
-  ]
 
   return (
     <section id="about" className="py-20 bg-gray-50">
@@ -74,41 +54,6 @@ export function About() {
               </p>
             </div>
           ))}
-        </div>
-
-        {/* Team Section */}
-        <div className="bg-white rounded-2xl p-8 lg:p-12 border border-gray-200 shadow-lg mb-16">
-          <div className="text-center mb-12">
-            <h3 className="font-serif text-2xl lg:text-3xl font-bold text-navy-900 mb-4">
-              Leadership Team
-            </h3>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Our team brings together expertise from premier investment institutions, 
-              combining academic rigor with practical market experience.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            {teamMembers.map((member, index) => (
-              <div key={index} className="text-center">
-                <div className="w-24 h-24 bg-navy-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                  {member.name.split(' ')[0].charAt(0)}{member.name.split(' ')[1].charAt(0)}
-                </div>
-                <h4 className="font-serif text-xl font-bold text-navy-900 mb-2">
-                  {member.name}
-                </h4>
-                <p className="text-gold-600 font-semibold mb-3">
-                  {member.title}
-                </p>
-                <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-                  {member.background}
-                </p>
-                <p className="text-navy-600 text-xs font-medium">
-                  {member.expertise}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Firm Overview */}
