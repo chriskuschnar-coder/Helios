@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-didit-signature, didit-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -21,9 +21,9 @@ Deno.serve(async (req) => {
       throw new Error("Missing DIDIT_WEBHOOK_SECRET")
     }
 
-    console.log('🔑 Webhook secret found:', DIDIT_WEBHOOK_SECRET ? 'Yes' : 'No')
+    console.log('🔑 Webhook secret found')
 
-    const signature = req.headers.get("x-didit-signature") || req.headers.get("didit-signature")
+    const signature = req.headers.get("x-signature")
     const body = await req.text()
     
     console.log('📦 Didit v2 webhook details:', {
@@ -72,10 +72,9 @@ Deno.serve(async (req) => {
       event = JSON.parse(body)
       console.log('📦 Didit v2 webhook event:', {
         session_id: event.session_id,
-        applicant_id: event.applicant_id,
+        vendor_data: event.vendor_data,
         status: event.status,
-        event_type: event.event_type,
-        workflow: event.workflow
+        workflow_id: event.workflow_id
       })
     } catch (err) {
       console.error('❌ Invalid JSON in webhook body')
@@ -86,14 +85,13 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     // Handle verification status updates
-    const { session_id, applicant_id, status, details, event_type, workflow } = event
+    const { session_id, vendor_data, status, workflow_id } = event
     
     console.log('🔄 Processing Didit v2 verification result:', {
       session_id,
-      applicant_id,
+      vendor_data, // This is the user_id
       status,
-      event_type,
-      workflow
+      workflow_id
     })
 
     // Map Didit v2 status to our compliance status
@@ -101,29 +99,29 @@ Deno.serve(async (req) => {
     let shouldMarkUserVerified = false
 
     switch (status) {
+      case 'Approved':
       case 'verified':
-      case 'completed:verified':
-      case 'approved':
-      case 'passed':
+      case 'completed':
         complianceStatus = 'approved'
         shouldMarkUserVerified = true
-        console.log('✅ Verification APPROVED for user:', applicant_id)
+        console.log('✅ Verification APPROVED for user:', vendor_data)
         break
       
-      case 'rejected':
+      case 'Rejected':
       case 'failed':
       case 'declined':
         complianceStatus = 'rejected'
-        console.log('❌ Verification REJECTED for user:', applicant_id)
+        console.log('❌ Verification REJECTED for user:', vendor_data)
         break
       
+      case 'Expired':
       case 'expired':
         complianceStatus = 'expired'
-        console.log('⏰ Verification EXPIRED for user:', applicant_id)
+        console.log('⏰ Verification EXPIRED for user:', vendor_data)
         break
       
       default:
-        console.log('ℹ️ Verification status update:', status, 'for user:', applicant_id)
+        console.log('ℹ️ Verification status update:', status, 'for user:', vendor_data)
     }
 
     // Update compliance record
@@ -140,10 +138,9 @@ Deno.serve(async (req) => {
         data_blob: {
           didit_session_id: session_id,
           verification_status: status,
-          verification_details: details || {},
-          webhook_received_at: new Date().toISOString(),
-          event_type: event_type,
-          workflow: workflow
+          vendor_data: vendor_data,
+          workflow_id: workflow_id,
+          webhook_received_at: new Date().toISOString()
         },
         updated_at: new Date().toISOString()
       })
@@ -158,10 +155,10 @@ Deno.serve(async (req) => {
     }
 
     // If verification approved, update user's KYC status
-    if (shouldMarkUserVerified && applicant_id) {
-      console.log('✅ Marking user as KYC verified:', applicant_id)
+    if (shouldMarkUserVerified && vendor_data) {
+      console.log('✅ Marking user as KYC verified:', vendor_data)
       
-      const userUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${applicant_id}`, {
+      const userUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${vendor_data}`, {
         method: 'PATCH',
         headers: {
           'apikey': supabaseServiceKey,

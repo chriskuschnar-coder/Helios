@@ -17,14 +17,22 @@ Deno.serve(async (req) => {
   try {
     // Get Didit API key from environment
     const DIDIT_API_KEY = Deno.env.get("DIDIT_API_KEY")
+    const DIDIT_WORKFLOW_ID = Deno.env.get("DIDIT_WORKFLOW_ID")
+    
     if (!DIDIT_API_KEY) {
       console.error('❌ Missing DIDIT_API_KEY in environment variables')
       throw new Error("Missing DIDIT_API_KEY in secrets")
     }
 
-    console.log('🔑 Didit API key found:', {
+    if (!DIDIT_WORKFLOW_ID) {
+      console.error('❌ Missing DIDIT_WORKFLOW_ID in environment variables')
+      throw new Error("Missing DIDIT_WORKFLOW_ID in secrets - create workflow in Didit Business Console")
+    }
+
+    console.log('🔑 Didit credentials found:', {
       hasApiKey: !!DIDIT_API_KEY,
-      keyLength: DIDIT_API_KEY?.length || 0
+      hasWorkflowId: !!DIDIT_WORKFLOW_ID,
+      workflowId: DIDIT_WORKFLOW_ID
     })
 
     // Get user from JWT token
@@ -65,35 +73,38 @@ Deno.serve(async (req) => {
       user_id,
       email,
       first_name,
-      last_name
+      last_name,
+      workflow_id: DIDIT_WORKFLOW_ID
     })
 
-    // STEP 1: Create Didit v2 verification session
+    // STEP 1: Create Didit v2 verification session using proper API format
     const sessionPayload = {
-      workflow: "kYC", // Your Didit workflow name - update this to match your actual workflow
-      callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
-      applicant: {
-        external_id: user_id,
-        email: email,
-        first_name: first_name,
-        last_name: last_name
+      workflow_id: DIDIT_WORKFLOW_ID,
+      callback: `${supabaseUrl}/functions/v1/didit-webhook`,
+      vendor_data: user_id,
+      metadata: {
+        user_type: "investor",
+        account_id: user_id,
+        email: email
       },
-      return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
+      contact_details: {
+        email: email,
+        email_lang: "en"
+      }
     }
     
     console.log('📡 Didit v2 session request:', {
       url: 'https://verification.didit.me/v2/session/',
       method: 'POST',
       payload: JSON.stringify(sessionPayload, null, 2),
-      hasApiKey: !!DIDIT_API_KEY,
-      apiKeyLength: DIDIT_API_KEY?.length || 0
+      hasApiKey: !!DIDIT_API_KEY
     })
 
     const sessionResponse = await fetch('https://verification.didit.me/v2/session/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': DIDIT_API_KEY,
+        'X-Api-Key': DIDIT_API_KEY, // Correct header format for v2
       },
       body: JSON.stringify(sessionPayload)
     })
@@ -101,8 +112,7 @@ Deno.serve(async (req) => {
     console.log('📊 Didit v2 session creation response:', {
       status: sessionResponse.status,
       statusText: sessionResponse.statusText,
-      ok: sessionResponse.ok,
-      headers: Object.fromEntries(sessionResponse.headers.entries())
+      ok: sessionResponse.ok
     })
 
     if (!sessionResponse.ok) {
@@ -123,24 +133,25 @@ Deno.serve(async (req) => {
         errorDetails = { message: 'Failed to parse error response', parse_error: parseError.message }
       }
       
-      console.error('❌ COMPLETE ERROR CONTEXT:', {
-        status: sessionResponse.status,
-        statusText: sessionResponse.statusText,
-        errorDetails: errorDetails,
-        sessionPayload: sessionPayload,
-        hasApiKey: !!DIDIT_API_KEY,
-        timestamp: new Date().toISOString()
-      })
+      // Provide specific error guidance
+      let userFriendlyError = 'Failed to create verification session'
+      if (sessionResponse.status === 401) {
+        userFriendlyError = 'Invalid API credentials. Please check your Didit API key.'
+      } else if (sessionResponse.status === 400) {
+        userFriendlyError = 'Invalid workflow configuration. Please check your workflow ID in Didit Business Console.'
+      } else if (sessionResponse.status === 404) {
+        userFriendlyError = 'Workflow not found. Please create a workflow in Didit Business Console.'
+      }
       
-      throw new Error(`Didit v2 API Error: ${errorDetails.message || errorDetails.error || 'Failed to create verification session'}`)
+      throw new Error(userFriendlyError)
     }
 
     const sessionData = await sessionResponse.json()
     console.log('✅ Didit v2 session created successfully:', JSON.stringify(sessionData, null, 2))
 
     // Extract session details from v2 response
-    const sessionId = sessionData.session_id || sessionData.id
-    const clientUrl = sessionData.client_url || sessionData.url || sessionData.verification_url
+    const sessionId = sessionData.session_id
+    const clientUrl = sessionData.url // v2 uses 'url' field
 
     if (!sessionId) {
       console.error('❌ No session ID in v2 response:', sessionData)
@@ -149,7 +160,7 @@ Deno.serve(async (req) => {
 
     if (!clientUrl) {
       console.error('❌ No client URL in v2 response:', sessionData)
-      throw new Error('No client URL returned from Didit v2 API')
+      throw new Error('No verification URL returned from Didit v2 API')
     }
 
     // Store session in compliance_records
@@ -162,12 +173,13 @@ Deno.serve(async (req) => {
       data_blob: {
         didit_session_id: sessionId,
         client_url: clientUrl,
-        workflow: 'kYC',
+        workflow_id: DIDIT_WORKFLOW_ID,
         created_at: new Date().toISOString(),
         user_email: email,
-        applicant_data: sessionPayload.applicant
+        vendor_data: user_id,
+        session_token: sessionData.session_token
       },
-      expires_at: sessionData.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
     }
 
     const dbResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records`, {
@@ -190,7 +202,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       session_id: sessionId,
       client_url: clientUrl,
-      expires_at: sessionData.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      session_token: sessionData.session_token,
+      workflow_id: DIDIT_WORKFLOW_ID,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       message: 'Didit v2 verification session created successfully'
     }), {
       headers: {
