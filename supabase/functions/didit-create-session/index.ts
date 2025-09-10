@@ -193,6 +193,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           <h4 className="font-semibold text-gray-900 mb-2">Upload ID</h4>
           <p className="text-sm text-gray-600">
             Government-issued ID (passport, driver's license, or national ID)
+            )
           </p>
         </div>
         
