@@ -30,13 +30,13 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
   const documents: Document[] = [
     {
-      id: 'private_placement_memorandum',
-      title: 'Private Placement Memorandum',
-      description: 'Comprehensive overview of the fund, investment strategy, risks, and terms. Review at your own pace.',
-      required: false,
+      id: 'investment_agreement',
+      title: 'Investment Management Agreement',
+      description: 'Defines the terms of our investment management relationship and fee structure.',
+      required: true,
       signed: false,
-      url: '/documents/Global_Markets_PPM_Final_85pp_TOC (2).pdf',
-      type: 'private_placement_memorandum'
+      url: '/documents/Improved_Private_Placement_Memorandum.docx',
+      type: 'investment_agreement'
     },
     {
       id: 'risk_disclosure',
@@ -103,7 +103,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
   const currentDocument = documents[currentDocumentIndex]
   const allRequiredSigned = documents.filter(doc => doc.required).every(doc => signedDocuments.has(doc.id))
-  const isCurrentDocumentRequired = currentDocument.required
 
   const handleSignDocument = async () => {
     if (!signature.trim()) {
@@ -232,19 +231,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
       {/* Signature Section */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        {!isCurrentDocumentRequired ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-900">Information Document</span>
-            </div>
-            <p className="text-sm text-blue-700">
-              This document is for your review and information. You may download it for your records, 
-              but no signature is required to proceed.
-            </p>
-          </div>
-        ) : (
-          <>
         <h4 className="text-lg font-semibold text-gray-900 mb-4">Electronic Signature</h4>
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -284,8 +270,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
             This constitutes your legal electronic signature
           </p>
         </div>
-          </>
-        )}
 
         {/* Navigation and Sign Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
@@ -310,7 +294,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
           </div>
 
           <div className="flex gap-3">
-            {!signedDocuments.has(currentDocument.id) && isCurrentDocumentRequired ? (
+            {!signedDocuments.has(currentDocument.id) ? (
               <button
                 onClick={handleSignDocument}
                 disabled={!signature.trim() || isSubmitting}
@@ -328,8 +312,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                   </>
                 )}
               </button>
-
-            {signedDocuments.has(currentDocument.id) && (
+            ) : (
               <div className="flex items-center space-x-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
                 <span className="font-medium">Document Signed</span>
@@ -342,23 +325,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
               >
                 <span>Next Document</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
-
-            {!isCurrentDocumentRequired && (
-              <button
-                onClick={() => {
-                  if (currentDocumentIndex < documents.length - 1) {
-                    handleNextDocument()
-                  } else {
-                    // Mark as completed and proceed
-                    markDocumentsCompleted().then(() => onComplete())
-                  }
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-              >
-                <span>{currentDocumentIndex < documents.length - 1 ? 'Continue to Next Document' : 'Complete Document Review'}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}
@@ -418,9 +384,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
               <div className="flex items-center space-x-2">
                 {signedDocuments.has(doc.id) && (
                   <span className="text-sm font-medium text-green-600">Signed</span>
-                )}
-                {!doc.required && (
-                  <span className="text-sm font-medium text-blue-600">Optional</span>
                 )}
                 {index === currentDocumentIndex && (
                   <span className="text-sm font-medium text-navy-600">Current</span>
