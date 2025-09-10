@@ -79,6 +79,10 @@ Deno.serve(async (req) => {
       throw new Error('Didit API key not configured. Please contact support.')
     }
     
+    console.log('🔑 Didit API key found:', diditApiKey ? 'Yes' : 'No')
+    console.log('🔑 API key length:', diditApiKey?.length || 0)
+    console.log('🔑 API key prefix:', diditApiKey?.substring(0, 8) + '...')
+    
     const diditApiBase = 'https://api.didit.me'
     
     const returnUrl = req.headers.get('origin') + '/kyc/callback'
@@ -116,7 +120,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${diditApiKey}`,
+        'X-API-Key': diditApiKey,
         'User-Agent': 'GlobalMarketConsulting/1.0'
       },
       body: JSON.stringify(diditPayload)
