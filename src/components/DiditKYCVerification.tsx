@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Shield, CheckCircle, AlertCircle, Loader2, X, FileText, Camera, Clock, ArrowRight } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, X, Eye, FileText, Camera, Clock, ArrowRight } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface DiditKYCVerificationProps {
@@ -88,18 +88,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     
     const pollInterval = setInterval(async () => {
       try {
-        // Check if user's KYC status has been updated
-        const { supabaseClient } = await import('../lib/supabase-client')
-        const { data: userData, error } = await supabaseClient
-          .from('users')
-          .select('kyc_status')
-          .eq('id', user?.id)
-          .single()
-
-        if (!error && userData?.kyc_status === 'verified') {
+        await checkKYCStatus()
+        
+        // If verification is complete, stop polling
+        if (kycStatus?.is_verified) {
           console.log('✅ Verification complete, stopping polling')
           clearInterval(pollInterval)
-          setIsVerified(true)
           setTimeout(() => {
             onVerificationComplete()
           }, 2000)
@@ -116,8 +110,34 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     }, 10 * 60 * 1000)
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return <CheckCircle className="h-8 w-8 text-green-600" />
+      case 'rejected':
+        return <AlertCircle className="h-8 w-8 text-red-600" />
+      case 'pending':
+        return <Clock className="h-8 w-8 text-yellow-600" />
+      default:
+        return <Shield className="h-8 w-8 text-blue-600" />
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return 'bg-green-50 border-green-200 text-green-800'
+      case 'rejected':
+        return 'bg-red-50 border-red-200 text-red-800'
+      case 'pending':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800'
+      default:
+        return 'bg-blue-50 border-blue-200 text-blue-800'
+    }
+  }
+
   // If user is already verified, show success state
-  if (isVerified) {
+  if (kycStatus?.is_verified) {
     return (
       <div className="text-center py-8">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -203,6 +223,40 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         </ul>
       </div>
 
+      {/* Current Status */}
+      {kycStatus && (
+        <div className={`p-6 rounded-xl border mb-8 ${getStatusColor(kycStatus.kyc_status)}`}>
+          <div className="flex items-center space-x-3 mb-4">
+            {getStatusIcon(kycStatus.kyc_status)}
+            <div>
+              <h4 className="font-semibold">Verification Status</h4>
+              <p className="text-sm opacity-80">{kycStatus.message}</p>
+            </div>
+          </div>
+          
+          {kycStatus.verification_details && (
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span>Provider:</span>
+                <span className="font-medium capitalize">{kycStatus.verification_details.provider}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span className="font-medium capitalize">{kycStatus.verification_details.status}</span>
+              </div>
+              {kycStatus.verification_details.created_at && (
+                <div className="flex justify-between">
+                  <span>Started:</span>
+                  <span className="font-medium">
+                    {new Date(kycStatus.verification_details.created_at).toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
@@ -221,13 +275,18 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         <div className="text-center">
           <button
             onClick={startVerification}
-            disabled={loading}
+            disabled={loading || checkingStatus || kycStatus?.is_verified}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
           >
             {loading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
                 Creating Verification Session...
+              </>
+            ) : checkingStatus ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Checking Status...
               </>
             ) : (
               <>
