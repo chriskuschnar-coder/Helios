@@ -1,697 +1,315 @@
-import React, { useState } from 'react';
-import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
-import { EmptyPortfolioState } from './EmptyPortfolioState';
-import { DocumentSigningFlow } from './DocumentSigningFlow';
-import { CongratulationsPage } from './CongratulationsPage';
-import { DiditKYCVerification } from './DiditKYCVerification';
-import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
-import { StripeCardForm } from './StripeCardForm';
-import { useAuth } from './auth/AuthProvider';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, X, FileText, Camera, Clock, ArrowRight } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 
-interface FundingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  prefilledAmount?: number | null;
-  onProceedToPayment?: (amount: number, method: string) => void;
+interface DiditKYCVerificationProps {
+  onVerificationComplete: () => void
+  onClose: () => void
 }
 
-export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
-  const { account, user, markDocumentsCompleted, processFunding } = useAuth();
-  const [amount, setAmount] = useState(prefilledAmount || 10000);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [showEmptyState, setShowEmptyState] = useState(true);
-  const [showDocumentSigning, setShowDocumentSigning] = useState(false);
-  const [showCongratulations, setShowCongratulations] = useState(false);
-  const [showKYCVerification, setShowKYCVerification] = useState(false);
-  const [showFundingPage, setShowFundingPage] = useState(false);
-  const [investmentAmount, setInvestmentAmount] = useState('');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
-  const [showWireInstructions, setShowWireInstructions] = useState(false);
-  const [showBankTransfer, setShowBankTransfer] = useState(false);
-  const [showCryptoPayment, setShowCryptoPayment] = useState(false);
-  const [wireInstructions, setWireInstructions] = useState(null);
-  const [copiedField, setCopiedField] = useState('');
-  const [selectedCrypto, setSelectedCrypto] = useState('');
-  const [error, setError] = useState('');
-  const [creatingPayment, setCreatingPayment] = useState(false);
+export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isVerified, setIsVerified] = useState(false)
 
-  if (!isOpen) return null;
-
-  const handleAmountSelect = (selectedAmount: number) => {
-    setAmount(selectedAmount);
-    setInvestmentAmount(selectedAmount.toLocaleString());
-    setShowEmptyState(false);
-    setShowFundingPage(true);
-  };
-
-  const handleProceedToPayment = () => {
-    // Check if user has already completed documents
-    if (user?.documents_completed) {
-      // Skip documents, go straight to funding page
-      setShowEmptyState(false);
-      setShowFundingPage(true);
-    } else {
-      // First time investor - show document signing
-      setShowEmptyState(false);
-      setShowDocumentSigning(true);
+  const startVerification = async () => {
+    if (!user) {
+      setError('User not authenticated')
+      return
     }
-  };
 
-  const handleBack = () => {
-    if (showPaymentForm) {
-      setShowPaymentForm(false);
-      setShowFundingPage(true);
-    } else if (showFundingPage) {
-      setShowFundingPage(false);
-      setShowCongratulations(true);
-    } else if (showCongratulations) {
-      setShowCongratulations(false);
-      setShowDocumentSigning(true);
-    } else if (showDocumentSigning) {
-      setShowDocumentSigning(false);
-      setShowEmptyState(true);
+    setLoading(true)
+    setError('')
+
+    try {
+      console.log('🚀 Starting Didit v2 verification for user:', user.id)
+
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      // Extract user name from metadata or email
+      const fullName = user.full_name || user.email.split('@')[0]
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0] || 'User'
+      const lastName = nameParts.slice(1).join(' ') || 'Name'
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey,
+          'origin': window.location.origin
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
+          return_url: `${window.location.origin}/kyc/callback`
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Didit session creation failed:', errorData)
+        throw new Error(errorData.error || 'Failed to create verification session')
+      }
+
+      const sessionData = await response.json()
+      console.log('✅ Didit v2 session created:', sessionData)
+
+      setVerificationUrl(sessionData.client_url)
+      setSessionId(sessionData.session_id)
+      
+      // Start polling for verification completion
+      startStatusPolling(sessionData.session_id)
+      
+    } catch (error) {
+      console.error('❌ Verification start failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to start verification')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
-  const handleDocumentComplete = () => {
-    // Mark documents as completed in database
-    markDocumentsCompleted();
-    setShowDocumentSigning(false);
-    setShowCongratulations(true);
-  };
+  const startStatusPolling = (sessionId: string) => {
+    console.log('🔄 Starting status polling for session:', sessionId)
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        // Check if user's KYC status has been updated
+        const { supabaseClient } = await import('../lib/supabase-client')
+        const { data: userData, error } = await supabaseClient
+          .from('users')
+          .select('kyc_status')
+          .eq('id', user?.id)
+          .single()
 
-  const handleContinueToPayment = () => {
-    // After congratulations, always go to KYC verification first
-    setShowCongratulations(false);
-    setShowKYCVerification(true);
-  };
+        if (!error && userData?.kyc_status === 'verified') {
+          console.log('✅ Verification complete, stopping polling')
+          clearInterval(pollInterval)
+          setIsVerified(true)
+          setTimeout(() => {
+            onVerificationComplete()
+          }, 2000)
+        }
+      } catch (error) {
+        console.error('❌ Status polling error:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+
+    // Stop polling after 10 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval)
+      console.log('⏰ Status polling timeout')
+    }, 10 * 60 * 1000)
+  }
 
   const handleKYCComplete = () => {
-    // KYC complete, proceed to funding
-    setShowKYCVerification(false);
-    setShowCongratulations(false);
-    setShowFundingPage(true);
-  };
+    console.log('✅ KYC verification completed, proceeding to funding')
+    setShowKYCVerification(false)
+    setShowCongratulations(false)
+    setShowFundingPage(true)
+  }
 
-  const handleBackToPortfolio = () => {
-    setShowDocumentSigning(false);
-    setShowEmptyState(true);
-  };
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    if (value) {
-      setInvestmentAmount(parseInt(value).toLocaleString());
-    } else {
-      setInvestmentAmount('');
-    }
-  };
-
-  const handlePresetAmountSelect = (amount: number) => {
-    setInvestmentAmount(amount.toLocaleString());
-    setAmount(amount);
-  };
-
-  const handlePaymentMethodSelect = (methodId: string) => {
-    setSelectedPaymentMethod(methodId);
-  };
-
-  const handleProceedWithPayment = () => {
-    if (investmentAmount && selectedPaymentMethod) {
-      const numericAmount = parseInt(investmentAmount.replace(/,/g, ''));
-      setAmount(numericAmount);
-      
-      // Route to different payment flows based on method
-      if (selectedPaymentMethod === 'card') {
-        setShowFundingPage(false);
-        setShowPaymentForm(true);
-      } else if (selectedPaymentMethod === 'wire') {
-        generateWireInstructions(numericAmount);
-        setShowFundingPage(false);
-        setShowWireInstructions(true);
-      } else if (selectedPaymentMethod === 'bank') {
-        setShowFundingPage(false);
-        setShowBankTransfer(true);
-      } else if (selectedPaymentMethod === 'crypto') {
-        setShowFundingPage(false);
-        setShowCryptoPayment(true);
-      }
-    }
-  };
-
-  const generateWireInstructions = (amount: number) => {
-    // Generate random reference code
-    const referenceCode = 'GMC' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    
-    setWireInstructions({
-      amount: amount,
-      referenceCode: referenceCode,
-      bankName: 'JPMorgan Chase Bank, N.A.',
-      routingNumber: '021000021',
-      accountNumber: '4567890123',
-      accountName: 'Global Market Consulting LLC',
-      swiftCode: 'CHASUS33',
-      bankAddress: '270 Park Avenue, New York, NY 10017',
-      beneficiaryAddress: '200 South Biscayne Boulevard, Suite 2800, Miami, FL 33131'
-    });
-  };
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(''), 2000);
-  };
-
-  const handleBackToFunding = () => {
-    setShowPaymentForm(false);
-    setShowWireInstructions(false);
-    setShowBankTransfer(false);
-    setShowCryptoPayment(false);
-    setShowFundingPage(true);
-    setError('');
-  };
-
-  const handlePaymentSuccess = (result: any) => {
-    console.log('✅ Payment successful:', result);
-    setShowPaymentForm(false);
-    setError('');
-    
-    // Process the funding in the database
-    processFunding(amount, 'stripe', 'Credit card payment').then(() => {
-      console.log('✅ Account balance updated');
-      onClose();
-      // Refresh account data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }).catch(error => {
-      console.error('❌ Failed to update account balance:', error);
-      // Still close modal but show error
-      onClose();
-    });
-  };
-
-  const handlePaymentError = (error: string) => {
-    console.error('❌ Payment error:', error);
-    setError(error);
-  };
-
-  const paymentMethods = [
-    {
-      id: 'card',
-      name: 'Credit/Debit Card',
-      icon: CreditCard,
-      description: 'Instant processing',
-      fee: 'No fees'
-    },
-    {
-      id: 'bank',
-      name: 'Bank Transfer',
-      icon: Building,
-      description: '1-3 business days',
-      fee: 'No fees'
-    },
-    {
-      id: 'wire',
-      name: 'Wire Transfer',
-      icon: Zap,
-      description: 'Same day processing',
-      fee: '$25 fee'
-    },
-    {
-      id: 'crypto',
-      name: 'Cryptocurrency',
-      icon: Coins,
-      description: 'Bitcoin, Ethereum',
-      fee: 'Network fees apply'
-    }
-  ];
-
-  const presetAmounts = [5000, 10000, 25000, 50000];
+  // If user is already verified, show success state
+  if (isVerified) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <h3 className="text-2xl font-bold text-green-900 mb-4">
+          Identity Verified!
+        </h3>
+        <p className="text-gray-600 mb-6">
+          Your identity has been successfully verified. You can now proceed to fund your account.
+        </p>
+        <button
+          onClick={onVerificationComplete}
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3"
+        >
+          Continue to Funding
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-      <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto mobile-card">
-        <div className="p-4 md:p-6 border-b border-gray-200 flex items-center justify-between safe-area-top">
-          <h2 className="text-lg md:text-2xl font-bold text-gray-900">
-            {showEmptyState ? 'Fund Your Account' : 
-             showDocumentSigning ? 'Complete Onboarding Documents' : 
-             showCongratulations ? 'Welcome to Global Markets!' :
-             showKYCVerification ? 'Identity Verification Required' :
-             showFundingPage ? 'Capital Contribution' :
-             showPaymentForm ? 'Secure Payment' :
-             'Capital Contribution'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors mobile-button"
-          >
-            <X className="w-5 h-5 md:w-6 md:h-6" />
-          </button>
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Shield className="h-10 w-10 text-blue-600" />
         </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          Identity Verification Required
+        </h3>
+        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          For compliance and security, all investors must complete a one-time identity verification 
+          before contributing capital. This process takes 2-5 minutes and helps us meet regulatory requirements.
+        </p>
+      </div>
 
-        <div className="p-4 md:p-6 safe-area-bottom">
-          {showEmptyState ? (
-            <EmptyPortfolioState 
-              onFundAccount={handleProceedToPayment}
-              onAmountSelect={handleAmountSelect}
-            />
-          ) : showDocumentSigning ? (
-            <DocumentSigningFlow 
-              onComplete={handleDocumentComplete}
-              onBack={handleBackToPortfolio}
-            />
-          ) : showCongratulations ? (
-            <CongratulationsPage 
-              onContinueToPayment={handleContinueToPayment}
-            />
-          ) : showKYCVerification ? (
-            <DiditKYCVerification 
-              onVerificationComplete={handleKYCComplete}
-              onClose={() => {
-                setShowKYCVerification(false);
-                setShowCongratulations(true);
-              }}
-            />
-          ) : showPaymentForm ? (
-            <div>
-              <div className="mb-6">
-                <button
-                  onClick={handleBackToFunding}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  ← Back to Investment Amount
-                </button>
-              </div>
-              
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                  <div>
-                    <h3 className="text-sm sm:text-base font-semibold text-blue-900">Capital Contribution</h3>
-                    <p className="text-sm sm:text-base text-blue-700">${amount.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-
-              <StripeCardForm 
-                amount={amount}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
-            </div>
-          ) : showFundingPage ? (
-            <div>
-              {/* Back Button */}
-              <div className="mb-6">
-                <button
-                  onClick={handleBack}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  {user?.documents_completed ? '← Back to Portfolio' : '← Back to Portfolio Setup'}
-                </button>
-              </div>
-
-              {/* Account Status Header */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg sm:rounded-xl">
-                <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
-                    Current Capital
-                  </div>
-                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                    ${(account?.balance || 0).toLocaleString()}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
-                    Available Capital
-                  </div>
-                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                    ${(account?.available_balance || 0).toLocaleString()}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
-                    Account Status
-                  </div>
-                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">
-                    Active
-                  </div>
-                </div>
-              </div>
-
-              {/* Capital Contribution Section */}
-              <div className="mb-8">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Capital Contribution</h3>
-                
-                {/* Amount Input */}
-                <div className="relative mb-6">
-                  <div className="absolute left-4 sm:left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg sm:text-xl font-semibold">
-                    USD
-                  </div>
-                  <input
-                    type="text"
-                    value={investmentAmount}
-                    onChange={handleAmountChange}
-                    placeholder="0.00"
-                    className="w-full pl-16 sm:pl-20 pr-4 sm:pr-6 py-4 sm:py-6 text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all"
-                  />
-                </div>
-
-                {/* Preset Amount Buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
-                  {presetAmounts.map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => handlePresetAmountSelect(preset)}
-                      className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
-                    >
-                      <span className="hidden sm:inline">${preset.toLocaleString()}</span>
-                      <span className="sm:hidden">${preset >= 1000 ? (preset/1000) + 'K' : preset}</span>
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => {
-                      const customAmount = prompt('Enter custom amount:');
-                      if (customAmount && !isNaN(parseInt(customAmount))) {
-                        handlePresetAmountSelect(parseInt(customAmount));
-                      }
-                    }}
-                    className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all"
-                  >
-                    Custom
-                  </button>
-                </div>
-              </div>
-
-              {/* Payment Methods */}
-              <div className="mb-8">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {paymentMethods.map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => handlePaymentMethodSelect(method.id)}
-                      className={`p-3 sm:p-4 border-2 rounded-lg sm:rounded-xl text-left transition-all ${
-                        selectedPaymentMethod === method.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
-                        <method.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
-                        <span className="text-sm sm:text-base font-semibold text-gray-900">{method.name}</span>
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-600">{method.description}</div>
-                      <div className="text-xs text-green-600 font-medium mt-1">{method.fee}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Security Features */}
-              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
-                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                  <span>SIPC Protected up to $500,000</span>
-                </div>
-                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
-                  <Award className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                  <span>SEC Registered Investment Advisor</span>
-                </div>
-              </div>
-
-              {/* Proceed Button */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <span className="text-red-900 font-medium">{error}</span>
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={handleProceedWithPayment}
-                disabled={!investmentAmount || !selectedPaymentMethod || creatingPayment}
-                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors flex items-center justify-center"
-              >
-                {creatingPayment ? (
-                  <>
-                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
-                    <span className="text-sm sm:text-base">Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm sm:text-base">Proceed to Payment</span>
-                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
-                  </>
-                )}
-              </button>
-            </div>
-          ) : showWireInstructions ? (
-            <div>
-              <div className="mb-6">
-                <button
-                  onClick={handleBackToFunding}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  ← Back to Payment Methods
-                </button>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-2 mb-2">
-                  <AlertCircle className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-blue-900">Important Instructions</span>
-                </div>
-                <p className="text-sm text-blue-700">
-                  Please include the reference code in your wire transfer. Processing typically takes 1-2 business days.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-sm font-medium text-gray-700">Investment Amount</div>
-                      <div className="text-2xl font-bold text-gray-900">${wireInstructions?.amount.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-700">Reference Code</div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-lg font-bold text-blue-600">{wireInstructions?.referenceCode}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.referenceCode, 'reference')}
-                          className="p-1 hover:bg-gray-200 rounded"
-                        >
-                          {copiedField === 'reference' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Bank Name</label>
-                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
-                        <span className="font-medium">{wireInstructions?.bankName}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.bankName, 'bankName')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {copiedField === 'bankName' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Routing Number</label>
-                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
-                        <span className="font-mono">{wireInstructions?.routingNumber}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.routingNumber, 'routing')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {copiedField === 'routing' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Account Number</label>
-                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
-                        <span className="font-mono">{wireInstructions?.accountNumber}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.accountNumber, 'account')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {copiedField === 'account' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Account Name</label>
-                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
-                        <span className="font-medium">{wireInstructions?.accountName}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.accountName, 'accountName')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {copiedField === 'accountName' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">SWIFT Code</label>
-                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
-                        <span className="font-mono">{wireInstructions?.swiftCode}</span>
-                        <button
-                          onClick={() => copyToClipboard(wireInstructions?.swiftCode, 'swift')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {copiedField === 'swift' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Bank Address</label>
-                      <div className="bg-white border rounded-lg p-3">
-                        <span className="text-sm">{wireInstructions?.bankAddress}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium text-yellow-900">Wire Transfer Notes</span>
-                  </div>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Include reference code: <strong>{wireInstructions?.referenceCode}</strong></li>
-                    <li>• Processing time: 1-2 business days</li>
-                    <li>• Wire fee: $25 (charged by your bank)</li>
-                    <li>• International wires may take 3-5 business days</li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => {
-                    // Process wire transfer funding
-                    const wireAmount = parseInt(investmentAmount.replace(/,/g, ''));
-                    processFunding(wireAmount, 'wire', `Wire transfer - ${wireInstructions?.referenceCode}`).then(() => {
-                      console.log('✅ Wire transfer recorded');
-                      onClose();
-                    }).catch(error => {
-                      console.error('❌ Failed to record wire transfer:', error);
-                    });
-                    onClose();
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors mt-6"
-                >
-                  I've Sent the Wire Transfer
-                </button>
-              </div>
-            </div>
-          ) : showBankTransfer ? (
-            <div>
-              <div className="mb-6">
-                <button
-                  onClick={handleBackToFunding}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                >
-                  ← Back to Payment Methods
-                </button>
-              </div>
-
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Building className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Bank Transfer Setup</h3>
-                <p className="text-gray-600">
-                  Connect your bank account for ${investmentAmount} investment
-                </p>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Shield className="h-5 w-5 text-green-600" />
-                  <span className="font-medium text-green-900">Secure Bank Connection</span>
-                </div>
-                <p className="text-sm text-green-700 mb-4">
-                  We use Plaid to securely connect to your bank account. Your login credentials are encrypted and never stored.
-                </p>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Bank-level security (256-bit encryption)</li>
-                  <li>• No fees for ACH transfers</li>
-                  <li>• Processing time: 1-3 business days</li>
-                  <li>• Supports 11,000+ financial institutions</li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  onClick={() => {
-                    // In production, this would open Plaid Link
-                    alert('Plaid integration will be implemented here. This would open a secure bank connection flow.');
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
-                >
-                  <Building className="h-5 w-5 mr-2" />
-                  Connect Bank Account Securely
-                </button>
-
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Powered by Plaid • Used by millions of Americans
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : showCryptoPayment ? (
-            <div>
-              {user?.id ? (
-                <NOWPaymentsCrypto 
-                  amount={parseInt(investmentAmount.replace(/,/g, '') || '0')}
-                  userId={user.id}
-                  onSuccess={(payment) => {
-                    console.log('✅ NOWPayments payment initiated:', payment)
-                    // Payment will be confirmed via webhook
-                    onClose()
-                  }}
-                  onError={(error) => {
-                    console.error('❌ NOWPayments payment error:', error)
-                    setError(error)
-                  }}
-                  onBack={handleBackToFunding}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
-                  <p className="text-gray-600 mb-4">Please sign in to continue with crypto payment</p>
-                  <button
-                    onClick={onClose}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-                  >
-                    Close and Sign In
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
+      {/* Verification Process Steps */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-6 w-6 text-blue-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Upload ID</h4>
+          <p className="text-sm text-gray-600">
+            Government-issued ID (passport, driver's license, or national ID)
+          </p>
+        </div>
+        
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Camera className="h-6 w-6 text-green-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Take Selfie</h4>
+          <p className="text-sm text-gray-600">
+            Live selfie with liveness detection for identity confirmation
+          </p>
+        </div>
+        
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-6 w-6 text-purple-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Instant Approval</h4>
+          <p className="text-sm text-gray-600">
+            Automated verification with immediate approval in most cases
+          </p>
         </div>
       </div>
+
+      {/* Security & Privacy Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div className="flex items-center space-x-3 mb-4">
+          <Shield className="h-6 w-6 text-blue-600" />
+          <h4 className="font-semibold text-blue-900">Security & Privacy</h4>
+        </div>
+        <ul className="text-sm text-blue-800 space-y-2">
+          <li>• Your documents are processed securely and encrypted</li>
+          <li>• We use Didit, a trusted third-party verification provider</li>
+          <li>• Your personal information is not stored on our servers</li>
+          <li>• This is a one-time verification - you won't need to repeat it</li>
+          <li>• The process is fully compliant with KYC/AML regulations</li>
+        </ul>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <h4 className="font-semibold text-red-900">Verification Error</h4>
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Interface */}
+      {!verificationUrl ? (
+        <div className="text-center">
+          <button
+            onClick={startVerification}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Creating Verification Session...
+              </>
+            ) : (
+              <>
+                <Shield className="w-6 h-6" />
+                Start Identity Verification
+              </>
+            )}
+          </button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            Powered by Didit • Secure identity verification
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <h4 className="font-semibold text-green-900">Verification Session Created</h4>
+            </div>
+            <p className="text-sm text-green-800 mb-4">
+              Complete your identity verification in the secure frame below. 
+              The process typically takes 2-5 minutes.
+            </p>
+            <div className="text-sm text-green-700">
+              <strong>Session ID:</strong> {sessionId}
+            </div>
+          </div>
+
+          {/* Embedded Didit Verification */}
+          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-gray-900">Secure Identity Verification</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-600 font-medium">SECURE</span>
+                </div>
+              </div>
+            </div>
+            
+            <iframe
+              src={verificationUrl}
+              title="Didit Identity Verification"
+              className="w-full h-[600px] border-none"
+              allow="camera; microphone"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+            />
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Clock className="h-5 w-5 text-yellow-600" />
+              <span className="font-medium text-yellow-900">Verification in Progress</span>
+            </div>
+            <p className="text-sm text-yellow-800">
+              Please complete the verification process above. Your status will update automatically 
+              when verification is complete. Do not close this window.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Back Button */}
+      <div className="mt-8 text-center">
+        <button
+          onClick={onClose}
+          className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          ← Back to Portfolio
+        </button>
+      </div>
     </div>
-  );
+  )
 }
