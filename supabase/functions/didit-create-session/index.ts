@@ -73,10 +73,7 @@ Deno.serve(async (req) => {
     }
 
     // Didit API configuration
-    const diditApiKey = Deno.env.get('DIDIT_API_KEY')
-    if (!diditApiKey) {
-      throw new Error('DIDIT_API_KEY environment variable is not configured')
-    }
+    const diditApiKey = 'HqcnDy0hHpLQ4WSADIlfjNQuk3yWt64TWAhyx6VzSg0'
     const diditApiBase = 'https://api.didit.me'
     
     const returnUrl = req.headers.get('origin') + '/kyc/callback'
