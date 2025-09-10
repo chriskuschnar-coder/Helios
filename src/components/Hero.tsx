@@ -23,24 +23,24 @@ export function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-            Invest with Confidence. See Your Portfolio Grow in Real Time.
+            Navigating Global Markets with Precision and Insight
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Global Market Consulting connects you to professional market strategies, 
-            giving you transparency, control, and peace of mind.
+            Global Markets Consulting delivers sophisticated investment research and systematic strategies 
+            to discerning investors seeking alpha in complex market environments.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; window.dispatchEvent(new CustomEvent('navigate-to-login')); }} className="bg-gold-600 hover:bg-gold-700 text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2 hover:scale-105 shadow-lg cursor-pointer">
               <TrendingUp className="h-5 w-5" />
-              <span>Get Started</span>
+              <span>Professional Portal</span>
               <ArrowRight className="h-5 w-5" />
             </a>
             
-            <a href="#services" className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2">
+            <a href="#approach" className="border-2 border-white text-white hover:bg-white hover:text-navy-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2">
               <Play className="h-5 w-5" />
-              <span>Learn More</span>
+              <span>Our Approach</span>
             </a>
           </div>
         </div>

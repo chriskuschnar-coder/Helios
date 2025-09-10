@@ -40,7 +40,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
               onClick={onNavigateToLogin}
               className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
             >
-              Client Portal
+              Professional Portal
             </button>
           </div>
 
