@@ -130,6 +130,7 @@ const InvestorDashboard: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
             <BarChart3 className="h-8 w-8 text-navy-600" />
+          </div>
           <p className="text-gray-600">Connecting to your account...</p>
         </div>
       </div>
@@ -187,8 +188,6 @@ const InvestorDashboard: React.FC = () => {
                             {section.id === 'positions' && 'Live trading positions from Helios'}
                             {section.id === 'insights' && 'AI-powered portfolio insights and recommendations'}
                             {section.id === 'analytics' && 'Advanced quantitative analysis'}
-                            {section.id === 'risk' && 'Risk management and stress testing'}
-                            {section.id === 'optimization' && 'Portfolio optimization engine'}
                           </p>
                         </div>
                       </div>
