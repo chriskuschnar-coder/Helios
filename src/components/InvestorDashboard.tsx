@@ -11,8 +11,6 @@ import { AIInsights } from './portfolio/AIInsights'
 import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
 import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { RiskDashboard } from './portfolio/RiskDashboard'
-import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { 
   TrendingUp, 
   BarChart3, 
@@ -22,7 +20,6 @@ import {
   Shield, 
   Target,
   Activity,
-  Zap,
   Plus,
   RefreshCw,
   Calendar,
@@ -124,18 +121,6 @@ const InvestorDashboard: React.FC = () => {
       title: 'Advanced Analytics',
       icon: BarChart3,
       component: () => <PortfolioAnalytics currentBalance={currentBalance} />
-    },
-    {
-      id: 'risk',
-      title: 'Risk Management',
-      icon: Shield,
-      component: () => <RiskDashboard currentBalance={currentBalance} />
-    },
-    {
-      id: 'optimization',
-      title: 'Portfolio Optimization',
-      icon: Zap,
-      component: () => <OptimizationEngine currentBalance={currentBalance} />
     }
   ]
 
@@ -145,8 +130,6 @@ const InvestorDashboard: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
             <BarChart3 className="h-8 w-8 text-navy-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Portfolio</h3>
           <p className="text-gray-600">Connecting to your account...</p>
         </div>
       </div>
