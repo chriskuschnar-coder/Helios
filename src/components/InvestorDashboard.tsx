@@ -36,6 +36,7 @@ const InvestorDashboard: React.FC = () => {
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['allocation']))
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
@@ -71,20 +72,6 @@ const InvestorDashboard: React.FC = () => {
   ]
 
   const portfolioSections = [
-    {
-      id: 'portfolio-value',
-      title: 'Portfolio Value',
-      icon: BarChart3,
-      component: () => (
-        <div className="space-y-6">
-          <PortfolioValueCard 
-            onFundPortfolio={handleFundPortfolio}
-            onWithdraw={handleWithdraw}
-          />
-          <PortfolioPerformanceChart currentBalance={currentBalance} />
-        </div>
-      )
-    },
     {
       id: 'allocation',
       title: 'Asset Allocation',
@@ -150,6 +137,13 @@ const InvestorDashboard: React.FC = () => {
         {/* Tab Content */}
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
+            {/* Portfolio Value Card - Always Visible */}
+            <PortfolioValueCard 
+              onFundPortfolio={handleFundPortfolio}
+              onWithdraw={handleWithdraw}
+            />
+            <PortfolioPerformanceChart currentBalance={currentBalance} />
+            
             {/* Portfolio sections in expandable folders */}
             {portfolioSections.map((section) => (
               <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
