@@ -590,10 +590,343 @@ export function InvestorDashboard() {
         {selectedTopTab === 'portfolio' && (
           <div className="mb-4 md:mb-6 mobile-card">
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
-              Welcome back, {getFirstName()}!
+              Welcome back, {getFirstName()}
             </h1>
-            <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 mobile-text-sm">
-              Your portfolio overview and account management
-            </p>
+            <PortfolioValueCard 
+              portfolioData={portfolioData}
+              account={account}
+              onFundAccount={openFunding}
+            />
           </div>
         )}
+
+        {/* Markets Tab */}
+        {selectedTopTab === 'markets' && <MarketsTab />}
+
+        {/* Research Tab */}
+        {selectedTopTab === 'research' && <ResearchTab />}
+
+        {/* Transactions Tab */}
+        {selectedTopTab === 'transactions' && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 mobile-card">
+            <div className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg md:text-xl font-bold text-navy-900">Transaction History</h2>
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <Clock className="h-4 w-4" />
+                  <span>Last updated: {lastSystemUpdate.toLocaleTimeString()}</span>
+                </div>
+              </div>
+              
+              {loadingTransactions ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-6 w-6 animate-spin text-navy-600" />
+                  <span className="ml-2 text-gray-600">Loading transactions...</span>
+                </div>
+              ) : allTransactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
+                  <p className="text-gray-600 mb-6">Start by funding your account to see transaction history</p>
+                  <button
+                    onClick={() => openFunding()}
+                    className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    Fund Account
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allTransactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {getTransactionIcon(transaction.type)}
+                        <div>
+                          <p className="font-medium text-gray-900">{transaction.description}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(transaction.created_at).toLocaleDateString()} • {transaction.method}
+                            {transaction.reference_id && (
+                              <span className="ml-2 text-xs text-gray-400">
+                                {transaction.reference_id}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-semibold ${getTransactionColor(transaction.type, transaction.amount)}`}>
+                          {formatTransactionAmount(transaction)}
+                        </p>
+                        {transaction.fee > 0 && (
+                          <p className="text-xs text-gray-500">Fee: ${transaction.fee}</p>
+                        )}
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          transaction.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : transaction.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {transaction.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Portfolio Tab Content */}
+        {selectedTopTab === 'portfolio' && (
+          <>
+            {/* Portfolio Navigation */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-4 md:mb-6 mobile-card">
+              <div className="px-3 md:px-6 py-3 md:py-4">
+                <nav className="flex space-x-2 md:space-x-8 overflow-x-auto scrollbar-hide">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setSelectedTab(tab.id)}
+                      className={`flex items-center space-x-2 py-2 px-3 md:px-4 rounded-lg font-medium text-sm transition-colors mobile-tab whitespace-nowrap ${
+                        selectedTab === tab.id
+                          ? 'bg-navy-600 text-white'
+                          : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <tab.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">{tab.name}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+
+            {/* Portfolio Overview Tab */}
+            {selectedTab === 'overview' && (
+              <div className="space-y-4 md:space-y-6">
+                {/* Performance Chart */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Portfolio Performance</h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span>Live</span>
+                    </div>
+                  </div>
+                  <PortfolioPerformanceChart />
+                </div>
+
+                {/* Key Metrics Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <span className="text-xs text-gray-500">YTD</span>
+                    </div>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">
+                      {portfolioData.yearlyReturn.toFixed(1)}%
+                    </p>
+                    <p className="text-xs md:text-sm text-gray-600">Annual Return</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <Shield className="h-5 w-5 text-blue-600" />
+                      <span className="text-xs text-gray-500">Risk</span>
+                    </div>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">12.4%</p>
+                    <p className="text-xs md:text-sm text-gray-600">Volatility</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <Target className="h-5 w-5 text-purple-600" />
+                      <span className="text-xs text-gray-500">Ratio</span>
+                    </div>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">1.34</p>
+                    <p className="text-xs md:text-sm text-gray-600">Sharpe Ratio</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <Activity className="h-5 w-5 text-orange-600" />
+                      <span className="text-xs text-gray-500">Today</span>
+                    </div>
+                    <p className={`text-xl md:text-2xl font-bold ${portfolioData.dailyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {portfolioData.dailyPnL >= 0 ? '+' : ''}${portfolioData.dailyPnL.toFixed(0)}
+                    </p>
+                    <p className="text-xs md:text-sm text-gray-600">Daily P&L</p>
+                  </div>
+                </div>
+
+                {/* Advanced Analytics */}
+                <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+                  <PortfolioAnalytics />
+                  <InteractiveAllocationChart holdings={holdings} />
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+                  <PerformanceMetrics portfolioData={portfolioData} />
+                  <AIInsights />
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+                  <RiskDashboard />
+                  <OptimizationEngine />
+                </div>
+
+                <LiveTradingPositions />
+                <FundNAVChart />
+              </div>
+            )}
+
+            {/* Holdings Detail Tab */}
+            {selectedTab === 'holdings' && (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-6">Portfolio Holdings</h3>
+                
+                {holdings.every(h => h.value === 0) ? (
+                  <div className="text-center py-12">
+                    <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No holdings yet</h3>
+                    <p className="text-gray-600 mb-6">Fund your account to start building your portfolio</p>
+                    <button
+                      onClick={() => openFunding()}
+                      className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      Fund Account
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {holdings.map((holding, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{holding.name}</h4>
+                            <p className="text-sm text-gray-600">{holding.risk} Risk</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-gray-900">${holding.value.toLocaleString()}</p>
+                            <p className="text-sm text-green-600">+{holding.return}%</p>
+                          </div>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-navy-600 h-2 rounded-full" 
+                            style={{ width: `${holding.allocation}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">{holding.allocation}% allocation</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Transaction History Tab */}
+            {selectedTab === 'transactions' && (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900">Recent Transactions</h3>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Clock className="h-4 w-4" />
+                    <span>Last updated: {lastSystemUpdate.toLocaleTimeString()}</span>
+                  </div>
+                </div>
+                
+                {loadingTransactions ? (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="h-6 w-6 animate-spin text-navy-600" />
+                    <span className="ml-2 text-gray-600">Loading transactions...</span>
+                  </div>
+                ) : recentTransactions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
+                    <p className="text-gray-600 mb-6">Start by funding your account to see transaction history</p>
+                    <button
+                      onClick={() => openFunding()}
+                      className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      Fund Account
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentTransactions.map((transaction) => (
+                      <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {getTransactionIcon(transaction.type)}
+                          <div>
+                            <p className="font-medium text-gray-900">{transaction.description}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(transaction.created_at).toLocaleDateString()} • {transaction.method}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-semibold ${getTransactionColor(transaction.type, transaction.amount)}`}>
+                            {formatTransactionAmount(transaction)}
+                          </p>
+                          {transaction.fee > 0 && (
+                            <p className="text-xs text-gray-500">Fee: ${transaction.fee}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {allTransactions.length > 10 && (
+                      <button
+                        onClick={() => setSelectedTopTab('transactions')}
+                        className="w-full mt-4 text-navy-600 hover:text-navy-700 font-medium text-sm flex items-center justify-center space-x-1"
+                      >
+                        <span>View all transactions</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Documents Tab */}
+            {selectedTab === 'documents' && (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 mobile-card">
+                <h3 className="font-serif text-lg md:text-xl font-bold text-navy-900 mb-6">Account Documents</h3>
+                <div className="space-y-3">
+                  {documents.map((doc, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <p className="font-medium text-gray-900">{doc.name}</p>
+                          <p className="text-sm text-gray-500">{doc.type} • {doc.date}</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight className="h-5 w-5 text-gray-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Funding Modal */}
+        {showFundingModal && (
+          <FundingModal
+            isOpen={showFundingModal}
+            onClose={() => setShowFundingModal(false)}
+            onSuccess={handleFundingSuccess}
+            onProceedToPayment={handleProceedToPayment}
+            prefilledAmount={prefilledAmount}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
