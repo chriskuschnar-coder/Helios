@@ -10,79 +10,10 @@ interface DiditKYCVerificationProps {
 export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [kycStatus, setKycStatus] = useState<any>(null)
-  const [checkingStatus, setCheckingStatus] = useState(false)
   const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isVerified, setIsVerified] = useState(false)
-
-  // Check existing KYC status on mount
-  useEffect(() => {
-    if (user) {
-      checkKYCStatus()
-    }
-  }, [user])
-
-  const checkKYCStatus = async () => {
-    if (!user) return
-
-    try {
-      setCheckingStatus(true)
-      console.log('🔍 Checking KYC status for user:', user.id)
-
-      const { supabaseClient } = await import('../lib/supabase-client')
-      
-      // Check compliance_records table for verification status
-      const { data: complianceData, error: complianceError } = await supabaseClient
-        .from('compliance_records')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('verification_type', 'identity')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (complianceError && complianceError.code !== 'PGRST116') {
-        throw complianceError
-      }
-
-      // Check users table for kyc_status
-      const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('kyc_status')
-        .eq('id', user.id)
-        .single()
-
-      if (userError) {
-        throw userError
-      }
-
-      const isVerified = userData?.kyc_status === 'verified' || complianceData?.status === 'approved'
-      
-      setKycStatus({
-        user_id: user.id,
-        kyc_status: userData?.kyc_status || 'pending',
-        is_verified: isVerified,
-        can_fund: isVerified,
-        verification_details: complianceData,
-        message: isVerified ? 'Identity verified' : 'Verification required'
-      })
-
-      // If already verified, complete immediately
-      if (isVerified) {
-        console.log('✅ User already verified, completing flow')
-        setTimeout(() => {
-          onVerificationComplete()
-        }, 1000)
-      }
-    } catch (error) {
-      console.error('❌ KYC status check failed:', error)
-      setError(error instanceof Error ? error.message : 'Failed to check verification status')
-    } finally {
-      setCheckingStatus(false)
-    }
-  }
 
   const startVerification = async () => {
     if (!user) {
@@ -112,6 +43,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       const firstName = nameParts[0] || 'User'
       const lastName = nameParts.slice(1).join(' ') || 'Name'
 
+      console.log('📝 Sending verification request with data:', {
+        user_id: user.id,
+        email: user.email,
+        first_name: firstName,
+        last_name: lastName
+      })
+
       const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
         method: 'POST',
         headers: {
@@ -129,14 +67,31 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         })
       })
 
+      console.log('📊 Response status:', response.status)
+      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        const errorData = await response.json()
+        const responseText = await response.text()
+        console.error('❌ Raw response:', responseText)
+        
+        let errorData
+        try {
+          errorData = JSON.parse(responseText)
+        } catch {
+          errorData = { error: responseText }
+        }
+        
         console.error('❌ Didit session creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create verification session')
       }
 
       const sessionData = await response.json()
       console.log('✅ Didit v2 session created:', sessionData)
+
+      if (!sessionData.client_url) {
+        console.error('❌ No client_url in response:', sessionData)
+        throw new Error('No verification URL received from Didit')
+      }
 
       setVerificationUrl(sessionData.client_url)
       setSessionId(sessionData.session_id)
@@ -205,6 +160,19 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     }
   }
 
+  // Show loading state while checking initial status
+  if (checkingStatus) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Checking Verification Status</h3>
+        <p className="text-gray-600">Please wait while we check your verification status...</p>
+      </div>
+    )
+  }
+
   // If user is already verified, show success state
   if (kycStatus?.is_verified) {
     return (
@@ -225,6 +193,99 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           Continue to Funding
           <ArrowRight className="w-5 h-5" />
         </button>
+      </div>
+    )
+  }
+
+  // If there's an error, show error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="h-8 w-8 text-red-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-red-900 mb-2">Verification Error</h3>
+        <p className="text-red-600 mb-6">{error}</p>
+        <button
+          onClick={() => {
+            setError('')
+            setVerificationUrl(null)
+            setSessionId(null)
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
+
+  // If verification URL exists, show iframe
+  if (verificationUrl) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+            <h4 className="font-semibold text-green-900">Verification Session Created</h4>
+          </div>
+          <p className="text-sm text-green-800 mb-4">
+            Complete your identity verification in the secure frame below. 
+            The process typically takes 2-5 minutes.
+          </p>
+          {sessionId && (
+            <div className="text-sm text-green-700">
+              <strong>Session ID:</strong> {sessionId}
+            </div>
+          )}
+        </div>
+
+        {/* Embedded Didit Verification */}
+        <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Shield className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-gray-900">Secure Identity Verification</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-green-600 font-medium">SECURE</span>
+              </div>
+            </div>
+          </div>
+          
+          <iframe
+            src={verificationUrl}
+            title="Didit Identity Verification"
+            className="w-full h-[600px] border-none"
+            allow="camera; microphone"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+            onLoad={() => console.log('✅ Didit iframe loaded')}
+            onError={() => console.error('❌ Didit iframe failed to load')}
+          />
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            <span className="font-medium text-yellow-900">Verification in Progress</span>
+          </div>
+          <p className="text-sm text-yellow-800">
+            Please complete the verification process above. Your status will update automatically 
+            when verification is complete. Do not close this window.
+          </p>
+        </div>
+
+        {/* Back Button */}
+        <div className="text-center">
+          <button
+            onClick={onClose}
+            className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            ← Back to Portfolio
+          </button>
+        </div>
       </div>
     )
   }
@@ -326,104 +387,33 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         </div>
       )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-          <div className="flex items-center space-x-3">
-            <AlertCircle className="h-6 w-6 text-red-600" />
-            <div>
-              <h4 className="font-semibold text-red-900">Verification Error</h4>
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Verification Interface */}
-      {!verificationUrl ? (
-        <div className="text-center">
-          <button
-            onClick={startVerification}
-            disabled={loading || checkingStatus || kycStatus?.is_verified}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Creating Verification Session...
-              </>
-            ) : checkingStatus ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Checking Status...
-              </>
-            ) : (
-              <>
-                <Shield className="w-6 h-6" />
-                Start Identity Verification
-              </>
-            )}
-          </button>
-          
-          <p className="text-sm text-gray-500 mt-4">
-            Powered by Didit • Secure identity verification
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <h4 className="font-semibold text-green-900">Verification Session Created</h4>
-            </div>
-            <p className="text-sm text-green-800 mb-4">
-              Complete your identity verification in the secure frame below. 
-              The process typically takes 2-5 minutes.
-            </p>
-            <div className="text-sm text-green-700">
-              <strong>Session ID:</strong> {sessionId}
-            </div>
-          </div>
-
-          {/* Embedded Didit Verification */}
-          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-gray-900">Secure Identity Verification</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">SECURE</span>
-                </div>
-              </div>
-            </div>
-            
-            <iframe
-              src={verificationUrl}
-              title="Didit Identity Verification"
-              className="w-full h-[600px] border-none"
-              allow="camera; microphone"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-            />
-          </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <span className="font-medium text-yellow-900">Verification in Progress</span>
-            </div>
-            <p className="text-sm text-yellow-800">
-              Please complete the verification process above. Your status will update automatically 
-              when verification is complete. Do not close this window.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Start Verification Button */}
+      <div className="text-center">
+        <button
+          onClick={startVerification}
+          disabled={loading || kycStatus?.is_verified}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Creating Verification Session...
+            </>
+          ) : (
+            <>
+              <Shield className="w-6 h-6" />
+              Start Identity Verification
+            </>
+          )}
+        </button>
+        
+        <p className="text-sm text-gray-500 mt-4">
+          Powered by Didit • Secure identity verification
+        </p>
+      </div>
 
       {/* Back Button */}
-      <div className="mt-8 text-center">
+      <div className="mt-6 text-center">
         <button
           onClick={onClose}
           className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
