@@ -15,16 +15,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get Didit API key from environment
-    const DIDIT_API_KEY = Deno.env.get("DIDIT_API_KEY")
-    if (!DIDIT_API_KEY) {
-      console.error('❌ Missing DIDIT_API_KEY in environment variables')
-      throw new Error("Missing DIDIT_API_KEY in secrets")
+    // Get Didit credentials from environment
+    const DIDIT_CLIENT_ID = Deno.env.get("DIDIT_CLIENT_ID")
+    const DIDIT_CLIENT_SECRET = Deno.env.get("DIDIT_CLIENT_SECRET")
+    
+    if (!DIDIT_CLIENT_ID || !DIDIT_CLIENT_SECRET) {
+      console.error('❌ Missing Didit OAuth credentials')
+      throw new Error("Missing DIDIT_CLIENT_ID or DIDIT_CLIENT_SECRET in environment variables")
     }
 
-    console.log('🔑 Didit API key found:', {
-      hasApiKey: !!DIDIT_API_KEY,
-      keyLength: DIDIT_API_KEY?.length || 0
+    console.log('🔑 Didit OAuth credentials found:', {
+      hasClientId: !!DIDIT_CLIENT_ID,
+      hasClientSecret: !!DIDIT_CLIENT_SECRET,
+      clientIdLength: DIDIT_CLIENT_ID?.length || 0,
+      secretLength: DIDIT_CLIENT_SECRET?.length || 0
     })
 
     // Get user from JWT token
@@ -58,33 +62,81 @@ Deno.serve(async (req) => {
     const userId = user_id || user.id
 
     console.log('📝 Creating Didit session for user:', userId)
+
+    // STEP 1: Get OAuth access token from Didit
+    console.log('🔐 Getting OAuth access token from Didit...')
     
-    // Prepare the request payload with all required fields
-    const requestPayload = {
+    const credentials = btoa(`${DIDIT_CLIENT_ID}:${DIDIT_CLIENT_SECRET}`)
+    console.log('🔍 OAuth request details:', {
+      url: 'https://apx.didit.me/auth/v2/token/',
+      method: 'POST',
+      hasCredentials: !!credentials,
+      credentialsLength: credentials.length
+    })
+
+    const tokenResponse = await fetch('https://apx.didit.me/auth/v2/token/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials'
+    })
+
+    console.log('📊 OAuth token response:', {
+      status: tokenResponse.status,
+      statusText: tokenResponse.statusText,
+      ok: tokenResponse.ok,
+      headers: Object.fromEntries(tokenResponse.headers.entries())
+    })
+
+    if (!tokenResponse.ok) {
+      const tokenError = await tokenResponse.text()
+      console.error('❌ OAuth token request failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: tokenError,
+        credentials: credentials.substring(0, 20) + '...'
+      })
+      throw new Error(`OAuth token request failed: ${tokenResponse.status} ${tokenResponse.statusText}`)
+    }
+
+    const tokenData = await tokenResponse.json()
+    console.log('✅ OAuth token received:', {
+      hasAccessToken: !!tokenData.access_token,
+      tokenType: tokenData.token_type,
+      expiresIn: tokenData.expires_in
+    })
+
+    if (!tokenData.access_token) {
+      throw new Error('No access token received from Didit OAuth')
+    }
+
+    // STEP 2: Create verification session using access token
+    console.log('📝 Creating verification session with access token...')
+    
+    const sessionPayload = {
       user_id: userId,
       email: user.email,
       callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
       return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
     }
     
-    console.log('📡 Full request payload being sent to Didit:', JSON.stringify(requestPayload, null, 2))
-    console.log('🔍 Request details:', {
-      url: 'https://api.didit.me/v1/sessions',
+    console.log('📡 Session request payload:', JSON.stringify(sessionPayload, null, 2))
+    console.log('🔍 Session request details:', {
+      url: 'https://verification.didit.me/v2/session/',
       method: 'POST',
-      hasApiKey: !!DIDIT_API_KEY,
-      apiKeyLength: DIDIT_API_KEY?.length,
-      userId: userId,
-      userEmail: user.email
+      hasAccessToken: !!tokenData.access_token,
+      accessTokenLength: tokenData.access_token?.length || 0
     })
 
-    // Create verification session with Didit API
-    const sessionResponse = await fetch('https://api.didit.me/v1/sessions', {
+    const sessionResponse = await fetch('https://verification.didit.me/v2/session/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': DIDIT_API_KEY,
+        'Authorization': `Bearer ${tokenData.access_token}`,
       },
-      body: JSON.stringify(requestPayload)
+      body: JSON.stringify(sessionPayload)
     })
 
     console.log('📊 Didit session creation response:', {
@@ -116,8 +168,8 @@ Deno.serve(async (req) => {
         status: sessionResponse.status,
         statusText: sessionResponse.statusText,
         errorDetails: errorDetails,
-        requestPayload: requestPayload,
-        apiKeyPresent: !!DIDIT_API_KEY,
+        sessionPayload: sessionPayload,
+        hasAccessToken: !!tokenData.access_token,
         timestamp: new Date().toISOString()
       })
       
