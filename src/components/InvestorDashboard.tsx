@@ -1217,41 +1217,6 @@ export function InvestorDashboard() {
                     </div>
                   )}
                 </div>
-              )}
-
-              {selectedTab === 'documents' && (
-                <div className="space-y-4 sm:space-y-6 mobile-space-y-2">
-                  <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-base">Investment Documents</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 mobile-grid">
-                    {documents.map((doc, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 sm:p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mobile-button mobile-compact-padding">
-                        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 mobile-space-x-1">
-                          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                          <div>
-                            <div className="text-xs sm:text-sm md:text-base font-medium text-gray-900 mobile-text-xs">{doc.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-600 mobile-text-xs">{doc.type} • {doc.date}</div>
-                          </div>
-                        </div>
-                        <button className="text-navy-600 hover:text-navy-700 font-medium text-xs px-2 py-1 rounded border border-navy-200 hover:bg-navy-50 transition-colors mobile-button mobile-ultra-compact">
-                          Download
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Funding Modal */}
-      <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => setShowFundingModal(false)}
-        prefilledAmount={prefilledAmount}
-        onProceedToPayment={handleProceedToPayment}
-      />
     </div>
   )
 }
