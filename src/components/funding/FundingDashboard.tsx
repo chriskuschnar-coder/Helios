@@ -373,7 +373,7 @@ export function FundingDashboard() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Secure Bank Connection</h3>
             <p className="text-gray-600">
-              Connect your bank account for ${fundingAmount.toLocaleString()} investment
+              Connect your bank account for ${fundingAmount.toLocaleString()} funding
             </p>
           </div>
 
