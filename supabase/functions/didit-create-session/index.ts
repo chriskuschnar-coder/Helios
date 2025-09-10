@@ -1,34 +1,13 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-interface DiditSessionRequest {
-  user_id: string
-  return_url?: string
-}
-
-interface DiditSessionPayload {
-  applicant: {
-    external_id: string
-    email: string
-    first_name?: string
-    last_name?: string
-  }
-  callback_url: string
-  return_url?: string
-  config?: {
-    document_types?: string[]
-    require_liveness?: boolean
-    require_address_verification?: boolean
-    aml_check?: boolean
-    pep_check?: boolean
-  }
-}
-
-Deno.serve(async (req) => {
-  console.log('🔐 Didit KYC session creation function called')
+serve(async (req) => {
+  console.log('🔐 Didit session creation function called')
   
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -38,6 +17,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Get Didit API key from environment
+    const DIDIT_API_KEY = Deno.env.get("DIDIT_API_KEY")
+    if (!DIDIT_API_KEY) {
+      console.error('❌ Missing DIDIT_API_KEY in environment variables')
+      throw new Error("Missing DIDIT_API_KEY in secrets")
+    }
+
+    console.log('🔑 Didit API key found:', DIDIT_API_KEY ? 'Yes' : 'No')
+    console.log('🔑 API key length:', DIDIT_API_KEY?.length || 0)
+    console.log('🔑 API key prefix:', DIDIT_API_KEY?.substring(0, 8) + '...')
+
     // Get user from JWT token
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -64,140 +54,87 @@ Deno.serve(async (req) => {
     const user = await userResponse.json()
     console.log('✅ User authenticated:', user.email)
 
-    // Check if user already has verified KYC
-    const existingKycResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?user_id=eq.${user.id}&verification_type=eq.identity&status=eq.approved&select=*`, {
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    // Get request data
+    const { user_id, return_url } = await req.json()
+    const userId = user_id || user.id
 
-    if (existingKycResponse.ok) {
-      const existingKyc = await existingKycResponse.json()
-      if (existingKyc.length > 0) {
-        console.log('✅ User already has approved KYC verification')
-        return new Response(JSON.stringify({
-          already_verified: true,
-          message: 'User already has approved identity verification',
-          verification_id: existingKyc[0].verification_id
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        })
-      }
-    }
+    console.log('📝 Creating session for user:', userId)
 
-    // Get Didit API configuration
-    const diditApiKey = Deno.env.get('DIDIT_API_KEY')
-    if (!diditApiKey) {
-      console.error('❌ DIDIT_API_KEY environment variable not set')
-      throw new Error('Didit API key not configured. Please contact support.')
-    }
-    
-    console.log('🔑 Didit API key found:', diditApiKey ? 'Yes' : 'No')
-    console.log('🔑 API key length:', diditApiKey?.length || 0)
-    console.log('🔑 API key prefix:', diditApiKey?.substring(0, 8) + '...')
-    
-    const diditApiBase = 'https://api.didit.me'
-    
-    const returnUrl = req.headers.get('origin') + '/kyc/callback'
-    const webhookUrl = `${supabaseUrl}/functions/v1/didit-webhook`
-    
-    console.log('🔍 Creating Didit session with:', {
-      user_id: user.id,
-      email: user.email,
-      return_url: returnUrl,
-      webhook_url: webhookUrl,
-      api_base: diditApiBase
-    })
-
-    // Create Didit verification session payload
-    const diditPayload: DiditSessionPayload = {
+    // Create Didit session payload
+    const diditPayload = {
       applicant: {
-        external_id: user.id,
+        external_id: userId,
         email: user.email,
         first_name: user.user_metadata?.full_name?.split(' ')[0] || 'User',
         last_name: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'Name'
       },
-      callback_url: webhookUrl,
-      return_url: returnUrl,
-      config: {
-        document_types: ['passport', 'driving_license', 'national_id'],
-        require_liveness: true,
-        require_address_verification: false,
-        aml_check: true,
-        pep_check: true
-      }
+      callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
+      return_url: return_url || `${req.headers.get('origin')}/kyc/callback`
     }
 
-    console.log('📡 Sending request to Didit API...')
-    console.log('📦 Payload:', JSON.stringify(diditPayload, null, 2))
-    
-    const diditResponse = await fetch(`${diditApiBase}/v1/sessions`, {
-      method: 'POST',
+    console.log('📡 Calling Didit API with payload:', JSON.stringify(diditPayload, null, 2))
+
+    // Call Didit API with correct authentication
+    const diditResponse = await fetch("https://api.didit.me/v1/sessions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': diditApiKey,
-        'User-Agent': 'GlobalMarketConsulting/1.0'
+        "Content-Type": "application/json",
+        "X-API-Key": DIDIT_API_KEY, // ✅ Correct header format
       },
       body: JSON.stringify(diditPayload)
     })
 
-    console.log('📊 Didit API response:', {
-      status: diditResponse.status,
-      statusText: diditResponse.statusText,
-      headers: Object.fromEntries(diditResponse.headers.entries())
-    })
+    console.log('📊 Didit API response status:', diditResponse.status)
+    console.log('📊 Didit API response headers:', Object.fromEntries(diditResponse.headers.entries()))
 
     if (!diditResponse.ok) {
       const errorText = await diditResponse.text()
-      console.error('❌ Didit API error details:', {
-        status: diditResponse.status,
-        statusText: diditResponse.statusText,
-        body: errorText,
-        url: `${diditApiBase}/v1/sessions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': diditApiKey.substring(0, 8) + '...',
-          'User-Agent': 'GlobalMarketConsulting/1.0'
-        }
-      })
+      console.error('❌ Didit API error response:', errorText)
       
       let errorMessage = 'Failed to create verification session'
       try {
         const errorData = JSON.parse(errorText)
-        errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage
+        errorMessage = errorData.message || errorData.error || errorMessage
       } catch {
         errorMessage = errorText.substring(0, 200)
       }
       
-      throw new Error(`Didit API Error: ${errorMessage}`)
+      return new Response(
+        JSON.stringify({ 
+          error: `Didit API Error: ${errorMessage}`,
+          status: diditResponse.status,
+          type: 'didit_session_creation_failed'
+        }),
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          }
+        }
+      )
     }
 
-    const diditSession = await diditResponse.json()
-    console.log('✅ Didit session created:', {
-      session_id: diditSession.session_id,
-      client_url: diditSession.client_url
+    const sessionData = await diditResponse.json()
+    console.log('✅ Didit session created successfully:', {
+      session_id: sessionData.session_id,
+      client_url: sessionData.client_url
     })
 
-    // Store verification session in compliance_records
+    // Store session in compliance_records
     const complianceRecord = {
-      user_id: user.id,
+      user_id: userId,
       provider: 'didit',
       verification_type: 'identity',
       status: 'pending',
-      verification_id: diditSession.session_id,
+      verification_id: sessionData.session_id,
       data_blob: {
-        didit_session_id: diditSession.session_id,
-        client_url: diditSession.client_url,
+        didit_session_id: sessionData.session_id,
+        client_url: sessionData.client_url,
         created_at: new Date().toISOString(),
-        user_email: user.email,
-        return_url: returnUrl
+        user_email: user.email
       },
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }
 
     const dbResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records`, {
@@ -206,24 +143,20 @@ Deno.serve(async (req) => {
         'apikey': supabaseServiceKey,
         'Authorization': `Bearer ${supabaseServiceKey}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify(complianceRecord)
     })
 
     if (!dbResponse.ok) {
-      const dbError = await dbResponse.text()
-      console.error('❌ Failed to store compliance record:', dbError)
-      // Don't fail the session creation if DB insert fails
+      console.warn('⚠️ Failed to store compliance record')
     } else {
-      const storedRecord = await dbResponse.json()
-      console.log('✅ Compliance record stored:', storedRecord[0]?.id)
+      console.log('✅ Compliance record stored')
     }
 
-    // Return session details for frontend
     return new Response(JSON.stringify({
-      session_id: diditSession.session_id,
-      client_url: diditSession.client_url,
+      session_id: sessionData.session_id,
+      client_url: sessionData.client_url,
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       message: 'Verification session created successfully'
     }), {
@@ -232,8 +165,9 @@ Deno.serve(async (req) => {
         ...corsHeaders,
       },
     })
+
   } catch (error) {
-    console.error('❌ Didit session creation error:', error)
+    console.error('❌ Session creation error:', error)
     
     return new Response(
       JSON.stringify({ 

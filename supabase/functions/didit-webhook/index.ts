@@ -1,19 +1,12 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-didit-signature, x-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-didit-signature, didit-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-interface DiditWebhookEvent {
-  session_id: string
-  applicant_id: string
-  status: string
-  details?: any
-  event_type?: string
-  timestamp?: string
-}
-
-Deno.serve(async (req) => {
+serve(async (req) => {
   console.log('🔔 Didit webhook received')
   
   if (req.method === 'OPTIONS') {
@@ -24,7 +17,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const signature = req.headers.get('x-didit-signature') || req.headers.get('x-signature')
+    const DIDIT_WEBHOOK_SECRET = Deno.env.get("DIDIT_WEBHOOK_SECRET")
+    if (!DIDIT_WEBHOOK_SECRET) {
+      console.error('❌ Missing DIDIT_WEBHOOK_SECRET in environment variables')
+      throw new Error("Missing DIDIT_WEBHOOK_SECRET")
+    }
+
+    console.log('🔑 Webhook secret found:', DIDIT_WEBHOOK_SECRET ? 'Yes' : 'No')
+
+    const signature = req.headers.get("x-didit-signature") || req.headers.get("didit-signature")
     const body = await req.text()
     
     console.log('📦 Webhook details:', {
@@ -34,11 +35,10 @@ Deno.serve(async (req) => {
     })
 
     // Verify webhook signature for security
-    const webhookSecret = Deno.env.get('DIDIT_WEBHOOK_SECRET')
-    if (webhookSecret && signature) {
+    if (DIDIT_WEBHOOK_SECRET && signature) {
       try {
         const encoder = new TextEncoder()
-        const keyData = encoder.encode(webhookSecret)
+        const keyData = encoder.encode(DIDIT_WEBHOOK_SECRET)
         const messageData = encoder.encode(body)
         
         const cryptoKey = await crypto.subtle.importKey(
@@ -68,8 +68,8 @@ Deno.serve(async (req) => {
       console.warn('⚠️ No webhook secret or signature provided - skipping verification')
     }
 
-    // Parse the webhook payload
-    let event: DiditWebhookEvent
+    // Parse webhook payload
+    let event
     try {
       event = JSON.parse(body)
       console.log('📦 Didit webhook event:', {
@@ -123,7 +123,6 @@ Deno.serve(async (req) => {
       
       default:
         console.log('ℹ️ Verification status update:', status, 'for user:', applicant_id)
-        // Keep as pending for other statuses
     }
 
     // Update compliance record
@@ -194,6 +193,7 @@ Deno.serve(async (req) => {
         ...corsHeaders,
       },
     })
+
   } catch (error) {
     console.error('❌ Didit webhook processing error:', error)
     
