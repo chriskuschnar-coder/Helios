@@ -229,32 +229,30 @@ export function FundingDashboard() {
               )}
               
               <div className="flex items-start space-x-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  selectedMethod === method.id ? 'bg-navy-600 text-white' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  <method.icon className="h-6 w-6" />
+            <div className="text-center">
+              <div className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 ${
+                selectedMethod === method.id ? 'bg-navy-600 text-white' : 'bg-gray-100 text-gray-600'
+              }`}>
+                <method.icon className="h-8 w-8" />
+              </div>
+              
+              <h4 className="font-bold text-gray-900 mb-2 text-lg">{method.name}</h4>
+              <p className="text-sm text-gray-600 mb-4">{method.description}</p>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Processing:</span>
+                  <span className="font-semibold text-gray-900">{method.processingTime}</span>
                 </div>
-                
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">{method.name}</h4>
-                  <p className="text-sm text-gray-600 mb-3">{method.description}</p>
-                  
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Processing:</span>
-                      <span className="font-medium text-gray-900">{method.processingTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Fees:</span>
-                      <span className="font-medium text-gray-900">{method.fees}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Limits:</span>
-                      <span className="font-medium text-gray-900">
-                        ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Fees:</span>
+                  <span className="font-semibold text-green-600">{method.fees}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Limits:</span>
+                  <span className="font-semibold text-gray-900">
+                    ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
