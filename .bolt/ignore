@@ -1,118 +1,42 @@
-# Dependencies and build outputs
-node_modules/
+# Dependencies
+node_modules
 package-lock.json
-yarn.lock
-dist/
-build/
-.next/
-out/
 
-# Cache directories
-.cache/
-.parcel-cache/
-.nuxt/
-.vite/
+# Build outputs
+dist
+build
+.cache
+coverage
 
-# Environment and config files
-.env
-.env.local
-.env.production
-.env.development
-
-# Logs and debug files
+# Logs
 *.log
-logs/
-debug.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS and IDE files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Large media files
-*.mp4
-*.mov
-*.avi
-*.mkv
-*.webm
-public/videos/
-assets/videos/
-
-# Documentation files
-docs/
-README.md
-CHANGELOG.md
-LICENSE
-*.md
-
-# Test files and coverage
-__tests__/
-*.test.js
-*.test.ts
-*.test.tsx
-*.spec.js
-*.spec.ts
-*.spec.tsx
-coverage/
-.nyc_output/
-
-# Backup and temporary files
-*.backup
-*.bak
-*.orig
 *.tmp
-*~
 
-# Large document files (keep only essential ones)
-public/documents/Global_Markets_PPM_Final_85pp_TOC.pdf
-public/documents/Global_Markets_PPM_Final_85pp_TOC\ (2).pdf
-public/documents/Global_Markets_PPM_Final_85pp_TOC\ (2)\ copy.pdf
-public/documents/Global_Markets_PPM_Final_85pp_TOC\ (2)\ copy\ copy.pdf
+# Large PDF documents (keep as external links)
+*.pdf
+*.docx
 
-# All discarded migrations (these are not needed)
-.bolt/supabase_discarded_migrations/
+# Images and media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.webm
 
-# TypeScript build files
-*.tsbuildinfo
+# Generated files
+docs/generated
 
-# Netlify files (not needed for Bolt)
-netlify.toml
-.netlify/
+# Environment files
+.env
 
 # Git files
-.git/
+.git
 .gitignore
 
-# Large image files
-*.jpeg
-*.jpg
-*.png
-*.gif
-*.webp
-*.svg
-public/images/
-assets/images/
+# Supabase discarded migrations
+.bolt/supabase_discarded_migrations
 
-# Audio files
-*.mp3
-*.wav
-*.ogg
-
-# Archive files
-*.zip
-*.tar.gz
-*.rar
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary React files
-.eslintcache
+# Other large files
+public/documents/
+public/Facetune_*
