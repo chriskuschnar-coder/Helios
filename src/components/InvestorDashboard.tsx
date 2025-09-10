@@ -588,13 +588,100 @@ export function InvestorDashboard() {
 
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
-          <div className="mb-4 md:mb-6 mobile-card">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
-              Welcome back, {getFirstName()}!
-            </h1>
-            <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 mobile-text-sm">
-              Your portfolio overview and account management
-            </p>
+          <>
+            <div className="mb-4 md:mb-6 mobile-card">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg">
+                Welcome back, {getFirstName()}!
+              </h1>
+              <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6 mobile-text-sm">
+                Your portfolio overview and account management
+              </p>
+            </div>
+
+            {/* Portfolio Value Card */}
+            <PortfolioValueCard 
+              onFundPortfolio={() => setShowFundingModal(true)}
+              onWithdraw={() => console.log('Withdraw clicked')}
+            />
+
+            {/* Portfolio Performance Chart */}
+            <PortfolioPerformanceChart currentBalance={account?.balance || 0} className="mb-6" />
+
+            {/* Portfolio Analytics Grid */}
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              <InteractiveAllocationChart currentBalance={account?.balance || 0} />
+              <PerformanceMetrics currentBalance={account?.balance || 0} />
+            </div>
+
+            {/* Advanced Analytics */}
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              <AIInsights currentBalance={account?.balance || 0} />
+              <RiskDashboard currentBalance={account?.balance || 0} />
+            </div>
+
+            {/* Additional Analytics */}
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              <OptimizationEngine currentBalance={account?.balance || 0} />
+              <LiveTradingPositions currentBalance={account?.balance || 0} />
+            </div>
+
+            {/* Fund NAV Chart */}
+            <FundNAVChart />
+          </>
+        )}
+
+        {/* Markets Tab */}
+        {selectedTopTab === 'markets' && (
+          <MarketsTab />
+        )}
+
+        {/* Research Tab */}
+        {selectedTopTab === 'research' && (
+          <ResearchTab />
+        )}
+
+        {/* Transactions Tab */}
+        {selectedTopTab === 'transactions' && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-serif text-xl font-bold text-navy-900">Transaction History</h3>
+                <p className="text-gray-600">Complete account activity</p>
+              </div>
+              <div className="text-sm text-gray-500">
+                {allTransactions.length} transactions
+              </div>
+            </div>
+
+            {loadingTransactions ? (
+              <div className="animate-pulse space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allTransactions.map((transaction, index) => (
+                  <div key={transaction.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {getTransactionIcon(transaction.type)}
+                      <div>
+                        <div className="font-medium text-gray-900">{transaction.description}</div>
+                        <div className="text-sm text-gray-600">
+                          {new Date(transaction.created_at).toLocaleDateString()} • {transaction.method}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-bold ${getTransactionColor(transaction.type, transaction.amount)}`}>
+                        {formatTransactionAmount(transaction)}
+                      </div>
+                      <div className="text-sm text-gray-600">{transaction.status}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
