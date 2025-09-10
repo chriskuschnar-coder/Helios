@@ -1,128 +1,215 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-didit-signature, didit-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
+  console.log('🔔 Didit v2 webhook received')
+  
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    })
   }
 
   try {
-    console.log('🔔 Didit webhook received')
-    
-    const body = await req.json()
-    console.log('📦 Webhook payload:', JSON.stringify(body, null, 2))
-
-    // Verify webhook signature if needed
-    const webhookSecret = Deno.env.get('DIDIT_WEBHOOK_SECRET')
-    if (webhookSecret) {
-      const signature = req.headers.get('x-didit-signature')
-      console.log('🔐 Webhook signature:', signature)
-      // TODO: Implement signature verification
+    const DIDIT_WEBHOOK_SECRET = Deno.env.get("DIDIT_WEBHOOK_SECRET")
+    if (!DIDIT_WEBHOOK_SECRET) {
+      console.error('❌ Missing DIDIT_WEBHOOK_SECRET in environment variables')
+      throw new Error("Missing DIDIT_WEBHOOK_SECRET")
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    console.log('🔑 Webhook secret found:', DIDIT_WEBHOOK_SECRET ? 'Yes' : 'No')
+
+    const signature = req.headers.get("x-didit-signature") || req.headers.get("didit-signature")
+    const body = await req.text()
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Extract verification data from webhook
-    const {
-      session_id,
-      external_id: user_id,
-      status,
-      verification_type = 'identity',
-      provider = 'didit',
-      data: verification_data
-    } = body
-
-    console.log('📊 Processing verification:', {
-      session_id,
-      user_id,
-      status,
-      verification_type,
-      provider
+    console.log('📦 Didit v2 webhook details:', {
+      signature: signature?.substring(0, 20) + '...',
+      bodyLength: body.length,
+      timestamp: new Date().toISOString()
     })
 
-    if (!user_id) {
-      console.error('❌ Missing user_id in webhook payload')
-      return new Response(
-        JSON.stringify({ error: 'Missing user_id' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Verify webhook signature for security
+    if (DIDIT_WEBHOOK_SECRET && signature) {
+      try {
+        const encoder = new TextEncoder()
+        const keyData = encoder.encode(DIDIT_WEBHOOK_SECRET)
+        const messageData = encoder.encode(body)
+        
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          keyData,
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        )
+        
+        const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData)
+        const computedSignature = Array.from(new Uint8Array(signatureBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
+        
+        if (signature !== computedSignature) {
+          console.error('❌ Invalid webhook signature')
+          return new Response('Invalid signature', { status: 401 })
+        }
+        
+        console.log('✅ Webhook signature verified')
+      } catch (sigError) {
+        console.error('❌ Signature verification failed:', sigError)
+        // Continue processing but log the error
+      }
+    } else {
+      console.warn('⚠️ No webhook secret or signature provided - skipping verification')
     }
 
-    // Update or insert compliance record
-    const { data: complianceRecord, error: complianceError } = await supabase
-      .from('compliance_records')
-      .upsert({
-        user_id,
-        provider,
-        verification_type,
-        status: status === 'completed' ? 'approved' : status === 'failed' ? 'rejected' : 'pending',
-        verification_id: session_id,
-        data_blob: verification_data || {},
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,verification_type,provider'
+    // Parse webhook payload
+    let event
+    try {
+      event = JSON.parse(body)
+      console.log('📦 Didit v2 webhook event:', {
+        session_id: event.session_id,
+        applicant_id: event.applicant_id,
+        status: event.status,
+        event_type: event.event_type,
+        workflow: event.workflow
       })
-      .select()
-      .single()
-
-    if (complianceError) {
-      console.error('❌ Failed to update compliance record:', complianceError)
-      throw complianceError
+    } catch (err) {
+      console.error('❌ Invalid JSON in webhook body')
+      return new Response('Invalid JSON', { status: 400 })
     }
 
-    console.log('✅ Compliance record updated:', complianceRecord)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // If verification is approved, update user's KYC status
-    if (status === 'completed' || status === 'approved') {
-      const { error: userUpdateError } = await supabase
-        .from('users')
-        .update({
+    // Handle verification status updates
+    const { session_id, applicant_id, status, details, event_type, workflow } = event
+    
+    console.log('🔄 Processing Didit v2 verification result:', {
+      session_id,
+      applicant_id,
+      status,
+      event_type,
+      workflow
+    })
+
+    // Map Didit v2 status to our compliance status
+    let complianceStatus = 'pending'
+    let shouldMarkUserVerified = false
+
+    switch (status) {
+      case 'verified':
+      case 'completed:verified':
+      case 'approved':
+      case 'passed':
+        complianceStatus = 'approved'
+        shouldMarkUserVerified = true
+        console.log('✅ Verification APPROVED for user:', applicant_id)
+        break
+      
+      case 'rejected':
+      case 'failed':
+      case 'declined':
+        complianceStatus = 'rejected'
+        console.log('❌ Verification REJECTED for user:', applicant_id)
+        break
+      
+      case 'expired':
+        complianceStatus = 'expired'
+        console.log('⏰ Verification EXPIRED for user:', applicant_id)
+        break
+      
+      default:
+        console.log('ℹ️ Verification status update:', status, 'for user:', applicant_id)
+    }
+
+    // Update compliance record
+    const updateResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?verification_id=eq.${session_id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        status: complianceStatus,
+        data_blob: {
+          didit_session_id: session_id,
+          verification_status: status,
+          verification_details: details || {},
+          webhook_received_at: new Date().toISOString(),
+          event_type: event_type,
+          workflow: workflow
+        },
+        updated_at: new Date().toISOString()
+      })
+    })
+
+    if (!updateResponse.ok) {
+      const updateError = await updateResponse.text()
+      console.error('❌ Failed to update compliance record:', updateError)
+    } else {
+      const updatedRecord = await updateResponse.json()
+      console.log('✅ Compliance record updated:', updatedRecord[0]?.id)
+    }
+
+    // If verification approved, update user's KYC status
+    if (shouldMarkUserVerified && applicant_id) {
+      console.log('✅ Marking user as KYC verified:', applicant_id)
+      
+      const userUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${applicant_id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
           kyc_status: 'verified',
           updated_at: new Date().toISOString()
         })
-        .eq('id', user_id)
+      })
 
-      if (userUpdateError) {
-        console.error('❌ Failed to update user KYC status:', userUpdateError)
-        throw userUpdateError
+      if (!userUpdateResponse.ok) {
+        console.error('❌ Failed to update user KYC status')
+      } else {
+        console.log('✅ User KYC status updated to verified')
       }
-
-      console.log('✅ User KYC status updated to verified')
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Webhook processed successfully',
-        compliance_record_id: complianceRecord.id
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return new Response(JSON.stringify({ 
+      received: true,
+      processed: true,
+      session_id: session_id,
+      status: complianceStatus,
+      user_verified: shouldMarkUserVerified,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
+    })
 
   } catch (error) {
-    console.error('❌ Webhook processing failed:', error)
+    console.error('❌ Didit v2 webhook processing error:', error)
     
     return new Response(
       JSON.stringify({ 
-        error: 'Webhook processing failed',
-        details: error.message 
+        error: error.message,
+        timestamp: new Date().toISOString()
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
       }
     )
   }
