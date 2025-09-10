@@ -150,62 +150,15 @@ const InvestorDashboard: React.FC = () => {
         {/* Tab Content */}
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
-            {portfolioSections.map((section) => {
-              const isExpanded = expandedSections.has(section.id)
-              const SectionComponent = section.component
-              
-              return (
-                <div key={section.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div 
-                    className="p-4 sm:p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100"
-                    onClick={() => toggleSection(section.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
-                          <section.icon className="h-5 w-5 text-navy-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                          <p className="text-sm text-gray-500">
-                            {section.id === 'overview' && 'Portfolio value and performance overview'}
-                            {section.id === 'allocation' && 'Asset distribution and allocation analysis'}
-                            {section.id === 'performance' && 'Detailed performance metrics and analytics'}
-                            {section.id === 'nav' && 'Net Asset Value history and trends'}
-                            {section.id === 'insights' && 'AI-powered portfolio insights and recommendations'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        {section.id === 'overview' && (
-                          <div className="text-right hidden sm:block">
-                            <div className="text-sm text-gray-500">Current Value</div>
-                            <div className="text-lg font-bold text-gray-900">
-                              ${currentBalance.toLocaleString()}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                          {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-gray-600" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-600" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {isExpanded && (
-                    <div className="p-4 sm:p-6 bg-gray-50">
-                      <SectionComponent />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            <PortfolioValueCard 
+              onFundPortfolio={handleFundPortfolio}
+              onWithdraw={handleWithdraw}
+            />
+            <PortfolioPerformanceChart currentBalance={currentBalance} />
+            <InteractiveAllocationChart currentBalance={currentBalance} />
+            <PerformanceMetrics currentBalance={currentBalance} />
+            <FundNAVChart />
+            <AIInsights currentBalance={currentBalance} />
           </div>
         )}
 
