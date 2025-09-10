@@ -1,42 +1,321 @@
-# Dependencies
-node_modules
-package-lock.json
+# ULTRA-AGGRESSIVE SAAS .bolt/ignore
+# This excludes EVERYTHING except core SaaS dashboard functionality
+# Copy this directly to your .bolt/ignore file
+
+# EXCLUDE EVERYTHING FIRST
+*
+
+# ===== ESSENTIAL CORE FILES ONLY =====
+# Package management (minimal)
+!package.json
+!yarn.lock
+!pnpm-lock.yaml
+
+# Core config files
+!next.config.js
+!tailwind.config.js
+!postcss.config.js
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.node.json
+!vite.config.ts
+!eslint.config.js
+!.env.example
+!index.html
+
+# ===== CORE SOURCE CODE =====
+# Main app structure
+!src/
+!app/
+!pages/
+
+# But exclude these heavy subdirectories even in src/
+src/components/marketing/
+src/components/landing/
+src/components/admin/
+src/components/analytics/
+src/components/billing/
+src/components/onboarding/
+src/components/help/
+src/components/reports/
+src/pages/admin/
+src/pages/marketing/
+src/pages/landing/
+src/pages/onboarding/
+src/pages/help/
+src/pages/billing/
+src/pages/analytics/
+
+# ===== STYLES (Core only) =====
+!src/styles/
+!styles/
+!src/index.css
+!src/main.tsx
+!src/App.tsx
+!src/vite-env.d.ts
+
+# Exclude heavy style directories
+src/styles/marketing/
+src/styles/admin/
+src/styles/landing/
+styles/marketing/
+styles/admin/
+styles/landing/
+
+# ===== ESSENTIAL LIBRARIES =====
+!src/lib/auth.js
+!src/lib/auth.ts
+!src/lib/api.js
+!src/lib/api.ts
+!src/lib/utils.js
+!src/lib/utils.ts
+!src/lib/supabase.js
+!src/lib/supabase.ts
+!src/lib/supabase-client.ts
+!src/lib/db.js
+!src/lib/db.ts
+
+# Exclude heavy lib modules
+src/lib/analytics/
+src/lib/billing/
+src/lib/email/
+src/lib/reporting/
+src/lib/admin/
+src/lib/marketing/
+src/lib/payments/
+src/lib/migrations/
+src/lib/seeds/
+
+# ===== ESSENTIAL HOOKS =====
+!src/hooks/use-auth.js
+!src/hooks/use-auth.ts
+!src/hooks/use-api.js
+!src/hooks/use-api.ts
+!src/hooks/use-user.js
+!src/hooks/use-user.ts
+
+# Exclude heavy hooks
+src/hooks/use-analytics.js
+src/hooks/use-analytics.ts
+src/hooks/use-billing.js
+src/hooks/use-billing.ts
+src/hooks/use-admin.js
+src/hooks/use-admin.ts
+
+# ===== PUBLIC ASSETS (Minimal) =====
+!public/favicon.ico
+!public/logo.png
+!public/logo.svg
+!public/vite.svg
+
+# Exclude heavy public assets
+public/images/
+public/videos/
+public/marketing/
+public/admin/
+public/landing/
+public/docs/
+public/help/
+public/*.pdf
+public/*.mp4
+public/*.mov
+public/*.zip
+public/documents/
+
+# ===== SUPABASE (Essential only) =====
+!supabase/functions/
+
+# Exclude migrations and other heavy supabase files
+supabase/migrations/
+supabase/seed.sql
+supabase/config.toml
+
+# ===== NETLIFY CONFIG =====
+!netlify.toml
+
+# ===== EXCLUDE ALL HEAVY FEATURES =====
+
+# Marketing & Landing
+marketing/
+landing/
+public-pages/
+blog/
+content/
+seo/
+
+# Admin & Management
+admin/
+management/
+dashboard-admin/
+user-management/
+billing-admin/
+analytics-admin/
+
+# Documentation & Help
+docs/
+documentation/
+help-center/
+knowledge-base/
+guides/
+tutorials/
+examples/
+demos/
+
+# Analytics & Reporting
+analytics/
+reports/
+metrics/
+tracking/
+monitoring/
+
+# Billing & Payments
+billing/
+payments/
+subscriptions/
+invoices/
+checkout/
+
+# Onboarding & Workflows
+onboarding/
+workflows/
+wizards/
+setup/
+getting-started/
+
+# Development & Tools
+tools/
+scripts/
+utilities/
+dev-tools/
+build-tools/
+config/
+webpack/
+babel/
+eslint/
+
+# Database & Backend
+migrations/
+seeds/
+fixtures/
+database/
+sql/
+prisma/migrations/
+supabase/migrations/
+
+# Testing
+__tests__/
+tests/
+test/
+spec/
+cypress/
+playwright/
+jest/
+coverage/
+.nyc_output/
+
+# Third-party integrations
+integrations/
+webhooks/
+api-docs/
+swagger/
+openapi/
+
+# Email & Communication
+email/
+templates/
+notifications/
+communication/
+
+# File uploads & Media
+uploads/
+media/
+assets/images/
+assets/videos/
+storage/
+
+# Backup & Archive
+backup/
+archive/
+old/
+deprecated/
+legacy/
+
+# Logs & Monitoring
+logs/
+monitoring/
+error-tracking/
+performance/
 
 # Build outputs
-dist
-build
-.cache
-coverage
+dist/
+build/
+.next/
+out/
+.vercel/
+.netlify/
 
-# Logs
-*.log
-*.tmp
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
 
-# Large PDF documents (keep as external links)
-*.pdf
-*.docx
+# Cache & temporary
+.cache/
+tmp/
+temp/
+.temp/
+.tmp/
 
-# Images and media files
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.mp4
-*.webm
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
 
-# Generated files
-docs/generated
-
-# Environment files
+# Environment & secrets
 .env
+.env.local
+.env.production
+.env.staging
+secrets/
+keys/
 
-# Git files
-.git
-.gitignore
+# Version control
+.git/
+.github/
+.gitlab/
 
-# Supabase discarded migrations
-.bolt/supabase_discarded_migrations
+# Package managers
+package-lock.json
 
-# Other large files
-public/documents/
-public/Facetune_*
+# Source maps & debug
+*.map
+
+# Documentation files
+README.md
+CHANGELOG.md
+LICENSE
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+
+# Config files for excluded features
+webpack.config.js
+babel.config.js
+.eslintrc*
+.prettierrc*
+jest.config.js
+cypress.config.js
+
+# Docker & deployment
+docker/
+docker-compose.yml
+Dockerfile
+.dockerignore
+k8s/
+kubernetes/
+
+# Storybook
+.storybook/
+stories/
