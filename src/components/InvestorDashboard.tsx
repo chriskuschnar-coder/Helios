@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
@@ -104,6 +104,12 @@ const InvestorDashboard: React.FC = () => {
       component: () => <FundNAVChart />
     },
     {
+      id: 'insights',
+      title: 'AI Portfolio Insights',
+      icon: Brain,
+      component: () => <AIInsights currentBalance={currentBalance} />
+    }
+  ]
 
   if (loading) {
     return (
@@ -166,9 +172,7 @@ const InvestorDashboard: React.FC = () => {
                             {section.id === 'allocation' && 'Asset distribution and allocation analysis'}
                             {section.id === 'performance' && 'Detailed performance metrics and analytics'}
                             {section.id === 'nav' && 'Net Asset Value history and trends'}
-                            {section.id === 'positions' && 'Live trading positions from Helios'}
                             {section.id === 'insights' && 'AI-powered portfolio insights and recommendations'}
-                            {section.id === 'analytics' && 'Advanced quantitative analysis'}
                           </p>
                         </div>
                       </div>
