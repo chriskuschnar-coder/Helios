@@ -46,11 +46,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleProceedToPayment = () => {
-    // Check if user has already completed documents
-    if (user?.documents_completed) {
-      // Skip documents, go straight to funding page
+    // Check user's completion status
+    if (user?.documents_completed && user?.kyc_status === 'verified') {
+      // Both documents and KYC complete - go straight to funding page
       setShowEmptyState(false);
       setShowFundingPage(true);
+    } else if (user?.documents_completed && user?.kyc_status !== 'verified') {
+      // Documents complete but KYC not verified - go to KYC verification
+      setShowEmptyState(false);
+      setShowKYCVerification(true);
     } else {
       // First time investor - show document signing
       setShowEmptyState(false);
