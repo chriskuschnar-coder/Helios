@@ -10,10 +10,79 @@ interface DiditKYCVerificationProps {
 export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [kycStatus, setKycStatus] = useState<any>(null)
+  const [checkingStatus, setCheckingStatus] = useState(false)
   const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isVerified, setIsVerified] = useState(false)
+
+  // Check existing KYC status on mount
+  useEffect(() => {
+    if (user) {
+      checkKYCStatus()
+    }
+  }, [user])
+
+  const checkKYCStatus = async () => {
+    if (!user) return
+
+    try {
+      setCheckingStatus(true)
+      console.log('🔍 Checking KYC status for user:', user.id)
+
+      const { supabaseClient } = await import('../lib/supabase-client')
+      
+      // Check compliance_records table for verification status
+      const { data: complianceData, error: complianceError } = await supabaseClient
+        .from('compliance_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('verification_type', 'identity')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (complianceError && complianceError.code !== 'PGRST116') {
+        throw complianceError
+      }
+
+      // Check users table for kyc_status
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('kyc_status')
+        .eq('id', user.id)
+        .single()
+
+      if (userError) {
+        throw userError
+      }
+
+      const isVerified = userData?.kyc_status === 'verified' || complianceData?.status === 'approved'
+      
+      setKycStatus({
+        user_id: user.id,
+        kyc_status: userData?.kyc_status || 'pending',
+        is_verified: isVerified,
+        can_fund: isVerified,
+        verification_details: complianceData,
+        message: isVerified ? 'Identity verified' : 'Verification required'
+      })
+
+      // If already verified, complete immediately
+      if (isVerified) {
+        console.log('✅ User already verified, completing flow')
+        setTimeout(() => {
+          onVerificationComplete()
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('❌ KYC status check failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to check verification status')
+    } finally {
+      setCheckingStatus(false)
+    }
+  }
 
   const startVerification = async () => {
     if (!user) {
