@@ -12,6 +12,7 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
 
   // If user has completed documents, show different messaging
   const hasCompletedDocuments = user?.documents_completed
+  const isKYCVerified = user?.kyc_status === 'verified'
 
   return (
     <div className="text-center py-12">
@@ -20,11 +21,14 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
           <TrendingUp className="w-12 h-12 text-navy-600" />
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
-          {hasCompletedDocuments ? 'Add Capital to Your Account' : 'Activate Your Account'}
+          {hasCompletedDocuments && isKYCVerified ? 'Add Capital to Your Account' : 
+           hasCompletedDocuments ? 'Complete Identity Verification' : 'Activate Your Account'}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto mb-8">
-          {hasCompletedDocuments 
-            ? 'Add additional capital to your existing managed account. Your onboarding is complete and you can fund immediately.'
+          {hasCompletedDocuments && isKYCVerified
+            ? 'Add additional capital to your existing managed account. Your onboarding and verification are complete.'
+            : hasCompletedDocuments
+            ? 'Complete identity verification to unlock funding capabilities. This one-time process ensures regulatory compliance.'
             : 'Begin your journey with our quantitative strategies. Complete the onboarding process to access institutional-grade portfolio management.'
           }
         </p>
@@ -49,7 +53,8 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
         onClick={onFundAccount}
         className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
       >
-        {hasCompletedDocuments ? 'Add Account Capital' : 'Complete Onboarding Documents'}
+        {hasCompletedDocuments && isKYCVerified ? 'Add Account Capital' : 
+         hasCompletedDocuments ? 'Complete Identity Verification' : 'Complete Onboarding Documents'}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>

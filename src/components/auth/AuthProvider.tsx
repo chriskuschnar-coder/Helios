@@ -7,6 +7,8 @@ interface User {
   full_name?: string
   documents_completed?: boolean
   documents_completed_at?: string
+  kyc_status?: string
+  is_kyc_verified?: boolean
 }
 
 interface Account {
@@ -159,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at')
+        .select('documents_completed, documents_completed_at, kyc_status')
         .eq('id', userId)
         .single()
 
@@ -168,7 +170,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(prev => prev ? {
           ...prev,
           documents_completed: userData.documents_completed,
-          documents_completed_at: userData.documents_completed_at
+          documents_completed_at: userData.documents_completed_at,
+          kyc_status: userData.kyc_status,
+          is_kyc_verified: userData.kyc_status === 'verified'
         } : null)
       }
     } catch (err) {

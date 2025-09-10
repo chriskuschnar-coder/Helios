@@ -3,6 +3,7 @@ import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRi
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { DocumentSigningFlow } from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
+import { DiditKYCVerification } from './DiditKYCVerification';
 import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
 import { StripeCardForm } from './StripeCardForm';
 import { useAuth } from './auth/AuthProvider';
@@ -22,6 +23,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const [showEmptyState, setShowEmptyState] = useState(true);
   const [showDocumentSigning, setShowDocumentSigning] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showKYCVerification, setShowKYCVerification] = useState(false);
   const [showFundingPage, setShowFundingPage] = useState(false);
   const [investmentAmount, setInvestmentAmount] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
@@ -80,7 +82,14 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleContinueToPayment = () => {
+    // After congratulations, check if KYC is needed
     setShowCongratulations(false);
+    setShowKYCVerification(true);
+  };
+
+  const handleKYCComplete = () => {
+    // KYC complete, proceed to funding
+    setShowKYCVerification(false);
     setShowFundingPage(true);
   };
 
@@ -228,6 +237,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             {showEmptyState ? 'Fund Your Account' : 
              showDocumentSigning ? 'Complete Onboarding Documents' : 
              showCongratulations ? 'Welcome to Global Markets!' :
+             showKYCVerification ? 'Identity Verification Required' :
              showFundingPage ? 'Capital Contribution' :
              showPaymentForm ? 'Secure Payment' :
              'Capital Contribution'}
@@ -254,6 +264,11 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
           ) : showCongratulations ? (
             <CongratulationsPage 
               onContinueToPayment={handleContinueToPayment}
+            />
+          ) : showKYCVerification ? (
+            <DiditKYCVerification 
+              onVerificationComplete={handleKYCComplete}
+              onClose={onClose}
             />
           ) : showPaymentForm ? (
             <div>
