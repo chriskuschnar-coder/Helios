@@ -1,13 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-didit-signature, didit-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-serve(async (req) => {
-  console.log('🔔 Didit webhook received')
+Deno.serve(async (req) => {
+  console.log('🔔 Didit v2 webhook received')
   
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -28,7 +26,7 @@ serve(async (req) => {
     const signature = req.headers.get("x-didit-signature") || req.headers.get("didit-signature")
     const body = await req.text()
     
-    console.log('📦 Webhook details:', {
+    console.log('📦 Didit v2 webhook details:', {
       signature: signature?.substring(0, 20) + '...',
       bodyLength: body.length,
       timestamp: new Date().toISOString()
@@ -72,11 +70,12 @@ serve(async (req) => {
     let event
     try {
       event = JSON.parse(body)
-      console.log('📦 Didit webhook event:', {
+      console.log('📦 Didit v2 webhook event:', {
         session_id: event.session_id,
         applicant_id: event.applicant_id,
         status: event.status,
-        event_type: event.event_type
+        event_type: event.event_type,
+        workflow: event.workflow
       })
     } catch (err) {
       console.error('❌ Invalid JSON in webhook body')
@@ -87,16 +86,17 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     // Handle verification status updates
-    const { session_id, applicant_id, status, details, event_type } = event
+    const { session_id, applicant_id, status, details, event_type, workflow } = event
     
-    console.log('🔄 Processing Didit verification result:', {
+    console.log('🔄 Processing Didit v2 verification result:', {
       session_id,
       applicant_id,
       status,
-      event_type
+      event_type,
+      workflow
     })
 
-    // Map Didit status to our compliance status
+    // Map Didit v2 status to our compliance status
     let complianceStatus = 'pending'
     let shouldMarkUserVerified = false
 
@@ -104,6 +104,7 @@ serve(async (req) => {
       case 'verified':
       case 'completed:verified':
       case 'approved':
+      case 'passed':
         complianceStatus = 'approved'
         shouldMarkUserVerified = true
         console.log('✅ Verification APPROVED for user:', applicant_id)
@@ -141,7 +142,8 @@ serve(async (req) => {
           verification_status: status,
           verification_details: details || {},
           webhook_received_at: new Date().toISOString(),
-          event_type: event_type
+          event_type: event_type,
+          workflow: workflow
         },
         updated_at: new Date().toISOString()
       })
@@ -195,7 +197,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('❌ Didit webhook processing error:', error)
+    console.error('❌ Didit v2 webhook processing error:', error)
     
     return new Response(
       JSON.stringify({ 

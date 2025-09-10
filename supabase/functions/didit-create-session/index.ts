@@ -5,7 +5,7 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  console.log('🔐 Didit session creation function called')
+  console.log('🔐 Didit v2 session creation function called')
   
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -15,20 +15,16 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get Didit credentials from environment
-    const DIDIT_CLIENT_ID = Deno.env.get("DIDIT_CLIENT_ID")
-    const DIDIT_CLIENT_SECRET = Deno.env.get("DIDIT_CLIENT_SECRET")
-    
-    if (!DIDIT_CLIENT_ID || !DIDIT_CLIENT_SECRET) {
-      console.error('❌ Missing Didit OAuth credentials')
-      throw new Error("Missing DIDIT_CLIENT_ID or DIDIT_CLIENT_SECRET in environment variables")
+    // Get Didit API key from environment
+    const DIDIT_API_KEY = Deno.env.get("DIDIT_API_KEY")
+    if (!DIDIT_API_KEY) {
+      console.error('❌ Missing DIDIT_API_KEY in environment variables')
+      throw new Error("Missing DIDIT_API_KEY in secrets")
     }
 
-    console.log('🔑 Didit OAuth credentials found:', {
-      hasClientId: !!DIDIT_CLIENT_ID,
-      hasClientSecret: !!DIDIT_CLIENT_SECRET,
-      clientIdLength: DIDIT_CLIENT_ID?.length || 0,
-      secretLength: DIDIT_CLIENT_SECRET?.length || 0
+    console.log('🔑 Didit API key found:', {
+      hasApiKey: !!DIDIT_API_KEY,
+      keyLength: DIDIT_API_KEY?.length || 0
     })
 
     // Get user from JWT token
@@ -61,85 +57,50 @@ Deno.serve(async (req) => {
     const { user_id, return_url } = await req.json()
     const userId = user_id || user.id
 
-    console.log('📝 Creating Didit session for user:', userId)
+    // Extract user name from metadata or email
+    const fullName = user.user_metadata?.full_name || user.email.split('@')[0]
+    const nameParts = fullName.split(' ')
+    const firstName = nameParts[0] || 'User'
+    const lastName = nameParts.slice(1).join(' ') || 'Name'
 
-    // STEP 1: Get OAuth access token from Didit
-    console.log('🔐 Getting OAuth access token from Didit...')
-    
-    const credentials = btoa(`${DIDIT_CLIENT_ID}:${DIDIT_CLIENT_SECRET}`)
-    console.log('🔍 OAuth request details:', {
-      url: 'https://apx.didit.me/auth/v2/token/',
-      method: 'POST',
-      hasCredentials: !!credentials,
-      credentialsLength: credentials.length
-    })
-
-    const tokenResponse = await fetch('https://apx.didit.me/auth/v2/token/', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials'
-    })
-
-    console.log('📊 OAuth token response:', {
-      status: tokenResponse.status,
-      statusText: tokenResponse.statusText,
-      ok: tokenResponse.ok,
-      headers: Object.fromEntries(tokenResponse.headers.entries())
-    })
-
-    if (!tokenResponse.ok) {
-      const tokenError = await tokenResponse.text()
-      console.error('❌ OAuth token request failed:', {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        error: tokenError,
-        credentials: credentials.substring(0, 20) + '...'
-      })
-      throw new Error(`OAuth token request failed: ${tokenResponse.status} ${tokenResponse.statusText}`)
-    }
-
-    const tokenData = await tokenResponse.json()
-    console.log('✅ OAuth token received:', {
-      hasAccessToken: !!tokenData.access_token,
-      tokenType: tokenData.token_type,
-      expiresIn: tokenData.expires_in
-    })
-
-    if (!tokenData.access_token) {
-      throw new Error('No access token received from Didit OAuth')
-    }
-
-    // STEP 2: Create verification session using access token
-    console.log('📝 Creating verification session with access token...')
-    
-    const sessionPayload = {
-      user_id: userId,
+    console.log('📝 Creating Didit v2 session for user:', {
+      userId,
       email: user.email,
+      firstName,
+      lastName
+    })
+
+    // STEP 1: Create Didit v2 verification session
+    const sessionPayload = {
+      workflow: "kYC", // Your Didit workflow name - update this to match your actual workflow
       callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
+      applicant: {
+        external_id: userId,
+        email: user.email,
+        first_name: firstName,
+        last_name: lastName
+      },
       return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
     }
     
-    console.log('📡 Session request payload:', JSON.stringify(sessionPayload, null, 2))
-    console.log('🔍 Session request details:', {
+    console.log('📡 Didit v2 session request:', {
       url: 'https://verification.didit.me/v2/session/',
       method: 'POST',
-      hasAccessToken: !!tokenData.access_token,
-      accessTokenLength: tokenData.access_token?.length || 0
+      payload: JSON.stringify(sessionPayload, null, 2),
+      hasApiKey: !!DIDIT_API_KEY,
+      apiKeyLength: DIDIT_API_KEY?.length || 0
     })
 
     const sessionResponse = await fetch('https://verification.didit.me/v2/session/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tokenData.access_token}`,
+        'x-api-key': DIDIT_API_KEY,
       },
       body: JSON.stringify(sessionPayload)
     })
 
-    console.log('📊 Didit session creation response:', {
+    console.log('📊 Didit v2 session creation response:', {
       status: sessionResponse.status,
       statusText: sessionResponse.statusText,
       ok: sessionResponse.ok,
@@ -153,10 +114,10 @@ Deno.serve(async (req) => {
       try {
         if (contentType && contentType.includes('application/json')) {
           errorDetails = await sessionResponse.json()
-          console.error('❌ Didit API JSON error response:', JSON.stringify(errorDetails, null, 2))
+          console.error('❌ Didit v2 API JSON error response:', JSON.stringify(errorDetails, null, 2))
         } else {
           const errorText = await sessionResponse.text()
-          console.error('❌ Didit API text error response:', errorText)
+          console.error('❌ Didit v2 API text error response:', errorText)
           errorDetails = { message: errorText, raw_response: errorText }
         }
       } catch (parseError) {
@@ -169,28 +130,28 @@ Deno.serve(async (req) => {
         statusText: sessionResponse.statusText,
         errorDetails: errorDetails,
         sessionPayload: sessionPayload,
-        hasAccessToken: !!tokenData.access_token,
+        hasApiKey: !!DIDIT_API_KEY,
         timestamp: new Date().toISOString()
       })
       
-      throw new Error(`Didit API Error: ${errorDetails.message || errorDetails.error || 'Failed to create verification session'}`)
+      throw new Error(`Didit v2 API Error: ${errorDetails.message || errorDetails.error || 'Failed to create verification session'}`)
     }
 
     const sessionData = await sessionResponse.json()
-    console.log('✅ Didit session created successfully:', JSON.stringify(sessionData, null, 2))
+    console.log('✅ Didit v2 session created successfully:', JSON.stringify(sessionData, null, 2))
 
-    // Extract session details
+    // Extract session details from v2 response
     const sessionId = sessionData.session_id || sessionData.id
     const clientUrl = sessionData.client_url || sessionData.url || sessionData.verification_url
 
     if (!sessionId) {
-      console.error('❌ No session ID in response:', sessionData)
-      throw new Error('No session ID returned from Didit')
+      console.error('❌ No session ID in v2 response:', sessionData)
+      throw new Error('No session ID returned from Didit v2 API')
     }
 
     if (!clientUrl) {
-      console.error('❌ No client URL in response:', sessionData)
-      throw new Error('No client URL returned from Didit')
+      console.error('❌ No client URL in v2 response:', sessionData)
+      throw new Error('No client URL returned from Didit v2 API')
     }
 
     // Store session in compliance_records
@@ -203,9 +164,10 @@ Deno.serve(async (req) => {
       data_blob: {
         didit_session_id: sessionId,
         client_url: clientUrl,
+        workflow: 'kYC',
         created_at: new Date().toISOString(),
         user_email: user.email,
-        oauth_token_expires: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null
+        applicant_data: sessionPayload.applicant
       },
       expires_at: sessionData.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }
@@ -231,7 +193,7 @@ Deno.serve(async (req) => {
       session_id: sessionId,
       client_url: clientUrl,
       expires_at: sessionData.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      message: 'Verification session created successfully'
+      message: 'Didit v2 verification session created successfully'
     }), {
       headers: {
         'Content-Type': 'application/json',
@@ -240,7 +202,7 @@ Deno.serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('❌ Session creation error:', error)
+    console.error('❌ Didit v2 session creation error:', error)
     
     return new Response(
       JSON.stringify({ 
