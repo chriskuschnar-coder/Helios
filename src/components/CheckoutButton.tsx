@@ -47,7 +47,7 @@ export function CheckoutButton({ amount, onSuccess, className, children }: Check
           children || (
             <>
               <CreditCard className="h-5 w-5 mr-2" />
-              Contribute ${amount.toLocaleString()} Capital
+              Add ${amount.toLocaleString()} Capital
             </>
           )
         )}
