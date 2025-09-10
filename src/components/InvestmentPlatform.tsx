@@ -21,7 +21,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
       const timeout = setTimeout(() => {
         console.warn('⚠️ Auth loading timeout - forcing auth forms to show')
         setForceShowAuth(true)
-      }, 5000) // 5 second timeout
+      }, 2000) // 2 second timeout - faster response
       
       return () => clearTimeout(timeout)
     }
@@ -35,11 +35,11 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Client Portal</h3>
           <p className="text-gray-600">Connecting to your account...</p>
           <div className="mt-4 text-sm text-gray-500">
-            If this takes too long, try refreshing the page
+            Loading should complete within 2 seconds...
           </div>
           <button
             onClick={() => setForceShowAuth(true)}
-            className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+            className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
             Continue to Login →
           </button>

@@ -85,8 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('❌ Session check failed:', err)
         setLoading(false)
       } finally {
-        console.log('✅ Auth loading complete - ensuring loading is false')
-        setTimeout(() => setLoading(false), 100) // Ensure loading is cleared
+        // Ensure loading is always cleared after maximum 3 seconds
+        setTimeout(() => {
+          console.log('⏰ Auth timeout - forcing loading to false')
+          setLoading(false)
+        }, 3000)
       }
     }
 
