@@ -88,22 +88,39 @@ serve(async (req) => {
     console.log('📊 Didit API response headers:', Object.fromEntries(diditResponse.headers.entries()))
 
     if (!diditResponse.ok) {
-      const errorText = await diditResponse.text()
-      console.error('❌ Didit API error response:', errorText)
+      let errorData
+      const contentType = diditResponse.headers.get('content-type')
       
-      let errorMessage = 'Failed to create verification session'
-      try {
-        const errorData = JSON.parse(errorText)
-        errorMessage = errorData.message || errorData.error || errorMessage
-      } catch {
-        errorMessage = errorText.substring(0, 200)
+      if (contentType && contentType.includes('application/json')) {
+        errorData = await diditResponse.json()
+        console.error('❌ Didit API JSON error response:', JSON.stringify(errorData, null, 2))
+      } else {
+        const errorText = await diditResponse.text()
+        console.error('❌ Didit API text error response:', errorText)
+        errorData = { message: errorText }
       }
+      
+      // Log the exact request that failed
+      console.error('❌ Failed request details:', {
+        url: 'https://api.didit.me/v1/sessions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': DIDIT_API_KEY ? `${DIDIT_API_KEY.substring(0, 8)}...` : 'MISSING'
+        },
+        payload: diditPayload,
+        status: diditResponse.status,
+        statusText: diditResponse.statusText
+      })
+      
+      const errorMessage = errorData.message || errorData.error || errorData.detail || 'Failed to create verification session'
       
       return new Response(
         JSON.stringify({ 
           error: `Didit API Error: ${errorMessage}`,
           status: diditResponse.status,
-          type: 'didit_session_creation_failed'
+          type: 'didit_session_creation_failed',
+          details: errorData
         }),
         { 
           status: 400,
