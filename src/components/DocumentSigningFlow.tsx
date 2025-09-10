@@ -328,7 +328,9 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                   </>
                 )}
               </button>
-            ) : signedDocuments.has(currentDocument.id) ? (
+            )}
+
+            {signedDocuments.has(currentDocument.id) && (
               <div className="flex items-center space-x-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
                 <span className="font-medium">Document Signed</span>
