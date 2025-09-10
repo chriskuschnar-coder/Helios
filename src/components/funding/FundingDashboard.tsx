@@ -213,6 +213,33 @@ export function FundingDashboard() {
         </div>
       </div>
 
+      {/* Funding Information Sidebar */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Funding Information</h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-gray-700">Secure payment processing via Stripe</span>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-gray-700">Instant account funding</span>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-gray-700">Professional capital management</span>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-gray-700">Real-time portfolio tracking</span>
+          </div>
+        </div>
+      </div>
+
       {/* Stripe Payment Form */}
       {showStripeForm && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
