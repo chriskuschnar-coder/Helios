@@ -109,18 +109,6 @@ const InvestorDashboard: React.FC = () => {
       title: 'Live Trading Positions',
       icon: Activity,
       component: () => <LiveTradingPositions currentBalance={currentBalance} />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
-    },
-    {
-      id: 'analytics',
-      title: 'Advanced Analytics',
-      icon: BarChart3,
-      component: () => <PortfolioAnalytics currentBalance={currentBalance} />
     }
   ]
 
