@@ -1,172 +1,349 @@
-# Didit v2 API Integration Setup Guide
+import React, { useState } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, ArrowRight, FileText, Camera, Clock } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 
-## 🔧 Environment Variables Required
+interface DiditKYCVerificationProps {
+  onVerificationComplete: () => void
+  onClose: () => void
+}
 
-Set these in your **Supabase Edge Functions** environment:
+export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isVerified, setIsVerified] = useState(false)
+  const [checkingStatus, setCheckingStatus] = useState(false)
 
-```bash
-DIDIT_API_KEY=your_actual_didit_api_key_here
-DIDIT_WORKFLOW_ID=your_workflow_id_from_business_console
-DIDIT_WEBHOOK_SECRET=your_webhook_secret_here
-```
+  const startVerification = async () => {
+    if (!user) {
+      setError('User not authenticated')
+      return
+    }
 
-## 📍 How to Set Environment Variables in Supabase
+    setLoading(true)
+    setError('')
 
-1. Go to your Supabase project dashboard
-2. Navigate to **Edge Functions** in the sidebar
-3. Click on **Secrets**
-4. Add these variables:
-   - `DIDIT_API_KEY` = Your actual Didit API key
-   - `DIDIT_WORKFLOW_ID` = Your workflow ID from Didit Business Console
-   - `DIDIT_WEBHOOK_SECRET` = Your webhook secret for signature verification
+    try {
+      console.log('🚀 Starting Didit v2 verification for user:', user.id)
 
-## 🏗️ CRITICAL: Create Workflow in Didit Business Console
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
 
-**This is the most important step that's likely missing:**
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      // Extract user name from metadata or email
+      const fullName = user.full_name || user.email.split('@')[0]
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0] || 'User'
+      const lastName = nameParts.slice(1).join(' ') || 'Name'
 
-1. Visit https://business.didit.me
-2. Log in to your Didit Business Console
-3. Navigate to **Workflows** section
-4. Click **Create New Workflow**
-5. Choose **KYC Verification** workflow type
-6. Configure verification settings:
-   - Document types (passport, driver's license, etc.)
-   - Countries to support
-   - Verification methods (liveness detection, etc.)
-   - Security settings
-7. **Copy the Workflow ID** - this is required for API calls
-8. Set webhook URL to: `https://upevugqarcvxnekzddeh.supabase.co/functions/v1/didit-webhook`
+      const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey,
+          'origin': window.location.origin
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
+          return_url: `${window.location.origin}/kyc/callback`
+        })
+      })
 
-## 🔄 Proper V2 API Usage
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Didit session creation failed:', errorData)
+        throw new Error(errorData.error || 'Failed to create verification session')
+      }
 
-### Session Creation Format:
-```javascript
-const sessionPayload = {
-  workflow_id: "your_workflow_id_here", // REQUIRED - from Business Console
-  callback: "https://yourapp.com/webhook",
-  vendor_data: "user-uuid", // Your user identifier
-  metadata: {
-    user_type: "investor",
-    account_id: "user-uuid"
-  },
-  contact_details: {
-    email: "user@example.com",
-    email_lang: "en"
+      const sessionData = await response.json()
+      console.log('✅ Didit v2 session created:', sessionData)
+
+      setVerificationUrl(sessionData.client_url)
+      setSessionId(sessionData.session_id)
+      
+      // Start polling for verification completion
+      startStatusPolling(sessionData.session_id)
+      
+    } catch (error) {
+      console.error('❌ Verification start failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to start verification')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const startStatusPolling = (sessionId: string) => {
+    console.log('🔄 Starting status polling for session:', sessionId)
+    setCheckingStatus(true)
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        // Check compliance records for verification status
+        const { supabaseClient } = await import('../lib/supabase-client')
+        const { data: complianceData, error: complianceError } = await supabaseClient
+          .from('compliance_records')
+          .select('status')
+          .eq('verification_id', sessionId)
+          .eq('verification_type', 'identity')
+          .single()
+
+        if (!complianceError && complianceData?.status === 'approved') {
+          console.log('✅ Verification approved, checking user status')
+          
+          // Check if user's KYC status has been updated
+          const { data: userData, error: userError } = await supabaseClient
+            .from('users')
+            .select('kyc_status')
+            .eq('id', user?.id)
+            .single()
+
+          if (!userError && userData?.kyc_status === 'verified') {
+            console.log('✅ Verification complete, stopping polling')
+            clearInterval(pollInterval)
+            setCheckingStatus(false)
+            setIsVerified(true)
+            setTimeout(() => {
+              onVerificationComplete()
+            }, 2000)
+          }
+        } else if (!complianceError && complianceData?.status === 'rejected') {
+          console.log('❌ Verification rejected')
+          clearInterval(pollInterval)
+          setCheckingStatus(false)
+          setError('Identity verification was rejected. Please contact support.')
+        } else if (!complianceError && complianceData?.status === 'expired') {
+          console.log('⏰ Verification expired')
+          clearInterval(pollInterval)
+          setCheckingStatus(false)
+          setError('Verification session expired. Please try again.')
+        }
+      } catch (error) {
+        console.error('❌ Status polling error:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+
+    // Stop polling after 10 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval)
+      setCheckingStatus(false)
+      console.log('⏰ Status polling timeout')
+      if (!isVerified) {
+        setError('Verification timeout. Please try again or contact support.')
+      }
+    }, 10 * 60 * 1000)
+  }
+
+  // If user is already verified, show success state
+  if (isVerified) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <h3 className="text-2xl font-bold text-green-900 mb-4">
+          Identity Verified!
+        </h3>
+        <p className="text-gray-600 mb-6">
+          Your identity has been successfully verified. You can now proceed to fund your account.
+        </p>
+        <button
+          onClick={onVerificationComplete}
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3"
+        >
+          Continue to Funding
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Shield className="h-10 w-10 text-blue-600" />
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          Identity Verification Required
+        </h3>
+        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          For compliance and security, all investors must complete a one-time identity verification 
+          before contributing capital. This process takes 2-5 minutes and helps us meet regulatory requirements.
+        </p>
+      </div>
+
+      {/* Verification Process Steps */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-6 w-6 text-blue-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Upload ID</h4>
+          <p className="text-sm text-gray-600">
+            Government-issued ID (passport, driver's license, or national ID)
+          </p>
+        </div>
+        
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Camera className="h-6 w-6 text-green-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Take Selfie</h4>
+          <p className="text-sm text-gray-600">
+            Live selfie with liveness detection for identity confirmation
+          </p>
+        </div>
+        
+        <div className="text-center p-6 bg-gray-50 rounded-xl">
+          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-6 w-6 text-purple-600" />
+          </div>
+          <h4 className="font-semibold text-gray-900 mb-2">Instant Approval</h4>
+          <p className="text-sm text-gray-600">
+            Automated verification with immediate approval in most cases
+          </p>
+        </div>
+      </div>
+
+      {/* Security & Privacy Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div className="flex items-center space-x-3 mb-4">
+          <Shield className="h-6 w-6 text-blue-600" />
+          <h4 className="font-semibold text-blue-900">Security & Privacy</h4>
+        </div>
+        <ul className="text-sm text-blue-800 space-y-2">
+          <li>• Your documents are processed securely and encrypted</li>
+          <li>• We use Didit, a trusted third-party verification provider</li>
+          <li>• Your personal information is not stored on our servers</li>
+          <li>• This is a one-time verification - you won't need to repeat it</li>
+          <li>• The process is fully compliant with KYC/AML regulations</li>
+        </ul>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <h4 className="font-semibold text-red-900">Verification Error</h4>
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setError('')
+              setVerificationUrl(null)
+              setSessionId(null)
+            }}
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {/* Verification Interface */}
+      {!verificationUrl ? (
+        <div className="text-center">
+          <button
+            onClick={startVerification}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Creating Verification Session...
+              </>
+            ) : (
+              <>
+                <Shield className="w-6 h-6" />
+                Start Identity Verification
+              </>
+            )}
+          </button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            Powered by Didit • Secure identity verification
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <h4 className="font-semibold text-green-900">Verification Session Created</h4>
+            </div>
+            <p className="text-sm text-green-800 mb-4">
+              Complete your identity verification in the secure frame below. 
+              The process typically takes 2-5 minutes.
+            </p>
+            <div className="text-sm text-green-700">
+              <strong>Session ID:</strong> {sessionId}
+            </div>
+          </div>
+
+          {/* Embedded Didit Verification */}
+          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-gray-900">Secure Identity Verification</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-600 font-medium">SECURE</span>
+                </div>
+              </div>
+            </div>
+            
+            <iframe
+              src={verificationUrl}
+              title="Didit Identity Verification"
+              className="w-full h-[600px] border-none"
+              allow="camera; microphone"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+            />
+          </div>
+
+          {checkingStatus && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <span className="font-medium text-yellow-900">Verification in Progress</span>
+              </div>
+              <p className="text-sm text-yellow-800">
+                Please complete the verification process above. Your status will update automatically 
+                when verification is complete. Do not close this window.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Back Button */}
+      <div className="mt-8 text-center">
+        <button
+          onClick={onClose}
+          className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          ← Back to Portfolio
+        </button>
+      </div>
+    </div>
+  )
 }
-
-const response = await fetch('https://verification.didit.me/v2/session/', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Api-Key': process.env.DIDIT_API_KEY // Note: X-Api-Key, not Authorization
-  },
-  body: JSON.stringify(sessionPayload)
-})
-```
-
-### Expected Success Response:
-```json
-{
-  "session_id": "11111111-2222-3333-4444-555555555555",
-  "session_number": 1234,
-  "session_token": "abcdef123456",
-  "vendor_data": "user-123",
-  "status": "Not Started",
-  "workflow_id": "your_workflow_id",
-  "callback": "https://yourapp.com/webhook",
-  "url": "https://verify.didit.me/session/abcdef123456"
-}
-```
-
-## 🌐 Webhook Configuration
-
-Configure this webhook URL in your Didit Business Console:
-
-```
-https://upevugqarcvxnekzddeh.supabase.co/functions/v1/didit-webhook
-```
-
-### Webhook Event Format:
-```json
-{
-  "session_id": "11111111-2222-3333-4444-555555555555",
-  "vendor_data": "user-uuid",
-  "status": "Approved", // or "Rejected", "Expired"
-  "workflow_id": "your_workflow_id",
-  "timestamp": "2025-01-30T12:00:00Z"
-}
-```
-
-## 🧪 Testing the Integration
-
-### Test 1: Verify Environment Variables
-
-```bash
-# Check if variables are set in Supabase Edge Functions
-curl -X POST "https://upevugqarcvxnekzddeh.supabase.co/functions/v1/didit-create-session" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_USER_JWT_TOKEN" \
-  -H "apikey: YOUR_SUPABASE_ANON_KEY" \
-  -d '{
-    "user_id": "test-user-id",
-    "email": "test@example.com",
-    "first_name": "Test",
-    "last_name": "User"
-  }'
-```
-
-### Expected Error Messages:
-- **"Missing DIDIT_API_KEY"** = API key not set in Supabase secrets
-- **"Missing DIDIT_WORKFLOW_ID"** = Workflow not created or ID not set
-- **"Invalid workflow configuration"** = Workflow ID doesn't exist in your console
-- **"Invalid API credentials"** = API key is incorrect
-
-## 🚨 Common Issues & Solutions
-
-### Issue 1: "Failed to create verification session"
-**Cause:** Missing workflow configuration
-**Solution:** Create workflow in Business Console and set DIDIT_WORKFLOW_ID
-
-### Issue 2: "Invalid API credentials" 
-**Cause:** Wrong API key or header format
-**Solution:** Use `X-Api-Key` header, verify key in Business Console
-
-### Issue 3: "Workflow not found"
-**Cause:** Workflow ID doesn't exist or is incorrect
-**Solution:** Copy exact workflow ID from Business Console
-
-### Issue 4: White screen in verification iframe
-**Cause:** Invalid verification URL or CORS issues
-**Solution:** Ensure workflow is properly configured and active
-
-## 📋 Verification Flow
-
-1. **Frontend** calls Edge Function to create session
-2. **Edge Function** calls Didit v2 API with workflow_id
-3. **Didit** returns session with verification URL
-4. **User** completes verification in iframe
-5. **Didit** sends webhook to your endpoint
-6. **Webhook** updates compliance_records and users tables
-7. **Frontend** polls database for status updates
-
-## ✅ Success Indicators
-
-1. **Session Creation**: Returns `session_id` and `url` without errors
-2. **Iframe Loading**: Verification interface loads in iframe
-3. **Webhook Processing**: Logs show "Compliance record updated"
-4. **Status Updates**: User's `kyc_status` changes to 'verified'
-5. **Frontend Flow**: User proceeds to funding after verification
-
-## 🔧 Troubleshooting Checklist
-
-- [ ] API key set in Supabase Edge Functions secrets
-- [ ] Workflow created in Didit Business Console
-- [ ] Workflow ID copied to DIDIT_WORKFLOW_ID environment variable
-- [ ] Webhook URL configured in Business Console
-- [ ] Webhook secret set in DIDIT_WEBHOOK_SECRET
-- [ ] Using correct v2 API endpoints
-- [ ] Using X-Api-Key header format
-- [ ] Workflow is active and properly configured
-
-The most common issue is missing workflow configuration. **You must create a workflow in the Didit Business Console before the API will work.**
