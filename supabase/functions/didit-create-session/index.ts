@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     // Didit API configuration
     const diditApiKey = Deno.env.get('DIDIT_API_KEY')
     if (!diditApiKey) {
-      throw new Error('DIDIT_API_KEY environment variable not set')
+      console.error('❌ DIDIT_API_KEY environment variable not set')
+      throw new Error('Didit API key not configured. Please contact support.')
     }
     
     const diditApiBase = 'https://api.didit.me'
@@ -115,26 +116,36 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${diditApiKey}`
+        'Authorization': `Bearer ${diditApiKey}`,
+        'User-Agent': 'GlobalMarketConsulting/1.0'
       },
       body: JSON.stringify(diditPayload)
     })
 
-    console.log('📊 Didit response status:', diditResponse.status)
+    console.log('📊 Didit API response:', {
+      status: diditResponse.status,
+      statusText: diditResponse.statusText,
+      headers: Object.fromEntries(diditResponse.headers.entries())
+    })
 
     if (!diditResponse.ok) {
       const errorText = await diditResponse.text()
-      console.error('❌ Didit API error:', errorText)
+      console.error('❌ Didit API error details:', {
+        status: diditResponse.status,
+        statusText: diditResponse.statusText,
+        body: errorText,
+        url: `${diditApiBase}/v1/sessions`
+      })
       
       let errorMessage = 'Failed to create verification session'
       try {
         const errorData = JSON.parse(errorText)
-        errorMessage = errorData.message || errorData.error || errorMessage
+        errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage
       } catch {
         errorMessage = errorText.substring(0, 200)
       }
       
-      throw new Error(errorMessage)
+      throw new Error(`Didit API Error: ${errorMessage}`)
     }
 
     const diditSession = await diditResponse.json()

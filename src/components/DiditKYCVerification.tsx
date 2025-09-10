@@ -116,8 +116,19 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         })
       })
 
+      console.log('📊 Didit session creation response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Didit session creation failed:', {
+          status: response.status,
+          error: errorData,
+          user_id: user.id
+        })
         throw new Error(errorData.error || 'Failed to create verification session')
       }
 
