@@ -35,7 +35,6 @@ const InvestorDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']))
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['allocation']))
 
   const currentBalance = account?.balance || 0
