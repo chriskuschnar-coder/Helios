@@ -476,33 +476,6 @@ export function FundingDashboard() {
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getStatusColor(transaction.status)}`}>
                     {getStatusIcon(transaction.status)}
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{transaction.method}</div>
-                    <div className="text-sm text-gray-600">{transaction.date}</div>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className="font-bold text-gray-900">
-                    +${transaction.amount.toLocaleString()}
-                  </div>
-                  <div className={`text-sm font-medium capitalize ${getStatusColor(transaction.status)}`}>
-                    {transaction.status}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <div className="text-gray-500 mb-2">No funding activity yet</div>
-            <div className="text-sm text-gray-400">
-              Your funding transactions will appear here
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
