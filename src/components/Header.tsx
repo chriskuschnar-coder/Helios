@@ -76,7 +76,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 }}
                 className="block w-full text-left px-3 py-2 text-navy-600 hover:text-navy-700 font-medium"
               >
-                Client Portal
+                Professional Portal
               </button>
             </div>
           </div>
