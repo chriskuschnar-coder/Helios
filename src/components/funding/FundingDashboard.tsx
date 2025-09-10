@@ -148,65 +148,6 @@ export function FundingDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Investment Amount Section */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
-        <div className="w-20 h-20 bg-navy-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <DollarSign className="h-10 w-10 text-white" />
-        </div>
-        
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Investment Amount</h2>
-        <p className="text-gray-600 mb-8 max-w-md mx-auto">
-          Add capital to your managed account with flexible amounts starting from $100
-        </p>
-
-        <div className="mb-6">
-          <label className="block text-lg font-medium text-gray-700 mb-4">
-            Contribution Amount
-          </label>
-          <div className="relative max-w-md mx-auto">
-            <span className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-xl">$</span>
-            <input
-              type="number"
-              value={fundingAmount}
-              onChange={(e) => setFundingAmount(Math.max(100, parseInt(e.target.value) || 0))}
-              className="w-full pl-12 pr-6 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-navy-500 focus:border-transparent text-2xl font-bold text-center"
-              placeholder="10000"
-              min="100"
-              step="100"
-            />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">Minimum investment: $100</p>
-        </div>
-
-        {/* Quick Amount Buttons */}
-        <div className="flex justify-center gap-3 mb-8">
-          {[1000, 5000, 10000, 25000].map((amount) => (
-            <button
-              key={amount}
-              onClick={() => setFundingAmount(amount)}
-              className={`px-6 py-3 border-2 rounded-xl font-semibold transition-all ${
-                fundingAmount === amount 
-                  ? 'border-navy-500 bg-navy-50 text-navy-700' 
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              ${amount.toLocaleString()}
-            </button>
-          ))}
-          <button
-            onClick={() => {
-              const customAmount = prompt('Enter custom amount:');
-              if (customAmount && !isNaN(parseInt(customAmount))) {
-                setFundingAmount(parseInt(customAmount));
-              }
-            }}
-            className="px-6 py-3 border-2 border-dashed border-gray-300 rounded-xl font-semibold text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all"
-          >
-            Custom
-          </button>
-        </div>
-      </div>
-
       {/* Payment Methods */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
         <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Select Payment Method</h3>
