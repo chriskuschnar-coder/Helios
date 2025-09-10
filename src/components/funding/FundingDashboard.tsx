@@ -195,7 +195,7 @@ export function FundingDashboard() {
                   <method.icon className="h-8 w-8 text-gray-600" />
                 </div>
                 
-                <h4 className="text-xl font-bold text-gray-900 mb-2">{method.name}</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-2 px-2">{method.name}</h4>
                 <p className="text-gray-600 mb-4">{method.description}</p>
                 
                 <div className="space-y-2 text-sm">
@@ -476,6 +476,25 @@ export function FundingDashboard() {
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getStatusColor(transaction.status)}`}>
                     {getStatusIcon(transaction.status)}
                   </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{transaction.method}</div>
+                    <div className="text-sm text-gray-600">{transaction.date}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900">${transaction.amount.toLocaleString()}</div>
+                  <div className="text-sm text-gray-600">{transaction.reference}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No funding activity yet</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
