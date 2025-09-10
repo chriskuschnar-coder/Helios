@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { CreditCard, Building, Zap, Coins, Shield, Clock, CheckCircle, AlertCircle, TrendingUp, DollarSign, Plus, ArrowRight, Copy, ExternalLink } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { StripeCheckout } from '../StripeCheckout'
+import { NOWPaymentsCrypto } from '../NOWPaymentsCrypto'
 
 interface FundingMethod {
   id: string
@@ -31,6 +32,8 @@ export function FundingDashboard() {
   const [fundingAmount, setFundingAmount] = useState(10000)
   const [showStripeForm, setShowStripeForm] = useState(false)
   const [showWireInstructions, setShowWireInstructions] = useState(false)
+  const [showCryptoPayment, setShowCryptoPayment] = useState(false)
+  const [showBankTransfer, setShowBankTransfer] = useState(false)
   const [wireReference, setWireReference] = useState('')
 
   const fundingMethods: FundingMethod[] = [
@@ -107,13 +110,29 @@ export function FundingDashboard() {
     if (methodId === 'card') {
       setShowStripeForm(true)
       setShowWireInstructions(false)
+      setShowCryptoPayment(false)
+      setShowBankTransfer(false)
     } else if (methodId === 'wire') {
       setShowWireInstructions(true)
       setShowStripeForm(false)
+      setShowCryptoPayment(false)
+      setShowBankTransfer(false)
       generateWireReference()
+    } else if (methodId === 'bank') {
+      setShowBankTransfer(true)
+      setShowStripeForm(false)
+      setShowWireInstructions(false)
+      setShowCryptoPayment(false)
+    } else if (methodId === 'crypto') {
+      setShowCryptoPayment(true)
+      setShowStripeForm(false)
+      setShowWireInstructions(false)
+      setShowBankTransfer(false)
     } else {
       setShowStripeForm(false)
       setShowWireInstructions(false)
+      setShowCryptoPayment(false)
+      setShowBankTransfer(false)
     }
   }
 
@@ -305,6 +324,110 @@ export function FundingDashboard() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Bank Transfer with Plaid */}
+      {showBankTransfer && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-navy-900">Bank Transfer (ACH)</h3>
+            <button
+              onClick={() => setShowBankTransfer(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Building className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Secure Bank Connection</h3>
+            <p className="text-gray-600">
+              Connect your bank account for ${fundingAmount.toLocaleString()} investment
+            </p>
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Shield className="h-5 w-5 text-green-600" />
+              <span className="font-medium text-green-900">Powered by Plaid</span>
+            </div>
+            <p className="text-sm text-green-700 mb-4">
+              We use Plaid to securely connect to your bank account. Your login credentials are encrypted and never stored.
+            </p>
+            <ul className="text-sm text-green-700 space-y-1">
+              <li>• Bank-level security (256-bit encryption)</li>
+              <li>• No fees for ACH transfers</li>
+              <li>• Processing time: 1-3 business days</li>
+              <li>• Supports 11,000+ financial institutions</li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => {
+                // In production, this would open Plaid Link
+                alert('Plaid integration will be implemented here. This would open a secure bank connection flow.');
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
+            >
+              <Building className="h-5 w-5 mr-2" />
+              Connect Bank Account Securely
+            </button>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Powered by Plaid • Used by millions of Americans
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cryptocurrency Payment with NOWPayments */}
+      {showCryptoPayment && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-navy-900">Cryptocurrency Payment</h3>
+            <button
+              onClick={() => setShowCryptoPayment(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+          
+          {user?.id ? (
+            <NOWPaymentsCrypto 
+              amount={fundingAmount}
+              userId={user.id}
+              onSuccess={(payment) => {
+                console.log('✅ NOWPayments payment initiated:', payment)
+                // Payment will be confirmed via webhook
+                setShowCryptoPayment(false)
+              }}
+              onError={(error) => {
+                console.error('❌ NOWPayments payment error:', error)
+                alert(`Crypto payment error: ${error}`)
+              }}
+              onBack={() => setShowCryptoPayment(false)}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+              <p className="text-gray-600 mb-4">Please sign in to continue with crypto payment</p>
+              <button
+                onClick={() => setShowCryptoPayment(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+              >
+                Close and Sign In
+              </button>
+            </div>
+          )}
         </div>
       )}
 
