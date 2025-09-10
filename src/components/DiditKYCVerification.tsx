@@ -97,9 +97,8 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           .select('status')
           .eq('verification_id', sessionId)
           .eq('verification_type', 'identity')
-          .single()
 
-        if (!complianceError && complianceData?.status === 'approved') {
+        if (!complianceError && complianceData?.[0]?.status === 'approved') {
           console.log('✅ Verification approved, checking user status')
           
           // Check if user's KYC status has been updated
@@ -118,12 +117,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               onVerificationComplete()
             }, 2000)
           }
-        } else if (!complianceError && complianceData?.status === 'rejected') {
+        } else if (!complianceError && complianceData?.[0]?.status === 'rejected') {
           console.log('❌ Verification rejected')
           clearInterval(pollInterval)
           setCheckingStatus(false)
           setError('Identity verification was rejected. Please contact support.')
-        } else if (!complianceError && complianceData?.status === 'expired') {
+        } else if (!complianceError && complianceData?.[0]?.status === 'expired') {
           console.log('⏰ Verification expired')
           clearInterval(pollInterval)
           setCheckingStatus(false)
@@ -220,130 +219,4 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       {/* Security & Privacy Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
         <div className="flex items-center space-x-3 mb-4">
-          <Shield className="h-6 w-6 text-blue-600" />
-          <h4 className="font-semibold text-blue-900">Security & Privacy</h4>
-        </div>
-        <ul className="text-sm text-blue-800 space-y-2">
-          <li>• Your documents are processed securely and encrypted</li>
-          <li>• We use Didit, a trusted third-party verification provider</li>
-          <li>• Your personal information is not stored on our servers</li>
-          <li>• This is a one-time verification - you won't need to repeat it</li>
-          <li>• The process is fully compliant with KYC/AML regulations</li>
-        </ul>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-          <div className="flex items-center space-x-3">
-            <AlertCircle className="h-6 w-6 text-red-600" />
-            <div>
-              <h4 className="font-semibold text-red-900">Verification Error</h4>
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setError('')
-              setVerificationUrl(null)
-              setSessionId(null)
-            }}
-            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {/* Verification Interface */}
-      {!verificationUrl ? (
-        <div className="text-center">
-          <button
-            onClick={startVerification}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Creating Verification Session...
-              </>
-            ) : (
-              <>
-                <Shield className="w-6 h-6" />
-                Start Identity Verification
-              </>
-            )}
-          </button>
-          
-          <p className="text-sm text-gray-500 mt-4">
-            Powered by Didit • Secure identity verification
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <h4 className="font-semibold text-green-900">Verification Session Created</h4>
-            </div>
-            <p className="text-sm text-green-800 mb-4">
-              Complete your identity verification in the secure frame below. 
-              The process typically takes 2-5 minutes.
-            </p>
-            <div className="text-sm text-green-700">
-              <strong>Session ID:</strong> {sessionId}
-            </div>
-          </div>
-
-          {/* Embedded Didit Verification */}
-          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-gray-900">Secure Identity Verification</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">SECURE</span>
-                </div>
-              </div>
-            </div>
-            
-            <iframe
-              src={verificationUrl}
-              title="Didit Identity Verification"
-              className="w-full h-[600px] border-none"
-              allow="camera; microphone"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-            />
-          </div>
-
-          {checkingStatus && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                <span className="font-medium text-yellow-900">Verification in Progress</span>
-              </div>
-              <p className="text-sm text-yellow-800">
-                Please complete the verification process above. Your status will update automatically 
-                when verification is complete. Do not close this window.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Back Button */}
-      <div className="mt-8 text-center">
-        <button
-          onClick={onClose}
-          className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
-        >
-          ← Back to Portfolio
-        </button>
-      </div>
-    </div>
-  )
-}
+          <Shield className="h-6
