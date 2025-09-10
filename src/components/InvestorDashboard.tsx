@@ -9,6 +9,7 @@ import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
 import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
 import { AIInsights } from './portfolio/AIInsights'
 import { FundNAVChart } from './portfolio/FundNAVChart'
+import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
 import { 
   TrendingUp, 
   BarChart3, 
@@ -25,17 +26,31 @@ import {
   Award,
   Eye,
   Settings,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 
 const InvestorDashboard: React.FC = () => {
   const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'markets' | 'research' | 'transactions'>('markets')
+  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']))
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
 
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
+      } else {
+        newSet.add(sectionId)
+      }
+      return newSet
+    })
+  }
 
   const handleFundPortfolio = (amount?: number) => {
     if (amount) {
@@ -49,11 +64,52 @@ const InvestorDashboard: React.FC = () => {
   }
 
   const tabs = [
+    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
     { id: 'transactions', name: 'Transactions', icon: FileText }
   ]
 
+  const portfolioSections = [
+    {
+      id: 'overview',
+      title: 'Portfolio Overview',
+      icon: BarChart3,
+      component: () => (
+        <div className="space-y-6">
+          <PortfolioValueCard 
+            onFundPortfolio={handleFundPortfolio}
+            onWithdraw={handleWithdraw}
+          />
+          <PortfolioPerformanceChart currentBalance={currentBalance} />
+        </div>
+      )
+    },
+    {
+      id: 'allocation',
+      title: 'Asset Allocation',
+      icon: Target,
+      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
+    },
+    {
+      id: 'performance',
+      title: 'Performance Analytics',
+      icon: Award,
+      component: () => <PerformanceMetrics currentBalance={currentBalance} />
+    },
+    {
+      id: 'nav',
+      title: 'Fund NAV History',
+      icon: TrendingUp,
+      component: () => <FundNAVChart />
+    },
+    {
+      id: 'insights',
+      title: 'AI Portfolio Insights',
+      icon: Brain,
+      component: () => <AIInsights currentBalance={currentBalance} />
+    }
+  ]
 
   if (loading) {
     return (
@@ -71,19 +127,6 @@ const InvestorDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 safe-area-bottom">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Portfolio Content - Always Visible */}
-        <div className="space-y-6 mb-6">
-          <PortfolioValueCard 
-            onFundPortfolio={handleFundPortfolio}
-            onWithdraw={handleWithdraw}
-          />
-          <PortfolioPerformanceChart currentBalance={currentBalance} />
-          <InteractiveAllocationChart currentBalance={currentBalance} />
-          <PerformanceMetrics currentBalance={currentBalance} />
-          <FundNAVChart />
-          <AIInsights currentBalance={currentBalance} />
-        </div>
-
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <div className="flex overflow-x-auto scrollbar-hide">
@@ -105,6 +148,66 @@ const InvestorDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
+        {selectedTab === 'portfolio' && (
+          <div className="space-y-6">
+            {portfolioSections.map((section) => {
+              const isExpanded = expandedSections.has(section.id)
+              const SectionComponent = section.component
+              
+              return (
+                <div key={section.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div 
+                    className="p-4 sm:p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100"
+                    onClick={() => toggleSection(section.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+                          <section.icon className="h-5 w-5 text-navy-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                          <p className="text-sm text-gray-500">
+                            {section.id === 'overview' && 'Portfolio value and performance overview'}
+                            {section.id === 'allocation' && 'Asset distribution and allocation analysis'}
+                            {section.id === 'performance' && 'Detailed performance metrics and analytics'}
+                            {section.id === 'nav' && 'Net Asset Value history and trends'}
+                            {section.id === 'insights' && 'AI-powered portfolio insights and recommendations'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        {section.id === 'overview' && (
+                          <div className="text-right hidden sm:block">
+                            <div className="text-sm text-gray-500">Current Value</div>
+                            <div className="text-lg font-bold text-gray-900">
+                              ${currentBalance.toLocaleString()}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="p-4 sm:p-6 bg-gray-50">
+                      <SectionComponent />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {selectedTab === 'markets' && <MarketsTab />}
         {selectedTab === 'research' && <ResearchTab />}
