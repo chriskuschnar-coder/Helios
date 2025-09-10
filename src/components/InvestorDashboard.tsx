@@ -589,4 +589,4 @@ export function InvestorDashboard() {
         {/* Portfolio Value Card */}
         {selectedTopTab === 'portfolio' && (
           <div className="mb-4 md:mb-6 mobile-card">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy-900 mb-1 mobile-text-lg"
