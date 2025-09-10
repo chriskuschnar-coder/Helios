@@ -91,8 +91,8 @@ Deno.serve(async (req) => {
       applicant: {
         external_id: user.id,
         email: user.email,
-        first_name: user.user_metadata?.full_name?.split(' ')[0] || '',
-        last_name: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''
+        first_name: user.user_metadata?.full_name?.split(' ')[0] || 'User',
+        last_name: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'Name'
       },
       callback_url: webhookUrl,
       return_url: returnUrl,

@@ -148,14 +148,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
-        .single()
 
       if (accountError) {
         console.warn('⚠️ Account load error:', accountError)
         // Don't throw error, just continue without account data
-      } else {
+      } else if (accountData && accountData.length > 0) {
         console.log('✅ Account loaded:', accountData.id)
-        setAccount(accountData)
+        setAccount(accountData[0])
+      } else {
+        // No account found, create one
+        console.log('📝 Creating new account for user:', userId)
+        const { data: newAccountData, error: createError } = await supabaseClient
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            account_type: 'trading',
+            balance: 0.00,
+            available_balance: 0.00,
+            total_deposits: 0.00,
+            total_withdrawals: 0.00,
+            currency: 'USD',
+            status: 'active'
+          })
+          .select()
+          .single()
+        
+        if (createError) {
+          console.error('❌ Failed to create account:', createError)
+        } else {
+          console.log('✅ New account created:', newAccountData.id)
+          setAccount(newAccountData)
+        }
       }
 
       // Load user profile data

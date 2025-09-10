@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     })
 
     // Verify webhook signature for security
-    const webhookSecret = Deno.env.get('DIDIT_WEBHOOK_SECRET') || 'your_webhook_secret_here'
+    const webhookSecret = Deno.env.get('DIDIT_WEBHOOK_SECRET')
     if (webhookSecret && signature) {
       try {
         const encoder = new TextEncoder()
