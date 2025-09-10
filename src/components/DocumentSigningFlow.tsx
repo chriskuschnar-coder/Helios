@@ -328,7 +328,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                   </>
                 )}
               </button>
-            )}
 
             {signedDocuments.has(currentDocument.id) && (
               <div className="flex items-center space-x-2 text-green-600">
