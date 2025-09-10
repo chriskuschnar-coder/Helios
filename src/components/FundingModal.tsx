@@ -82,7 +82,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleContinueToPayment = () => {
-    // After congratulations, check if KYC is needed
+    // After congratulations, always go to KYC verification first
     setShowCongratulations(false);
     setShowKYCVerification(true);
   };
