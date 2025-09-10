@@ -58,7 +58,24 @@ Deno.serve(async (req) => {
     const userId = user_id || user.id
 
     console.log('📝 Creating Didit session for user:', userId)
-    console.log('📡 Request payload:', JSON.stringify({ user_id: userId, return_url }, null, 2))
+    
+    // Prepare the request payload with all required fields
+    const requestPayload = {
+      user_id: userId,
+      email: user.email,
+      callback_url: `${supabaseUrl}/functions/v1/didit-webhook`,
+      return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
+    }
+    
+    console.log('📡 Full request payload being sent to Didit:', JSON.stringify(requestPayload, null, 2))
+    console.log('🔍 Request details:', {
+      url: 'https://api.didit.me/v1/sessions',
+      method: 'POST',
+      hasApiKey: !!DIDIT_API_KEY,
+      apiKeyLength: DIDIT_API_KEY?.length,
+      userId: userId,
+      userEmail: user.email
+    })
 
     // Create verification session with Didit API
     const sessionResponse = await fetch('https://api.didit.me/v1/sessions', {
@@ -67,14 +84,15 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'X-API-Key': DIDIT_API_KEY,
       },
-      body: JSON.stringify({
-        user_id: userId,
-        return_url: return_url || `${req.headers.get('origin') || 'https://localhost:5173'}/kyc/callback`
-      })
+      body: JSON.stringify(requestPayload)
     })
 
-    console.log('📊 Didit API response status:', sessionResponse.status)
-    console.log('📊 Didit API response headers:', Object.fromEntries(sessionResponse.headers.entries()))
+    console.log('📊 Didit session creation response:', {
+      status: sessionResponse.status,
+      statusText: sessionResponse.statusText,
+      ok: sessionResponse.ok,
+      headers: Object.fromEntries(sessionResponse.headers.entries())
+    })
 
     if (!sessionResponse.ok) {
       let errorDetails
@@ -83,28 +101,27 @@ Deno.serve(async (req) => {
       try {
         if (contentType && contentType.includes('application/json')) {
           errorDetails = await sessionResponse.json()
+          console.error('❌ Didit API JSON error response:', JSON.stringify(errorDetails, null, 2))
         } else {
           const errorText = await sessionResponse.text()
+          console.error('❌ Didit API text error response:', errorText)
           errorDetails = { message: errorText, raw_response: errorText }
         }
       } catch (parseError) {
+        console.error('❌ Failed to parse Didit error response:', parseError)
         errorDetails = { message: 'Failed to parse error response', parse_error: parseError.message }
       }
       
-      console.error('❌ Didit API error details:', JSON.stringify(errorDetails, null, 2))
-      console.error('❌ Request details that failed:', {
-        url: 'https://api.didit.me/v1/sessions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': DIDIT_API_KEY ? `${DIDIT_API_KEY.substring(0, 10)}...` : 'MISSING'
-        },
-        body: JSON.stringify({ user_id: userId, return_url }),
+      console.error('❌ COMPLETE ERROR CONTEXT:', {
         status: sessionResponse.status,
-        statusText: sessionResponse.statusText
+        statusText: sessionResponse.statusText,
+        errorDetails: errorDetails,
+        requestPayload: requestPayload,
+        apiKeyPresent: !!DIDIT_API_KEY,
+        timestamp: new Date().toISOString()
       })
       
-      throw new Error(`Didit API Error: ${errorDetails.message || 'Failed to create verification session'}`)
+      throw new Error(`Didit API Error: ${errorDetails.message || errorDetails.error || 'Failed to create verification session'}`)
     }
 
     const sessionData = await sessionResponse.json()
