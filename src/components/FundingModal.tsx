@@ -90,6 +90,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const handleKYCComplete = () => {
     // KYC complete, proceed to funding
     setShowKYCVerification(false);
+    setShowCongratulations(false);
     setShowFundingPage(true);
   };
 
@@ -268,7 +269,10 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
           ) : showKYCVerification ? (
             <DiditKYCVerification 
               onVerificationComplete={handleKYCComplete}
-              onClose={onClose}
+              onClose={() => {
+                setShowKYCVerification(false);
+                setShowCongratulations(true);
+              }}
             />
           ) : showPaymentForm ? (
             <div>
