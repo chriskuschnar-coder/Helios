@@ -1,4 +1,4 @@
-import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp, Eye, CheckCircle, ArrowRight } from 'lucide-react'
+import { BarChart3, Shield, Briefcase, PieChart, Brain, Zap, Target, TrendingUp, Eye, CheckCircle, ArrowRight, Award, Users } from 'lucide-react'
 
 export function Services() {
   const investmentApproach = [
