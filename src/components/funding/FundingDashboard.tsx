@@ -1,0 +1,601 @@
+import React, { useState } from 'react'
+import { CreditCard, Building, Zap, Coins, Shield, Clock, CheckCircle, AlertCircle, TrendingUp, DollarSign, Plus, ArrowRight, Copy, ExternalLink } from 'lucide-react'
+import { useAuth } from '../auth/AuthProvider'
+import { StripeCheckout } from '../StripeCheckout'
+
+interface FundingMethod {
+  id: string
+  name: string
+  icon: React.ComponentType<any>
+  description: string
+  processingTime: string
+  fees: string
+  minAmount: number
+  maxAmount: number
+  available: boolean
+  popular?: boolean
+}
+
+interface FundingTransaction {
+  id: string
+  method: string
+  amount: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  date: string
+  reference?: string
+}
+
+export function FundingDashboard() {
+  const { account, user } = useAuth()
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
+  const [fundingAmount, setFundingAmount] = useState(10000)
+  const [showStripeForm, setShowStripeForm] = useState(false)
+  const [showWireInstructions, setShowWireInstructions] = useState(false)
+  const [wireReference, setWireReference] = useState('')
+
+  const fundingMethods: FundingMethod[] = [
+    {
+      id: 'card',
+      name: 'Credit/Debit Card',
+      icon: CreditCard,
+      description: 'Instant funding with any major credit or debit card',
+      processingTime: 'Instant',
+      fees: '2.9% + $0.30',
+      minAmount: 100,
+      maxAmount: 50000,
+      available: true,
+      popular: true
+    },
+    {
+      id: 'bank',
+      name: 'Bank Transfer (ACH)',
+      icon: Building,
+      description: 'Direct transfer from your bank account',
+      processingTime: '1-3 business days',
+      fees: 'No fees',
+      minAmount: 100,
+      maxAmount: 250000,
+      available: true
+    },
+    {
+      id: 'wire',
+      name: 'Wire Transfer',
+      icon: Zap,
+      description: 'Same-day processing for large amounts',
+      processingTime: 'Same day',
+      fees: '$25 wire fee',
+      minAmount: 10000,
+      maxAmount: 1000000,
+      available: true
+    },
+    {
+      id: 'crypto',
+      name: 'Cryptocurrency',
+      icon: Coins,
+      description: 'Bitcoin, Ethereum, and other cryptocurrencies',
+      processingTime: '10-30 minutes',
+      fees: 'Network fees only',
+      minAmount: 100,
+      maxAmount: 100000,
+      available: true
+    }
+  ]
+
+  // Mock recent funding transactions
+  const recentTransactions: FundingTransaction[] = [
+    {
+      id: '1',
+      method: 'Credit Card',
+      amount: 25000,
+      status: 'completed',
+      date: '2025-01-29',
+      reference: 'pi_3QkL...'
+    },
+    {
+      id: '2',
+      method: 'Wire Transfer',
+      amount: 50000,
+      status: 'completed',
+      date: '2025-01-25',
+      reference: 'WIRE-GMC-001'
+    }
+  ]
+
+  const handleMethodSelect = (methodId: string) => {
+    setSelectedMethod(methodId)
+    
+    if (methodId === 'card') {
+      setShowStripeForm(true)
+      setShowWireInstructions(false)
+    } else if (methodId === 'wire') {
+      setShowWireInstructions(true)
+      setShowStripeForm(false)
+      generateWireReference()
+    } else {
+      setShowStripeForm(false)
+      setShowWireInstructions(false)
+    }
+  }
+
+  const generateWireReference = () => {
+    const ref = 'GMC-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+    setWireReference(ref)
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'text-green-600 bg-green-50'
+      case 'processing': return 'text-blue-600 bg-blue-50'
+      case 'pending': return 'text-yellow-600 bg-yellow-50'
+      case 'failed': return 'text-red-600 bg-red-50'
+      default: return 'text-gray-600 bg-gray-50'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4" />
+      case 'processing': return <Clock className="h-4 w-4" />
+      case 'pending': return <Clock className="h-4 w-4" />
+      case 'failed': return <AlertCircle className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Account Funding Overview */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-navy-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-6 w-6 text-navy-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-navy-900">Account Funding</h2>
+              <p className="text-gray-600">Add capital to your managed account</p>
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <div className="text-sm text-gray-600">Available Balance</div>
+            <div className="text-2xl font-bold text-navy-900">
+              ${(account?.available_balance || 0).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Account Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-gray-900 mb-1">
+              ${(account?.balance || 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600">Total Balance</div>
+          </div>
+          
+          <div className="bg-green-50 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-900 mb-1">
+              ${(account?.total_deposits || 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-green-700">Total Deposits</div>
+          </div>
+          
+          <div className="bg-blue-50 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-blue-900 mb-1">
+              ${(account?.total_withdrawals || 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-blue-700">Total Withdrawals</div>
+          </div>
+        </div>
+
+        {/* Security Notice */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Shield className="h-5 w-5 text-green-600" />
+            <span className="font-medium text-green-900">Secure Account Funding</span>
+          </div>
+          <p className="text-sm text-green-700">
+            All funding methods are secured with bank-level encryption. Your account is SIPC protected up to $500,000.
+          </p>
+        </div>
+      </div>
+
+      {/* Funding Methods */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <h3 className="text-lg font-bold text-navy-900 mb-6">Choose Funding Method</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {fundingMethods.map((method) => (
+            <div
+              key={method.id}
+              onClick={() => method.available && handleMethodSelect(method.id)}
+              className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all ${
+                selectedMethod === method.id
+                  ? 'border-navy-500 bg-navy-50'
+                  : method.available
+                  ? 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
+              }`}
+            >
+              {method.popular && (
+                <div className="absolute -top-2 -right-2 bg-gold-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  Popular
+                </div>
+              )}
+              
+              <div className="flex items-start space-x-4">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  selectedMethod === method.id ? 'bg-navy-600 text-white' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <method.icon className="h-6 w-6" />
+                </div>
+                
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">{method.name}</h4>
+                  <p className="text-sm text-gray-600 mb-3">{method.description}</p>
+                  
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Processing:</span>
+                      <span className="font-medium text-gray-900">{method.processingTime}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Fees:</span>
+                      <span className="font-medium text-gray-900">{method.fees}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Limits:</span>
+                      <span className="font-medium text-gray-900">
+                        ${method.minAmount.toLocaleString()} - ${method.maxAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Amount Selection */}
+        {selectedMethod && (
+          <div className="border-t border-gray-200 pt-6">
+            <h4 className="font-semibold text-gray-900 mb-4">Funding Amount</h4>
+            
+            <div className="mb-4">
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-lg">$</span>
+                <input
+                  type="number"
+                  value={fundingAmount}
+                  onChange={(e) => setFundingAmount(Math.max(100, parseInt(e.target.value) || 0))}
+                  className="w-full pl-8 pr-4 py-4 text-xl font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-navy-500 focus:bg-white transition-all"
+                  placeholder="Enter amount"
+                  min="100"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum: $100 • Maximum: ${fundingMethods.find(m => m.id === selectedMethod)?.maxAmount.toLocaleString()}
+              </p>
+            </div>
+
+            {/* Quick Amount Buttons */}
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              {[1000, 5000, 10000, 25000].map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => setFundingAmount(amount)}
+                  className={`py-3 px-4 border border-gray-200 rounded-lg text-sm font-medium hover:border-navy-500 hover:bg-navy-50 transition-colors ${
+                    fundingAmount === amount ? 'border-navy-500 bg-navy-50' : ''
+                  }`}
+                >
+                  ${amount.toLocaleString()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Stripe Payment Form */}
+      {showStripeForm && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-navy-900">Credit Card Payment</h3>
+            <button
+              onClick={() => setShowStripeForm(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+          
+          <StripeCheckout customAmount={fundingAmount} />
+        </div>
+      )}
+
+      {/* Wire Transfer Instructions */}
+      {showWireInstructions && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-navy-900">Wire Transfer Instructions</h3>
+            <button
+              onClick={() => setShowWireInstructions(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2 mb-2">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <span className="font-medium text-blue-900">Important Instructions</span>
+            </div>
+            <p className="text-sm text-blue-700">
+              Please include your reference code in the wire transfer memo. Processing typically takes 1-2 business days.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Bank Name</label>
+                <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3 mt-1">
+                  <span className="font-medium">JPMorgan Chase Bank, N.A.</span>
+                  <button
+                    onClick={() => copyToClipboard('JPMorgan Chase Bank, N.A.')}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <Copy className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Routing Number</label>
+                <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3 mt-1">
+                  <span className="font-mono">021000021</span>
+                  <button
+                    onClick={() => copyToClipboard('021000021')}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <Copy className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Account Number</label>
+                <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3 mt-1">
+                  <span className="font-mono">4567890123</span>
+                  <button
+                    onClick={() => copyToClipboard('4567890123')}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <Copy className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Account Name</label>
+                <div className="bg-gray-50 border rounded-lg p-3 mt-1">
+                  <span className="font-medium">Global Market Consulting LLC</span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Reference Code</label>
+                <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-1">
+                  <span className="font-mono font-bold text-yellow-900">{wireReference}</span>
+                  <button
+                    onClick={() => copyToClipboard(wireReference)}
+                    className="p-1 hover:bg-yellow-100 rounded"
+                  >
+                    <Copy className="h-4 w-4 text-yellow-600" />
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Amount</label>
+                <div className="bg-gray-50 border rounded-lg p-3 mt-1">
+                  <span className="font-bold text-lg">${fundingAmount.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Funding Calculator */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <h3 className="text-lg font-bold text-navy-900 mb-6">Funding Calculator</h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Cost Breakdown</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Funding Amount:</span>
+                <span className="font-medium">${fundingAmount.toLocaleString()}</span>
+              </div>
+              
+              {selectedMethod === 'card' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Processing Fee (2.9% + $0.30):</span>
+                    <span className="font-medium">${(fundingAmount * 0.029 + 0.30).toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="flex justify-between font-bold">
+                      <span>Total Cost:</span>
+                      <span>${(fundingAmount + fundingAmount * 0.029 + 0.30).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {selectedMethod === 'wire' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Wire Fee:</span>
+                    <span className="font-medium">$25.00</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="flex justify-between font-bold">
+                      <span>Total Cost:</span>
+                      <span>${(fundingAmount + 25).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {(selectedMethod === 'bank' || !selectedMethod) && (
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="flex justify-between font-bold">
+                    <span>Total Cost:</span>
+                    <span>${fundingAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Processing Timeline</h4>
+            <div className="space-y-3">
+              {selectedMethod && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {fundingMethods.find(m => m.id === selectedMethod)?.processingTime}
+                    </div>
+                    <div className="text-sm text-gray-600">Processing time</div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">Instant availability</div>
+                  <div className="text-sm text-gray-600">Funds available for trading</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Funding Activity */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-navy-900">Recent Funding Activity</h3>
+          <button className="text-navy-600 hover:text-navy-700 text-sm font-medium flex items-center space-x-1">
+            <span>View All</span>
+            <ExternalLink className="h-4 w-4" />
+          </button>
+        </div>
+        
+        {recentTransactions.length > 0 ? (
+          <div className="space-y-3">
+            {recentTransactions.map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getStatusColor(transaction.status)}`}>
+                    {getStatusIcon(transaction.status)}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{transaction.method}</div>
+                    <div className="text-sm text-gray-600">{transaction.date}</div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="font-bold text-gray-900">
+                    +${transaction.amount.toLocaleString()}
+                  </div>
+                  <div className={`text-sm font-medium capitalize ${getStatusColor(transaction.status)}`}>
+                    {transaction.status}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-gray-500 mb-2">No funding activity yet</div>
+            <div className="text-sm text-gray-400">
+              Your funding transactions will appear here
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Funding Limits & Information */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <h3 className="text-lg font-bold text-navy-900 mb-6">Funding Information</h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Daily Limits</h4>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Credit/Debit Card:</span>
+                <span className="font-medium">$50,000</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Bank Transfer:</span>
+                <span className="font-medium">$250,000</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Wire Transfer:</span>
+                <span className="font-medium">$1,000,000</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Cryptocurrency:</span>
+                <span className="font-medium">$100,000</span>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">Security Features</h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-gray-700">SIPC Protected up to $500,000</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-gray-700">Bank-level encryption (256-bit SSL)</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-gray-700">PCI DSS compliant payment processing</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-gray-700">Real-time fraud monitoring</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
