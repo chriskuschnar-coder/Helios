@@ -150,15 +150,47 @@ const InvestorDashboard: React.FC = () => {
         {/* Tab Content */}
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
+            {/* Portfolio Value Card - Always visible */}
             <PortfolioValueCard 
               onFundPortfolio={handleFundPortfolio}
               onWithdraw={handleWithdraw}
             />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            <InteractiveAllocationChart currentBalance={currentBalance} />
-            <PerformanceMetrics currentBalance={currentBalance} />
-            <FundNAVChart />
-            <AIInsights currentBalance={currentBalance} />
+            
+            {/* Portfolio sections in expandable folders */}
+            {portfolioSections.map((section) => (
+              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div 
+                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
+                        <section.icon className="h-6 w-6 text-navy-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      {expandedSections.has(section.id) ? (
+                        <ChevronDown className="h-5 w-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {expandedSections.has(section.id) && (
+                  <div className="border-t border-gray-100 p-6">
+                    <section.component />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
