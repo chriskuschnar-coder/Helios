@@ -4,6 +4,15 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+interface DiditWebhookEvent {
+  session_id: string
+  applicant_id: string
+  status: string
+  details?: any
+  event_type?: string
+  timestamp?: string
+}
+
 Deno.serve(async (req) => {
   console.log('🔔 Didit webhook received')
   
@@ -55,10 +64,12 @@ Deno.serve(async (req) => {
         console.error('❌ Signature verification failed:', sigError)
         // Continue processing but log the error
       }
+    } else {
+      console.warn('⚠️ No webhook secret or signature provided - skipping verification')
     }
 
     // Parse the webhook payload
-    let event
+    let event: DiditWebhookEvent
     try {
       event = JSON.parse(body)
       console.log('📦 Didit webhook event:', {
@@ -85,7 +96,7 @@ Deno.serve(async (req) => {
       event_type
     })
 
-    // Update compliance record based on verification result
+    // Map Didit status to our compliance status
     let complianceStatus = 'pending'
     let shouldMarkUserVerified = false
 

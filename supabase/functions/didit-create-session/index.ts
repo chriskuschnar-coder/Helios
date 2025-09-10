@@ -9,6 +9,24 @@ interface DiditSessionRequest {
   return_url?: string
 }
 
+interface DiditSessionPayload {
+  applicant: {
+    external_id: string
+    email: string
+    first_name?: string
+    last_name?: string
+  }
+  callback_url: string
+  return_url?: string
+  config?: {
+    document_types?: string[]
+    require_liveness?: boolean
+    require_address_verification?: boolean
+    aml_check?: boolean
+    pep_check?: boolean
+  }
+}
+
 Deno.serve(async (req) => {
   console.log('🔐 Didit KYC session creation function called')
   
@@ -72,7 +90,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Didit API configuration
+    // Get Didit API configuration
     const diditApiKey = Deno.env.get('DIDIT_API_KEY')
     if (!diditApiKey) {
       console.error('❌ DIDIT_API_KEY environment variable not set')
@@ -92,11 +110,12 @@ Deno.serve(async (req) => {
       user_id: user.id,
       email: user.email,
       return_url: returnUrl,
-      webhook_url: webhookUrl
+      webhook_url: webhookUrl,
+      api_base: diditApiBase
     })
 
-    // Create Didit verification session
-    const diditPayload = {
+    // Create Didit verification session payload
+    const diditPayload: DiditSessionPayload = {
       applicant: {
         external_id: user.id,
         email: user.email,
@@ -115,6 +134,7 @@ Deno.serve(async (req) => {
     }
 
     console.log('📡 Sending request to Didit API...')
+    console.log('📦 Payload:', JSON.stringify(diditPayload, null, 2))
     
     const diditResponse = await fetch(`${diditApiBase}/v1/sessions`, {
       method: 'POST',
@@ -138,7 +158,12 @@ Deno.serve(async (req) => {
         status: diditResponse.status,
         statusText: diditResponse.statusText,
         body: errorText,
-        url: `${diditApiBase}/v1/sessions`
+        url: `${diditApiBase}/v1/sessions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': diditApiKey.substring(0, 8) + '...',
+          'User-Agent': 'GlobalMarketConsulting/1.0'
+        }
       })
       
       let errorMessage = 'Failed to create verification session'
