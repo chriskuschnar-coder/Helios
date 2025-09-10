@@ -326,13 +326,13 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
           <DollarSign className="h-8 w-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Investment Amount</h3>
-        <p className="text-gray-600">Make an investment in our hedge fund with flexible amounts starting from $100</p>
+        <p className="text-gray-600">Add capital to your managed account with flexible amounts starting from $100</p>
       </div>
 
       {/* Amount Input */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Investment Amount
+          Contribution Amount
         </label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-lg">$</span>
@@ -368,10 +368,10 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2 mb-2">
           <Shield className="h-5 w-5 text-green-600" />
-          <span className="font-medium text-green-900">Live Payment Processing</span>
+          <span className="font-medium text-green-900">Secure Account Funding</span>
         </div>
         <p className="text-sm text-green-700">
-          <strong>LIVE MODE:</strong> Your payment information is encrypted and processed securely by Stripe. Real charges will be made.
+          <strong>SECURE:</strong> Your payment information is encrypted and processed securely by Stripe.
         </p>
       </div>
 
@@ -397,14 +397,14 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         ) : (
           <>
             <CreditCard className="h-5 w-5 mr-2" />
-            Invest ${amount.toLocaleString()} Securely
+            Add ${amount.toLocaleString()} Capital
           </>
         )}
       </button>
 
       {!user && (
         <p className="text-sm text-gray-500 text-center mt-4">
-          Please sign in to continue with your investment
+          Please sign in to continue with account funding
         </p>
       )}
     </div>

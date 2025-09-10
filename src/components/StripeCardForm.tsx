@@ -221,7 +221,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         ) : (
           <>
             <CreditCard className="h-4 w-4 mr-2" />
-            Complete Payment - ${amount.toLocaleString()}
+            Complete Contribution - ${amount.toLocaleString()}
           </>
         )}
       </button>

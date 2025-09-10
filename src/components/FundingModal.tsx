@@ -228,9 +228,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
             {showEmptyState ? 'Fund Your Account' : 
              showDocumentSigning ? 'Complete Onboarding Documents' : 
              showCongratulations ? 'Welcome to Global Markets!' :
-             showFundingPage ? 'Investment Amount' :
+             showFundingPage ? 'Capital Contribution' :
              showPaymentForm ? 'Secure Payment' :
-             'Investment Amount'}
+             'Capital Contribution'}
           </h2>
           <button
             onClick={onClose}
@@ -270,7 +270,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   <div>
-                    <h3 className="text-sm sm:text-base font-semibold text-blue-900">Investment Amount</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-blue-900">Capital Contribution</h3>
                     <p className="text-sm sm:text-base text-blue-700">${amount.toLocaleString()}</p>
                   </div>
                 </div>
@@ -314,17 +314,17 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
-                    Investor Status
+                    Account Status
                   </div>
                   <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">
-                    Qualified
+                    Active
                   </div>
                 </div>
               </div>
 
-              {/* Investment Amount Section */}
+              {/* Capital Contribution Section */}
               <div className="mb-8">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Investment Amount</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Capital Contribution</h3>
                 
                 {/* Amount Input */}
                 <div className="relative mb-6">

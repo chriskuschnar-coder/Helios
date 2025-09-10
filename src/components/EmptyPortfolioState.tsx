@@ -20,12 +20,12 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
           <TrendingUp className="w-12 h-12 text-navy-600" />
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
-          {hasCompletedDocuments ? 'Add Capital to Your Portfolio' : 'Start Building Your Portfolio'}
+          {hasCompletedDocuments ? 'Add Capital to Your Account' : 'Activate Your Account'}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto mb-8">
           {hasCompletedDocuments 
-            ? 'Add additional capital to your existing investment account. Your onboarding is complete and you can invest immediately.'
-            : 'Begin your investment journey with our quantitative strategies. Complete the onboarding process to access institutional-grade portfolio management.'
+            ? 'Add additional capital to your existing managed account. Your onboarding is complete and you can fund immediately.'
+            : 'Begin your journey with our quantitative strategies. Complete the onboarding process to access institutional-grade portfolio management.'
           }
         </p>
       </div>
@@ -49,7 +49,7 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
         onClick={onFundAccount}
         className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
       >
-        {hasCompletedDocuments ? 'Add Investment Capital' : 'Complete Onboarding Documents'}
+        {hasCompletedDocuments ? 'Add Account Capital' : 'Complete Onboarding Documents'}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>
