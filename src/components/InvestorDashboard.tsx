@@ -8,7 +8,6 @@ import { ResearchTab } from './research/ResearchTab'
 import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
 import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
 import { AIInsights } from './portfolio/AIInsights'
-import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
 import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
 import { 
@@ -105,12 +104,6 @@ const InvestorDashboard: React.FC = () => {
       component: () => <FundNAVChart />
     },
     {
-      id: 'positions',
-      title: 'Live Trading Positions',
-      icon: Activity,
-      component: () => <LiveTradingPositions currentBalance={currentBalance} />
-    }
-  ]
 
   if (loading) {
     return (
