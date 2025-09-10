@@ -195,10 +195,10 @@ export function FundingDashboard() {
                   <method.icon className="h-8 w-8 text-gray-600" />
                 </div>
                 
-                <h4 className="text-lg font-bold text-gray-900 mb-2 text-center px-2">{method.name}</h4>
-                <p className="text-gray-600 mb-4 text-center">{method.description}</p>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">{method.name}</h4>
+                <p className="text-gray-600 mb-4">{method.description}</p>
                 
-                <div className="space-y-2 text-sm text-center">
+                <div className="space-y-2 text-sm">
                   <div className="text-green-600 font-semibold">{method.fees}</div>
                 </div>
               </div>
