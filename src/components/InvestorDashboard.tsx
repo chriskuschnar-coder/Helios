@@ -39,10 +39,9 @@ import { AIInsights } from './portfolio/AIInsights'
 import { RiskDashboard } from './portfolio/RiskDashboard'
 import { OptimizationEngine } from './portfolio/OptimizationEngine'
 import { LiveTradingPositions } from './portfolio/LiveTradingPositions'
-import { TrendingUp, DollarSign, BarChart3, Activity, Users, Target, Calendar, Plus, LogOut, CreditCard } from 'lucide-react'
+import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { useAuth } from './auth/AuthProvider'
-import { StripeCheckout } from './StripeCheckout'
 import { supabaseClient } from '../lib/supabase-client'
 import '../styles/funding.css'
 
@@ -1240,25 +1239,6 @@ export function InvestorDashboard() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-        <button
-          onClick={() => setActiveTab('invest')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-            activeTab === 'invest'
-              ? 'bg-navy-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          <div className="flex items-center space-x-2">
-            <CreditCard className="h-4 w-4" />
-            <span>Invest</span>
-          </div>
-        </button>
-
-        {activeTab === 'invest' && (
-          <div className="space-y-6">
-            <StripeCheckout />
           </div>
         )}
       </div>
