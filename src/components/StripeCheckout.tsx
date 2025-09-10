@@ -392,7 +392,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
         {creatingPayment ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Initializing Account Funding...
+            Initializing Secure Payment...
           </>
         ) : (
           <>
@@ -404,7 +404,7 @@ export function StripeCheckout({ productId, className = '', customAmount }: Stri
 
       {!user && (
         <p className="text-sm text-gray-500 text-center mt-4">
-          Please sign in to continue
+          Please sign in to continue with account funding
         </p>
       )}
     </div>
