@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { user_id, code, email } = await req.json()
+    const { user_id, code, method = 'email' } = await req.json()
     
     console.log('🔍 2FA verification request:', { user_id, code: code ? '***' + code.slice(-2) : 'none', email })
     
@@ -26,10 +26,6 @@ Deno.serve(async (req) => {
     
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
       throw new Error('Invalid verification code format - must be 6 digits')
-    }
-    
-    if (!method || !['email', 'sms'].includes(method)) {
-      throw new Error('Invalid verification method')
     }
 
     // Get user from JWT token
