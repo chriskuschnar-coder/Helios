@@ -19,6 +19,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [showTimeoutOptions, setShowTimeoutOptions] = useState(false)
   const [componentError, setComponentError] = useState('')
   const [manualOverride, setManualOverride] = useState(false)
+  const [pollCount, setPollCount] = useState(0)
 
   // Check KYC status on component mount
   useEffect(() => {
@@ -253,14 +254,17 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const startStatusPolling = (sessionId: string) => {
     console.log('🔄 Starting status polling for session:', sessionId)
     setCheckingStatus(true)
+    setPollCount(0)
     
-    let pollCount = 0
     const maxPolls = 60 // 5 minutes max (every 5 seconds)
     let pollInterval: NodeJS.Timeout
     
     const pollStatus = async () => {
-      pollCount++
-      console.log(`🔄 Status poll #${pollCount} for session:`, sessionId)
+      setPollCount(prev => {
+        const newCount = prev + 1
+        console.log(`🔄 Status poll #${newCount} for session:`, sessionId)
+        return newCount
+      })
       
       try {
         // OPTION 1: Check our compliance records first
@@ -512,7 +516,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
             <div>
               <h4 className="font-semibold text-blue-900">Checking Verification Status</h4>
               <p className="text-sm text-blue-800">
-                Please wait while we check your verification status... (Poll #{updateCount})
+                Please wait while we check your verification status... (Poll #{pollCount})
               </p>
               <div className="mt-2 text-xs text-blue-600">
                 This usually takes 30-60 seconds. If it takes longer, you can return to your dashboard.
