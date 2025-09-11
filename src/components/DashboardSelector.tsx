@@ -5,9 +5,18 @@ import HeliosDashboard from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
 
 export function DashboardSelector() {
-  const { user, signOut, account } = useAuth()
+  const { user, signOut, account, needsSubscriptionAgreement } = useAuth()
   const [selectedDashboard, setSelectedDashboard] = useState<'investor' | 'helios'>('investor')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Redirect to subscription agreement if needed
+  useEffect(() => {
+    if (needsSubscriptionAgreement) {
+      console.log('🔒 Subscription agreement required - this should be handled by InvestmentPlatform')
+      // This component should not render if subscription agreement is needed
+      // InvestmentPlatform handles the routing
+    }
+  }, [needsSubscriptionAgreement])
 
   const handleSignOut = async () => {
     try {

@@ -12,6 +12,8 @@ interface User {
   is_kyc_verified?: boolean
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
+  subscription_signed_at?: string
+  subscription_signed_url?: string
 }
 
 interface Account {
@@ -45,10 +47,12 @@ interface AuthContextType {
   pendingAuthData: { userData: any; session: any } | null
   account: Account | null
   subscription: Subscription | null
+  needsSubscriptionAgreement: boolean
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   markDocumentsCompleted: () => Promise<void>
+  markSubscriptionSigned: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -67,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [needsSubscriptionAgreement, setNeedsSubscriptionAgreement] = useState(false)
 
   const complete2FA = async (code: string, userData: any, session: any) => {
     try {
@@ -270,12 +275,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at, subscription_signed_url')
         .eq('id', userId)
         .single()
 
       if (!userError && userData) {
         console.log('✅ User profile loaded')
+        
+        // Check if subscription agreement is needed
+        const needsAgreement = !userData.subscription_signed_at
+        setNeedsSubscriptionAgreement(needsAgreement)
+        
         setUser(prev => prev ? {
           ...prev,
           full_name: userData.full_name,
@@ -285,7 +295,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           kyc_status: userData.kyc_status,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
-          two_factor_method: userData.two_factor_method
+          two_factor_method: userData.two_factor_method,
+          subscription_signed_at: userData.subscription_signed_at,
+          subscription_signed_url: userData.subscription_signed_url
         } : null)
         
         setProfile(userData)
@@ -414,6 +426,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const markSubscriptionSigned = async () => {
+    if (!user) return
+
+    try {
+      // Refresh user data to get latest subscription status
+      await loadUserAccount(user.id)
+      setNeedsSubscriptionAgreement(false)
+    } catch (err) {
+      console.error('Error refreshing subscription status:', err)
+    }
+  }
   const signIn = async (email: string, password: string) => {
     try {
       console.log('🔐 Attempting sign in for:', email)
@@ -552,12 +575,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       pendingAuthData,
       account,
       subscription,
+      needsSubscriptionAgreement,
       profile,
       refreshAccount,
       refreshSubscription,
       refreshProfile,
       processFunding,
       markDocumentsCompleted,
+      markSubscriptionSigned,
       signIn,
       complete2FA,
       signUp,

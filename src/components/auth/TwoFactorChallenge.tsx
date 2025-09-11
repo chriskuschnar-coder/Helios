@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock, Loader2 } from 'lucide-react'
+import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Loader2 } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 
 interface TwoFactorChallengeProps {
@@ -144,7 +144,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         // Delay to show success message, then redirect
         setTimeout(() => {
           setLoading(false)
-          console.log('🎉 Redirecting to dashboard')
+          console.log('🎉 Calling onSuccess - will check subscription agreement status')
           onSuccess()
         }, 1500)
       } else {
