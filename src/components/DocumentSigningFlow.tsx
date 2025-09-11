@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FileText, CheckCircle, Download, Eye, Shield, AlertCircle, ArrowRight, ArrowLeft, User, Building, DollarSign } from 'lucide-react'
+import { FileText, CheckCircle, Download, Eye, Shield, AlertCircle, ArrowRight, ArrowLeft, User, Building, DollarSign, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCw } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface DocumentSigningFlowProps {
@@ -70,6 +70,9 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [exhibitDData, setExhibitDData] = useState<ExhibitDData>({
     signature: ''
   })
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false)
+  const [previewZoom, setPreviewZoom] = useState(100)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Check if user has already completed documents
   const hasCompletedDocuments = user?.documents_completed
@@ -510,6 +513,13 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                 <Eye className="h-4 w-4" />
                 <span>Review Document</span>
               </a>
+              <button
+                onClick={() => setShowDocumentPreview(true)}
+                className="inline-flex items-center space-x-2 text-navy-600 hover:text-navy-700 font-medium"
+              >
+                <Maximize2 className="h-4 w-4" />
+                <span>Preview Document</span>
+              </button>
               <a
                 href={currentDocument.url}
                 download
@@ -1055,5 +1065,181 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
         </div>
       </div>
     </div>
+
+    {/* Document Preview Modal */}
+    {showDocumentPreview && (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className={`bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${
+          isFullscreen ? 'w-full h-full' : 'w-full max-w-6xl h-[90vh]'
+        }`}>
+          {/* Preview Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-navy-100 rounded-lg flex items-center justify-center">
+                <FileText className="h-4 w-4 text-navy-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">{currentDocument.title}</h3>
+                <p className="text-sm text-gray-600">Document Preview</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              {/* Zoom Controls */}
+              <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
+                <button
+                  onClick={() => setPreviewZoom(Math.max(50, previewZoom - 25))}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="h-4 w-4 text-gray-600" />
+                </button>
+                <span className="px-3 py-1 text-sm font-medium text-gray-700 min-w-[60px] text-center">
+                  {previewZoom}%
+                </span>
+                <button
+                  onClick={() => setPreviewZoom(Math.min(200, previewZoom + 25))}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+              
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <Maximize2 className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
+              
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowDocumentPreview(false)
+                  setIsFullscreen(false)
+                  setPreviewZoom(100)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Close Preview"
+              >
+                <X className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+          </div>
+          
+          {/* Document Preview Content */}
+          <div className="h-full bg-gray-100 overflow-hidden">
+            {currentDocument.url.endsWith('.pdf') ? (
+              <div className="h-full overflow-auto">
+                <iframe
+                  src={`${currentDocument.url}#toolbar=1&navpanes=1&scrollbar=1&view=FitH&zoom=${previewZoom}`}
+                  className="w-full h-full border-none"
+                  title={`Preview: ${currentDocument.title}`}
+                  style={{
+                    minHeight: isFullscreen ? '100vh' : '600px',
+                    transform: `scale(${previewZoom / 100})`,
+                    transformOrigin: 'top left'
+                  }}
+                />
+              </div>
+            ) : currentDocument.url.endsWith('.html') ? (
+              <div className="h-full overflow-auto bg-white">
+                <iframe
+                  src={currentDocument.url}
+                  className="w-full h-full border-none"
+                  title={`Preview: ${currentDocument.title}`}
+                  style={{
+                    minHeight: isFullscreen ? '100vh' : '600px',
+                    transform: `scale(${previewZoom / 100})`,
+                    transformOrigin: 'top left'
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Preview Not Available</h3>
+                  <p className="text-gray-600 mb-4">
+                    This document type cannot be previewed in the browser.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <a
+                      href={currentDocument.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>Open in New Tab</span>
+                    </a>
+                    <a
+                      href={currentDocument.url}
+                      download
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Download</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Preview Footer */}
+          <div className="bg-gray-50 border-t border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Shield className="h-4 w-4 text-green-600" />
+                  <span>Secure Document Preview</span>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Use scroll wheel or trackpad to navigate through the document
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <a
+                  href={currentDocument.url}
+                  download
+                  className="text-gray-600 hover:text-gray-700 text-sm font-medium inline-flex items-center space-x-1"
+                >
+                  <Download className="h-3 w-3" />
+                  <span>Download</span>
+                </a>
+                <a
+                  href={currentDocument.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center space-x-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  <span>Open in New Tab</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setShowDocumentPreview(false)
+                    setIsFullscreen(false)
+                    setPreviewZoom(100)
+                  }}
+                  className="bg-navy-600 hover:bg-navy-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   )
 }
