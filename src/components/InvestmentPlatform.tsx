@@ -11,7 +11,7 @@ interface AuthenticatedAppProps {
 }
 
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
-  const { user, loading } = useAuth()
+  const { user, loading, pending2FA, pendingAuthData } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
