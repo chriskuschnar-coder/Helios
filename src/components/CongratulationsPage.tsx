@@ -33,17 +33,14 @@ export function CongratulationsPage({ onContinueToPayment }: CongratulationsPage
     setIsProcessing(true);
     setError('');
     
-    // Small delay to show processing state, then continue
-    setTimeout(() => {
-      try {
-        console.log('🚀 Calling onContinueToPayment...');
-        onContinueToPayment();
-      } catch (error) {
-        console.error('❌ Error continuing to payment:', error);
-        setError('Failed to continue to payment. Please try again.');
-        setIsProcessing(false);
-      }
-    }, 500);
+    try {
+      console.log('🚀 Calling onContinueToPayment...');
+      onContinueToPayment();
+    } catch (error) {
+      console.error('❌ Error continuing to payment:', error);
+      setError('Failed to continue to payment. Please try again.');
+      setIsProcessing(false);
+    }
   };
   
   // Error boundary fallback

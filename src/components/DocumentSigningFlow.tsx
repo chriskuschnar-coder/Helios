@@ -866,7 +866,10 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
           <div className="flex flex-col sm:flex-row gap-3 justify-between">
             <div className="flex gap-3">
               <button
-                onClick={onBack}
+                onClick={() => {
+                  console.log('🔙 Going back to portfolio from document signing')
+                  onBack()
+                }}
                 className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-700 font-medium transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
