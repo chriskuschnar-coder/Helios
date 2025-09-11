@@ -64,8 +64,9 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       required: true,
       signed: false,
       url: '/documents/Improved_Private_Placement_Memorandum.docx',
-      type: 'investment_agreement'
+      type: 'investment_agreement',
       order: 3
+    },
     {
       id: 'risk_disclosure',
       title: 'Risk Disclosure Statement',
