@@ -99,10 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state changed:', event, session?.user?.email)
-        console.log('Auth state change:', event, session);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in successfully');
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -399,14 +397,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log('🚪 Signing out user')
-      setLoading(true);
       const { error } = await supabaseClient.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
       } else {
         console.log('✅ Sign out successful')
       }
-      setLoading(false);
     } catch (err) {
       console.error('Sign out failed:', err)
     }
