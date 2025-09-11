@@ -54,7 +54,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': anonKey
+          'apikey': anonKey,
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           method: 'email',
@@ -100,7 +101,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': anonKey
+          'apikey': anonKey,
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           code: verificationCode,
