@@ -66,14 +66,6 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
   }
 
   const handleFundPortfolio = (amount?: number) => {
-    // Check KYC status before allowing funding
-    if (!isKYCVerified) {
-      if (onShowKYCProgress) {
-        onShowKYCProgress()
-      }
-      return
-    }
-    
     if (amount) {
       setPrefilledAmount(amount)
     }
@@ -81,6 +73,7 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
   }
 
   const handleWithdraw = () => {
+    // Check KYC status before allowing withdrawals
     if (!isKYCVerified) {
       if (onShowKYCProgress) {
         onShowKYCProgress()
@@ -263,14 +256,14 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
       </div>
 
       {/* Funding Modal */}
-      {isKYCVerified && <FundingModal
+      <FundingModal
         isOpen={showFundingModal}
         onClose={() => {
           setShowFundingModal(false)
           setPrefilledAmount(null)
         }}
         prefilledAmount={prefilledAmount}
-      />}
+      />
     </div>
   )
 }
