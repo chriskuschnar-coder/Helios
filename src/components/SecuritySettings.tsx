@@ -23,10 +23,24 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
 
     setLoading(true)
     try {
-      // Implementation for disabling 2FA would go here
-      alert('2FA disable functionality will be implemented')
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ two_factor_enabled: false })
+        .eq('id', user?.id)
+
+      if (error) {
+        throw error
+      }
+
+      // Clear any stored biometric credentials
+      localStorage.removeItem('biometric_credential_id')
+      
+      await refreshProfile()
+      setError('')
     } catch (error) {
       console.error('Error disabling 2FA:', error)
+      setError('Failed to disable 2FA. Please try again.')
     } finally {
       setLoading(false)
     }

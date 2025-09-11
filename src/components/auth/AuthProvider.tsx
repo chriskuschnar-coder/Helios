@@ -47,12 +47,15 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
+  profile: User | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
@@ -190,23 +193,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled')
         .eq('id', userId)
         .single()
 
       if (!userError && userData) {
         console.log('✅ User profile loaded')
-        setUser(prev => prev ? {
+        const updatedUser = prev => prev ? {
           ...prev,
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
-          is_kyc_verified: userData.kyc_status === 'verified'
-        } : null)
+          is_kyc_verified: userData.kyc_status === 'verified',
+          two_factor_enabled: userData.two_factor_enabled
+        } : null
+        
+        setUser(updatedUser)
+        setProfile(updatedUser)
       }
     } catch (err) {
       console.error('❌ Account load failed:', err)
       // Don't let account loading errors prevent the app from working
+    }
+  }
+
+  const refreshProfile = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
     }
   }
 
@@ -426,10 +439,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
+    profile,
     loading,
     account,
     subscription,
     refreshAccount,
+    refreshProfile,
     refreshSubscription,
     processFunding,
     markDocumentsCompleted,

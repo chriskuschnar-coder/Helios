@@ -1,219 +1,315 @@
-import React, { useState } from 'react'
-import { useAuth } from './auth/AuthProvider'
-import { PortfolioValueCard } from './PortfolioValueCard'
-import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { FundingModal } from './FundingModal'
-import { MarketsTab } from './markets/MarketsTab'
-import { ResearchTab } from './research/ResearchTab'
-import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
-import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
-import { AIInsights } from './portfolio/AIInsights'
-import { FundNAVChart } from './portfolio/FundNAVChart'
-import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Brain, 
-  Globe, 
-  FileText, 
-  Shield, 
-  Target,
-  Activity,
-  Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
-import { SecuritySettings } from './SecuritySettings'
+import React, { useState, useEffect } from 'react'
+import { Shield, Mail, Fingerprint, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Copy } from 'lucide-react'
 
-const InvestorDashboard: React.FC = () => {
-  const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+interface TwoFactorChallengeProps {
+  onSuccess: () => void
+  onCancel: () => void
+  userEmail: string
+  biometricEnabled?: boolean
+}
 
-  const currentBalance = account?.balance || 0
-  const hasActivity = currentBalance > 0
+export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({ 
+  onSuccess, 
+  onCancel, 
+  userEmail,
+  biometricEnabled = false 
+}) => {
+  const [method, setMethod] = useState<'email' | 'biometric'>('email')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [sentCode, setSentCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [attempts, setAttempts] = useState(0)
+  const [biometricSupported, setBiometricSupported] = useState(false)
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
+  useEffect(() => {
+    checkBiometricSupport()
+    // Auto-send email code when component mounts
+    if (method === 'email') {
+      sendEmailCode()
+    }
+  }, [])
+
+  const checkBiometricSupport = async () => {
+    try {
+      if (window.PublicKeyCredential) {
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        setBiometricSupported(available && biometricEnabled)
       }
-      return newSet
-    })
-  }
-
-  const handleFundPortfolio = (amount?: number) => {
-    if (amount) {
-      setPrefilledAmount(amount)
+    } catch (error) {
+      setBiometricSupported(false)
     }
-    setShowFundingModal(true)
   }
 
-  const handleWithdraw = () => {
-    alert('Withdrawal functionality will be implemented here')
-  }
+  const sendEmailCode = async () => {
+    setLoading(true)
+    setError('')
 
-  const tabs = [
-    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
-    { id: 'markets', name: 'Markets', icon: Globe },
-    { id: 'research', name: 'Research', icon: Brain },
-  ]
+    try {
+      // Generate 6-digit code
+      const code = Math.floor(100000 + Math.random() * 900000).toString()
+      setSentCode(code)
 
-  const portfolioSections = [
-    {
-      id: 'allocation',
-      title: 'Asset Allocation',
-      icon: Target,
-      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
-    },
-    {
-      id: 'performance',
-      title: 'Performance Analytics',
-      icon: Award,
-      component: () => <PerformanceMetrics currentBalance={currentBalance} />
-    },
-    {
-      id: 'nav',
-      title: 'Fund NAV History',
-      icon: TrendingUp,
-      component: () => <FundNAVChart />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
+      console.log('📧 2FA Challenge code sent to', userEmail, ':', code)
+      
+      // Simulate email send delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setSuccess(`Verification code sent to ${userEmail}`)
+    } catch (error) {
+      setError('Failed to send verification code')
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <BarChart3 className="h-8 w-8 text-navy-600" />
-          </div>
-          <p className="text-gray-600">Connecting to your account...</p>
-        </div>
-      </div>
-    )
+  const verifyBiometric = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      // Get stored credential ID
+      const credentialId = localStorage.getItem('biometric_credential_id')
+      if (!credentialId) {
+        throw new Error('No biometric credential found')
+      }
+
+      // Verify using WebAuthn
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: new Uint8Array(32),
+          allowCredentials: [{
+            id: new TextEncoder().encode(credentialId),
+            type: 'public-key'
+          }],
+          userVerification: 'required',
+          timeout: 60000
+        }
+      })
+
+      if (assertion) {
+        console.log('🔐 Biometric verification successful')
+        setSuccess('Biometric verification successful!')
+        setTimeout(() => {
+          onSuccess()
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('🔐 Biometric verification failed:', error)
+      if (error.name === 'NotAllowedError') {
+        setError('Biometric verification was cancelled')
+      } else {
+        setError('Biometric verification failed. Please try email verification.')
+        setMethod('email')
+        sendEmailCode()
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const verifyEmailCode = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      setError('Please enter the 6-digit verification code')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      if (verificationCode === sentCode) {
+        setSuccess('Verification successful!')
+        setTimeout(() => {
+          onSuccess()
+        }, 1000)
+      } else {
+        setAttempts(prev => prev + 1)
+        if (attempts >= 2) {
+          setError('Too many failed attempts. Please request a new code.')
+          setSentCode('')
+          setVerificationCode('')
+          setAttempts(0)
+        } else {
+          setError(`Invalid code. ${2 - attempts} attempts remaining.`)
+        }
+      }
+    } catch (error) {
+      setError('Verification failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resendCode = async () => {
+    setVerificationCode('')
+    setAttempts(0)
+    await sendEmailCode()
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
-                  selectedTab === tab.id
-                    ? 'bg-navy-600 text-white'
-                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
-                }`}
-              >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={onCancel}
+          className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Cancel</span>
+        </button>
+      </div>
+
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Shield className="h-8 w-8 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication Required</h2>
+        <p className="text-gray-600">Please verify your identity to continue</p>
+      </div>
+
+      {/* Method Selector */}
+      {biometricSupported && (
+        <div className="flex space-x-2 mb-6">
+          <button
+            onClick={() => setMethod('email')}
+            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
+              method === 'email' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Mail className="h-4 w-4 mx-auto mb-1" />
+            <span className="text-sm">Email</span>
+          </button>
+          <button
+            onClick={() => {
+              setMethod('biometric')
+              verifyBiometric()
+            }}
+            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
+              method === 'biometric' 
+                ? 'bg-purple-600 text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Fingerprint className="h-4 w-4 mx-auto mb-1" />
+            <span className="text-sm">Biometric</span>
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <span className="text-red-900 font-medium">{error}</span>
           </div>
         </div>
+      )}
 
-        {/* Tab Content */}
-        {selectedTab === 'portfolio' && (
-          <div className="space-y-6">
-            {/* Portfolio Value Card - Always Visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-            />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            
-            {/* Portfolio sections in expandable folders */}
-            {portfolioSections.map((section) => (
-              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                <div 
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => toggleSection(section.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
-                        <section.icon className="h-6 w-6 text-navy-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {expandedSections.has(section.id) && (
-                  <div className="border-t border-gray-100 p-6">
-                    <section.component />
-                  </div>
-                )}
-              </div>
-            ))}
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-green-900 font-medium">{success}</span>
           </div>
-        )}
+        </div>
+      )}
 
-        {selectedTab === 'markets' && <MarketsTab />}
-        {selectedTab === 'research' && <ResearchTab />}
-        {selectedTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
-              <p className="text-gray-600 mb-6">
-                View your complete transaction history and account activity
-              </p>
+      {method === 'email' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              We've sent a 6-digit verification code to <strong>{userEmail}</strong>
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Verification Code
+            </label>
+            <input
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+              className="w-full px-4 py-3 text-center text-2xl font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="000000"
+              maxLength={6}
+              autoComplete="one-time-code"
+              autoFocus
+            />
+          </div>
+
+          <button
+            onClick={verifyEmailCode}
+            disabled={loading || verificationCode.length !== 6}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            {loading ? 'Verifying...' : 'Verify Code'}
+          </button>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-2">
+              Didn't receive the code?
+            </p>
+            <button
+              onClick={resendCode}
+              disabled={loading}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Resend Code
+            </button>
+          </div>
+
+          {/* Demo code display */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-900">Demo Mode</span>
+            </div>
+            <p className="text-xs text-yellow-800 mb-2">
+              For testing, your verification code is:
+            </p>
+            <div className="flex items-center space-x-2">
+              <code className="bg-white px-3 py-1 rounded border text-lg font-mono font-bold text-yellow-900">
+                {sentCode}
+              </code>
               <button
-                onClick={() => handleFundPortfolio()}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(sentCode)
+                  setSuccess('Code copied!')
+                  setTimeout(() => setSuccess(''), 2000)
+                }}
+                className="p-1 hover:bg-yellow-100 rounded"
               >
-                <Plus className="h-4 w-4" />
-                <span>Add First Transaction</span>
+                <Copy className="h-4 w-4 text-yellow-600" />
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Funding Modal */}
-      <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => {
-          setShowFundingModal(false)
-          setPrefilledAmount(null)
-        }}
-        prefilledAmount={prefilledAmount}
-      />
+      {method === 'biometric' && (
+        <div className="space-y-6">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+            <Fingerprint className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+            <p className="text-purple-800 font-medium">
+              {loading ? 'Waiting for biometric verification...' : 'Tap to verify with biometric authentication'}
+            </p>
+          </div>
+
+          {!loading && (
+            <button
+              onClick={verifyBiometric}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+            >
+              <Fingerprint className="h-4 w-4 mr-2" />
+              Verify with Biometric
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
-
-export default InvestorDashboard

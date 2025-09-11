@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
+import { TwoFactorChallenge } from './TwoFactorChallenge'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
 
 interface LoginFormProps {
@@ -15,6 +16,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [show2FA, setShow2FA] = useState(false)
+  const [userNeedsTwoFactor, setUserNeedsTwoFactor] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,10 +36,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       if (result.error) {
         setError(result.error.message)
       } else {
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          onSuccess?.()
-        }, 100)
+        // Check if user has 2FA enabled
+        const { supabaseClient } = await import('../../lib/supabase-client')
+        const { data: userData } = await supabaseClient
+          .from('users')
+          .select('two_factor_enabled')
+          .eq('email', email)
+          .single()
+
+        if (userData?.two_factor_enabled) {
+          console.log('🔐 2FA required for user')
+          setUserNeedsTwoFactor(true)
+          setShow2FA(true)
+        } else {
+          console.log('✅ No 2FA required, proceeding to dashboard')
+          setTimeout(() => {
+            onSuccess?.()
+          }, 100)
+        }
       }
     } catch (err) {
       console.error('Login error:', err)
@@ -44,6 +61,33 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     } finally {
       setLoading(false)
     }
+  }
+
+  const handle2FASuccess = () => {
+    console.log('✅ 2FA verification successful')
+    setShow2FA(false)
+    setTimeout(() => {
+      onSuccess?.()
+    }, 100)
+  }
+
+  const handle2FACancel = () => {
+    setShow2FA(false)
+    setUserNeedsTwoFactor(false)
+    // Sign out the user since they didn't complete 2FA
+    const { signOut } = useAuth()
+    signOut()
+  }
+
+  if (show2FA) {
+    return (
+      <TwoFactorChallenge
+        onSuccess={handle2FASuccess}
+        onCancel={handle2FACancel}
+        userEmail={email}
+        biometricEnabled={true}
+      />
+    )
   }
 
   return (
