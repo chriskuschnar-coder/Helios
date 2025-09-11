@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { TwoFactorChallenge } from './auth/TwoFactorChallenge'
-import { SubscriptionAgreementFlow } from './auth/SubscriptionAgreementFlow'
 import { DashboardSelector } from './DashboardSelector'
 import { Loader2 } from 'lucide-react'
 
@@ -12,7 +11,7 @@ interface AuthenticatedAppProps {
 }
 
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
-  const { user, loading, pending2FA, pendingAuthData, needsSubscriptionAgreement, signOut, markSubscriptionSigned } = useAuth()
+  const { user, loading, pending2FA, pendingAuthData, signOut } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
@@ -75,22 +74,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         userEmail={pendingAuthData.userData.email}
         userData={pendingAuthData.userData}
         session={pendingAuthData.session}
-      />
-    )
-  }
-
-  // Show subscription agreement if user is authenticated but hasn't signed
-  if (user && needsSubscriptionAgreement) {
-    return (
-      <SubscriptionAgreementFlow
-        onComplete={() => {
-          console.log('✅ Subscription agreement completed')
-          markSubscriptionSigned()
-        }}
-        onCancel={async () => {
-          console.log('❌ Subscription agreement cancelled - signing out')
-          await signOut()
-        }}
       />
     )
   }
