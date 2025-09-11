@@ -72,6 +72,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
       <TwoFactorChallenge
         onSuccess={() => {
           console.log('✅ 2FA verification successful - user now authenticated')
+          // Don't need to do anything here - AuthProvider handles the state
         }}
         onCancel={async () => {
           console.log('❌ 2FA cancelled - signing out')

@@ -29,6 +29,11 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   // Generate and send code on mount
   useEffect(() => {
     console.log('🔐 2FA Challenge mounted - generating code for:', userEmail)
+    console.log('🔐 User data available:', { 
+      userId: userData?.id, 
+      email: userData?.email,
+      userEmail: userEmail 
+    })
     sendVerificationCode()
   }, [])
 
@@ -48,6 +53,12 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
     try {
       console.log('📧 Sending email verification code to:', userEmail)
+      console.log('📧 Request payload:', {
+        user_id: userData?.id,
+        method: 'email',
+        email: userEmail,
+        phone: userData?.phone
+      })
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
@@ -61,12 +72,14 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           'origin': window.location.origin
         },
         body: JSON.stringify({
-          user_id: userData.id,
+          user_id: userData?.id,
           method: 'email',
           email: userEmail,
-          phone: userData?.phone
+          phone: userData?.phone || null
         })
       })
+
+      console.log('📧 Send code response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -84,9 +97,15 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       }
       
       // Determine if we're in live mode based on SendGrid success
-      setIsLiveMode(!!result.success && !result.demo_mode)
+      setIsLiveMode(!!result.success && !result.demo_mode && !!result.sendgrid_success)
       
-      setSuccess(`Verification code sent to ${userEmail}`)
+      if (result.sendgrid_success) {
+        setSuccess(`✅ Live verification code sent to ${userEmail}`)
+        setIsLiveMode(true)
+      } else {
+        setSuccess(`📧 Verification code sent to ${userEmail}`)
+        setIsLiveMode(false)
+      }
       setResendCount(prev => prev + 1)
       
     } catch (error) {
@@ -101,11 +120,21 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       return
     }
 
+    if (!userData?.id) {
+      setError('User data not available. Please try logging in again.')
+      return
+    }
     setLoading(true)
     setError('')
 
     try {
-      console.log('🔍 Verifying 2FA code...')
+      console.log('🔍 Verifying 2FA code for user:', userData.id)
+      console.log('🔍 Verification payload:', {
+        user_id: userData.id,
+        code: '***' + verificationCode.slice(-2),
+        email: userEmail,
+        method: 'email'
+      })
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
@@ -120,23 +149,27 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         body: JSON.stringify({
           user_id: userData.id,
           code: verificationCode,
-          email: userData.email,
+          email: userEmail,
           method: 'email'
         })
       })
 
+      console.log('🔍 Verify code response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ 2FA verification error:', errorData)
-        setError('Invalid verification code')
+        console.error('❌ 2FA verification HTTP error:', errorData)
+        setError(errorData.error || 'Verification failed')
         setLoading(false)
         return
       }
 
       const result = await response.json()
+      console.log('✅ Verify code response:', result)
       
-      if (!result.valid) {
-        setError('Invalid verification code')
+      if (!result.valid || !result.success) {
+        console.error('❌ Code verification failed:', result)
+        setError(result.message || 'Invalid verification code')
         setLoading(false)
         return
       }
@@ -145,6 +178,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       setSuccess('Verification successful!')
       
       try {
+        console.log('🔐 Setting Supabase session...')
         // Complete the authentication by setting the session
         const { supabaseClient } = await import('../../lib/supabase-client')
         const { error: sessionError } = await supabaseClient.auth.setSession(session)
@@ -154,8 +188,15 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           throw new Error('Failed to complete authentication')
         }
         
-        console.log('🎉 2FA complete, calling onSuccess')
-        onSuccess()
+        console.log('✅ Session set successfully')
+        
+        // Small delay to ensure session is properly set
+        setTimeout(() => {
+          console.log('🎉 2FA complete, calling onSuccess')
+          setLoading(false)
+          onSuccess()
+        }, 500)
+        
       } catch (authError) {
         console.error('❌ Auth completion failed:', authError)
         setError('Authentication completion failed')

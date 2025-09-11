@@ -15,9 +15,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { user_id, code, email, method = 'email' } = await req.json()
+    const requestBody = await req.json()
+    const { user_id, code, email, method = 'email' } = requestBody
     
     console.log('🔍 2FA verification request:', { 
+      requestBody,
       user_id, 
       code: code ? '***' + code.slice(-2) : 'none', 
       email: email ? email.substring(0, 3) + '***' : 'none',
@@ -26,14 +28,17 @@ Deno.serve(async (req) => {
     
     // Validate inputs
     if (!user_id) {
+      console.error('❌ Missing user_id in request')
       throw new Error('User ID required')
     }
     
     if (!email) {
+      console.error('❌ Missing email in request')
       throw new Error('Email required')
     }
     
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+      console.error('❌ Invalid code format:', code)
       throw new Error('Invalid verification code format - must be 6 digits')
     }
 
@@ -58,13 +63,16 @@ Deno.serve(async (req) => {
             last_login: new Date().toISOString()
           })
         })
+        console.log('✅ Demo mode: Last login updated')
       } catch (updateError) {
-        console.warn('⚠️ Failed to update last login for demo mode')
+        console.warn('⚠️ Failed to update last login for demo mode:', updateError)
       }
 
       return new Response(JSON.stringify({
         valid: true,
+        success: true,
         demo_mode: true,
+        user_id: user_id,
         message: 'Demo code verification successful',
         timestamp: new Date().toISOString()
       }), {
@@ -78,6 +86,8 @@ Deno.serve(async (req) => {
     // LIVE MODE: Check database for real verification codes
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    console.log('🔍 Checking database for verification codes...')
     
     // Get the most recent unused code for this user and method
     const codesResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?user_id=eq.${user_id}&method=eq.${method}&used=eq.false&expires_at=gte.${new Date().toISOString()}&order=created_at.desc&limit=1`, {
@@ -97,6 +107,7 @@ Deno.serve(async (req) => {
     console.log('📊 Found codes:', codes.length)
     
     if (codes.length === 0) {
+      console.error('❌ No valid codes found for user:', user_id)
       throw new Error('No valid verification code found. Code may have expired. Please request a new code.')
     }
 
@@ -156,7 +167,9 @@ Deno.serve(async (req) => {
 
       return new Response(JSON.stringify({
         valid: true,
+        success: true,
         demo_mode: false,
+        user_id: user_id,
         message: '2FA verification successful',
         timestamp: new Date().toISOString()
       }), {
@@ -170,6 +183,7 @@ Deno.serve(async (req) => {
       
       return new Response(JSON.stringify({
         valid: false,
+        success: false,
         message: 'Invalid verification code',
         timestamp: new Date().toISOString()
       }), {
@@ -186,6 +200,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         error: error.message,
         valid: false,
+        success: false,
         timestamp: new Date().toISOString()
       }),
       {

@@ -71,6 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const complete2FA = async (code: string, userData: any, session: any) => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      console.log('🔐 Complete2FA payload:', {
+        code: '***' + code.slice(-2),
+        userId: userData.id,
+        email: userData.email
+      })
       
       // Verify the 2FA code first
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
@@ -84,25 +89,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           'apikey': anonKey
         },
         body: JSON.stringify({
+          user_id: userData.id,
           code: code,
           method: 'email',
           email: userData.email
         })
       })
 
+      console.log('🔍 Verify response status:', verifyResponse.status)
+
       if (!verifyResponse.ok) {
         const errorData = await verifyResponse.json()
+        console.error('❌ Verify response error:', errorData)
         throw new Error(errorData.error || 'Invalid verification code')
       }
 
       const verifyResult = await verifyResponse.json()
-      if (!verifyResult.valid) {
+      console.log('✅ Verify result:', verifyResult)
+      
+      if (!verifyResult.valid || !verifyResult.success) {
+        console.error('❌ Code verification failed:', verifyResult)
         throw new Error('Invalid verification code')
       }
 
       console.log('✅ 2FA code verified successfully')
       
       // Set the Supabase session to complete login
+      console.log('🔐 Setting session in Supabase...')
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
       
       if (sessionError) {
@@ -117,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPendingAuthData(null)
       
       // Set user state immediately
+      console.log('👤 Setting user state...')
       setUser({
         id: userData.id,
         email: userData.email,
@@ -124,8 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       // Load account data
+      console.log('📊 Loading user account data...')
       await loadUserAccount(userData.id)
       
+      console.log('🎉 2FA completion successful!')
       return { success: true }
     } catch (error) {
       console.error('❌ 2FA completion failed:', error)
