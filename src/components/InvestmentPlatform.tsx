@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import { supabaseClient } from '../lib/supabase-client'
 
 interface User {
   id: string
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('📊 Loading user account for:', userId)
       // Ensure investor_units exists for this user
-      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (session) {
