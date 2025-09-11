@@ -5,9 +5,6 @@ import { SignupForm } from './auth/SignupForm'
 import { DashboardSelector } from './DashboardSelector'
 import { Loader2 } from 'lucide-react'
 
-interface AuthenticatedAppProps {
-  onBackToHome?: () => void
-}
 
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
