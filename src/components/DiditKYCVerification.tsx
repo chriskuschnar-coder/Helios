@@ -716,7 +716,11 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
                     console.log('👤 User manually triggering auto-approval')
                     setCheckingStatus(false)
                     setShowTimeoutOptions(true)
-                  Auto-Approve Verification (Skip Didit) →
+                }}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                Auto-Approve Verification (Skip Didit) →
+              </button>
                 </button>
               </div>
             </div>
