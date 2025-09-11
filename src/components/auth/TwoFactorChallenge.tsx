@@ -71,7 +71,7 @@ const InvestorDashboard: React.FC = () => {
   ]
 
   const portfolioSections = [
-      console.log('✅ 2FA verification successful:', data)
+    {
       id: 'allocation',
       title: 'Asset Allocation',
       icon: Target,
@@ -91,17 +91,7 @@ const InvestorDashboard: React.FC = () => {
     },
     {
       id: 'insights',
-      if (err instanceof Error) {
-        if (err.message.includes('Invalid TOTP code')) {
-          setError('Invalid code. Please check your authenticator app and try again.')
-        } else if (err.message.includes('expired')) {
-          setError('Code expired. Please go back and try signing in again.')
-        } else {
-          setError(err.message)
-        }
-      } else {
-        setError('Verification failed. Please try again.')
-      }
+      title: 'AI Insights',
       icon: Brain,
       component: () => <AIInsights currentBalance={currentBalance} />
     }

@@ -41,6 +41,14 @@ const InvestorDashboard: React.FC = () => {
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
 
+  const portfolioSections = [
+    { id: 'performance', title: 'Performance Metrics', icon: TrendingUp, component: PerformanceMetrics },
+    { id: 'allocation', title: 'Asset Allocation', icon: Target, component: InteractiveAllocationChart },
+    { id: 'insights', title: 'AI Insights', icon: Brain, component: AIInsights },
+    { id: 'nav', title: 'Fund NAV Chart', icon: Activity, component: FundNAVChart },
+    { id: 'analytics', title: 'Portfolio Analytics', icon: BarChart3, component: PortfolioAnalytics }
+  ]
+
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
       const newSet = new Set(prev)
@@ -69,32 +77,10 @@ const InvestorDashboard: React.FC = () => {
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
   ]
-        // Check if user has 2FA enabled by checking actual MFA factors
-        const { data: factors, error: factorsError } = await supabaseClient.auth.mfa.listFactors()
-        
-        if (!factorsError && factors && factors.totp && factors.totp.length > 0) {
-          console.log('🔐 2FA required for user - found factors:', factors.totp.length)
-          
-          // Create MFA challenge
-          const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
-            factorId: factors.totp[0].id
-          })
 
-          if (!challengeError && challengeData) {
-            console.log('🔐 2FA challenge created:', challengeData.id)
-            setTwoFactorRequired(true)
-            return { 
-              error: null, 
-              requiresTwoFactor: true, 
-              factorId: factors.totp[0].id,
-              challengeId: challengeData.id 
-            }
-          } else {
-            console.error('❌ Failed to create 2FA challenge:', challengeError)
-          }
-        } else {
-          console.log('ℹ️ No 2FA factors found for user')
-        }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
             <BarChart3 className="h-8 w-8 text-navy-600" />
