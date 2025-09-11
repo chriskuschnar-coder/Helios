@@ -49,19 +49,13 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw, kycStatus = 'u
       </div>
       
       <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 mobile-space-y-1">
-        <DisabledFundingButton
-          kycStatus={kycStatus}
-          hasCompletedDocuments={hasCompletedDocuments}
+        <button
           onClick={() => onFundPortfolio()}
-          className={`flex-1 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 ${
-            isKYCVerified 
-              ? 'bg-black hover:bg-gray-800 text-white' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className="flex-1 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 bg-black hover:bg-gray-800 text-white"
         >
           <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           <span className="text-xs sm:text-sm mobile-text-xs">Fund Portfolio</span>
-        </DisabledFundingButton>
+        </button>
         <DisabledFundingButton
           kycStatus={kycStatus}
           hasCompletedDocuments={hasCompletedDocuments}
