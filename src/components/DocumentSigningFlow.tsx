@@ -99,7 +99,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Comprehensive subscription agreement including investor questionnaire, beneficial ownership, tax forms, and AML/KYC certification.',
       required: true,
       signed: false,
-      url: '/documents/Global_Markets_Subscription_Agreement_Complete.pdf',
+      url: '/documents/Global_Markets_Subscription_Agreement_Complete (1) copy copy.pdf',
       type: 'subscription_agreement'
     },
   ]
