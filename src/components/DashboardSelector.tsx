@@ -13,9 +13,25 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
   const [selectedDashboard, setSelectedDashboard] = useState<'investor' | 'helios'>('investor')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Restore dashboard selection from localStorage
+  useEffect(() => {
+    const savedDashboard = localStorage.getItem('selectedDashboard')
+    if (savedDashboard === 'investor' || savedDashboard === 'helios') {
+      setSelectedDashboard(savedDashboard)
+    }
+  }, [])
+
+  // Save dashboard selection to localStorage
+  useEffect(() => {
+    localStorage.setItem('selectedDashboard', selectedDashboard)
+  }, [selectedDashboard])
+
   const handleSignOut = async () => {
     try {
       console.log('🚪 Dashboard sign out initiated')
+      // Clear saved states on sign out
+      localStorage.removeItem('selectedDashboard')
+      localStorage.removeItem('showInvestmentPlatform')
       await signOut()
       console.log('✅ Sign out completed')
     } catch (error) {

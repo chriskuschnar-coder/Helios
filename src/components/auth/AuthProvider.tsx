@@ -157,10 +157,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       try {
         setLoading(true)
+        console.log('🔍 Checking for existing session...')
         const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
           console.warn('Session check error:', error)
+          setLoading(false)
+        } else if (session && session.user) {
+          console.log('✅ Found existing session for:', session.user.email)
+          
+          // Set user immediately from session
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name,
+            phone: session.user.user_metadata?.phone
+          })
+          
+          // Load additional user data and account
+          await loadUserAccount(session.user.id)
           setLoading(false)
         } else {
           console.log('No existing session found or session check error')
@@ -176,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const timeoutId = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
-    }, 2000) // Reduced to 2 seconds
+    }, 3000) // Increased to 3 seconds for session restoration
 
     checkSession()
 
@@ -193,8 +208,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setPending2FA(false)
           setPendingAuthData(null)
           setLoading(false)
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          console.log('✅ User signed in via auth state change:', session.user.email)
+          
+          // Set user state
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name,
+            phone: session.user.user_metadata?.phone
+          })
+          
+          // Load account data
+          await loadUserAccount(session.user.id)
+          setLoading(false)
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('🔄 Token refreshed for:', session.user.email)
+          // Update user data on token refresh
+          await loadUserAccount(session.user.id)
         }
-        // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
     )
 

@@ -16,7 +16,9 @@ export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: false,
+    storageKey: 'gmc-auth-token',
+    storage: window.localStorage
   },
   global: {
     headers: {
