@@ -49,48 +49,7 @@ Deno.serve(async (req) => {
     const user = await userResponse.json()
     console.log('✅ User authenticated:', user.email)
 
-    // Verify user_id matches
-    if (user.id !== user_id) {
-      throw new Error('User ID mismatch')
-    }
-
-    // STEP 1: Check our database first
-    console.log('🔍 Checking database for current KYC status...')
-    const dbStatusResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user_id}&select=kyc_status,kyc_verified_at`, {
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    let currentDbStatus = 'pending'
-    if (dbStatusResponse.ok) {
-      const userData = await dbStatusResponse.json()
-      if (userData.length > 0) {
-        currentDbStatus = userData[0].kyc_status
-        console.log('📊 Current database status:', currentDbStatus)
-        
-        // If already verified, return immediately
-        if (currentDbStatus === 'verified') {
-          return new Response(JSON.stringify({
-            session_id: session_id,
-            status: 'verified',
-            source: 'database',
-            is_approved: true,
-            message: 'User is already verified',
-            timestamp: new Date().toISOString()
-          }), {
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
-          })
-        }
-      }
-    }
-
-    // STEP 2: Check Didit API for real-time status
+    // Check Didit API directly for real-time status
     const diditApiKey = Deno.env.get('DIDIT_API_KEY')
     if (!diditApiKey) {
       console.error('❌ DIDIT_API_KEY not found')
@@ -99,6 +58,7 @@ Deno.serve(async (req) => {
 
     console.log('📡 Checking Didit API for session status...')
     
+    // Call Didit API to get session status
     const diditResponse = await fetch(`https://verification.didit.me/v2/session/${session_id}`, {
       method: 'GET',
       headers: {
@@ -113,11 +73,11 @@ Deno.serve(async (req) => {
       const errorText = await diditResponse.text()
       console.error('❌ Didit API error:', errorText)
       
-      // If session not found, check our compliance records
+      // If session not found, check our database
       if (diditResponse.status === 404) {
-        console.log('🔍 Session not found in Didit, checking compliance records...')
+        console.log('🔍 Session not found in Didit, checking database...')
         
-        const complianceResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?verification_id=eq.${session_id}&user_id=eq.${user_id}&select=*`, {
+        const dbResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?verification_id=eq.${session_id}&user_id=eq.${user_id}&select=*`, {
           headers: {
             'apikey': supabaseServiceKey,
             'Authorization': `Bearer ${supabaseServiceKey}`,
@@ -125,18 +85,17 @@ Deno.serve(async (req) => {
           }
         })
 
-        if (complianceResponse.ok) {
-          const records = await complianceResponse.json()
+        if (dbResponse.ok) {
+          const records = await dbResponse.json()
           if (records.length > 0) {
             const record = records[0]
-            console.log('📊 Found compliance record with status:', record.status)
+            console.log('📊 Found database record with status:', record.status)
             
             return new Response(JSON.stringify({
               session_id: session_id,
               status: record.status,
-              source: 'compliance_database',
-              is_approved: record.status === 'approved',
-              message: `Verification status from database: ${record.status}`,
+              source: 'database',
+              message: `Verification status: ${record.status}`,
               timestamp: new Date().toISOString()
             }), {
               headers: {
@@ -148,7 +107,7 @@ Deno.serve(async (req) => {
         }
       }
       
-      throw new Error(`Didit API error (${diditResponse.status}): ${errorText}`)
+      throw new Error(`Didit API error: ${errorText}`)
     }
 
     const sessionData = await diditResponse.json()
@@ -160,8 +119,8 @@ Deno.serve(async (req) => {
       updated_at: sessionData.updated_at
     })
 
-    // STEP 3: Map Didit status to our internal status
-    let internalStatus: 'pending' | 'verified' | 'rejected' = 'pending'
+    // Map Didit status to our internal status
+    let internalStatus = 'pending'
     let shouldUpdateUser = false
 
     switch (sessionData.status?.toLowerCase()) {
@@ -169,7 +128,7 @@ Deno.serve(async (req) => {
       case 'verified':
       case 'completed':
       case 'success':
-        internalStatus = 'verified'
+        internalStatus = 'approved'
         shouldUpdateUser = true
         console.log('✅ Didit verification APPROVED')
         break
@@ -177,28 +136,25 @@ Deno.serve(async (req) => {
       case 'rejected':
       case 'failed':
       case 'declined':
-      case 'manual_review_failed':
         internalStatus = 'rejected'
         console.log('❌ Didit verification REJECTED')
         break
       
       case 'expired':
-      case 'timeout':
-        internalStatus = 'rejected'
+        internalStatus = 'expired'
         console.log('⏰ Didit verification EXPIRED')
         break
       
       case 'pending':
       case 'in_progress':
       case 'processing':
-      case 'manual_review':
       default:
         internalStatus = 'pending'
         console.log('⏳ Didit verification still PENDING')
     }
 
-    // STEP 4: Update compliance record with latest status
-    const updateComplianceResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?verification_id=eq.${session_id}`, {
+    // Update our compliance record with latest status
+    const updateResponse = await fetch(`${supabaseUrl}/rest/v1/compliance_records?verification_id=eq.${session_id}`, {
       method: 'PATCH',
       headers: {
         'apikey': supabaseServiceKey,
@@ -207,26 +163,25 @@ Deno.serve(async (req) => {
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
-        status: internalStatus === 'verified' ? 'approved' : internalStatus === 'rejected' ? 'rejected' : 'pending',
+        status: internalStatus,
         data_blob: {
           ...sessionData,
           last_status_check: new Date().toISOString(),
-          didit_raw_status: sessionData.status,
-          checked_via_api: true
+          didit_raw_status: sessionData.status
         },
         updated_at: new Date().toISOString()
       })
     })
 
-    if (!updateComplianceResponse.ok) {
+    if (!updateResponse.ok) {
       console.error('❌ Failed to update compliance record')
     } else {
       console.log('✅ Compliance record updated with status:', internalStatus)
     }
 
-    // STEP 5: Update user's KYC status if changed
-    if (shouldUpdateUser || internalStatus !== currentDbStatus) {
-      console.log(`🔄 Updating user KYC status from ${currentDbStatus} to ${internalStatus}`)
+    // If approved, update user's KYC status
+    if (shouldUpdateUser) {
+      console.log('✅ Updating user KYC status to verified')
       
       const userUpdateResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user_id}`, {
         method: 'PATCH',
@@ -237,42 +192,17 @@ Deno.serve(async (req) => {
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
-          kyc_status: internalStatus,
-          kyc_verified_at: shouldUpdateUser ? new Date().toISOString() : null,
+          kyc_status: 'verified',
           updated_at: new Date().toISOString()
         })
       })
 
       if (!userUpdateResponse.ok) {
-        const userError = await userUpdateResponse.text()
-        console.error('❌ Failed to update user KYC status:', userError)
+        console.error('❌ Failed to update user KYC status')
       } else {
-        console.log('✅ User KYC status updated successfully')
+        console.log('✅ User KYC status updated to verified')
       }
     }
-
-    // STEP 6: Log the status check
-    await fetch(`${supabaseUrl}/rest/v1/kyc_webhook_logs`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        user_id: user_id,
-        session_id: session_id,
-        webhook_payload: {
-          type: 'manual_status_check',
-          didit_response: sessionData,
-          previous_status: currentDbStatus,
-          new_status: internalStatus
-        },
-        status: internalStatus,
-        processed_at: new Date().toISOString()
-      })
-    })
 
     return new Response(JSON.stringify({
       session_id: session_id,
@@ -280,11 +210,10 @@ Deno.serve(async (req) => {
       didit_status: sessionData.status,
       source: 'didit_api',
       is_approved: shouldUpdateUser,
-      status_changed: internalStatus !== currentDbStatus,
       message: shouldUpdateUser 
-        ? 'Identity verification approved! Your account is now unlocked.'
+        ? 'Identity verification approved! You can now fund your account.'
         : internalStatus === 'rejected'
-        ? 'Identity verification was rejected. Please contact support or resubmit documents.'
+        ? 'Identity verification was rejected. Please contact support.'
         : internalStatus === 'expired'
         ? 'Verification session expired. Please start a new verification.'
         : 'Verification is still being processed. Please wait and check again.',
@@ -299,34 +228,9 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('❌ Didit status check error:', error)
     
-    // Log error for debugging
-    try {
-      await fetch(`${supabaseUrl}/rest/v1/kyc_webhook_logs`, {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          user_id: user_id,
-          session_id: session_id,
-          webhook_payload: { error: error.message },
-          status: 'api_check_error',
-          error_message: error.message,
-          processed_at: new Date().toISOString()
-        })
-      })
-    } catch (logError) {
-      console.error('❌ Failed to log error:', logError)
-    }
-    
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        session_id: session_id,
-        user_id: user_id,
         timestamp: new Date().toISOString()
       }),
       {

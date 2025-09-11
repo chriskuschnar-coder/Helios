@@ -1,580 +1,797 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import React, { useState } from 'react';
+import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { EmptyPortfolioState } from './EmptyPortfolioState';
+import DocumentSigningFlow from './DocumentSigningFlow';
+import { CongratulationsPage } from './CongratulationsPage';
+import { DiditKYCVerification } from './DiditKYCVerification';
+import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
+import { StripeCardForm } from './StripeCardForm';
+import { useAuth } from './auth/AuthProvider';
+import { Loader2 } from 'lucide-react';
 
-interface User {
-  id: string
-  email: string
-  full_name?: string
-  phone?: string
-  documents_completed?: boolean
-  documents_completed_at?: string
-  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
-  is_kyc_verified?: boolean
-  two_factor_enabled?: boolean
-  two_factor_method?: 'email' | 'sms' | 'biometric'
-  subscription_signed_at?: string
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_live_51•••••itV');
+interface FundingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  prefilledAmount?: number | null;
+  onProceedToPayment?: (amount: number, method: string) => void;
 }
 
-interface Account {
-  id: string
-  balance: number
-  available_balance: number
-  total_deposits: number
-  total_withdrawals: number
-  currency: string
-  status: string
-}
+export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
+  const { account, user, markDocumentsCompleted, processFunding, refreshAccount } = useAuth();
+  const [amount, setAmount] = useState(prefilledAmount || 10000);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showEmptyState, setShowEmptyState] = useState(true);
+  const [showDocumentSigning, setShowDocumentSigning] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showKYCVerification, setShowKYCVerification] = useState(false);
+  const [showFundingPage, setShowFundingPage] = useState(false);
+  const [investmentAmount, setInvestmentAmount] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [showWireInstructions, setShowWireInstructions] = useState(false);
+  const [showBankTransfer, setShowBankTransfer] = useState(false);
+  const [showCryptoPayment, setShowCryptoPayment] = useState(false);
+  const [wireInstructions, setWireInstructions] = useState(null);
+  const [copiedField, setCopiedField] = useState('');
+  const [selectedCrypto, setSelectedCrypto] = useState('');
+  const [error, setError] = useState('');
+  const [creatingPayment, setCreatingPayment] = useState(false);
 
-interface Subscription {
-  subscription_status: string
-  price_id: string | null
-  current_period_start: number | null
-  current_period_end: number | null
-  cancel_at_period_end: boolean
-  payment_method_brand: string | null
-  payment_method_last4: string | null
-}
+  if (!isOpen) return null;
 
-interface AuthError {
-  message: string
-}
+  const handleAmountSelect = (selectedAmount: number) => {
+    setAmount(selectedAmount);
+    setInvestmentAmount(selectedAmount.toLocaleString());
+    setShowEmptyState(false);
+    setShowFundingPage(true);
+  };
 
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  pending2FA: boolean
-  pendingAuthData: { userData: any; session: any } | null
-  account: Account | null
-  subscription: Subscription | null
-  refreshAccount: () => Promise<void>
-  refreshSubscription: () => Promise<void>
-  processFunding: (amount: number, method: string, description?: string) => Promise<any>
-  markDocumentsCompleted: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
-  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
-  profile: User | null
-}
+  const handleProceedToPayment = () => {
+    // Check user's completion status
+    if (user?.documents_completed && user?.kyc_status === 'verified') {
+      // Both documents and KYC complete - go straight to funding page
+      setShowEmptyState(false);
+      setShowFundingPage(true);
+    } else if (user?.documents_completed && user?.kyc_status !== 'verified') {
+      // Documents complete but KYC not verified - go to KYC verification
+      setShowEmptyState(false);
+      setShowKYCVerification(true);
+    } else {
+      // First time investor - show document signing
+      setShowEmptyState(false);
+      setShowDocumentSigning(true);
+    }
+  };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+  const handleBack = () => {
+    if (showPaymentForm) {
+      setShowPaymentForm(false);
+      setSelectedPaymentMethod('')
+      setShowFundingPage(true);
+    } else if (showWireInstructions) {
+      setShowWireInstructions(false)
+      setWireInstructions(null)
+      setShowFundingPage(true)
+    } else if (showBankTransfer) {
+      setShowBankTransfer(false)
+      setShowFundingPage(true)
+    } else if (showCryptoPayment) {
+      setShowCryptoPayment(false)
+      setShowFundingPage(true)
+    } else if (showFundingPage) {
+      setShowFundingPage(false);
+      if (user?.documents_completed && user?.kyc_status === 'verified') {
+        setShowEmptyState(true)
+      } else if (user?.documents_completed) {
+        setShowKYCVerification(true)
+      } else {
+        setShowCongratulations(true)
+      }
+    } else if (showKYCVerification) {
+      setShowKYCVerification(false)
+      setShowCongratulations(true)
+    } else if (showCongratulations) {
+      setShowCongratulations(false);
+      setShowDocumentSigning(true);
+    } else if (showDocumentSigning) {
+      setShowDocumentSigning(false);
+      setShowEmptyState(true);
+    }
+  };
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [pending2FA, setPending2FA] = useState(false)
-  const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
-  const [account, setAccount] = useState<Account | null>(null)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const handleDocumentComplete = () => {
+    console.log('🎉 Document completion handler called')
+    // Mark documents as completed in database (background operation)
+    markDocumentsCompleted().then(() => {
+      console.log('✅ Documents marked as completed in user profile')
+    }).catch(error => {
+      console.warn('⚠️ Failed to mark documents completed:', error)
+    })
+    
+    // Immediately proceed to congratulations
+    setShowDocumentSigning(false);
+    setShowCongratulations(true);
+  };
 
-  const complete2FA = async (code: string, userData: any, session: any) => {
+  const handleContinueToPayment = () => {
+    console.log('🎯 handleContinueToPayment called from congratulations');
+    console.log('📊 User status:', {
+      documents_completed: user?.documents_completed,
+      kyc_status: user?.kyc_status
+    });
+    
     try {
-      console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      console.log('🔄 Transitioning from congratulations to KYC...');
       
-      // Verify the 2FA code first
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          code: code,
-          method: 'email',
-          email: userData.email
-        })
-      })
-
-
-      if (!verifyResponse.ok) {
-        const errorData = await verifyResponse.json()
-        console.error('❌ Verify response error:', errorData)
-        throw new Error(errorData.error || 'Invalid verification code')
-      }
-
-      const verifyResult = await verifyResponse.json()
-      console.log('✅ 2FA verification result:', { 
-        valid: verifyResult.valid, 
-        success: verifyResult.success,
-        message: verifyResult.message 
-      })
-      
-      if (!verifyResult.valid || !verifyResult.success) {
-        throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
-      }
-
-      console.log('✅ 2FA code verified successfully')
-      
-      // Set the Supabase session to complete login
-      console.log('🔐 Setting Supabase session...')
-      const { error: sessionError } = await supabaseClient.auth.setSession(session)
-      
-      if (sessionError) {
-        console.error('❌ Failed to set session:', sessionError)
-        throw new Error('Failed to complete authentication')
-      }
-      
-      // Verify session is actually set
-      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
-      if (!currentSession) {
-        throw new Error('Session not properly established')
-      }
-      
-      console.log('✅ Session verified and established')
-      
-      // Clear 2FA pending state
-      setPending2FA(false)
-      setPendingAuthData(null)
-      
-      // Set user state immediately
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        full_name: userData.user_metadata?.full_name,
-        phone: userData.user_metadata?.phone
-      })
-      
-      // Load account data
-      await loadUserAccount(userData.id)
-      
-      console.log('🎉 2FA completion successful!')
-      return { success: true }
-    } catch (error) {
-      console.error('❌ 2FA completion failed:', error)
-      throw error
-    }
-  }
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        setLoading(true)
-        const { data: { session }, error } = await supabaseClient.auth.getSession()
-        
-        if (error) {
-          console.warn('Session check error:', error)
-          setLoading(false)
-        } else {
-          console.log('No existing session found or session check error')
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Session check failed:', err)
-        setLoading(false)
-      }
-    }
-
-    // Set a maximum timeout for loading state
-    const timeoutId = setTimeout(() => {
-      console.log('Auth timeout - forcing loading to false')
-      setLoading(false)
-    }, 2000) // Reduced to 2 seconds
-
-    checkSession()
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
-        clearTimeout(timeoutId) // Clear timeout when auth state changes
-        
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setAccount(null)
-          setSubscription(null)
-          setPending2FA(false)
-          setPendingAuthData(null)
-          setLoading(false)
-        }
-        // Don't auto-authenticate on SIGNED_IN - require 2FA
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeoutId)
-    }
-  }, [])
-
-  const loadUserAccount = async (userId: string) => {
-    try {
-      console.log('📊 Loading user account for:', userId)
-      // Ensure investor_units exists for this user
-      const { supabaseClient } = await import('../../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (session) {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-        
-        // Auto-create investor_units if missing
+      // Add small delay to ensure state is clean
+      setTimeout(() => {
         try {
-          await fetch(`${supabaseUrl}/functions/v1/auto-create-investor-units`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-              'apikey': anonKey
-            },
-            body: JSON.stringify({ user_id: userId })
-          })
-        } catch (error) {
-          console.warn('⚠️ Auto-create investor units failed:', error)
+          setShowCongratulations(false);
+          setShowKYCVerification(true);
+          console.log('✅ Successfully navigated to KYC verification');
+        } catch (innerError) {
+          console.error('❌ Inner navigation error:', innerError);
+          // Fallback: go directly to funding
+          setShowCongratulations(false);
+          setShowFundingPage(true);
         }
-      }
-
-      const { data: accountData, error: accountError } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-
-      if (accountError) {
-        console.warn('⚠️ Account load error:', accountError)
-        // Don't throw error, just continue without account data
-      } else if (accountData && accountData.length > 0) {
-        console.log('✅ Account loaded:', accountData.id)
-        setAccount(accountData[0])
-      } else {
-        // No account found, create one
-        console.log('📝 Creating new account for user:', userId)
-        const { data: newAccountData, error: createError } = await supabaseClient
-          .from('accounts')
-          .insert({
-            user_id: userId,
-            account_type: 'trading',
-            balance: 0.00,
-            available_balance: 0.00,
-            total_deposits: 0.00,
-            total_withdrawals: 0.00,
-            currency: 'USD',
-            status: 'active'
-          })
-          .select()
-          .single()
-        
-        if (createError) {
-          console.error('❌ Failed to create account:', createError)
-        } else {
-          console.log('✅ New account created:', newAccountData.id)
-          setAccount(newAccountData)
-        }
-      }
-
-      // Load user profile data
-      const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
-        .eq('id', userId)
-        .single()
-
-      if (!userError && userData) {
-        console.log('✅ User profile loaded')
-        setUser(prev => prev ? {
-          ...prev,
-          full_name: userData.full_name,
-          phone: userData.phone,
-          documents_completed: userData.documents_completed,
-          documents_completed_at: userData.documents_completed_at,
-          kyc_status: userData.kyc_status,
-          kyc_verified_at: userData.kyc_verified_at,
-          is_kyc_verified: userData.kyc_status === 'verified',
-          two_factor_enabled: userData.two_factor_enabled,
-          two_factor_method: userData.two_factor_method,
-          subscription_signed_at: userData.subscription_signed_at
-        } : null)
-        
-        setProfile(userData)
-      }
-    } catch (err) {
-      console.error('❌ Account load failed:', err)
-      // Don't let account loading errors prevent the app from working
-    }
-  }
-
-  const refreshProfile = async () => {
-    if (user) {
-      await loadUserAccount(user.id)
-    }
-  }
-
-  const refreshAccount = async () => {
-    if (user) {
-      await loadUserAccount(user.id)
-    }
-  }
-
-  const refreshSubscription = async () => {
-    // Subscription refresh logic here
-  }
-
-  const processFunding = async (amount: number, method: string, description?: string) => {
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
-    if (!account) {
-      throw new Error('User account not found')
-    }
-
-    try {
-      // STEP 1: Process deposit allocation through fund units
-      console.log('💰 Processing deposit allocation:', { amount, method })
+      }, 100);
       
-      const { supabaseClient } = await import('../../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (!session) {
-        throw new Error('No active session')
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      // Call deposit allocation function
-      const allocationResponse = await fetch(`${supabaseUrl}/functions/v1/process-deposit-allocation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          deposit_amount: amount,
-          payment_method: method,
-          reference_id: description
-        })
-      })
-
-      if (!allocationResponse.ok) {
-        const error = await allocationResponse.json()
-        throw new Error(error.error || 'Failed to process deposit allocation')
-      }
-
-      const allocationResult = await allocationResponse.json()
-      console.log('✅ Deposit allocation successful:', allocationResult)
-
-      // STEP 2: Create transaction record for tracking
-      // Add transaction record
-      const { error: transactionError } = await supabaseClient
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          account_id: account.id,
-          type: 'deposit',
-          method: method,
-          amount: amount,
-          status: 'completed',
-          description: description || `${method} deposit - ${allocationResult.units_allocated.toFixed(4)} units allocated`
-        })
-
-      if (transactionError) {
-        console.error('Transaction error:', transactionError)
-        throw new Error('Failed to record transaction')
-      }
-
-      // Refresh account data to show updated balance
-      await refreshAccount()
-
-      return { success: true }
     } catch (error) {
-      console.error('Funding processing failed:', error)
-      throw error
+      console.error('❌ Error navigating to KYC:', error);
+      // Fallback: go directly to funding if KYC fails
+      setShowCongratulations(false);
+      setShowFundingPage(true);
     }
-  }
+  };
 
-  const markDocumentsCompleted = async () => {
-    if (!user) return
-
+  const handleKYCComplete = () => {
+    console.log('✅ KYC verification completed, proceeding to funding');
+    // KYC complete, proceed to funding
     try {
-      const { error } = await supabaseClient
-        .from('users')
-        .update({
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('Failed to mark documents completed:', error)
-      } else {
-        setUser(prev => prev ? {
-          ...prev,
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        } : null)
-      }
-    } catch (err) {
-      console.error('Error marking documents completed:', err)
+      setShowKYCVerification(false);
+      setShowCongratulations(false);
+      setShowFundingPage(true);
+      console.log('✅ Navigated to funding page');
+    } catch (error) {
+      console.error('❌ Error navigating to funding:', error);
     }
-  }
+  };
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      console.log('🔐 Attempting sign in for:', email)
-      
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      })
+  const handleBackToPortfolio = () => {
+    // Reset all states and go back to empty state
+    setShowDocumentSigning(false)
+    setShowCongratulations(false)
+    setShowKYCVerification(false)
+    setShowFundingPage(false)
+    setShowPaymentForm(false)
+    setShowWireInstructions(false)
+    setShowBankTransfer(false)
+    setShowCryptoPayment(false)
+    setShowEmptyState(true)
+  };
 
-      if (error) {
-        console.error('❌ Sign in error:', error)
-        
-        if (error.message.includes('Invalid login credentials')) {
-          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
-        }
-        
-        return { error: { message: error.message } }
-      }
-
-      if (data.user) {
-        console.log('✅ Sign in successful for:', data.user.email)
-        
-        // Set pending 2FA state and return requires2FA flag
-        setPending2FA(true)
-        setPendingAuthData({ userData: data.user, session: data.session })
-        
-        return { error: null, requires2FA: true }
-      }
-
-      return { error: { message: 'No user returned' } }
-    } catch (err) {
-      console.error('Sign in failed:', err)
-      return { error: { message: 'Connection error' } }
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    if (value) {
+      setInvestmentAmount(parseInt(value).toLocaleString());
+    } else {
+      setInvestmentAmount('');
     }
-  }
+  };
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
-    try {
-      console.log('📝 Attempting sign up for:', email)
+  const handlePresetAmountSelect = (amount: number) => {
+    setInvestmentAmount(amount.toLocaleString());
+    setAmount(amount);
+  };
+
+  const handlePaymentMethodSelect = (methodId: string) => {
+    setSelectedPaymentMethod(methodId);
+  };
+
+  const handleProceedWithPayment = () => {
+    if (investmentAmount && selectedPaymentMethod) {
+      const numericAmount = parseInt(investmentAmount.replace(/,/g, ''));
+      setAmount(numericAmount);
       
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata
-        }
-      })
-
-      if (error) {
-        console.error('❌ Sign up error:', error)
-        
-        if (error.message.includes('User already registered')) {
-          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
-        }
-        
-        if (error.message.includes('Invalid email')) {
-          return { error: { message: 'Please enter a valid email address.' } }
-        }
-        
-        if (error.message.includes('Password')) {
-          return { error: { message: 'Password must be at least 6 characters long.' } }
-        }
-        
-        return { error: { message: `Signup failed: ${error.message}` } }
+      // Route to different payment flows based on method
+      if (selectedPaymentMethod === 'card') {
+        setShowFundingPage(false);
+        setShowPaymentForm(true);
+      } else if (selectedPaymentMethod === 'wire') {
+        generateWireInstructions(numericAmount);
+        setShowFundingPage(false);
+        setShowWireInstructions(true);
+      } else if (selectedPaymentMethod === 'bank') {
+        setShowFundingPage(false);
+        setShowBankTransfer(true);
+      } else if (selectedPaymentMethod === 'crypto') {
+        setShowFundingPage(false);
+        setShowCryptoPayment(true);
       }
-
-      if (data.user) {
-        console.log('✅ Sign up successful for:', data.user.email)
-        
-        // Create user profile with phone number
-        try {
-          const { error: profileError } = await supabaseClient
-            .from('users')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: metadata?.full_name,
-              phone: metadata?.phone
-            })
-
-          if (profileError) {
-            console.error('Error creating user profile:', profileError)
-          } else {
-            console.log('✅ User profile created successfully')
-          }
-        } catch (err) {
-          console.error('Unexpected error inserting user profile:', err)
-        }
-
-        return { error: null }
-      }
-
-      return { error: { message: 'No user returned from signup' } }
-    } catch (err) {
-      console.error('Sign up failed:', err)
-      return { error: { message: 'Connection error during signup' } }
     }
-  }
+  };
 
+  const generateWireInstructions = (amount: number) => {
+    // Generate random reference code
+    const referenceCode = 'GMC' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    
+    setWireInstructions({
+      amount: amount,
+      referenceCode: referenceCode,
+      bankName: 'JPMorgan Chase Bank, N.A.',
+      routingNumber: '021000021',
+      accountNumber: '4567890123',
+      accountName: 'Global Market Consulting LLC',
+      swiftCode: 'CHASUS33',
+      bankAddress: '270 Park Avenue, New York, NY 10017',
+      beneficiaryAddress: '200 South Biscayne Boulevard, Suite 2800, Miami, FL 33131'
+    });
+  };
 
-  const signOut = async () => {
-    try {
-      console.log('🚪 Signing out user...')
-      
-      const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-      } else {
-        console.log('✅ Sign out successful')
-      }
-      
-      // Always clear state and reload page for clean logout
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
-      setProfile(null)
-      
-      // Force page reload to ensure clean state
-      window.location.reload()
-    } catch (err) {
-      console.error('Sign out failed:', err)
-      // Force reload on any error
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
-      setProfile(null)
-      window.location.reload()
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(''), 2000);
+  };
+
+  const handleBackToFunding = () => {
+    setShowPaymentForm(false);
+    setShowWireInstructions(false);
+    setShowBankTransfer(false);
+    setShowCryptoPayment(false);
+    setShowFundingPage(true);
+    setError('');
+  };
+
+  const handlePaymentSuccess = (result: any) => {
+    console.log('✅ Payment successful:', result);
+    setShowPaymentForm(false);
+    setError('');
+    
+    // Process the funding in the database
+    processFunding(amount, 'stripe', 'Credit card payment').then(() => {
+      console.log('✅ Account balance updated');
+      // Refresh account data without page reload
+      refreshAccount();
+      onClose();
+    }).catch(error => {
+      console.error('❌ Failed to update account balance:', error);
+      // Still close modal but show error
+      onClose();
+    });
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('❌ Payment error:', error);
+    setError(error);
+  };
+
+  const paymentMethods = [
+    {
+      id: 'card',
+      name: 'Credit/Debit Card',
+      icon: CreditCard,
+      description: 'Instant processing',
+      fee: 'No fees'
+    },
+    {
+      id: 'bank',
+      name: 'Bank Transfer',
+      icon: Building,
+      description: '1-3 business days',
+      fee: 'No fees'
+    },
+    {
+      id: 'wire',
+      name: 'Wire Transfer',
+      icon: Zap,
+      description: 'Same day processing',
+      fee: '$25 fee'
+    },
+    {
+      id: 'crypto',
+      name: 'Cryptocurrency',
+      icon: Coins,
+      description: 'Bitcoin, Ethereum',
+      fee: 'Network fees apply'
     }
-  }
+  ];
+
+  const presetAmounts = [5000, 10000, 25000, 50000];
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      pending2FA,
-      pendingAuthData,
-      account,
-      subscription,
-      profile,
-      refreshAccount,
-      refreshSubscription,
-      refreshProfile,
-      processFunding,
-      markDocumentsCompleted,
-      signIn,
-      complete2FA,
-      signUp,
-      signOut
-    }}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+      <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto mobile-card">
+        <div className="p-4 md:p-6 border-b border-gray-200 flex items-center justify-between safe-area-top">
+          <h2 className="text-lg md:text-2xl font-bold text-gray-900">
+            {showEmptyState ? 'Fund Your Account' : 
+             showDocumentSigning ? 'Complete Onboarding Documents' : 
+             showCongratulations ? 'Welcome to Global Markets!' :
+             showKYCVerification ? 'Identity Verification Required' :
+             showFundingPage ? 'Capital Contribution' :
+             showPaymentForm ? 'Secure Payment' :
+             'Capital Contribution'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors mobile-button"
+          >
+            <X className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+        </div>
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+        <div className="p-4 md:p-6 safe-area-bottom">
+          {showEmptyState ? (
+            <EmptyPortfolioState 
+              onFundAccount={handleProceedToPayment}
+              onAmountSelect={handleAmountSelect}
+            />
+          ) : showDocumentSigning ? (
+            <DocumentSigningFlow 
+              onComplete={handleDocumentComplete}
+              onBack={handleBackToPortfolio}
+            />
+          ) : showCongratulations ? (
+            <CongratulationsPage 
+              onContinueToPayment={handleContinueToPayment}
+            />
+          ) : showKYCVerification ? (
+            <DiditKYCVerification 
+              onVerificationComplete={handleKYCComplete}
+              onClose={() => {
+                setShowKYCVerification(false);
+                setShowCongratulations(true);
+              }}
+            />
+          ) : showPaymentForm ? (
+            <div>
+              <div className="mb-6">
+                <button
+                  onClick={handleBackToFunding}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  ← Back to Payment Methods
+                </button>
+              </div>
+              
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <div>
+                    <h3 className="text-sm sm:text-base font-semibold text-blue-900">Capital Contribution</h3>
+                    <p className="text-sm sm:text-base text-blue-700">${amount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Elements stripe={stripePromise}>
+                <StripeCardForm 
+                  amount={amount}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </Elements>
+            </div>
+          ) : showFundingPage ? (
+            <div>
+              {/* Back Button */}
+              <div className="mb-6">
+                <button
+                  onClick={() => {
+                    if (user?.documents_completed && user?.kyc_status === 'verified') {
+                      setShowFundingPage(false)
+                      setShowEmptyState(true)
+                    } else if (user?.documents_completed) {
+                      setShowFundingPage(false)
+                      setShowKYCVerification(true)
+                    } else {
+                      setShowFundingPage(false)
+                      setShowCongratulations(true)
+                    }
+                  }}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  {user?.documents_completed ? '← Back to Portfolio' : '← Back to Portfolio Setup'}
+                </button>
+              </div>
+
+              {/* Account Status Header */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg sm:rounded-xl">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
+                    Current Capital
+                  </div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                    ${(account?.balance || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
+                    Available Capital
+                  </div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                    ${(account?.available_balance || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1 sm:mb-2">
+                    Account Status
+                  </div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">
+                    Active
+                  </div>
+                </div>
+              </div>
+
+              {/* Capital Contribution Section */}
+              <div className="mb-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Capital Contribution</h3>
+                
+                {/* Amount Input */}
+                <div className="relative mb-6">
+                  <div className="absolute left-4 sm:left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg sm:text-xl font-semibold">
+                    USD
+                  </div>
+                  <input
+                    type="text"
+                    value={investmentAmount}
+                    onChange={handleAmountChange}
+                    placeholder="0.00"
+                    className="w-full pl-16 sm:pl-20 pr-4 sm:pr-6 py-4 sm:py-6 text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Preset Amount Buttons */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
+                  {presetAmounts.map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => handlePresetAmountSelect(preset)}
+                      className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-700 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all"
+                    >
+                      <span className="hidden sm:inline">${preset.toLocaleString()}</span>
+                      <span className="sm:hidden">${preset >= 1000 ? (preset/1000) + 'K' : preset}</span>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const customAmount = prompt('Enter custom amount:');
+                      if (customAmount && !isNaN(parseInt(customAmount))) {
+                        handlePresetAmountSelect(parseInt(customAmount));
+                      }
+                    }}
+                    className="py-3 sm:py-4 px-2 sm:px-4 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl text-sm sm:text-base text-gray-500 font-semibold hover:border-gray-400 hover:bg-gray-50 transition-all"
+                  >
+                    Custom
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div className="mb-8">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {paymentMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => handlePaymentMethodSelect(method.id)}
+                      className={`p-3 sm:p-4 border-2 rounded-lg sm:rounded-xl text-left transition-all ${
+                        selectedPaymentMethod === method.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
+                        <method.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                        <span className="text-sm sm:text-base font-semibold text-gray-900">{method.name}</span>
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-600">{method.description}</div>
+                      <div className="text-xs text-green-600 font-medium mt-1">{method.fee}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Security Features */}
+              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span>SIPC Protected up to $500,000</span>
+                </div>
+                <div className="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm text-gray-600">
+                  <Award className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span>SEC Registered Investment Advisor</span>
+                </div>
+              </div>
+
+              {/* Proceed Button */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span className="text-red-900 font-medium">{error}</span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={handleProceedWithPayment}
+                disabled={!investmentAmount || !selectedPaymentMethod || creatingPayment}
+                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors flex items-center justify-center"
+              >
+                {creatingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                    <span className="text-sm sm:text-base">Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm sm:text-base">Proceed to Payment</span>
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                  </>
+                )}
+              </button>
+            </div>
+          ) : showWireInstructions ? (
+            <div>
+              <div className="mb-6">
+                <button
+                  onClick={handleBackToFunding}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  ← Back to Payment Methods
+                </button>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">Important Instructions</span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  Please include the reference code in your wire transfer. Processing typically takes 1-2 business days.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">Investment Amount</div>
+                      <div className="text-2xl font-bold text-gray-900">${wireInstructions?.amount.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">Reference Code</div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-lg font-bold text-blue-600">{wireInstructions?.referenceCode}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.referenceCode, 'reference')}
+                          className="p-1 hover:bg-gray-200 rounded"
+                        >
+                          {copiedField === 'reference' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Bank Name</label>
+                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <span className="font-medium">{wireInstructions?.bankName}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.bankName, 'bankName')}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          {copiedField === 'bankName' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Routing Number</label>
+                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <span className="font-mono">{wireInstructions?.routingNumber}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.routingNumber, 'routing')}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          {copiedField === 'routing' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Account Number</label>
+                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <span className="font-mono">{wireInstructions?.accountNumber}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.accountNumber, 'account')}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          {copiedField === 'account' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Account Name</label>
+                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <span className="font-medium">{wireInstructions?.accountName}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.accountName, 'accountName')}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          {copiedField === 'accountName' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">SWIFT Code</label>
+                      <div className="flex items-center justify-between bg-white border rounded-lg p-3">
+                        <span className="font-mono">{wireInstructions?.swiftCode}</span>
+                        <button
+                          onClick={() => copyToClipboard(wireInstructions?.swiftCode, 'swift')}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          {copiedField === 'swift' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-600" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Bank Address</label>
+                      <div className="bg-white border rounded-lg p-3">
+                        <span className="text-sm">{wireInstructions?.bankAddress}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    <span className="font-medium text-yellow-900">Wire Transfer Notes</span>
+                  </div>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• Include reference code: <strong>{wireInstructions?.referenceCode}</strong></li>
+                    <li>• Processing time: 1-2 business days</li>
+                    <li>• Wire fee: $25 (charged by your bank)</li>
+                    <li>• International wires may take 3-5 business days</li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => {
+                    // Process wire transfer funding
+                    const wireAmount = parseInt(investmentAmount.replace(/,/g, ''));
+                    processFunding(wireAmount, 'wire', `Wire transfer - ${wireInstructions?.referenceCode}`).then(() => {
+                      console.log('✅ Wire transfer recorded');
+                      onClose();
+                      // Refresh the page to show updated balance
+                      setTimeout(() => window.location.reload(), 1000)
+                    }).catch(error => {
+                      console.error('❌ Failed to record wire transfer:', error);
+                      setError('Failed to record wire transfer. Please try again.')
+                    });
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors mt-6"
+                >
+                  I've Sent the Wire Transfer
+                </button>
+              </div>
+            </div>
+          ) : showBankTransfer ? (
+            <div>
+              <div className="mb-6">
+                <button
+                  onClick={handleBackToFunding}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                >
+                  ← Back to Payment Methods
+                </button>
+              </div>
+
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Building className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Bank Transfer Setup</h3>
+                <p className="text-gray-600">
+                  Connect your bank account for ${investmentAmount} investment
+                </p>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Shield className="h-5 w-5 text-green-600" />
+                  <span className="font-medium text-green-900">Secure Bank Connection</span>
+                </div>
+                <p className="text-sm text-green-700 mb-4">
+                  We use Plaid to securely connect to your bank account. Your login credentials are encrypted and never stored.
+                </p>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• Bank-level security (256-bit encryption)</li>
+                  <li>• No fees for ACH transfers</li>
+                  <li>• Processing time: 1-3 business days</li>
+                  <li>• Supports 11,000+ financial institutions</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    // In production, this would open Plaid Link
+                    const bankAmount = parseInt(investmentAmount.replace(/,/g, ''))
+                    processFunding(bankAmount, 'bank', 'Bank transfer via Plaid').then(() => {
+                      console.log('✅ Bank transfer recorded')
+                      onClose()
+                      setTimeout(() => window.location.reload(), 1000)
+                    }).catch(error => {
+                      console.error('❌ Failed to record bank transfer:', error)
+                      setError('Failed to record bank transfer. Please try again.')
+                    })
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
+                >
+                  <Building className="h-5 w-5 mr-2" />
+                  Complete Bank Transfer
+                </button>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Powered by Plaid • Used by millions of Americans
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : showCryptoPayment ? (
+            <div>
+              {user?.id ? (
+                <NOWPaymentsCrypto 
+                  amount={parseInt(investmentAmount.replace(/,/g, '') || '0')}
+                  userId={user.id}
+                  onSuccess={(payment) => {
+                    console.log('✅ NOWPayments payment initiated:', payment)
+                    // Payment will be confirmed via webhook, close modal
+                    onClose()
+                    // Show success message
+                    setTimeout(() => {
+                      alert('Crypto payment initiated! Your account will be updated when the payment is confirmed on the blockchain.')
+                    }, 500)
+                  }}
+                  onError={(error) => {
+                    console.error('❌ NOWPayments payment error:', error)
+                    setError(error)
+                  }}
+                  onBack={handleBackToFunding}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+                  <p className="text-gray-600 mb-4">Please sign in to continue with crypto payment</p>
+                  <button
+                    onClick={onClose}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                  >
+                    Close and Sign In
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 }
