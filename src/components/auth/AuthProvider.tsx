@@ -52,6 +52,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
   profile: User | null
+  complete2FA: (code: string) => Promise<{ error: AuthError | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -442,6 +443,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Sign up failed:', err)
       return { error: { message: 'Connection error during signup' } }
+    }
+  }
+
+  const complete2FA = async (code: string) => {
+    if (!user) {
+      return { error: { message: 'No user found' } }
+    }
+
+    try {
+      // Verify the 2FA code
+      const { data, error } = await supabaseClient.functions.invoke('verify-2fa-code', {
+        body: { code, user_id: user.id }
+      })
+
+      if (error) {
+        console.error('2FA verification error:', error)
+        return { error: { message: 'Invalid verification code' } }
+      }
+
+      if (data?.success) {
+        // Refresh user profile and account data
+        await refreshProfile()
+        return { error: null }
+      } else {
+        return { error: { message: 'Invalid verification code' } }
+      }
+    } catch (err) {
+      console.error('2FA completion failed:', err)
+      return { error: { message: 'Verification failed' } }
     }
   }
 
