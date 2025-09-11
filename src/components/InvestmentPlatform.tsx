@@ -12,31 +12,23 @@ interface AuthenticatedAppProps {
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
-  const [authTimeout, setAuthTimeout] = useState(false)
   const [error, setError] = useState('')
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
 
   console.log('🔍 AuthenticatedApp state:', {
     user: user?.email,
     loading,
-    authTimeout
+    initialLoadComplete
   })
 
-  // Prevent infinite loading with shorter timeout
+  // Mark initial load as complete after a short delay
   useEffect(() => {
-    try {
-    if (loading) {
-      const timeout = setTimeout(() => {
-        console.warn('Auth loading timeout - showing login forms')
-        setAuthTimeout(true)
-      }, 1500) // Even shorter timeout
-      
-      return () => clearTimeout(timeout)
-    }
-    } catch (err) {
-      console.error('❌ Auth timeout setup error:', err);
-      setError('Authentication setup failed');
-    }
-  }, [loading])
+    const timeout = setTimeout(() => {
+      setInitialLoadComplete(true)
+    }, 1000)
+    
+    return () => clearTimeout(timeout)
+  }, [])
 
   // Error boundary
   if (error) {
@@ -59,8 +51,8 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     );
   }
 
-  // Show loading only briefly, then force auth forms
-  if (loading && !authTimeout) {
+  // Show loading only during initial load
+  if (loading && !initialLoadComplete) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -71,9 +63,9 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
-  // Show auth forms if no user or auth timeout
-  if (!user || authTimeout) {
-    console.log('🔐 Showing auth forms - user:', !!user, 'timeout:', authTimeout)
+  // Show auth forms if no user
+  if (!user) {
+    console.log('🔐 Showing auth forms - no authenticated user')
     
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -81,7 +73,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <SignupForm 
             onSuccess={() => {
               try {
-              setAuthTimeout(false)
+                console.log('✅ Signup success')
               } catch (err) {
                 console.error('❌ Signup success handler error:', err);
                 setError('Login transition failed');
@@ -94,8 +86,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <LoginForm 
             onSuccess={() => {
               try {
-              console.log('🎉 Login success callback - user should now access dashboard')
-              setAuthTimeout(false)
+                console.log('🎉 Login success callback - user should now access dashboard')
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');

@@ -51,6 +51,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
   profile: User | null
 }
 
@@ -62,6 +63,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+
+  const complete2FA = async (code: string, userData: any, session: any) => {
+    try {
+      console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      
+      // Set the Supabase session to complete login
+      const { error: sessionError } = await supabaseClient.auth.setSession(session)
+      
+      if (sessionError) {
+        console.error('❌ Failed to set session:', sessionError)
+        throw new Error('Failed to complete authentication')
+      }
+      
+      console.log('✅ Session set successfully')
+      
+      // Set user state immediately
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.user_metadata?.full_name
+      })
+      
+      // Load account data
+      await loadUserAccount(userData.id)
+      
+      return { success: true }
+    } catch (error) {
+      console.error('❌ 2FA completion failed:', error)
+      throw error
+    }
+  }
 
   // Check for existing session on mount
   useEffect(() => {
@@ -480,6 +512,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       processFunding,
       markDocumentsCompleted,
       signIn,
+      complete2FA,
       complete2FA,
       signUp,
       signOut

@@ -158,23 +158,33 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('✅ 2FA verification successful')
       setSuccess('Verification successful!')
       
-      // CRITICAL: Set the Supabase session to complete login
-      const { supabaseClient } = await import('../../lib/supabase-client')
-      await supabaseClient.auth.setSession(pendingAuth?.session)
-      
-      // Clear pending auth data
-      localStorage.removeItem('pending_2fa_session')
-      
-      setTimeout(() => {
-        console.log('🎉 2FA complete, calling onSuccess')
-        onSuccess()
-      }, 1000)
+      // CRITICAL: Complete the 2FA process by calling the complete2FA function
+      try {
+        console.log('🔐 Completing 2FA authentication...')
+        const completeResult = await complete2FA(verificationCode, userData, session)
+        
+        if (completeResult.success) {
+          console.log('✅ 2FA completion successful')
+          
+          // Clear pending auth data
+          localStorage.removeItem('pending_2fa_session')
+          
+          setTimeout(() => {
+            console.log('🎉 2FA complete, calling onSuccess')
+            onSuccess()
+          }, 1000)
+        } else {
+          throw new Error('2FA completion failed')
+        }
+      } catch (completeError) {
+        console.error('❌ 2FA completion error:', completeError)
+        setError('Authentication completion failed. Please try again.')
+        setLoading(false)
+      }
     } catch (error) {
       console.error('❌ 2FA verification failed:', error)
       setError(error instanceof Error ? error.message : 'Verification failed')
       setLoading(false)
-    } finally {
-      // Don't set loading false here - let the success flow handle it
     }
   }
 
