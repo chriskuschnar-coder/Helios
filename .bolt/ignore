@@ -1,45 +1,31 @@
-# Dependencies
-node_modules
-package-lock.json
-
-# Build outputs
-dist
-build
-.cache
-coverage
-
-# Logs
-*.log
-*.tmp
-
-# Large PDF documents (keep as external links)
-*.pdf
-*.docx
-
-# Images and media files
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.mp4
-*.webm
-
-# Generated files
-docs/generated
-
-# Environment files
-.env
-
-# Git files
-.git
-.gitignore
-
-# Supabase discarded migrations
-.bolt/supabase_discarded_migrations
-
-# Other large files
-public/documents/
-public/Facetune_*drafts/
+# Ignore local drafts, temp files, build caches
 *.bak
-test-files/
-*.jpeg
+*.tmp
+*.log
+node_modules/
+drafts/
+designs/
+screenshots/
+test-data/
+**/*.psd
+**/*.ai
+**/*.sketch
+**/*.docx
+**/*.jpeg
+**/*.jpg
+**/*.png
+
+# Ignore old document versions (but keep current live ones)
+public/documents/old_*
+public/documents/test_*
+public/documents/**/
+public/documents/*.jpeg
+public/documents/*.jpg
+public/documents/*.png
+
+# Keep only the 5 essential investor documents:
+# - Global_Markets_PPM_Final_85pp_TOC.pdf
+# - GLOBAL MARKETS, LP.pdf  
+# - Global_Markets_Subscription_Agreement.pdf
+# - Investor_Questionnaire.pdf
+# - Risk_Disclosure_Statement.pdf
