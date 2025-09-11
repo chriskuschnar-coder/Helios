@@ -121,7 +121,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         setSuccess('Verification successful!')
         
         // Complete the login process
-        const completeResult = await complete2FA()
+        const completeResult = await complete2FA(verificationCode)
         if (completeResult.error) {
           throw new Error(completeResult.error.message)
         }

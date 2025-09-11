@@ -47,7 +47,7 @@ interface AuthContextType {
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   markDocumentsCompleted: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -363,17 +363,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // Set user and load account data
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: data.user.user_metadata?.full_name
-        })
-        
-        // Load user account data immediately
-        await loadUserAccount(data.user.id)
-        
-        return { error: null }
+        // Check if user has 2FA enabled
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('two_factor_enabled, two_factor_method, full_name, phone')
+          .eq('id', data.user.id)
+          .single()
+
+        if (!userError && userData?.two_factor_enabled) {
+          console.log('🔐 2FA enabled for user, sending verification code')
+          
+          // Send 2FA code via email
+          try {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+            
+            const codeResponse = await fetch(`${supabaseUrl}/functions/v1/send-2fa-code`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${data.session?.access_token}`,
+                'apikey': anonKey
+              },
+              body: JSON.stringify({
+                method: 'email',
+                email: data.user.email
+              })
+            })
+
+            if (codeResponse.ok) {
+              console.log('✅ 2FA code sent successfully')
+            } else {
+              console.warn('⚠️ Failed to send 2FA code, but continuing with 2FA flow')
+            }
+          } catch (codeError) {
+            console.warn('⚠️ 2FA code sending failed:', codeError)
+          }
+          
+          // Set user but indicate 2FA is required
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            full_name: userData.full_name || data.user.user_metadata?.full_name,
+            phone: userData.phone,
+            two_factor_enabled: userData.two_factor_enabled,
+            two_factor_method: userData.two_factor_method
+          })
+          
+          // Return requires2FA flag to show 2FA challenge
+          return { error: null, requires2FA: true }
+        } else {
+          console.log('✅ No 2FA required, completing login')
+          
+          // Set user and load account data for users without 2FA
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            full_name: userData?.full_name || data.user.user_metadata?.full_name,
+            phone: userData?.phone,
+            two_factor_enabled: userData?.two_factor_enabled || false,
+            two_factor_method: userData?.two_factor_method
+          })
+          
+          // Load user account data
+          await loadUserAccount(data.user.id)
+          
+          return { error: null }
+        }
       }
 
       return { error: { message: 'No user returned' } }
