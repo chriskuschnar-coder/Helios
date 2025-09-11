@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
-import { Mail, Lock, User, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from './AuthProvider'
+import { TrendingUp, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle, ArrowLeft, X } from 'lucide-react'
 
 interface SignupFormProps {
-  onSwitchToLogin: () => void
-  onSignupSuccess: () => void
+  onSuccess?: () => void
+  onSwitchToLogin?: () => void
+  onBackToHome?: () => void
 }
 
-export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignupSuccess }) => {
+export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin, onBackToHome }) => {
   const { signUp } = useAuth()
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,45 +20,58 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignu
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  const passwordRequirements = [
+    { text: 'At least 8 characters', met: formData.password.length >= 8 },
+    { text: 'Contains uppercase letter', met: /[A-Z]/.test(formData.password) },
+    { text: 'Contains lowercase letter', met: /[a-z]/.test(formData.password) },
+    { text: 'Contains number', met: /\d/.test(formData.password) },
+    { text: 'Contains special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password) }
+  ]
+
+  const isPasswordValid = passwordRequirements.every(req => req.met)
+  const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       [e.target.name]: e.target.value
-    }))
-  }
-
-  const validateForm = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
-    }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return false
-    }
-    return true
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    
-    if (!validateForm()) return
-
     setLoading(true)
+    setError('')
+
+    if (!isPasswordValid) {
+      setError('Password does not meet requirements')
+      setLoading(false)
+      return
+    }
+
+    if (!passwordsMatch) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    if (!agreedToTerms) {
+      setError('You must agree to the Terms of Service')
+      setLoading(false)
+      return
+    }
 
     try {
-      const { error } = await signUp(formData.email, formData.password, formData.fullName)
+      const { error } = await signUp(formData.email, formData.password, {
+        full_name: formData.fullName
+      })
       
       if (error) {
         setError(error.message)
       } else {
-        setSuccess(true)
-        setTimeout(() => {
-          onSignupSuccess()
-        }, 2000)
+        onSuccess?.()
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -66,50 +80,60 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignu
     }
   }
 
-  if (success) {
-    return (
-      <div className="w-full max-w-md mx-auto text-center">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-8">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h2>
-          <p className="text-gray-600">
-            Please check your email to verify your account before signing in.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="w-full max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-        <p className="text-gray-600 mt-2">Start your investment journey today</p>
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+      {/* Back to Home Button */}
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={onBackToHome}
+          className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </button>
+        <button
+          onClick={onBackToHome}
+          className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
+
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center">
+            <TrendingUp className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
+          Create Account
+        </h1>
+        <p className="text-gray-600">
+          Join our investment platform
+        </p>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
-            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
-
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
             Full Name
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <User className="h-5 w-5 text-gray-400" />
-            </div>
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
+              type="text"
               id="fullName"
               name="fullName"
-              type="text"
               value={formData.fullName}
               onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+              className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
               placeholder="Enter your full name"
               required
             />
@@ -121,16 +145,14 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignu
             Email Address
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
-            </div>
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
+              type="email"
               id="email"
               name="email"
-              type="email"
               value={formData.email}
               onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+              className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
               placeholder="Enter your email"
               required
             />
@@ -142,31 +164,42 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignu
             Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
-            </div>
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
+              type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
-              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+              className="w-full pl-9 sm:pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
               placeholder="Create a password"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              ) : (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
             </button>
           </div>
+          
+          {formData.password && (
+            <div className="mt-2 space-y-1">
+              {passwordRequirements.map((req, index) => (
+                <div key={index} className="flex items-center text-xs">
+                  {req.met ? (
+                    <CheckCircle className="h-3 w-3 text-green-500 mr-2" />
+                  ) : (
+                    <div className="h-3 w-3 border border-gray-300 rounded-full mr-2" />
+                  )}
+                  <span className={req.met ? 'text-green-600' : 'text-gray-500'}>
+                    {req.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -174,52 +207,79 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin, onSignu
             Confirm Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
-            </div>
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
+              type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               name="confirmPassword"
-              type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+              className="w-full pl-9 sm:pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
               placeholder="Confirm your password"
               required
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {showConfirmPassword ? (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              ) : (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-              )}
+              {showConfirmPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
             </button>
           </div>
+          
+          {formData.confirmPassword && (
+            <div className="mt-2 flex items-center text-xs">
+              {passwordsMatch ? (
+                <>
+                  <CheckCircle className="h-3 w-3 text-green-500 mr-2" />
+                  <span className="text-green-600">Passwords match</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-3 w-3 text-red-500 mr-2" />
+                  <span className="text-red-600">Passwords do not match</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-start">
+          <input
+            type="checkbox"
+            id="terms"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-1 rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+            required
+          />
+          <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
+            I agree to the{' '}
+            <a href="#" className="text-navy-600 hover:text-navy-700 underline">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="#" className="text-navy-600 hover:text-navy-700 underline">
+              Privacy Policy
+            </a>
+          </label>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-navy-400 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
+          disabled={loading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
+          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
         >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            'Create Account'
-          )}
+          {loading ? 'Creating Account...' : 'Create Account'}
         </button>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-600">
+        <p className="text-sm text-gray-600">
           Already have an account?{' '}
           <button
             onClick={onSwitchToLogin}
-            className="text-navy-600 hover:text-navy-700 font-medium"
+            className="text-navy-600 hover:text-navy-700 font-medium transition-colors"
           >
             Sign in
           </button>
