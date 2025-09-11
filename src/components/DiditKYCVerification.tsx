@@ -43,40 +43,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     }
   }, [user])
 
-  // Component error boundary
-  if (componentError) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertCircle className="h-10 w-10 text-red-600" />
-        </div>
-        <h3 className="text-2xl font-bold text-red-900 mb-4">
-          Verification Error
-        </h3>
-        <p className="text-gray-600 mb-6">
-          {componentError}
-        </p>
-        <div className="space-y-3">
-          <button
-            onClick={() => {
-              setComponentError('');
-              setError('');
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium mr-3"
-          >
-            Try Again
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Return to Portfolio
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const checkKYCStatus = async () => {
     if (!user) return
     
@@ -585,34 +551,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       {/* Verification Interface */}
       {!verificationUrl ? (
         <div className="text-center space-y-6">
-          {/* Manual Override Option */}
-          {!checkingStatus && !loading && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <h4 className="font-semibold text-green-900">Skip Verification (Demo Mode)</h4>
-              </div>
-              <p className="text-sm text-green-800 mb-4">
-                For testing purposes, you can skip identity verification and proceed directly to funding.
-              </p>
-              <button
-                onClick={() => {
-                  console.log('🎯 Demo mode: Skipping verification')
-                  setLoading(true)
-                  setIsVerified(true)
-                  setTimeout(() => {
-                    setLoading(false)
-                    onVerificationComplete()
-                  }, 1000)
-                }}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                disabled={loading}
-              >
-                {loading ? 'Processing...' : 'Skip Verification (Demo)'}
-              </button>
-            </div>
-          )}
-          
           <button
             onClick={startVerification}
             disabled={loading || checkingStatus}
