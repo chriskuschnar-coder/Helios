@@ -1,5 +1,6 @@
+```typescript
 import React, { useState } from 'react'
-import { FileText, CheckCircle, Download, Eye, Shield, AlertCircle, ArrowRight, ArrowLeft, User, Building, DollarSign, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCw } from 'lucide-react'
+import { FileText, CheckCircle, Download, Eye, Shield, AlertCircle, ArrowRight, ArrowLeft, User, Building, DollarSign, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCw, X, ExternalLink, Plus, Minus, Maximize } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface DocumentSigningFlowProps {
@@ -43,7 +44,7 @@ interface Document {
   required: boolean
   signed: boolean
   url: string
-  type: 'investment_agreement' | 'risk_disclosure' | 'accredited_investor' | 'subscription_agreement' | 'privacy_policy'
+  type: 'investment_agreement' | 'risk_disclosure' | 'accredited_investor' | 'subscription_agreement' | 'privacy_policy' | 'informational'
 }
 
 export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowProps) {
@@ -74,9 +75,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [exhibitDData, setExhibitDData] = useState<ExhibitDData>({
     signature: ''
   })
-  const [showDocumentPreview, setShowDocumentPreview] = useState(false)
   const [previewZoom, setPreviewZoom] = useState(100)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Check if user has already completed documents
   const hasCompletedDocuments = user?.documents_completed
@@ -465,7 +464,115 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     }
   }
 
+  // Add the missing state and preview modal outside the main return
+  const DocumentPreviewModal = () => {
+    if (!showDocumentPreview || !previewDoc) return null
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl max-h-[90vh]">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Eye className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{previewDoc.title}</h3>
+                <p className="text-sm text-gray-600">Document Preview</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setZoomLevel(Math.max(50, zoomLevel - 25))}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Zoom Out"
+              >
+                <Minus className="h-4 w-4 text-gray-600" />
+              </button>
+              <span className="text-sm text-gray-600 min-w-[60px] text-center">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Zoom In"
+              >
+                <Plus className="h-4 w-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Toggle Fullscreen"
+              >
+                <Maximize className="h-4 w-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setShowDocumentPreview(false)}
+                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                title="Close Preview"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+          </div>
+          
+          <div className={`${isFullscreen ? 'h-[85vh]' : 'h-[70vh]'} bg-gray-100 relative overflow-hidden`}>
+            <div className="w-full h-full overflow-auto">
+              {previewDoc.url.endsWith('.pdf') ? (
+                <iframe
+                  src={`${previewDoc.url}#zoom=${zoomLevel}`}
+                  title={`Preview: ${previewDoc.title}`}
+                  className="w-full h-full border-none"
+                  style={{ minHeight: '100%' }}
+                />
+              ) : (
+                <iframe
+                  src={previewDoc.url}
+                  title={`Preview: ${previewDoc.title}`}
+                  className="w-full h-full border-none"
+                  style={{ 
+                    minHeight: '100%',
+                    transform: `scale(${zoomLevel / 100})`,
+                    transformOrigin: 'top left'
+                  }}
+                />
+              )}
+            </div>
+          </div>
+          
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Shield className="h-4 w-4 text-green-600" />
+                <span>Secure Document Preview</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <a
+                  href={previewDoc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Open in New Tab</span>
+                </a>
+                <a
+                  href={previewDoc.url}
+                  download
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-700 text-sm font-medium transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download PDF</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
+    <>
     <div className="max-w-4xl mx-auto">
       {/* Progress Bar */}
       <div className="mb-8">
@@ -917,443 +1024,3 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                     <>
                       <FileText className="h-4 w-4" />
                       <span>{isSubscriptionAgreement ? 'Complete Subscription Agreement' : 'Sign Document'}</span>
-                    </>
-                  )}
-                </button>
-              ) : isCurrentDocumentRequired ? (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">{isSubscriptionAgreement ? 'Subscription Agreement Complete' : 'Document Signed'}</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 text-blue-600">
-                  <Eye className="h-5 w-5" />
-                  <span className="font-medium">Review Complete</span>
-                </div>
-              )}
-
-              {(!isCurrentDocumentRequired || signedDocuments.has(currentDocument.id)) && currentDocumentIndex < documents.length - 1 && (
-                <button
-                  onClick={handleNextDocument}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <span>Next Document</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              )}
-
-              {allRequiredSigned && currentDocumentIndex === documents.length - 1 && (
-                <button
-                  onClick={() => {
-                    console.log('🎉 Final completion button clicked')
-                    setSignedDocuments(prev => new Set([...prev, currentDocument.id]))
-                    
-                    // Mark documents as completed in background
-                    markDocumentsCompleted().then(() => {
-                      console.log('✅ Documents marked as completed in user profile')
-                    }).catch(error => {
-                      console.warn('⚠️ Failed to mark documents completed, but proceeding:', error)
-                    })
-                    
-                    // Immediately proceed to congratulations
-                    console.log('🎊 Proceeding to congratulations page')
-                    onComplete()
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Complete Onboarding</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="text-center">
-            <Eye className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <h4 className="text-lg font-semibold text-blue-900 mb-2">Document Review</h4>
-            <p className="text-blue-700 mb-6">
-              Please review the Private Placement Memorandum above. This document provides important 
-              information about the investment opportunity and does not require your signature.
-            </p>
-            
-            <div className="flex justify-center gap-3">
-              {currentDocumentIndex > 0 && (
-                <button
-                  onClick={handlePreviousDocument}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Previous</span>
-                </button>
-              )}
-              
-              {currentDocumentIndex < documents.length - 1 ? (
-                <button
-                  onClick={handleNextDocument}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <span>Continue to Signature Documents</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    console.log('🎉 Review completion button clicked')
-                    markDocumentsCompleted().catch(console.error)
-                    onComplete()
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Complete Onboarding</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Document List Overview */}
-      <div className="mt-8 bg-gray-50 rounded-xl p-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">Document Checklist</h4>
-        <div className="space-y-3">
-          {documents.map((doc, index) => (
-            <div 
-              key={doc.id}
-              className={`flex items-center justify-between p-3 rounded-lg border ${
-                index === currentDocumentIndex ? 'border-navy-500 bg-navy-50' : 'border-gray-200 bg-white'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  signedDocuments.has(doc.id) ? 'bg-green-100' : 
-                  index === currentDocumentIndex ? 'bg-navy-100' : 'bg-gray-100'
-                }`}>
-                  {signedDocuments.has(doc.id) ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : !doc.required ? (
-                    <Eye className="h-4 w-4 text-blue-600" />
-                  ) : (
-                    <span className={`font-bold text-sm ${
-                      index === currentDocumentIndex ? 'text-navy-600' : 'text-gray-600'
-                    }`}>
-                      {index + 1}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <div className={`font-medium ${
-                    index === currentDocumentIndex ? 'text-navy-900' : 'text-gray-900'
-                  }`}>
-                    {doc.title}
-                  </div>
-                  <div className="text-sm text-gray-600">{doc.description}</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {signedDocuments.has(doc.id) && (
-                  <span className="text-sm font-medium text-green-600">Signed</span>
-                )}
-                {!doc.required && (
-                  <span className="text-sm font-medium text-blue-600">Review Only</span>
-                )}
-                {index === currentDocumentIndex && (
-                  <span className="text-sm font-medium text-navy-600">Current</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* Document Preview Modal */}
-    {showDocumentPreview && (
-      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-        <div className={`bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${
-          isFullscreen ? 'w-full h-full' : 'w-full max-w-6xl h-[90vh]'
-        }`}>
-          {/* Preview Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-navy-100 rounded-lg flex items-center justify-center">
-                <FileText className="h-4 w-4 text-navy-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">{currentDocument.title}</h3>
-                <p className="text-sm text-gray-600">Document Preview</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              {/* Zoom Controls */}
-              <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-200 p-1">
-                <button
-                  onClick={() => setPreviewZoom(Math.max(50, previewZoom - 25))}
-                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="h-4 w-4 text-gray-600" />
-                </button>
-                <span className="px-3 py-1 text-sm font-medium text-gray-700 min-w-[60px] text-center">
-                  {previewZoom}%
-                </span>
-                <button
-                  onClick={() => setPreviewZoom(Math.min(200, previewZoom + 25))}
-                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Zoom In"
-                >
-                  <ZoomIn className="h-4 w-4 text-gray-600" />
-                </button>
-              </div>
-              
-              {/* Fullscreen Toggle */}
-              <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4 text-gray-600" />
-                ) : (
-                  <Maximize2 className="h-4 w-4 text-gray-600" />
-                )}
-              </button>
-              
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setShowDocumentPreview(false)
-                  setIsFullscreen(false)
-                  setPreviewZoom(100)
-                }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Close Preview"
-              >
-                <X className="h-4 w-4 text-gray-600" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Document Preview Content */}
-          <div className="h-full bg-gray-100 overflow-hidden">
-            {currentDocument.url.endsWith('.pdf') ? (
-              <div className="h-full overflow-auto">
-                <iframe
-                  src={`${currentDocument.url}#toolbar=1&navpanes=1&scrollbar=1&view=FitH&zoom=${previewZoom}`}
-                  className="w-full h-full border-none"
-                  title={`Preview: ${currentDocument.title}`}
-                  style={{
-                    minHeight: isFullscreen ? '100vh' : '600px',
-                    transform: `scale(${previewZoom / 100})`,
-                    transformOrigin: 'top left'
-                  }}
-                />
-              </div>
-            ) : currentDocument.url.endsWith('.html') ? (
-              <div className="h-full overflow-auto bg-white">
-                <iframe
-                  src={currentDocument.url}
-                  className="w-full h-full border-none"
-                  title={`Preview: ${currentDocument.title}`}
-                  style={{
-                    minHeight: isFullscreen ? '100vh' : '600px',
-                    transform: `scale(${previewZoom / 100})`,
-                    transformOrigin: 'top left'
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Preview Not Available</h3>
-                  <p className="text-gray-600 mb-4">
-                    This document type cannot be previewed in the browser.
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <a
-                      href={currentDocument.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>Open in New Tab</span>
-                    </a>
-                    <a
-                      href={currentDocument.url}
-                      download
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>Download</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Preview Footer */}
-          <div className="bg-gray-50 border-t border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <span>Secure Document Preview</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                  Use scroll wheel or trackpad to navigate through the document
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <a
-                  href={currentDocument.url}
-                  download
-                  className="text-gray-600 hover:text-gray-700 text-sm font-medium inline-flex items-center space-x-1"
-                >
-                  <Download className="h-3 w-3" />
-                  <span>Download</span>
-                </a>
-                <a
-                  href={currentDocument.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center space-x-1"
-                >
-                  <Eye className="h-3 w-3" />
-                  <span>Open in New Tab</span>
-                </a>
-                <button
-                  onClick={() => {
-                    setShowDocumentPreview(false)
-                    setIsFullscreen(false)
-                    setPreviewZoom(100)
-                  }}
-                  className="bg-navy-600 hover:bg-navy-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Close Preview
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-  </>
-)
-
-// Add the missing state and preview modal outside the main return
-const DocumentPreviewModal = () => {
-  if (!showDocumentPreview || !previewDoc) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl max-h-[90vh]">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Eye className="h-4 w-4 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{previewDoc.title}</h3>
-              <p className="text-sm text-gray-600">Document Preview</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setZoomLevel(Math.max(50, zoomLevel - 25))}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Zoom Out"
-            >
-              <Minus className="h-4 w-4 text-gray-600" />
-            </button>
-            <span className="text-sm text-gray-600 min-w-[60px] text-center">{zoomLevel}%</span>
-            <button
-              onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Zoom In"
-            >
-              <Plus className="h-4 w-4 text-gray-600" />
-            </button>
-            <button
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Toggle Fullscreen"
-            >
-              <Maximize className="h-4 w-4 text-gray-600" />
-            </button>
-            <button
-              onClick={() => setShowDocumentPreview(false)}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-              title="Close Preview"
-            >
-              <X className="h-5 w-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
-        
-        <div className={`${isFullscreen ? 'h-[85vh]' : 'h-[70vh]'} bg-gray-100 relative overflow-hidden`}>
-          <div className="w-full h-full overflow-auto">
-            {previewDoc.url.endsWith('.pdf') ? (
-              <iframe
-                src={`${previewDoc.url}#zoom=${zoomLevel}`}
-                title={`Preview: ${previewDoc.title}`}
-                className="w-full h-full border-none"
-                style={{ minHeight: '100%' }}
-              />
-            ) : (
-              <iframe
-                src={previewDoc.url}
-                title={`Preview: ${previewDoc.title}`}
-                className="w-full h-full border-none"
-                style={{ 
-                  minHeight: '100%',
-                  transform: `scale(${zoomLevel / 100})`,
-                  transformOrigin: 'top left'
-                }}
-              />
-            )}
-          </div>
-        </div>
-        
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Shield className="h-4 w-4 text-green-600" />
-              <span>Secure Document Preview</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <a
-                href={previewDoc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
-              >
-                <ExternalLink className="h-4 w-4" />
-                <span>Open in New Tab</span>
-              </a>
-              <a
-                href={previewDoc.url}
-                download
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-700 text-sm font-medium transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                <span>Download PDF</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <DocumentPreviewModal />
-    </>
-  )
-}
