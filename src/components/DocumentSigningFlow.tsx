@@ -81,7 +81,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_PPM_Final_85pp_TOC.pdf',
+      url: '/documents/Global_Markets_Subscription_Agreement_Complete (1).pdf',
       type: 'informational'
     },
     {
@@ -90,7 +90,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal framework governing the partnership structure and investor rights.',
       required: false,
       signed: false,
-      url: '/documents/GLOBAL MARKETS, LP.pdf',
+      url: '/documents/Global_Markets_LPA.pdf/GLOBAL MARKETS, LP (1) (1).pdf',
       type: 'informational'
     },
     {
@@ -99,7 +99,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Comprehensive subscription agreement including investor questionnaire, beneficial ownership, tax forms, and AML/KYC certification.',
       required: true,
       signed: false,
-      url: '/documents/Global_Markets_Subscription_Agreement_Complete.pdf',
+      url: '/documents/Global_Markets_Subscription_Agreement.html',
       type: 'subscription_agreement'
     },
   ]
