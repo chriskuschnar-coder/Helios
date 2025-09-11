@@ -66,7 +66,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.warn('Session check error:', error)
-          setLoading(false)
         } else if (session?.user) {
           console.log('Found existing session for:', session.user.email)
           setUser({
@@ -75,11 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             full_name: session.user.user_metadata?.full_name
           })
           await loadUserAccount(session.user.id)
-          setLoading(false)
         } else {
           console.log('No existing session found')
-          setLoading(false)
         }
+        setLoading(false)
       } catch (err) {
         console.error('Session check failed:', err)
         setLoading(false)
@@ -87,18 +85,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Set a maximum timeout for loading state
-    const timeoutId = setTimeout(() => {
-      console.log('Auth timeout - forcing loading to false')
-      setLoading(false)
-    }, 2000) // Reduced to 2 seconds
-
     checkSession()
 
     // Listen for auth state changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
-        clearTimeout(timeoutId) // Clear timeout when auth state changes
         
         if (event === 'SIGNED_IN' && session?.user) {
           setUser({
@@ -119,7 +111,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe()
-      clearTimeout(timeoutId)
     }
   }, [])
 
