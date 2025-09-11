@@ -44,13 +44,6 @@ interface Document {
   signed: boolean
   url: string
   type: 'investment_agreement' | 'risk_disclosure' | 'accredited_investor' | 'subscription_agreement' | 'privacy_policy'
-}
-
-export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowProps) {
-  const { user, markDocumentsCompleted } = useAuth()
-  const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0)
-  const [signedDocuments, setSignedDocuments] = useState<Set<string>>(new Set())
-  const [signature, setSignature] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [showDocumentPreview, setShowDocumentPreview] = useState(false)
@@ -742,6 +735,16 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                                 />
                               </div>
                             </div>
+                        <button
+                          onClick={() => handlePreviewDocument({
+                            title: doc.title,
+                            url: doc.url
+                          })}
+                          className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span>Preview Document</span>
+                        </button>
                           </div>
                         ))}
                         <button
