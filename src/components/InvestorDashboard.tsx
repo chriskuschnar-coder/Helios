@@ -1,272 +1,580 @@
-import React, { useState } from 'react'
-import { useAuth } from './auth/AuthProvider'
-import { PortfolioValueCard } from './PortfolioValueCard'
-import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { FundingModal } from './FundingModal'
-import { SecuritySettings } from './SecuritySettings'
-import { MarketsTab } from './markets/MarketsTab'
-import { ResearchTab } from './research/ResearchTab'
-import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
-import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
-import { AIInsights } from './portfolio/AIInsights'
-import { FundNAVChart } from './portfolio/FundNAVChart'
-import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { ReadOnlyPortfolioOverlay } from './ReadOnlyPortfolioOverlay'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Brain, 
-  Globe, 
-  FileText, 
-  Shield, 
-  Target,
-  Activity,
-  Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
-interface InvestorDashboardProps {
-  onShowKYCProgress?: () => void
+interface User {
+  id: string
+  email: string
+  full_name?: string
+  phone?: string
+  documents_completed?: boolean
+  documents_completed_at?: string
+  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
+  is_kyc_verified?: boolean
+  two_factor_enabled?: boolean
+  two_factor_method?: 'email' | 'sms' | 'biometric'
+  subscription_signed_at?: string
 }
 
-const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress }) => {
-  const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions' | 'security'>('portfolio')
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
+interface Account {
+  id: string
+  balance: number
+  available_balance: number
+  total_deposits: number
+  total_withdrawals: number
+  currency: string
+  status: string
+}
 
-  const currentBalance = account?.balance || 0
-  const hasActivity = currentBalance > 0
-  const kycStatus = user?.kyc_status || 'unverified'
-  const isKYCVerified = kycStatus === 'verified'
+interface Subscription {
+  subscription_status: string
+  price_id: string | null
+  current_period_start: number | null
+  current_period_end: number | null
+  cancel_at_period_end: boolean
+  payment_method_brand: string | null
+  payment_method_last4: string | null
+}
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
+interface AuthError {
+  message: string
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  pending2FA: boolean
+  pendingAuthData: { userData: any; session: any } | null
+  account: Account | null
+  subscription: Subscription | null
+  refreshAccount: () => Promise<void>
+  refreshSubscription: () => Promise<void>
+  processFunding: (amount: number, method: string, description?: string) => Promise<any>
+  markDocumentsCompleted: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
+  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
+  profile: User | null
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [pending2FA, setPending2FA] = useState(false)
+  const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
+  const [account, setAccount] = useState<Account | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+
+  const complete2FA = async (code: string, userData: any, session: any) => {
+    try {
+      console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      
+      // Verify the 2FA code first
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          code: code,
+          method: 'email',
+          email: userData.email
+        })
+      })
+
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json()
+        console.error('❌ Verify response error:', errorData)
+        throw new Error(errorData.error || 'Invalid verification code')
       }
-      return newSet
-    })
+
+      const verifyResult = await verifyResponse.json()
+      console.log('✅ 2FA verification result:', { 
+        valid: verifyResult.valid, 
+        success: verifyResult.success,
+        message: verifyResult.message 
+      })
+      
+      if (!verifyResult.valid || !verifyResult.success) {
+        throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
+      }
+
+      console.log('✅ 2FA code verified successfully')
+      
+      // Set the Supabase session to complete login
+      console.log('🔐 Setting Supabase session...')
+      const { error: sessionError } = await supabaseClient.auth.setSession(session)
+      
+      if (sessionError) {
+        console.error('❌ Failed to set session:', sessionError)
+        throw new Error('Failed to complete authentication')
+      }
+      
+      // Verify session is actually set
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
+      if (!currentSession) {
+        throw new Error('Session not properly established')
+      }
+      
+      console.log('✅ Session verified and established')
+      
+      // Clear 2FA pending state
+      setPending2FA(false)
+      setPendingAuthData(null)
+      
+      // Set user state immediately
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.user_metadata?.full_name,
+        phone: userData.user_metadata?.phone
+      })
+      
+      // Load account data
+      await loadUserAccount(userData.id)
+      
+      console.log('🎉 2FA completion successful!')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ 2FA completion failed:', error)
+      throw error
+    }
   }
 
-  const handleFundPortfolio = (amount?: number) => {
-    // Check KYC status before allowing funding
-    if (!isKYCVerified) {
-      if (onShowKYCProgress) {
-        onShowKYCProgress()
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        setLoading(true)
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.warn('Session check error:', error)
+          setLoading(false)
+        } else {
+          console.log('No existing session found or session check error')
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('Session check failed:', err)
+        setLoading(false)
       }
-      return
     }
-    
-    if (amount) {
-      setPrefilledAmount(amount)
-    }
-    setShowFundingModal(true)
-  }
 
-  const handleWithdraw = () => {
-    if (!isKYCVerified) {
-      if (onShowKYCProgress) {
-        onShowKYCProgress()
+    // Set a maximum timeout for loading state
+    const timeoutId = setTimeout(() => {
+      console.log('Auth timeout - forcing loading to false')
+      setLoading(false)
+    }, 2000) // Reduced to 2 seconds
+
+    checkSession()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        clearTimeout(timeoutId) // Clear timeout when auth state changes
+        
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setAccount(null)
+          setSubscription(null)
+          setPending2FA(false)
+          setPendingAuthData(null)
+          setLoading(false)
+        }
+        // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
-      return
-    }
-    alert('Withdrawal functionality will be implemented here')
-  }
-
-  const tabs = [
-    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
-    { id: 'markets', name: 'Markets', icon: Globe },
-    { id: 'research', name: 'Research', icon: Brain },
-    { id: 'transactions', name: 'Transactions', icon: FileText },
-    { id: 'security', name: 'Security', icon: Shield }
-  ]
-
-  const portfolioSections = [
-    {
-      id: 'allocation',
-      title: 'Asset Allocation',
-      icon: Target,
-      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
-    },
-    {
-      id: 'performance',
-      title: 'Performance Analytics',
-      icon: Award,
-      component: () => <PerformanceMetrics currentBalance={currentBalance} />
-    },
-    {
-      id: 'nav',
-      title: 'Fund NAV History',
-      icon: TrendingUp,
-      component: () => <FundNAVChart />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
-    }
-  ]
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <BarChart3 className="h-8 w-8 text-navy-600" />
-          </div>
-          <p className="text-gray-600">Connecting to your account...</p>
-        </div>
-      </div>
     )
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeoutId)
+    }
+  }, [])
+
+  const loadUserAccount = async (userId: string) => {
+    try {
+      console.log('📊 Loading user account for:', userId)
+      // Ensure investor_units exists for this user
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (session) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+        
+        // Auto-create investor_units if missing
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-create-investor-units`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': anonKey
+            },
+            body: JSON.stringify({ user_id: userId })
+          })
+        } catch (error) {
+          console.warn('⚠️ Auto-create investor units failed:', error)
+        }
+      }
+
+      const { data: accountData, error: accountError } = await supabaseClient
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (accountError) {
+        console.warn('⚠️ Account load error:', accountError)
+        // Don't throw error, just continue without account data
+      } else if (accountData && accountData.length > 0) {
+        console.log('✅ Account loaded:', accountData.id)
+        setAccount(accountData[0])
+      } else {
+        // No account found, create one
+        console.log('📝 Creating new account for user:', userId)
+        const { data: newAccountData, error: createError } = await supabaseClient
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            account_type: 'trading',
+            balance: 0.00,
+            available_balance: 0.00,
+            total_deposits: 0.00,
+            total_withdrawals: 0.00,
+            currency: 'USD',
+            status: 'active'
+          })
+          .select()
+          .single()
+        
+        if (createError) {
+          console.error('❌ Failed to create account:', createError)
+        } else {
+          console.log('✅ New account created:', newAccountData.id)
+          setAccount(newAccountData)
+        }
+      }
+
+      // Load user profile data
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
+        .eq('id', userId)
+        .single()
+
+      if (!userError && userData) {
+        console.log('✅ User profile loaded')
+        setUser(prev => prev ? {
+          ...prev,
+          full_name: userData.full_name,
+          phone: userData.phone,
+          documents_completed: userData.documents_completed,
+          documents_completed_at: userData.documents_completed_at,
+          kyc_status: userData.kyc_status,
+          kyc_verified_at: userData.kyc_verified_at,
+          is_kyc_verified: userData.kyc_status === 'verified',
+          two_factor_enabled: userData.two_factor_enabled,
+          two_factor_method: userData.two_factor_method,
+          subscription_signed_at: userData.subscription_signed_at
+        } : null)
+        
+        setProfile(userData)
+      }
+    } catch (err) {
+      console.error('❌ Account load failed:', err)
+      // Don't let account loading errors prevent the app from working
+    }
   }
 
-  if (showSecuritySettings) {
-    return <SecuritySettings onBack={() => setShowSecuritySettings(false)} />
+  const refreshProfile = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
+    }
   }
+
+  const refreshAccount = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
+    }
+  }
+
+  const refreshSubscription = async () => {
+    // Subscription refresh logic here
+  }
+
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    if (!account) {
+      throw new Error('User account not found')
+    }
+
+    try {
+      // STEP 1: Process deposit allocation through fund units
+      console.log('💰 Processing deposit allocation:', { amount, method })
+      
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      // Call deposit allocation function
+      const allocationResponse = await fetch(`${supabaseUrl}/functions/v1/process-deposit-allocation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          deposit_amount: amount,
+          payment_method: method,
+          reference_id: description
+        })
+      })
+
+      if (!allocationResponse.ok) {
+        const error = await allocationResponse.json()
+        throw new Error(error.error || 'Failed to process deposit allocation')
+      }
+
+      const allocationResult = await allocationResponse.json()
+      console.log('✅ Deposit allocation successful:', allocationResult)
+
+      // STEP 2: Create transaction record for tracking
+      // Add transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: account.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `${method} deposit - ${allocationResult.units_allocated.toFixed(4)} units allocated`
+        })
+
+      if (transactionError) {
+        console.error('Transaction error:', transactionError)
+        throw new Error('Failed to record transaction')
+      }
+
+      // Refresh account data to show updated balance
+      await refreshAccount()
+
+      return { success: true }
+    } catch (error) {
+      console.error('Funding processing failed:', error)
+      throw error
+    }
+  }
+
+  const markDocumentsCompleted = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabaseClient
+        .from('users')
+        .update({
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Failed to mark documents completed:', error)
+      } else {
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        } : null)
+      }
+    } catch (err) {
+      console.error('Error marking documents completed:', err)
+    }
+  }
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      console.log('🔐 Attempting sign in for:', email)
+      
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('❌ Sign in error:', error)
+        
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
+        }
+        
+        return { error: { message: error.message } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful for:', data.user.email)
+        
+        // Set pending 2FA state and return requires2FA flag
+        setPending2FA(true)
+        setPendingAuthData({ userData: data.user, session: data.session })
+        
+        return { error: null, requires2FA: true }
+      }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('Sign in failed:', err)
+      return { error: { message: 'Connection error' } }
+    }
+  }
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      console.log('📝 Attempting sign up for:', email)
+      
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+
+      if (error) {
+        console.error('❌ Sign up error:', error)
+        
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
+        }
+        
+        if (error.message.includes('Invalid email')) {
+          return { error: { message: 'Please enter a valid email address.' } }
+        }
+        
+        if (error.message.includes('Password')) {
+          return { error: { message: 'Password must be at least 6 characters long.' } }
+        }
+        
+        return { error: { message: `Signup failed: ${error.message}` } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful for:', data.user.email)
+        
+        // Create user profile with phone number
+        try {
+          const { error: profileError } = await supabaseClient
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              phone: metadata?.phone
+            })
+
+          if (profileError) {
+            console.error('Error creating user profile:', profileError)
+          } else {
+            console.log('✅ User profile created successfully')
+          }
+        } catch (err) {
+          console.error('Unexpected error inserting user profile:', err)
+        }
+
+        return { error: null }
+      }
+
+      return { error: { message: 'No user returned from signup' } }
+    } catch (err) {
+      console.error('Sign up failed:', err)
+      return { error: { message: 'Connection error during signup' } }
+    }
+  }
+
+
+  const signOut = async () => {
+    try {
+      console.log('🚪 Signing out user...')
+      
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      } else {
+        console.log('✅ Sign out successful')
+      }
+      
+      // Always clear state and reload page for clean logout
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
+      
+      // Force page reload to ensure clean state
+      window.location.reload()
+    } catch (err) {
+      console.error('Sign out failed:', err)
+      // Force reload on any error
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
+      window.location.reload()
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
-                  selectedTab === tab.id
-                    ? 'bg-navy-600 text-white'
-                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
-                }`}
-              >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {selectedTab === 'portfolio' && (
-          <div className="space-y-6">
-            {/* KYC Status Overlay */}
-            {!isKYCVerified && (
-              <ReadOnlyPortfolioOverlay 
-                kycStatus={kycStatus}
-                onCheckKYC={onShowKYCProgress}
-                onResubmitKYC={onShowKYCProgress}
-              />
-            )}
-            
-            {/* Portfolio Value Card - Always Visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-              kycStatus={kycStatus}
-            />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            
-            {/* Portfolio sections in expandable folders */}
-            {portfolioSections.map((section) => (
-              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                <div 
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => toggleSection(section.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
-                        <section.icon className="h-6 w-6 text-navy-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {expandedSections.has(section.id) && (
-                  <div className="border-t border-gray-100 p-6">
-                    <section.component />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selectedTab === 'markets' && <MarketsTab />}
-        {selectedTab === 'research' && <ResearchTab />}
-        {selectedTab === 'security' && (
-          <SecuritySettings onBack={() => setSelectedTab('portfolio')} />
-        )}
-        {selectedTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            {!isKYCVerified && (
-              <ReadOnlyPortfolioOverlay 
-                kycStatus={kycStatus}
-                onCheckKYC={onShowKYCProgress}
-                onResubmitKYC={onShowKYCProgress}
-              />
-            )}
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
-              <p className="text-gray-600 mb-6">
-                View your complete transaction history and account activity
-              </p>
-              <button
-                onClick={() => handleFundPortfolio()}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2 ${
-                  isKYCVerified 
-                    ? 'bg-navy-600 hover:bg-navy-700 text-white' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={!isKYCVerified}
-                title={!isKYCVerified ? 'Complete identity verification to fund portfolio' : ''}
-              >
-                <Plus className="h-4 w-4" />
-                <span>{isKYCVerified ? 'Add First Transaction' : 'Verification Required'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Funding Modal */}
-      {isKYCVerified && <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => {
-          setShowFundingModal(false)
-          setPrefilledAmount(null)
-        }}
-        prefilledAmount={prefilledAmount}
-      />}
-    </div>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      pending2FA,
+      pendingAuthData,
+      account,
+      subscription,
+      profile,
+      refreshAccount,
+      refreshSubscription,
+      refreshProfile,
+      processFunding,
+      markDocumentsCompleted,
+      signIn,
+      complete2FA,
+      signUp,
+      signOut
+    }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 
-export default InvestorDashboard
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
