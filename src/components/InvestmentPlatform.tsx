@@ -21,24 +21,47 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
 
   // Mark initial load as complete after a short delay
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    try {
+      const timeout = setTimeout(() => {
+        setInitialLoadComplete(true)
+      }, 1000)
+      
+      return () => clearTimeout(timeout)
+    } catch (error) {
+      console.error('❌ Initial load timer error:', error)
       setInitialLoadComplete(true)
-    }, 1000)
-    
-    return () => clearTimeout(timeout)
+    }
   }, [])
 
   // Prevent white screen by ensuring we always show something
   const [renderReady, setRenderReady] = useState(false)
   
   useEffect(() => {
-    // Always mark as ready to render after a brief moment
-    const timer = setTimeout(() => {
+    try {
+      // Always mark as ready to render after a brief moment
+      const timer = setTimeout(() => {
+        setRenderReady(true)
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    } catch (error) {
+      console.error('❌ Render ready timer error:', error)
       setRenderReady(true)
-    }, 100)
-    
-    return () => clearTimeout(timer)
+    }
   }, [])
+
+  // Emergency fallback to prevent infinite white screen
+  useEffect(() => {
+    const emergencyTimeout = setTimeout(() => {
+      if (!renderReady) {
+        console.warn('⚠️ Emergency render fallback triggered')
+        setRenderReady(true)
+        setInitialLoadComplete(true)
+      }
+    }, 3000)
+    
+    return () => clearTimeout(emergencyTimeout)
+  }, [renderReady])
 
   // Don't render anything until we're ready
   if (!renderReady) {
@@ -47,6 +70,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         <div className="text-center">
           <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
           <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
+          <p className="text-sm text-gray-600">Initializing application...</p>
         </div>
       </div>
     )
