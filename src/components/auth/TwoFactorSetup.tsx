@@ -68,6 +68,7 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
+    { id: 'transactions', name: 'Transactions', icon: FileText }
   ]
 
   const portfolioSections = [
@@ -78,10 +79,7 @@ const InvestorDashboard: React.FC = () => {
       component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
     },
     {
-        console.error('❌ TOTP verification error:', error)
       id: 'performance',
-      } else {
-        console.log('✅ User 2FA status updated in database')
       title: 'Performance Analytics',
       icon: Award,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
@@ -94,11 +92,7 @@ const InvestorDashboard: React.FC = () => {
     },
     {
       id: 'insights',
-      if (err instanceof Error && err.message.includes('Invalid TOTP code')) {
-        setError('Invalid code. Please check your authenticator app and try again.')
-      } else {
-        setError(err instanceof Error ? err.message : 'Verification failed. Please try again.')
-      }
+      title: 'AI Insights',
       icon: Brain,
       component: () => <AIInsights currentBalance={currentBalance} />
     }
