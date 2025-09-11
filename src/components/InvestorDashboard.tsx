@@ -29,6 +29,7 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
+import { SecuritySettings } from './SecuritySettings'
 
 const InvestorDashboard: React.FC = () => {
   const { user, account, loading } = useAuth()
@@ -67,7 +68,6 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-    { id: 'transactions', name: 'Transactions', icon: FileText }
   ]
 
   const portfolioSections = [

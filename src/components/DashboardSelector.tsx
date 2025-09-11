@@ -37,7 +37,6 @@ const InvestorDashboard: React.FC = () => {
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
@@ -69,7 +68,6 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-    { id: 'transactions', name: 'Transactions', icon: FileText }
   ]
 
   const portfolioSections = [
@@ -77,18 +75,12 @@ const InvestorDashboard: React.FC = () => {
       id: 'allocation',
       title: 'Asset Allocation',
       icon: Target,
-      component: () => <InteractiveAllocationChart />
-    },
-    {
-      id: 'analytics',
-      title: 'Portfolio Analytics',
-      icon: BarChart3,
-      component: () => <PortfolioAnalytics />
+      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
     },
     {
       id: 'performance',
-      title: 'Performance Metrics',
-      icon: Activity,
+      title: 'Performance Analytics',
+      icon: Award,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
     },
     {
@@ -101,7 +93,7 @@ const InvestorDashboard: React.FC = () => {
       id: 'insights',
       title: 'AI Portfolio Insights',
       icon: Brain,
-      component: () => <AIInsights />
+      component: () => <AIInsights currentBalance={currentBalance} />
     }
   ]
 
@@ -120,31 +112,7 @@ const InvestorDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-6 w-6 text-navy-600" />
-              <span className="font-serif text-lg font-bold text-navy-900">
-                InvestorPortal
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Header with Security Button */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <button
-            onClick={() => setShowSecuritySettings(true)}
-            className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
-          >
-            <Settings className="h-4 w-4" />
-            <span>Security</span>
-          </button>
-        </div>
-
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <div className="flex overflow-x-auto scrollbar-hide">
@@ -189,13 +157,17 @@ const InvestorDashboard: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
                       </div>
                     </div>
-                    {expandedSections.has(section.id) ? (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    )}
+                    
+                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      {expandedSections.has(section.id) ? (
+                        <ChevronDown className="h-5 w-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      )}
+                    </div>
                   </div>
                 </div>
                 

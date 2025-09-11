@@ -68,7 +68,6 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-    { id: 'transactions', name: 'Transactions', icon: FileText }
   ]
 
   const portfolioSections = [
@@ -92,7 +91,7 @@ const InvestorDashboard: React.FC = () => {
     },
     {
       id: 'insights',
-      title: 'AI Insights',
+      title: 'AI Portfolio Insights',
       icon: Brain,
       component: () => <AIInsights currentBalance={currentBalance} />
     }

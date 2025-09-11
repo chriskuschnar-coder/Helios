@@ -1,240 +1,219 @@
 import React, { useState } from 'react'
-import { CreditCard, Shield, Lock, AlertCircle } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { PortfolioValueCard } from './PortfolioValueCard'
+import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
+import { FundingModal } from './FundingModal'
+import { MarketsTab } from './markets/MarketsTab'
+import { ResearchTab } from './research/ResearchTab'
+import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
+import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
+import { AIInsights } from './portfolio/AIInsights'
+import { FundNAVChart } from './portfolio/FundNAVChart'
+import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
+import { 
+  TrendingUp, 
+  BarChart3, 
+  Brain, 
+  Globe, 
+  FileText, 
+  Shield, 
+  Target,
+  Activity,
+  Plus,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  Award,
+  Eye,
+  Settings,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
+import { SecuritySettings } from './SecuritySettings'
+import { SecuritySettings } from './SecuritySettings'
 
-interface StripeCardFormProps {
-  amount: number
-  onSuccess: (result: any) => void
-  onError: (error: string) => void
-}
+const InvestorDashboard: React.FC = () => {
+  const { user, account, loading } = useAuth()
+  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
-export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormProps) {
-  const { user, processFunding } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [cardDetails, setCardDetails] = useState({
-    number: '',
-    expiry: '',
-    cvc: '',
-    name: ''
-  })
+  const currentBalance = account?.balance || 0
+  const hasActivity = currentBalance > 0
 
-  const handleCardChange = (field: string, value: string) => {
-    setCardDetails(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    const matches = v.match(/\d{4,16}/g)
-    const match = matches && matches[0] || ''
-    const parts = []
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4))
-    }
-    if (parts.length) {
-      return parts.join(' ')
-    } else {
-      return v
-    }
-  }
-
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4)
-    }
-    return v
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    setLoading(true)
-
-    try {
-      console.log('💳 Starting Stripe checkout for amount:', amount)
-      
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      console.log('🔍 Using Supabase URL:', supabaseUrl)
-
-      // Get user session for authentication
-      const { supabaseClient } = await import('../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (!session) {
-        throw new Error('Please sign in to continue')
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
+      } else {
+        newSet.add(sectionId)
       }
-
-      console.log('✅ User session found, creating checkout...')
-
-      // Create Stripe checkout session
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
-          mode: 'payment',
-          amount: amount * 100,
-          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-          cancel_url: `${window.location.origin}/funding-cancelled`
-        })
-      })
-
-      console.log('📡 Checkout response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Checkout creation failed:', errorData)
-        throw new Error(errorData.error || 'Failed to create checkout session')
-      }
-
-      const { url } = await response.json()
-      console.log('✅ Checkout URL received:', url)
-      
-      if (!url) {
-        throw new Error('No checkout URL received')
-      }
-      
-      console.log('🚀 Redirecting to Stripe checkout...')
-      window.location.href = url
-      
-    } catch (error) {
-      console.error('❌ Stripe checkout error:', error)
-      onError(error instanceof Error ? error.message : 'Payment failed')
-      setLoading(false)
-    }
+      return newSet
+    })
   }
 
-  const processingFee = amount * 0.029 + 0.30
-  const totalCharge = amount + processingFee
+  const handleFundPortfolio = (amount?: number) => {
+    if (amount) {
+      setPrefilledAmount(amount)
+    }
+    setShowFundingModal(true)
+  }
+
+  const handleWithdraw = () => {
+    alert('Withdrawal functionality will be implemented here')
+  }
+
+  const tabs = [
+    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
+    { id: 'markets', name: 'Markets', icon: Globe },
+    { id: 'research', name: 'Research', icon: Brain },
+
+  const portfolioSections = [
+    {
+      id: 'allocation',
+      title: 'Asset Allocation',
+      icon: Target,
+      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
+    },
+    {
+      id: 'performance',
+      title: 'Performance Analytics',
+      icon: Award,
+      component: () => <PerformanceMetrics currentBalance={currentBalance} />
+    },
+    {
+      id: 'nav',
+      title: 'Fund NAV History',
+      icon: TrendingUp,
+      component: () => <FundNAVChart />
+    },
+    {
+      id: 'insights',
+      title: 'AI Portfolio Insights',
+      icon: Brain,
+      component: () => <AIInsights currentBalance={currentBalance} />
+    }
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <BarChart3 className="h-8 w-8 text-navy-600" />
+          </div>
+          <p className="text-gray-600">Connecting to your account...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
-        <div className="flex items-center space-x-2 mb-2">
-          <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-          <span className="text-sm sm:text-base font-medium text-blue-900">Secure Payment Processing</span>
-          <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-        </div>
-        <p className="text-xs sm:text-sm text-blue-700">
-          Your payment information is encrypted and secure. Uses Supabase + Stripe integration.
-        </p>
-      </div>
-
-      <div className="space-y-3 sm:space-y-4">
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-            Cardholder Name
-          </label>
-          <input
-            type="text"
-            value={cardDetails.name}
-            onChange={(e) => handleCardChange('name', e.target.value)}
-            className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Full name on card"
-            required
-          />
+    <div className="min-h-screen bg-gray-50 safe-area-bottom">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id as any)}
+                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
+                  selectedTab === tab.id
+                    ? 'bg-navy-600 text-white'
+                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
+                }`}
+              >
+                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{tab.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-            Card Number
-          </label>
-          <input
-            type="text"
-            value={cardDetails.number}
-            onChange={(e) => handleCardChange('number', formatCardNumber(e.target.value))}
-            className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-            placeholder="4242 4242 4242 4242"
-            maxLength={19}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Expiry Date
-            </label>
-            <input
-              type="text"
-              value={cardDetails.expiry}
-              onChange={(e) => handleCardChange('expiry', formatExpiry(e.target.value))}
-              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-              placeholder="MM/YY"
-              maxLength={5}
-              required
+        {/* Tab Content */}
+        {selectedTab === 'portfolio' && (
+          <div className="space-y-6">
+            {/* Portfolio Value Card - Always Visible */}
+            <PortfolioValueCard 
+              onFundPortfolio={handleFundPortfolio}
+              onWithdraw={handleWithdraw}
             />
+            <PortfolioPerformanceChart currentBalance={currentBalance} />
+            
+            {/* Portfolio sections in expandable folders */}
+            {portfolioSections.map((section) => (
+              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div 
+                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
+                        <section.icon className="h-6 w-6 text-navy-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      {expandedSections.has(section.id) ? (
+                        <ChevronDown className="h-5 w-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {expandedSections.has(section.id) && (
+                  <div className="border-t border-gray-100 p-6">
+                    <section.component />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              CVC
-            </label>
-            <input
-              type="text"
-              value={cardDetails.cvc}
-              onChange={(e) => handleCardChange('cvc', e.target.value.replace(/\D/g, '').substring(0, 4))}
-              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-              placeholder="123"
-              maxLength={4}
-              required
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs sm:text-sm text-gray-700">Investment Amount:</span>
-          <span className="text-sm sm:text-base font-bold text-gray-900">${amount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 text-xs sm:text-sm">Processing fee (2.9% + $0.30):</span>
-          <span className="text-gray-600 text-xs sm:text-sm">${processingFee.toFixed(2)}</span>
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm sm:text-base font-medium text-gray-900">Total charge:</span>
-            <span className="text-sm sm:text-base font-bold text-gray-900">${totalCharge.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 sm:py-4 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center justify-center"
-      >
-        {loading ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Processing Payment...
-          </>
-        ) : (
-          <>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Complete Contribution - ${amount.toLocaleString()}
-          </>
         )}
-      </button>
-      
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <div className="flex items-center space-x-2 mb-1">
-          <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-900 text-xs sm:text-sm">Live Mode</span>
-        </div>
-        <p className="text-xs text-yellow-700">
-          <strong>Live Payment:</strong> Real charges will be processed through Stripe
-        </p>
+
+        {selectedTab === 'markets' && <MarketsTab />}
+        {selectedTab === 'research' && <ResearchTab />}
+        {selectedTab === 'transactions' && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
+              <p className="text-gray-600 mb-6">
+                View your complete transaction history and account activity
+              </p>
+              <button
+                onClick={() => handleFundPortfolio()}
+                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add First Transaction</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-    </form>
+
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => {
+          setShowFundingModal(false)
+          setPrefilledAmount(null)
+        }}
+        prefilledAmount={prefilledAmount}
+      />
+    </div>
   )
 }
+
+export default InvestorDashboard

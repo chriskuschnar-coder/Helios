@@ -68,21 +68,11 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-          const { error: unenrollError } = await supabaseClient.auth.mfa.unenroll({ 
-            factorId: factor.id 
-          })
-          
-          if (unenrollError) {
-            console.error('❌ Unenroll error:', unenrollError)
-            throw unenrollError
-          }
   ]
 
   const portfolioSections = [
     {
       id: 'allocation',
-      } else {
-        console.log('ℹ️ No TOTP factors found to unenroll')
       title: 'Asset Allocation',
       icon: Target,
       component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
@@ -92,14 +82,12 @@ const InvestorDashboard: React.FC = () => {
       title: 'Performance Analytics',
       icon: Award,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
-        console.error('❌ Database update error:', error)
     },
     {
       id: 'nav',
       title: 'Fund NAV History',
       icon: TrendingUp,
       component: () => <FundNAVChart />
-      console.log('✅ 2FA disabled successfully')
     },
     {
       id: 'insights',

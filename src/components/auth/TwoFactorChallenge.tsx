@@ -91,7 +91,7 @@ const InvestorDashboard: React.FC = () => {
     },
     {
       id: 'insights',
-      title: 'AI Insights',
+      title: 'AI Portfolio Insights',
       icon: Brain,
       component: () => <AIInsights currentBalance={currentBalance} />
     }
