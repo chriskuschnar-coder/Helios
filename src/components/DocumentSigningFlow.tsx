@@ -54,10 +54,6 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [signature, setSignature] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [showDocumentPreview, setShowDocumentPreview] = useState(false)
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null)
-  const [zoomLevel, setZoomLevel] = useState(100)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [exhibitAData, setExhibitAData] = useState<ExhibitAData>({
     accreditedInvestorSelections: [],
     qualifiedPurchaserSelections: [],
@@ -75,7 +71,10 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [exhibitDData, setExhibitDData] = useState<ExhibitDData>({
     signature: ''
   })
-  const [previewZoom, setPreviewZoom] = useState(100)
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null)
+  const [zoomLevel, setZoomLevel] = useState(100)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Check if user has already completed documents
   const hasCompletedDocuments = user?.documents_completed
@@ -988,6 +987,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
             <div className="flex gap-3">
               <button
                 onClick={() => {
+                  setPreviewDoc({ title: currentDocument.title, url: currentDocument.url })
                   console.log('🔙 Going back to portfolio from document signing')
                   onBack()
                 }}
