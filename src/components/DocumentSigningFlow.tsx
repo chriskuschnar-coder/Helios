@@ -514,23 +514,23 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
             </div>
           </div>
           
-          <div className={`${isFullscreen ? 'h-[85vh]' : 'h-[70vh]'} bg-gray-100 relative overflow-hidden`}>
+          <div className={\`${isFullscreen ? 'h-[85vh]' : 'h-[70vh]'} bg-gray-100 relative overflow-hidden`}>
             <div className="w-full h-full overflow-auto">
               {previewDoc.url.endsWith('.pdf') ? (
                 <iframe
-                  src={`${previewDoc.url}#zoom=${zoomLevel}`}
-                  title={`Preview: ${previewDoc.title}`}
+                  src={\`${previewDoc.url}#zoom=${zoomLevel}`}
+                  title={\`Preview: ${previewDoc.title}`}
                   className="w-full h-full border-none"
                   style={{ minHeight: '100%' }}
                 />
               ) : (
                 <iframe
                   src={previewDoc.url}
-                  title={`Preview: ${previewDoc.title}`}
+                  title={\`Preview: ${previewDoc.title}`}
                   className="w-full h-full border-none"
                   style={{ 
                     minHeight: '100%',
-                    transform: `scale(${zoomLevel / 100})`,
+                    transform: \`scale(${zoomLevel / 100})`,
                     transformOrigin: 'top left'
                   }}
                 />
@@ -586,7 +586,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className="bg-navy-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((currentDocumentIndex + 1) / documents.length) * 100}%` }}
+            style={{ width: \`${((currentDocumentIndex + 1) / documents.length) * 100}%` }}
           ></div>
         </div>
       </div>
