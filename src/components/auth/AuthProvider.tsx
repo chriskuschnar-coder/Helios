@@ -156,21 +156,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        setLoading(true)
         const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
           console.warn('Session check error:', error)
           setLoading(false)
         } else if (session) {
-          console.log('✅ Existing session found, loading user data...')
-          await loadUserAccount(session.user.id)
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name,
-            phone: session.user.user_metadata?.phone
-          })
+          console.log('✅ Existing session found, but requiring fresh login for security')
+          // Clear any existing session to force fresh login
+          await supabaseClient.auth.signOut()
           setLoading(false)
         } else {
           console.log('No existing session found or session check error')
@@ -186,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const timeoutId = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
-    }, 2000) // Reduced to 2 seconds
+    }, 1000) // Reduced to 1 second
 
     checkSession()
 
@@ -200,11 +194,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setAccount(null)
           setSubscription(null)
+          setProfile(null)
           setPending2FA(false)
           setPendingAuthData(null)
           setLoading(false)
         }
-        // Don't auto-authenticate on SIGNED_IN - require 2FA
+        // Don't auto-authenticate on any event - require explicit login
       }
     )
 

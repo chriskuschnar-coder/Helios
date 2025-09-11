@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
@@ -15,18 +14,8 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading, pending2FA, pendingAuthData, signOut } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const [showKYCProgress, setShowKYCProgress] = useState(false)
 
-
-  // Mark initial load as complete after a short delay
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setInitialLoadComplete(true)
-    }, 1000)
-    
-    return () => clearTimeout(timeout)
-  }, [])
 
   // Error boundary
   if (error) {
@@ -49,8 +38,8 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     );
   }
 
-  // Show loading only during initial load
-  if (loading && !initialLoadComplete) {
+  // Show loading only when actually loading
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
