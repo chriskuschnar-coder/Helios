@@ -362,9 +362,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // CRITICAL: Don't set user state yet - wait for 2FA completion
-        // The user state will only be set after successful 2FA verification
-        console.log('🔐 Login successful, but 2FA verification required before setting user state')
+        // Set user temporarily for 2FA verification
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: data.user.user_metadata?.full_name
+        })
         
         return { error: null }
       }
@@ -419,7 +422,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               full_name: metadata?.full_name,
               phone: metadata?.phone,
               kyc_status: 'pending',
-              two_factor_enabled: true, // ALWAYS enable 2FA for security
+              two_factor_enabled: true, // Enable 2FA by default for security
               two_factor_method: 'email' // Default to email verification
             })
 

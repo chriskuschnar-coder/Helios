@@ -38,6 +38,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         console.error('❌ Login failed:', result.error.message)
         setError(result.error.message)
         setLoading(false)
+        return
       } else {
         console.log('✅ Login successful, checking 2FA status...')
         
@@ -62,14 +63,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
           hasPhone: !!userData?.phone 
         })
 
-        // ALWAYS require 2FA for security (all accounts have 2FA enabled by default)
-        if (userData?.two_factor_enabled !== false) {
+        // Check if 2FA is enabled for this user
+        if (userData?.two_factor_enabled === true) {
           console.log('🔐 2FA is enabled, showing challenge')
           setUserProfile(userData)
           setShow2FA(true)
           setLoading(false)
         } else {
-          console.log('⚠️ 2FA not enabled (legacy account), proceeding to dashboard')
+          console.log('✅ 2FA not required, proceeding to dashboard')
           setLoading(false)
           onSuccess?.()
         }
@@ -78,8 +79,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       console.error('Login error:', err)
       setError('Connection error - please try again')
       setLoading(false)
-    } finally {
-      // Loading state is managed above
     }
   }
 
@@ -95,6 +94,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setUserProfile(null)
     setLoading(false)
     // Sign out the user since they didn't complete 2FA
+    const { supabaseClient } = await import('../../lib/supabase-client')
     supabaseClient.auth.signOut()
   }
 

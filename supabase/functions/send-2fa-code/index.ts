@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       console.log('📧 Sending email verification code to:', email)
       
       try {
-        // Get SendGrid credentials
+        // Get SendGrid API key from environment
         const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')
         const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'noreply@globalmarketsconsulting.com'
         

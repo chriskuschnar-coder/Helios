@@ -29,9 +29,11 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
   useEffect(() => {
     checkBiometricSupport()
-    // Auto-send email code (primary method)
-    if (userEmail) {
+    // Auto-send email code on mount (email is primary method)
+    if (userEmail && preferredMethod === 'email') {
       sendVerificationCode('email')
+    } else if (userPhone && preferredMethod === 'sms') {
+      sendVerificationCode('sms')
     }
   }, [])
 
@@ -103,14 +105,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       const result = await response.json()
       console.log('✅ Verification code sent successfully')
       
-      // Show the demo code for testing
-      if (result.demo_code) {
-        console.log('🔑 Demo verification code:', result.demo_code)
-        setSuccess(`Code sent to ${selectedMethod === 'email' ? userEmail : userPhone}. Demo code: ${result.demo_code}`)
-      } else {
-        setSuccess(`Verification code sent to ${selectedMethod === 'email' ? userEmail : userPhone}`)
-      }
-      
+      setSuccess(`Verification code sent to ${selectedMethod === 'email' ? userEmail : userPhone}`)
       setCodeSent(true)
       setTimeRemaining(600) // Reset timer
       setCanResend(false)
@@ -271,7 +266,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           <Shield className="h-8 w-8 text-blue-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h2>
-        <p className="text-gray-600">Check your email for the verification code</p>
+        <p className="text-gray-600">
+          {codeSent ? 'Enter the verification code' : 'We\'ll send you a verification code'}
+        </p>
       </div>
 
       {/* Method Selector */}
@@ -282,7 +279,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             setVerificationCode('')
             setError('')
             setSuccess('')
-            sendVerificationCode('email')
+            if (!codeSent) sendVerificationCode('email')
           }}
           className={`p-4 rounded-lg font-medium transition-colors text-center ${
             method === 'email' 
