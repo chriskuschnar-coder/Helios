@@ -6,10 +6,23 @@ import { Services } from './components/Services'
 import { Footer } from './components/Footer'
 import { InvestmentPlatform } from './components/InvestmentPlatform'
 import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
 
 export default function App() {
   const [showInvestmentPlatform, setShowInvestmentPlatform] = useState(false)
   const [platformLoading, setPlatformLoading] = useState(false)
+
+  useEffect(() => {
+    const handleNavigateToLogin = () => {
+      handleNavigateToLogin()
+    }
+
+    window.addEventListener('navigate-to-login', handleNavigateToLogin)
+    
+    return () => {
+      window.removeEventListener('navigate-to-login', handleNavigateToLogin)
+    }
+  }, [])
 
   const handleNavigateToLogin = () => {
     setPlatformLoading(true)
