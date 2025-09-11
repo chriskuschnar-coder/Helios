@@ -1,13 +1,15 @@
 import React from 'react'
 import { TrendingUp, Plus, Activity, TrendingDown } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { DisabledFundingButton } from './ReadOnlyPortfolioOverlay'
 
 interface PortfolioValueCardProps {
   onFundPortfolio: (amount?: number) => void
   onWithdraw: () => void
+  kycStatus?: string
 }
 
-export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioValueCardProps) {
+export function PortfolioValueCard({ onFundPortfolio, onWithdraw, kycStatus = 'unverified' }: PortfolioValueCardProps) {
   const { account } = useAuth()
   
   const currentValue = account?.balance || 0
@@ -22,6 +24,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
   const dailyChange = netDeposits > 0 ? totalPnL / 365 : 0
   const dailyChangePct = netDeposits > 0 ? (totalPnL / netDeposits * 100) / 365 : 0
   const isPositive = dailyChange >= 0
+  const isKYCVerified = kycStatus === 'verified'
 
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-3 sm:mb-4 md:mb-6 mobile-card">
@@ -44,20 +47,30 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw }: PortfolioVal
       </div>
       
       <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 mobile-space-y-1">
-        <button 
+        <DisabledFundingButton
+          kycStatus={kycStatus}
           onClick={() => onFundPortfolio()}
-          className="flex-1 bg-black hover:bg-gray-800 text-white px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
+          className={`flex-1 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 ${
+            isKYCVerified 
+              ? 'bg-black hover:bg-gray-800 text-white' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
           <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           <span className="text-xs sm:text-sm mobile-text-xs">Fund Portfolio</span>
-        </button>
-        <button 
+        </DisabledFundingButton>
+        <DisabledFundingButton
+          kycStatus={kycStatus}
           onClick={onWithdraw}
-          className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1"
+          className={`flex-1 border-2 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 ${
+            isKYCVerified 
+              ? 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300' 
+              : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
+          }`}
         >
           <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
           <span className="text-xs sm:text-sm mobile-text-xs">Withdraw</span>
-        </button>
+        </DisabledFundingButton>
       </div>
     </div>
   )

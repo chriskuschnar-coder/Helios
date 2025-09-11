@@ -11,6 +11,7 @@ import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationCha
 import { AIInsights } from './portfolio/AIInsights'
 import { FundNAVChart } from './portfolio/FundNAVChart'
 import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
+import { ReadOnlyPortfolioOverlay } from './ReadOnlyPortfolioOverlay'
 import { 
   TrendingUp, 
   BarChart3, 
@@ -31,7 +32,11 @@ import {
   ChevronRight
 } from 'lucide-react'
 
-const InvestorDashboard: React.FC = () => {
+interface InvestorDashboardProps {
+  onShowKYCProgress?: () => void
+}
+
+const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress }) => {
   const { user, account, loading } = useAuth()
   const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions' | 'security'>('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
@@ -41,6 +46,8 @@ const InvestorDashboard: React.FC = () => {
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
+  const kycStatus = user?.kyc_status || 'unverified'
+  const isKYCVerified = kycStatus === 'verified'
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -55,6 +62,14 @@ const InvestorDashboard: React.FC = () => {
   }
 
   const handleFundPortfolio = (amount?: number) => {
+    // Check KYC status before allowing funding
+    if (!isKYCVerified) {
+      if (onShowKYCProgress) {
+        onShowKYCProgress()
+      }
+      return
+    }
+    
     if (amount) {
       setPrefilledAmount(amount)
     }
@@ -62,6 +77,12 @@ const InvestorDashboard: React.FC = () => {
   }
 
   const handleWithdraw = () => {
+    if (!isKYCVerified) {
+      if (onShowKYCProgress) {
+        onShowKYCProgress()
+      }
+      return
+    }
     alert('Withdrawal functionality will be implemented here')
   }
 
@@ -142,10 +163,20 @@ const InvestorDashboard: React.FC = () => {
         {/* Tab Content */}
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
+            {/* KYC Status Overlay */}
+            {!isKYCVerified && (
+              <ReadOnlyPortfolioOverlay 
+                kycStatus={kycStatus}
+                onCheckKYC={onShowKYCProgress}
+                onResubmitKYC={onShowKYCProgress}
+              />
+            )}
+            
             {/* Portfolio Value Card - Always Visible */}
             <PortfolioValueCard 
               onFundPortfolio={handleFundPortfolio}
               onWithdraw={handleWithdraw}
+              kycStatus={kycStatus}
             />
             <PortfolioPerformanceChart currentBalance={currentBalance} />
             
@@ -194,6 +225,13 @@ const InvestorDashboard: React.FC = () => {
         )}
         {selectedTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            {!isKYCVerified && (
+              <ReadOnlyPortfolioOverlay 
+                kycStatus={kycStatus}
+                onCheckKYC={onShowKYCProgress}
+                onResubmitKYC={onShowKYCProgress}
+              />
+            )}
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
@@ -202,10 +240,16 @@ const InvestorDashboard: React.FC = () => {
               </p>
               <button
                 onClick={() => handleFundPortfolio()}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                className={`px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2 ${
+                  isKYCVerified 
+                    ? 'bg-navy-600 hover:bg-navy-700 text-white' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!isKYCVerified}
+                title={!isKYCVerified ? 'Complete identity verification to fund portfolio' : ''}
               >
                 <Plus className="h-4 w-4" />
-                <span>Add First Transaction</span>
+                <span>{isKYCVerified ? 'Add First Transaction' : 'Verification Required'}</span>
               </button>
             </div>
           </div>
@@ -213,14 +257,14 @@ const InvestorDashboard: React.FC = () => {
       </div>
 
       {/* Funding Modal */}
-      <FundingModal
+      {isKYCVerified && <FundingModal
         isOpen={showFundingModal}
         onClose={() => {
           setShowFundingModal(false)
           setPrefilledAmount(null)
         }}
         prefilledAmount={prefilledAmount}
-      />
+      />}
     </div>
   )
 }

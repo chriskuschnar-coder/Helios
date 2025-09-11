@@ -1,6 +1,7 @@
 import React from 'react'
 import { TrendingUp, ArrowRight, Shield, Award, CheckCircle } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
+import { DisabledFundingButton } from './ReadOnlyPortfolioOverlay'
 
 interface EmptyPortfolioStateProps {
   onFundAccount: () => void
@@ -12,7 +13,8 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
 
   // If user has completed documents, show different messaging
   const hasCompletedDocuments = user?.documents_completed
-  const isKYCVerified = user?.kyc_status === 'verified'
+  const kycStatus = user?.kyc_status || 'unverified'
+  const isKYCVerified = kycStatus === 'verified'
 
   const handleProceedToPayment = () => {
     // Check if user has already completed documents AND KYC verification
@@ -66,14 +68,15 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
         </div>
       </div>
 
-      <button
+      <DisabledFundingButton
+        kycStatus={kycStatus}
         onClick={onFundAccount}
         className="bg-navy-600 hover:bg-navy-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
       >
         {hasCompletedDocuments && isKYCVerified ? 'Add Account Capital' : 
          hasCompletedDocuments ? 'Complete Identity Verification' : 'Complete Onboarding Documents'}
         <ArrowRight className="w-5 h-5" />
-      </button>
+      </DisabledFundingButton>
     </div>
   )
 }

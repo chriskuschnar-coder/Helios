@@ -4,7 +4,11 @@ import InvestorDashboard from './InvestorDashboard'
 import HeliosDashboard from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
 
-export function DashboardSelector() {
+interface DashboardSelectorProps {
+  onShowKYCProgress?: () => void
+}
+
+export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps) {
   const { user, signOut, account } = useAuth()
   const [selectedDashboard, setSelectedDashboard] = useState<'investor' | 'helios'>('investor')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -165,7 +169,7 @@ export function DashboardSelector() {
   return (
     <>
       <DashboardSwitcher />
-      <InvestorDashboard />
+      <InvestorDashboard onShowKYCProgress={onShowKYCProgress} />
     </>
   )
 }

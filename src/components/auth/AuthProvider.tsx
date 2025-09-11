@@ -8,7 +8,7 @@ interface User {
   phone?: string
   documents_completed?: boolean
   documents_completed_at?: string
-  kyc_status?: string
+  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
   is_kyc_verified?: boolean
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'

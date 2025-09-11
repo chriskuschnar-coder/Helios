@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
 import { TwoFactorChallenge } from './auth/TwoFactorChallenge'
+import { KYCVerificationInProgress } from './KYCVerificationInProgress'
 import { DashboardSelector } from './DashboardSelector'
 import { Loader2 } from 'lucide-react'
 
@@ -15,6 +16,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
+  const [showKYCProgress, setShowKYCProgress] = useState(false)
 
 
   // Mark initial load as complete after a short delay
@@ -115,6 +117,24 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
+  // Show KYC verification progress if user is authenticated but not verified
+  if (user && !pending2FA && showKYCProgress) {
+    return (
+      <KYCVerificationInProgress
+        onContinueBrowsing={() => setShowKYCProgress(false)}
+        onFundPortfolio={() => {
+          setShowKYCProgress(false)
+          // Will be handled by DashboardSelector
+        }}
+        onResubmitKYC={() => {
+          // Trigger KYC resubmission flow
+          setShowKYCProgress(false)
+          // Could trigger DiditKYCVerification component
+        }}
+      />
+    )
+  }
+
   // Block access if pending 2FA (safety check)
   if (pending2FA) {
     return (
@@ -134,7 +154,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   }
 
   try {
-    return <DashboardSelector />
+    return <DashboardSelector onShowKYCProgress={() => setShowKYCProgress(true)} />
   } catch (err) {
     console.error('❌ Dashboard render error:', err);
     return (
