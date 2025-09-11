@@ -173,7 +173,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         const timeoutId = setTimeout(() => {
           console.error('⏰ Didit session creation timeout after 10 seconds')
           reject(new Error('Verification session creation timeout - please try again'))
-        }, 10000)
+        }, 30000)
         return timeoutId
       })
 
