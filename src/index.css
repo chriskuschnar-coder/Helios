@@ -358,15 +358,37 @@ body {
 /* CRITICAL: Stripe Elements CSS for proper mounting and interaction */
 .StripeElement {
   width: 100% !important;
-  height: 100% !important;
-  padding: 10px 0 !important;
+  height: auto !important;
+  min-height: 40px !important;
+  padding: 8px 0 !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
 }
 
 .StripeElement--focus {
   outline: none !important;
+  border: none !important;
+}
+
+.StripeElement--complete {
+  color: #424770 !important;
+}
+
+.StripeElement--invalid {
+  color: #9e2146 !important;
 }
 
 /* Ensure the container divs have proper dimensions */
-[class*="Element"] {
+.__PrivateStripeElement {
+  width: 100% !important;
   min-height: 40px !important;
+  padding: 0 !important;
+}
+
+.__PrivateStripeElement > iframe {
+  width: 100% !important;
+  height: 40px !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }

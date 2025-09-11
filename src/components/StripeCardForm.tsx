@@ -121,16 +121,37 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
   const cardElementOptions = {
     style: {
       base: {
-        fontSize: '16px',
+        fontSize: '18px',
         color: '#424770',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        lineHeight: '24px',
+        '::placeholder': {
+          color: '#aab7c4',
+        },
+        ':focus': {
+          color: '#424770',
+        },
+        ':disabled': {
+          color: '#9ca3af',
+        },
+      },
+      complete: {
+        color: '#424770',
+      },
+      empty: {
+        color: '#9ca3af',
         '::placeholder': {
           color: '#aab7c4',
         },
       },
       invalid: {
         color: '#9e2146',
+        iconColor: '#9e2146',
       },
     },
+    hidePostalCode: false,
+    iconStyle: 'solid',
+    disabled: loading,
   }
 
   return (
@@ -165,7 +186,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             Card Details
           </label>
-          <div className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+          <div className="w-full px-3 sm:px-4 py-4 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-white min-h-[50px] flex items-center">
             <CardElement options={cardElementOptions} />
           </div>
         </div>
