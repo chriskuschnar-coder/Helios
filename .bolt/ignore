@@ -18,6 +18,9 @@ test-data/
 # Ignore old document versions (but keep current live ones)
 public/documents/old_*
 public/documents/test_*
+
+# Keep all current PDF documents for investors
+!public/documents/*.pdf
 public/documents/**/
 public/documents/*.jpeg
 public/documents/*.jpg
