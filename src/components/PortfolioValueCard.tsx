@@ -1,7 +1,7 @@
 import React from 'react'
 import { TrendingUp, Plus, Activity, TrendingDown } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { DisabledFundingButton } from './ReadOnlyPortfolioOverlay'
+import { DisabledFundingButton } from './DisabledFundingButton'
 
 interface PortfolioValueCardProps {
   onFundPortfolio: (amount?: number) => void
@@ -25,6 +25,8 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw, kycStatus = 'u
   const dailyChangePct = netDeposits > 0 ? (totalPnL / netDeposits * 100) / 365 : 0
   const isPositive = dailyChange >= 0
   const isKYCVerified = kycStatus === 'verified'
+  const { user, profile } = useAuth()
+  const hasCompletedDocuments = user?.documents_completed || profile?.documents_completed || false
 
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-3 sm:p-4 md:p-8 mb-3 sm:mb-4 md:mb-6 mobile-card">
@@ -49,6 +51,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw, kycStatus = 'u
       <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 mobile-space-y-1">
         <DisabledFundingButton
           kycStatus={kycStatus}
+          hasCompletedDocuments={hasCompletedDocuments}
           onClick={() => onFundPortfolio()}
           className={`flex-1 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 ${
             isKYCVerified 
@@ -61,6 +64,7 @@ export function PortfolioValueCard({ onFundPortfolio, onWithdraw, kycStatus = 'u
         </DisabledFundingButton>
         <DisabledFundingButton
           kycStatus={kycStatus}
+          hasCompletedDocuments={hasCompletedDocuments}
           onClick={onWithdraw}
           className={`flex-1 border-2 px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center space-x-1 sm:space-x-2 mobile-button active:scale-95 mobile-button-compact mobile-space-x-1 ${
             isKYCVerified 

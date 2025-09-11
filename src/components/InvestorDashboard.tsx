@@ -48,9 +48,10 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
   const hasActivity = currentBalance > 0
   const kycStatus = user?.kyc_status || profile?.kyc_status || 'unverified'
   const isKYCVerified = kycStatus === 'verified'
+  const hasCompletedDocuments = user?.documents_completed || profile?.documents_completed || false
   
-  // Don't show KYC overlay during initial loading or if user is already verified
-  const shouldShowKYCOverlay = !loading && !isKYCVerified && user && profile
+  // Only show KYC overlay if documents are completed but KYC is not verified
+  const shouldShowKYCOverlay = !loading && hasCompletedDocuments && !isKYCVerified && user && profile
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -170,6 +171,7 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
             {shouldShowKYCOverlay && (
               <ReadOnlyPortfolioOverlay 
                 kycStatus={kycStatus}
+                hasCompletedDocuments={hasCompletedDocuments}
                 onCheckKYC={onShowKYCProgress}
                 onResubmitKYC={onShowKYCProgress}
               />
@@ -231,6 +233,7 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
             {shouldShowKYCOverlay && (
               <ReadOnlyPortfolioOverlay 
                 kycStatus={kycStatus}
+                hasCompletedDocuments={hasCompletedDocuments}
                 onCheckKYC={onShowKYCProgress}
                 onResubmitKYC={onShowKYCProgress}
               />
