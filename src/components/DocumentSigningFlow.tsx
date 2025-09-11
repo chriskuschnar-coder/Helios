@@ -48,6 +48,16 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'investment_agreement'
     },
     {
+      id: 'lpa',
+      title: 'Limited Partnership Agreement',
+      description: 'Defines the terms of our investment management relationship and fee structure.',
+      file: 'Global_Markets_LPA_With_Schedules_1_20.pdf',
+      type: 'informational' as const,
+      signingRequired: false,
+      downloadable: true,
+      order: 2
+    },
+    {
       id: 'investment_agreement',
       title: 'Investment Management Agreement',
       description: 'Defines the terms of our investment management relationship and fee structure.',
@@ -55,7 +65,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       signed: false,
       url: '/documents/Improved_Private_Placement_Memorandum.docx',
       type: 'investment_agreement'
-    },
+      order: 3
     {
       id: 'risk_disclosure',
       title: 'Risk Disclosure Statement',
