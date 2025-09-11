@@ -1,219 +1,172 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Shield, Smartphone, Key, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { PortfolioValueCard } from './PortfolioValueCard'
-import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { FundingModal } from './FundingModal'
-import { MarketsTab } from './markets/MarketsTab'
-import { ResearchTab } from './research/ResearchTab'
-import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
-import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
-import { AIInsights } from './portfolio/AIInsights'
-import { FundNAVChart } from './portfolio/FundNAVChart'
-import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Brain, 
-  Globe, 
-  FileText, 
-  Shield, 
-  Target,
-  Activity,
-  Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
-import { SecuritySettings } from './SecuritySettings'
+import { TwoFactorSetup } from './auth/TwoFactorSetup'
 
-const InvestorDashboard: React.FC = () => {
-  const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+interface SecuritySettingsProps {
+  onBack: () => void
+}
 
-  const currentBalance = account?.balance || 0
-  const hasActivity = currentBalance > 0
+export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) => {
+  const { user, profile, refreshProfile } = useAuth()
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
-      }
-      return newSet
-    })
+  const handleEnable2FA = () => {
+    setShowTwoFactorSetup(true)
   }
 
-  const handleFundPortfolio = (amount?: number) => {
-    if (amount) {
-      setPrefilledAmount(amount)
+  const handleDisable2FA = async () => {
+    if (!confirm('Are you sure you want to disable two-factor authentication? This will make your account less secure.')) {
+      return
     }
-    setShowFundingModal(true)
-  }
 
-  const handleWithdraw = () => {
-    alert('Withdrawal functionality will be implemented here')
-  }
-
-  const tabs = [
-    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
-    { id: 'markets', name: 'Markets', icon: Globe },
-    { id: 'research', name: 'Research', icon: Brain },
-  ]
-
-  const portfolioSections = [
-    {
-      id: 'allocation',
-      title: 'Asset Allocation',
-      icon: Target,
-      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
-    },
-    {
-      id: 'performance',
-      title: 'Performance Analytics',
-      icon: Award,
-      component: () => <PerformanceMetrics currentBalance={currentBalance} />
-    },
-    {
-      id: 'nav',
-      title: 'Fund NAV History',
-      icon: TrendingUp,
-      component: () => <FundNAVChart />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
+    setLoading(true)
+    try {
+      // Implementation for disabling 2FA would go here
+      alert('2FA disable functionality will be implemented')
+    } catch (error) {
+      console.error('Error disabling 2FA:', error)
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
-  if (loading) {
+  const handle2FASetupComplete = () => {
+    setShowTwoFactorSetup(false)
+    refreshProfile()
+  }
+
+  if (showTwoFactorSetup) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <BarChart3 className="h-8 w-8 text-navy-600" />
-          </div>
-          <p className="text-gray-600">Connecting to your account...</p>
-        </div>
-      </div>
+      <TwoFactorSetup 
+        onComplete={handle2FASetupComplete}
+        onCancel={() => setShowTwoFactorSetup(false)}
+      />
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
               <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
-                  selectedTab === tab.id
-                    ? 'bg-navy-600 text-white'
-                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
-                }`}
+                onClick={onBack}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{tab.name}</span>
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {selectedTab === 'portfolio' && (
-          <div className="space-y-6">
-            {/* Portfolio Value Card - Always Visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-            />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            
-            {/* Portfolio sections in expandable folders */}
-            {portfolioSections.map((section) => (
-              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                <div 
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => toggleSection(section.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
-                        <section.icon className="h-6 w-6 text-navy-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-navy-600" />
                 </div>
-                
-                {expandedSections.has(section.id) && (
-                  <div className="border-t border-gray-100 p-6">
-                    <section.component />
-                  </div>
-                )}
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Security Settings</h1>
+                  <p className="text-sm text-gray-600">Manage your account security</p>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {selectedTab === 'markets' && <MarketsTab />}
-        {selectedTab === 'research' && <ResearchTab />}
-        {selectedTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
-              <p className="text-gray-600 mb-6">
-                View your complete transaction history and account activity
-              </p>
-              <button
-                onClick={() => handleFundPortfolio()}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add First Transaction</span>
-              </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Funding Modal */}
-      <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => {
-          setShowFundingModal(false)
-          setPrefilledAmount(null)
-        }}
-        prefilledAmount={prefilledAmount}
-      />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Two-Factor Authentication */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Two-Factor Authentication
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Add an extra layer of security to your account by requiring a verification code from your phone.
+                  </p>
+                  
+                  <div className="flex items-center space-x-2 mb-4">
+                    {profile?.two_factor_enabled ? (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="text-green-700 font-medium">Enabled</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-amber-500" />
+                        <span className="text-amber-700 font-medium">Disabled</span>
+                      </>
+                    )}
+                  </div>
+
+                  {profile?.two_factor_enabled ? (
+                    <button
+                      onClick={handleDisable2FA}
+                      disabled={loading}
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      {loading ? 'Disabling...' : 'Disable 2FA'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleEnable2FA}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Enable 2FA
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Password Management */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Key className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Password
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Keep your account secure with a strong password.
+                </p>
+                <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                  Change Password
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <p className="text-gray-900">{user?.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <p className="text-gray-900">{profile?.full_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-green-700 font-medium">Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
-
-export default InvestorDashboard

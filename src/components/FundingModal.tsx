@@ -1,220 +1,172 @@
 import React, { useState } from 'react'
-import { useAuth } from './auth/AuthProvider'
-import { PortfolioValueCard } from './PortfolioValueCard'
-import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { FundingModal } from './FundingModal'
-import { MarketsTab } from './markets/MarketsTab'
-import { ResearchTab } from './research/ResearchTab'
-import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
-import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
-import { AIInsights } from './portfolio/AIInsights'
-import { FundNAVChart } from './portfolio/FundNAVChart'
-import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Brain, 
-  Globe, 
-  FileText, 
-  Shield, 
-  Target,
-  Activity,
-  Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
-import { SecuritySettings } from './SecuritySettings'
-import { SecuritySettings } from './SecuritySettings'
+import { X, CreditCard, Building2, Smartphone, DollarSign } from 'lucide-react'
+import { StripeCardForm } from './StripeCardForm'
+import { NOWPaymentsCrypto } from './NOWPaymentsCrypto'
 
-const InvestorDashboard: React.FC = () => {
-  const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+interface FundingModalProps {
+  isOpen: boolean
+  onClose: () => void
+  prefilledAmount?: number | null
+}
 
-  const currentBalance = account?.balance || 0
-  const hasActivity = currentBalance > 0
+export const FundingModal: React.FC<FundingModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  prefilledAmount 
+}) => {
+  const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'crypto' | 'wire'>('stripe')
+  const [amount, setAmount] = useState(prefilledAmount?.toString() || '')
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
-      }
-      return newSet
-    })
-  }
+  if (!isOpen) return null
 
-  const handleFundPortfolio = (amount?: number) => {
-    if (amount) {
-      setPrefilledAmount(amount)
-    }
-    setShowFundingModal(true)
-  }
-
-  const handleWithdraw = () => {
-    alert('Withdrawal functionality will be implemented here')
-  }
-
-  const tabs = [
-    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
-    { id: 'markets', name: 'Markets', icon: Globe },
-    { id: 'research', name: 'Research', icon: Brain },
-  ]
-
-  const portfolioSections = [
+  const fundingMethods = [
     {
-      id: 'allocation',
-      title: 'Asset Allocation',
-      icon: Target,
-      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
+      id: 'stripe' as const,
+      name: 'Credit/Debit Card',
+      icon: CreditCard,
+      description: 'Instant funding with Visa, Mastercard, or American Express',
+      processingTime: 'Instant',
+      fees: '2.9% + $0.30'
     },
     {
-      id: 'performance',
-      title: 'Performance Analytics',
-      icon: Award,
-      component: () => <PerformanceMetrics currentBalance={currentBalance} />
+      id: 'crypto' as const,
+      name: 'Cryptocurrency',
+      icon: Smartphone,
+      description: 'Fund with Bitcoin, Ethereum, USDT, or other cryptocurrencies',
+      processingTime: '10-30 minutes',
+      fees: '1.5%'
     },
     {
-      id: 'nav',
-      title: 'Fund NAV History',
-      icon: TrendingUp,
-      component: () => <FundNAVChart />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
+      id: 'wire' as const,
+      name: 'Wire Transfer',
+      icon: Building2,
+      description: 'Bank wire transfer for larger amounts',
+      processingTime: '1-3 business days',
+      fees: '$25 flat fee'
     }
   ]
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <BarChart3 className="h-8 w-8 text-navy-600" />
-          </div>
-          <p className="text-gray-600">Connecting to your account...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
-                  selectedTab === tab.id
-                    ? 'bg-navy-600 text-white'
-                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
-                }`}
-              >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {selectedTab === 'portfolio' && (
-          <div className="space-y-6">
-            {/* Portfolio Value Card - Always Visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-            />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            
-            {/* Portfolio sections in expandable folders */}
-            {portfolioSections.map((section) => (
-              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                <div 
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => toggleSection(section.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
-                        <section.icon className="h-6 w-6 text-navy-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {expandedSections.has(section.id) && (
-                  <div className="border-t border-gray-100 p-6">
-                    <section.component />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selectedTab === 'markets' && <MarketsTab />}
-        {selectedTab === 'research' && <ResearchTab />}
-        {selectedTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
-              <p className="text-gray-600 mb-6">
-                View your complete transaction history and account activity
-              </p>
-              <button
-                onClick={() => handleFundPortfolio()}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add First Transaction</span>
-              </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-navy-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Fund Your Portfolio</h2>
+              <p className="text-sm text-gray-600">Choose your preferred funding method</p>
             </div>
           </div>
-        )}
-      </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
 
-      {/* Funding Modal */}
-      <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => {
-          setShowFundingModal(false)
-          setPrefilledAmount(null)
-        }}
-        prefilledAmount={prefilledAmount}
-      />
+        {/* Amount Input */}
+        <div className="p-6 border-b border-gray-200">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Investment Amount
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">$</span>
+            </div>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="block w-full pl-7 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500 text-lg"
+              placeholder="10,000"
+              min="1000"
+              step="100"
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">USD</span>
+            </div>
+          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            Minimum investment: $1,000
+          </p>
+        </div>
+
+        {/* Payment Methods */}
+        <div className="p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Select Payment Method</h3>
+          
+          <div className="space-y-3 mb-6">
+            {fundingMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setSelectedMethod(method.id)}
+                className={`w-full p-4 border rounded-lg text-left transition-all ${
+                  selectedMethod === method.id
+                    ? 'border-navy-500 bg-navy-50 ring-2 ring-navy-200'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    selectedMethod === method.id ? 'bg-navy-100' : 'bg-gray-100'
+                  }`}>
+                    <method.icon className={`h-5 w-5 ${
+                      selectedMethod === method.id ? 'text-navy-600' : 'text-gray-600'
+                    }`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900">{method.name}</h4>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900">{method.fees}</div>
+                        <div className="text-xs text-gray-500">{method.processingTime}</div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{method.description}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Payment Form */}
+          {selectedMethod === 'stripe' && (
+            <StripeCardForm 
+              amount={parseFloat(amount) || 0}
+              onSuccess={onClose}
+            />
+          )}
+
+          {selectedMethod === 'crypto' && (
+            <NOWPaymentsCrypto 
+              amount={parseFloat(amount) || 0}
+              onSuccess={onClose}
+            />
+          )}
+
+          {selectedMethod === 'wire' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Wire Transfer Instructions</h4>
+              <p className="text-sm text-blue-800 mb-3">
+                Wire transfer details will be provided after you confirm the amount.
+              </p>
+              <button
+                onClick={() => {
+                  alert('Wire transfer instructions will be sent to your email')
+                  onClose()
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Get Wire Instructions
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
-
-export default InvestorDashboard
