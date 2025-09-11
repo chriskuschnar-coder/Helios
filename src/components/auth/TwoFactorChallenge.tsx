@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock } from 'lucide-react'
+import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
+import { useAuth } from './AuthProvider'
 
 interface TwoFactorChallengeProps {
   onSuccess: () => void
   onCancel: () => void
   userEmail: string
-  userPhone?: string
-  preferredMethod?: 'email' | 'sms' | 'biometric'
 }
 
 export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({ 
@@ -14,46 +13,25 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   onCancel, 
   userEmail
 }) => {
+  const { complete2FA } = useAuth()
   const [verificationCode, setVerificationCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [codeSent, setCodeSent] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(600) // 10 minutes
-  const [canResend, setCanResend] = useState(false)
+  const [sendingCode, setSendingCode] = useState(true)
 
   useEffect(() => {
     // Auto-send email code on mount
-    console.log('📧 Auto-sending email verification code to:', userEmail)
-    if (userEmail && userEmail.includes('@')) {
-      sendVerificationCode()
-    } else {
-      setError('Invalid email address. Please contact support.')
-    }
+    sendVerificationCode()
   }, [])
 
-  useEffect(() => {
-    // Countdown timer for code expiration
-    if (codeSent && timeRemaining > 0) {
-      const timer = setTimeout(() => {
-        setTimeRemaining(prev => {
-          const newTime = prev - 1
-          if (newTime <= 540) { // Allow resend after 1 minute
-            setCanResend(true)
-          }
-          return newTime
-        })
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [codeSent, timeRemaining])
-
   const sendVerificationCode = async () => {
-    setLoading(true)
+    setSendingCode(true)
     setError('')
 
     try {
-      console.log('📧 Sending email verification code...')
+      console.log('📧 Sending email verification code to:', userEmail)
       
       const { supabaseClient } = await import('../../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
@@ -86,14 +64,12 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('✅ Verification code sent successfully')
       setSuccess(`Verification code sent to ${userEmail}`)
       setCodeSent(true)
-      setTimeRemaining(600) // Reset timer
-      setCanResend(false)
       
     } catch (error) {
       console.error('❌ Failed to send verification code:', error)
       setError(error instanceof Error ? error.message : 'Failed to send verification code')
     } finally {
-      setLoading(false)
+      setSendingCode(false)
     }
   }
 
@@ -143,6 +119,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       if (result.valid) {
         console.log('✅ 2FA verification successful')
         setSuccess('Verification successful!')
+        
+        // Complete the login process
+        const completeResult = await complete2FA()
+        if (completeResult.error) {
+          throw new Error(completeResult.error.message)
+        }
+        
         setTimeout(() => {
           onSuccess()
         }, 1000)
@@ -164,12 +147,6 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     await sendVerificationCode()
   }
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-  }
-
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8">
       <div className="flex items-center justify-between mb-6">
@@ -178,7 +155,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Cancel</span>
+          <span className="text-sm font-medium">Back</span>
         </button>
       </div>
 
@@ -188,31 +165,22 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h2>
         <p className="text-gray-600">
-          {codeSent ? 'Enter the verification code sent to your email' : 'Sending verification code to your email'}
+          {sendingCode ? 'Sending verification code...' : 'Enter the verification code sent to your email'}
         </p>
       </div>
 
       {/* Email Status */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-2 mb-2">
-          <Mail className="h-5 w-5 text-blue-600" />
-          <span className="font-medium text-blue-900">Email Verification</span>
-        </div>
-        <p className="text-blue-800">
-          {codeSent 
-            ? `Verification code sent to ${userEmail}`
-            : `Sending code to ${userEmail}...`
-          }
-        </p>
-        {codeSent && timeRemaining > 0 && (
-          <div className="flex items-center space-x-1 mt-2">
-            <Clock className="h-3 w-3 text-blue-600" />
-            <span className="text-xs text-blue-700">
-              Code expires in {formatTime(timeRemaining)}
-            </span>
+      {!sendingCode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <Mail className="h-5 w-5 text-blue-600" />
+            <span className="font-medium text-blue-900">Verification Code Sent</span>
           </div>
-        )}
-      </div>
+          <p className="text-blue-800">
+            Check your email: {userEmail}
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -232,7 +200,12 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         </div>
       )}
 
-      {codeSent && (
+      {sendingCode ? (
+        <div className="text-center py-8">
+          <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600">Sending verification code to your email...</p>
+        </div>
+      ) : (
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -258,17 +231,16 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             {loading ? 'Verifying...' : 'Verify Code'}
           </button>
 
-          <div className="text-center space-y-3">
-            <p className="text-sm text-gray-600">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-2">
               Didn't receive the code?
             </p>
             <button
               onClick={resendCode}
-              disabled={loading || !canResend}
+              disabled={sendingCode}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              {timeRemaining <= 0 ? 'Code Expired - Click to Resend' : 
-               canResend ? 'Resend Code' : `Wait ${formatTime(600 - timeRemaining)} to resend`}
+              Resend Code
             </button>
           </div>
         </div>

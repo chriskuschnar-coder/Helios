@@ -474,6 +474,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       processFunding,
       markDocumentsCompleted,
       signIn,
+      complete2FA,
       signUp,
       signOut
     }}>
