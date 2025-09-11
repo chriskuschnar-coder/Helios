@@ -30,7 +30,6 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { SecuritySettings } from './SecuritySettings'
-import { SecuritySettings } from './SecuritySettings'
 
 const InvestorDashboard: React.FC = () => {
   const { user, account, loading } = useAuth()
