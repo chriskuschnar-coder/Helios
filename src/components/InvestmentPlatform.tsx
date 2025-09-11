@@ -13,6 +13,10 @@ interface User {
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
   subscription_signed_at?: string
+}
+
+interface Account {
+  id: string
   balance: number
   available_balance: number
   total_deposits: number
