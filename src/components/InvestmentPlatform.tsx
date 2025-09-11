@@ -21,60 +21,13 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
 
   // Mark initial load as complete after a short delay
   useEffect(() => {
-    try {
-      const timeout = setTimeout(() => {
-        setInitialLoadComplete(true)
-      }, 1000)
-      
-      return () => clearTimeout(timeout)
-    } catch (error) {
-      console.error('❌ Initial load timer error:', error)
+    const timeout = setTimeout(() => {
       setInitialLoadComplete(true)
-    }
-  }, [])
-
-  // Prevent white screen by ensuring we always show something
-  const [renderReady, setRenderReady] = useState(false)
-  
-  useEffect(() => {
-    try {
-      // Always mark as ready to render after a brief moment
-      const timer = setTimeout(() => {
-        setRenderReady(true)
-      }, 100)
-      
-      return () => clearTimeout(timer)
-    } catch (error) {
-      console.error('❌ Render ready timer error:', error)
-      setRenderReady(true)
-    }
-  }, [])
-
-  // Emergency fallback to prevent infinite white screen
-  useEffect(() => {
-    const emergencyTimeout = setTimeout(() => {
-      if (!renderReady) {
-        console.warn('⚠️ Emergency render fallback triggered')
-        setRenderReady(true)
-        setInitialLoadComplete(true)
-      }
-    }, 3000)
+    }, 1000)
     
-    return () => clearTimeout(emergencyTimeout)
-  }, [renderReady])
+    return () => clearTimeout(timeout)
+  }, [])
 
-  // Don't render anything until we're ready
-  if (!renderReady) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
-          <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
-          <p className="text-sm text-gray-600">Initializing application...</p>
-        </div>
-      </div>
-    )
-  }
   // Error boundary
   if (error) {
     return (
@@ -150,10 +103,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
                 console.log('🎉 Login success callback - checking for 2FA requirement')
-                // Add small delay to ensure state transition is complete
-                setTimeout(() => {
-                  console.log('🔄 Login success transition complete')
-                }, 200)
+                // Login success is handled by AuthProvider
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');

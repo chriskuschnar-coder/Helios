@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useEffect } from 'react'
 import { useAuth } from './AuthProvider'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
 import { TwoFactorChallenge } from './TwoFactorChallenge'
@@ -45,11 +44,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         // Don't call onSuccess yet - wait for 2FA completion
       } else {
         console.log('✅ Login successful, no 2FA required')
-        // Keep loading state briefly to prevent white screen
-        setTimeout(() => {
-          setLoading(false)
-          onSuccess?.()
-        }, 500)
+        setLoading(false)
+        onSuccess?.()
       }
     } catch (err) {
       console.error('Login error:', err)

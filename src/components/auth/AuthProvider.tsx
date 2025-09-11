@@ -157,25 +157,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       try {
         setLoading(true)
-        console.log('🔍 Checking for existing session...')
         const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
           console.warn('Session check error:', error)
-          setLoading(false)
-        } else if (session && session.user) {
-          console.log('✅ Found existing session for:', session.user.email)
-          
-          // Set user immediately from session
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name,
-            phone: session.user.user_metadata?.phone
-          })
-          
-          // Load additional user data and account
-          await loadUserAccount(session.user.id)
           setLoading(false)
         } else {
           console.log('No existing session found or session check error')
@@ -187,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Set a shorter timeout to prevent white screens
+    // Set a maximum timeout for loading state
     const timeoutId = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
@@ -208,29 +193,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setPending2FA(false)
           setPendingAuthData(null)
           setLoading(false)
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          console.log('✅ User signed in via auth state change:', session.user.email)
-          
-          // Clear any pending 2FA state
-          setPending2FA(false)
-          setPendingAuthData(null)
-          
-          // Set user state
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name,
-            phone: session.user.user_metadata?.phone
-          })
-          
-          // Load account data
-          await loadUserAccount(session.user.id)
-          setLoading(false)
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          console.log('🔄 Token refreshed for:', session.user.email)
-          // Update user data on token refresh
-          await loadUserAccount(session.user.id)
         }
+        // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
     )
 
@@ -509,49 +473,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // Check if user has 2FA enabled
-        const { data: userData, error: userError } = await supabaseClient
-          .from('users')
-          .select('two_factor_enabled, full_name, phone, documents_completed, kyc_status')
-          .eq('id', data.user.id)
-          .single()
-
-        if (userError) {
-          console.warn('⚠️ Could not check 2FA status:', userError)
-          // Continue without 2FA if we can't check
-          setUser({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: data.user.user_metadata?.full_name,
-            phone: data.user.user_metadata?.phone
-          })
-          
-          await loadUserAccount(data.user.id)
-          return { error: null, requires2FA: false }
-        }
-
-        if (userData?.two_factor_enabled) {
-          console.log('🔐 2FA required for user')
-          // Set pending 2FA state and return requires2FA flag
-          setPending2FA(true)
-          setPendingAuthData({ userData: data.user, session: data.session })
-          
-          return { error: null, requires2FA: true }
-        } else {
-          console.log('✅ No 2FA required, completing sign in')
-          // No 2FA required, complete sign in immediately
-          setUser({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: userData?.full_name || data.user.user_metadata?.full_name,
-            phone: userData?.phone || data.user.user_metadata?.phone,
-            documents_completed: userData?.documents_completed,
-            kyc_status: userData?.kyc_status
-          })
-          
-          await loadUserAccount(data.user.id)
-          return { error: null, requires2FA: false }
-        }
+        // Set pending 2FA state and return requires2FA flag
+        setPending2FA(true)
+        setPendingAuthData({ userData: data.user, session: data.session })
+        
+        return { error: null, requires2FA: true }
       }
 
       return { error: { message: 'No user returned' } }

@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
@@ -44,38 +43,6 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [showSecuritySettings, setShowSecuritySettings] = useState(false)
-
-  // Restore tab selection from localStorage
-  useEffect(() => {
-    const savedTab = localStorage.getItem('selectedTab')
-    if (savedTab && ['portfolio', 'markets', 'research', 'transactions', 'security'].includes(savedTab)) {
-      setSelectedTab(savedTab as any)
-    }
-  }, [])
-
-  // Save tab selection to localStorage
-  useEffect(() => {
-    localStorage.setItem('selectedTab', selectedTab)
-  }, [selectedTab])
-
-  // Restore expanded sections from localStorage
-  useEffect(() => {
-    const savedSections = localStorage.getItem('expandedSections')
-    if (savedSections) {
-      try {
-        const sectionsArray = JSON.parse(savedSections)
-        setExpandedSections(new Set(sectionsArray))
-      } catch (error) {
-        console.warn('Failed to restore expanded sections:', error)
-      }
-    }
-  }, [])
-
-  // Save expanded sections to localStorage
-  useEffect(() => {
-    const sectionsArray = Array.from(expandedSections)
-    localStorage.setItem('expandedSections', JSON.stringify(sectionsArray))
-  }, [expandedSections])
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
