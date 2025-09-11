@@ -28,6 +28,29 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     return () => clearTimeout(timeout)
   }, [])
 
+  // Prevent white screen by ensuring we always show something
+  const [renderReady, setRenderReady] = useState(false)
+  
+  useEffect(() => {
+    // Always mark as ready to render after a brief moment
+    const timer = setTimeout(() => {
+      setRenderReady(true)
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Don't render anything until we're ready
+  if (!renderReady) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
+          <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
+        </div>
+      </div>
+    )
+  }
   // Error boundary
   if (error) {
     return (
@@ -103,7 +126,10 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
                 console.log('🎉 Login success callback - checking for 2FA requirement')
-                // Login success is handled by AuthProvider
+                // Add small delay to ensure state transition is complete
+                setTimeout(() => {
+                  console.log('🔄 Login success transition complete')
+                }, 200)
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');

@@ -27,12 +27,8 @@ export default function App() {
   }, [showInvestmentPlatform])
 
   const handleNavigateToLogin = () => {
-    setPlatformLoading(true)
-    // Small delay to show loading state
-    setTimeout(() => {
-      setPlatformLoading(false)
-      setShowInvestmentPlatform(true)
-    }, 500)
+    console.log('🚀 Navigating to investment platform')
+    setShowInvestmentPlatform(true)
   }
 
   useEffect(() => {

@@ -187,11 +187,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Set a maximum timeout for loading state
+    // Set a shorter timeout to prevent white screens
     const timeoutId = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
-    }, 3000) // Increased to 3 seconds for session restoration
+    }, 2000) // Reduced to 2 seconds
 
     checkSession()
 
@@ -210,6 +210,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
         } else if (event === 'SIGNED_IN' && session?.user) {
           console.log('✅ User signed in via auth state change:', session.user.email)
+          
+          // Clear any pending 2FA state
+          setPending2FA(false)
+          setPendingAuthData(null)
           
           // Set user state
           setUser({
@@ -505,11 +509,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // Set pending 2FA state and return requires2FA flag
-        setPending2FA(true)
-        setPendingAuthData({ userData: data.user, session: data.session })
-        
-        return { error: null, requires2FA: true }
+        // Check if user has 2FA enabled
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('two_factor_enabled, full_name, phone, documents_completed, kyc_status')
+          .eq('id', data.user.id)
+          .single()
+
+        if (userError) {
+          console.warn('⚠️ Could not check 2FA status:', userError)
+          // Continue without 2FA if we can't check
+          setUser({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: data.user.user_metadata?.full_name,
+            phone: data.user.user_metadata?.phone
+          })
+          
+          await loadUserAccount(data.user.id)
+          return { error: null, requires2FA: false }
+        }
+
+        if (userData?.two_factor_enabled) {
+          console.log('🔐 2FA required for user')
+          // Set pending 2FA state and return requires2FA flag
+          setPending2FA(true)
+          setPendingAuthData({ userData: data.user, session: data.session })
+          
+          return { error: null, requires2FA: true }
+        } else {
+          console.log('✅ No 2FA required, completing sign in')
+          // No 2FA required, complete sign in immediately
+          setUser({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: userData?.full_name || data.user.user_metadata?.full_name,
+            phone: userData?.phone || data.user.user_metadata?.phone,
+            documents_completed: userData?.documents_completed,
+            kyc_status: userData?.kyc_status
+          })
+          
+          await loadUserAccount(data.user.id)
+          return { error: null, requires2FA: false }
+        }
       }
 
       return { error: { message: 'No user returned' } }
