@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
-import { DocumentSigningFlow } from './DocumentSigningFlow';
+import DocumentSigningFlow from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
 import { DiditKYCVerification } from './DiditKYCVerification';
 import { NOWPaymentsCrypto } from './NOWPaymentsCrypto';
