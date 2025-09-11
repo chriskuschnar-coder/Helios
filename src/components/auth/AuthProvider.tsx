@@ -162,6 +162,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.warn('Session check error:', error)
           setLoading(false)
+        } else if (session) {
+          console.log('✅ Existing session found, loading user data...')
+          await loadUserAccount(session.user.id)
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name,
+            phone: session.user.user_metadata?.phone
+          })
+          setLoading(false)
         } else {
           console.log('No existing session found or session check error')
           setLoading(false)

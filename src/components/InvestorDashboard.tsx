@@ -37,7 +37,7 @@ interface InvestorDashboardProps {
 }
 
 const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress }) => {
-  const { user, account, loading } = useAuth()
+  const { user, account, loading, profile } = useAuth()
   const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions' | 'security'>('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
@@ -46,8 +46,11 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
-  const kycStatus = user?.kyc_status || 'unverified'
+  const kycStatus = user?.kyc_status || profile?.kyc_status || 'unverified'
   const isKYCVerified = kycStatus === 'verified'
+  
+  // Don't show KYC overlay during initial loading or if user is already verified
+  const shouldShowKYCOverlay = !loading && !isKYCVerified && user && profile
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -164,7 +167,7 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
         {selectedTab === 'portfolio' && (
           <div className="space-y-6">
             {/* KYC Status Overlay */}
-            {!isKYCVerified && (
+            {shouldShowKYCOverlay && (
               <ReadOnlyPortfolioOverlay 
                 kycStatus={kycStatus}
                 onCheckKYC={onShowKYCProgress}
@@ -225,7 +228,7 @@ const InvestorDashboard: React.FC<InvestorDashboardProps> = ({ onShowKYCProgress
         )}
         {selectedTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            {!isKYCVerified && (
+            {shouldShowKYCOverlay && (
               <ReadOnlyPortfolioOverlay 
                 kycStatus={kycStatus}
                 onCheckKYC={onShowKYCProgress}
