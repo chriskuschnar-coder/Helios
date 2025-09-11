@@ -328,7 +328,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // STEP 1: Process deposit allocation through fund units
       console.log('💰 Processing deposit allocation:', { amount, method })
       
-      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (!session) {
