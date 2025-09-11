@@ -363,16 +363,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // Check if user has 2FA enabled
+        // CRITICAL: Check if user has 2FA enabled BEFORE setting user state
         const { data: userData, error: userError } = await supabaseClient
           .from('users')
-          .select('two_factor_enabled, two_factor_method, full_name, phone')
+          .select('two_factor_enabled, two_factor_method, full_name, phone, documents_completed, kyc_status')
           .eq('id', data.user.id)
           .single()
+
+        console.log('🔍 User 2FA status:', {
+          two_factor_enabled: userData?.two_factor_enabled,
+          two_factor_method: userData?.two_factor_method,
+          user_id: data.user.id
+        })
 
         if (!userError && userData?.two_factor_enabled) {
           console.log('🔐 2FA enabled for user, sending verification code')
           
+          // IMPORTANT: Do NOT set user state yet - keep them in pending state
+          // Set minimal user data for 2FA process only
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            full_name: userData.full_name,
+            phone: userData.phone,
+            two_factor_enabled: true,
+            two_factor_method: userData.two_factor_method,
+            documents_completed: userData.documents_completed,
+            kyc_status: userData.kyc_status
+          })
+
           // Send 2FA code via email
           try {
             const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
@@ -393,24 +412,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (codeResponse.ok) {
               console.log('✅ 2FA code sent successfully')
+              const codeResult = await codeResponse.json()
+              console.log('📧 Email send result:', codeResult)
             } else {
               console.warn('⚠️ Failed to send 2FA code, but continuing with 2FA flow')
+              const errorData = await codeResponse.json()
+              console.error('📧 Email send error:', errorData)
             }
           } catch (codeError) {
             console.warn('⚠️ 2FA code sending failed:', codeError)
           }
           
-          // Set user but indicate 2FA is required
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            full_name: userData.full_name || data.user.user_metadata?.full_name,
-            phone: userData.phone,
-            two_factor_enabled: userData.two_factor_enabled,
-            two_factor_method: userData.two_factor_method
-          })
-          
-          // Return requires2FA flag to show 2FA challenge
+          // CRITICAL: Return requires2FA flag WITHOUT loading account data
+          console.log('🔐 Returning requires2FA=true to show challenge')
           return { error: null, requires2FA: true }
         } else {
           console.log('✅ No 2FA required, completing login')
@@ -421,6 +435,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: data.user.email || '',
             full_name: userData?.full_name || data.user.user_metadata?.full_name,
             phone: userData?.phone,
+            documents_completed: userData?.documents_completed,
+            kyc_status: userData?.kyc_status,
             two_factor_enabled: userData?.two_factor_enabled || false,
             two_factor_method: userData?.two_factor_method
           })

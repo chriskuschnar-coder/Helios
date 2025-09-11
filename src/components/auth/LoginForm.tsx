@@ -39,14 +39,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         setError(result.error.message)
         setLoading(false)
       } else if (result.requires2FA) {
-        console.log('🔐 Login successful, showing 2FA challenge')
+        console.log('🔐 2FA REQUIRED - showing challenge screen')
         setUserEmail(email)
         setShow2FA(true)
-        setLoading(false)
+        setLoading(false) // Stop loading to show 2FA screen
       } else {
         console.log('✅ Login successful, no 2FA required')
-        onSuccess?.()
         setLoading(false)
+        onSuccess?.()
       }
     } catch (err) {
       console.error('Login error:', err)

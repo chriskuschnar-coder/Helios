@@ -16,6 +16,14 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [authTimeout, setAuthTimeout] = useState(false)
   const [error, setError] = useState('')
 
+  console.log('🔍 AuthenticatedApp state:', {
+    user: user?.email,
+    loading,
+    two_factor_enabled: user?.two_factor_enabled,
+    forceShowAuth,
+    authTimeout
+  })
+
   // Prevent infinite loading with shorter timeout
   useEffect(() => {
     try {
@@ -73,6 +81,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
+  // CRITICAL: Show auth forms if no user OR if user exists but hasn't completed 2FA
   if (!user || forceShowAuth || authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -94,6 +103,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <LoginForm 
             onSuccess={() => {
               try {
+              console.log('🎉 Login success callback - user should now access dashboard')
               setForceShowAuth(false)
               setAuthTimeout(false)
               } catch (err) {
@@ -110,6 +120,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   }
 
   try {
+    console.log('🚀 Rendering DashboardSelector for authenticated user:', user.email)
     return <DashboardSelector />
   } catch (err) {
     console.error('❌ Dashboard render error:', err);

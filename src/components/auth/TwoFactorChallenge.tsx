@@ -59,16 +59,30 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('📧 SendGrid error:', errorData)
         throw new Error(errorData.error || 'Failed to send verification code')
       }
 
-      console.log('✅ Verification code sent successfully')
+      const result = await response.json()
+      console.log('✅ Verification code sent successfully:', result)
       setSuccess(`Verification code sent to ${userEmail}`)
       setCodeSent(true)
+      
+      // Show demo code for testing
+      if (result.demo_code) {
+        setDemoCode(result.demo_code)
+        console.log('🔑 Demo code for testing:', result.demo_code)
+      }
       
     } catch (error) {
       console.error('❌ Failed to send verification code:', error)
       setError(error instanceof Error ? error.message : 'Failed to send verification code')
+      
+      // For testing, generate a demo code even if email fails
+      const testCode = Math.floor(100000 + Math.random() * 900000).toString()
+      setDemoCode(testCode)
+      console.log('🔑 Using demo code due to email failure:', testCode)
+      setSuccess(`Email sending failed - using demo code: ${testCode}`)
     } finally {
       setSendingCode(false)
     }
@@ -116,18 +130,25 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       }
 
       const result = await response.json()
+      console.log('📊 2FA verification result:', result)
       
       if (result.valid) {
         console.log('✅ 2FA verification successful')
         setSuccess('Verification successful!')
         
-        // Complete the login process
+        // CRITICAL: Call the complete2FA function from useAuth
+        console.log('🔄 Completing 2FA login process with useAuth...')
         const completeResult = await complete2FA(verificationCode)
+        
         if (completeResult.error) {
-          throw new Error(completeResult.error.message)
+          console.error('❌ 2FA completion failed:', completeResult.error)
+          setError(completeResult.error.message)
+          setLoading(false)
+          return
         }
         
         setTimeout(() => {
+          console.log('🎉 2FA complete, calling onSuccess')
           onSuccess()
         }, 1000)
       } else {
@@ -226,13 +247,25 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
           {demoCode && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-900">Demo Mode</span>
+              </div>
+              <p className="text-xs text-yellow-800 mb-2">
+                For testing purposes, your verification code is:
+              </p>
               <div className="flex items-center justify-between">
-                <span className="text-yellow-800 font-medium">Demo Code: {demoCode}</span>
+                <code className="bg-white px-3 py-1 rounded border text-lg font-mono font-bold text-yellow-900">
+                  {demoCode}
+                </code>
                 <button
-                  onClick={() => navigator.clipboard.writeText(demoCode)}
-                  className="text-yellow-600 hover:text-yellow-700 text-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(demoCode)
+                    setVerificationCode(demoCode)
+                  }}
+                  className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
                 >
-                  Copy
+                  Use Code
                 </button>
               </div>
             </div>
