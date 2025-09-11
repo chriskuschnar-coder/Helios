@@ -87,6 +87,10 @@ Deno.serve(async (req) => {
 
     console.log('✅ 2FA code stored in database')
 
+    // Add delay to ensure database transaction is fully committed
+    await new Promise(resolve => setTimeout(resolve, 500))
+    console.log('⏱️ Database commit delay completed')
+
     // PRIORITY: Send email first (primary method)
     if (method === 'email' || !phone) {
       console.log('📧 Sending email verification code via SendGrid to:', email)
