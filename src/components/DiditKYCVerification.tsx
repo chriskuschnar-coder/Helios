@@ -55,30 +55,29 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
       // Add timeout to prevent infinite loading
-      const checkStatusPromise = fetch(`${supabaseUrl}/functions/v1/check-kyc-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({ user_id: user.id })
-      })
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('KYC status check timeout')), 8000)
-      )
-      
-      const response = await Promise.race([checkStatusPromise, timeoutPromise]) as Response
-      
-      console.log('📊 KYC status response:', response.status)
+      // Check user's KYC status directly from users table
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('kyc_status')
+        .eq('id', user.id)
+        .single()
 
-      if (response.ok) {
-        const statusData = await response.json()
-        console.log('✅ KYC status data:', statusData)
-        setKycStatus(statusData)
+      console.log('📊 Direct user KYC check:', { userData, userError })
+
+      if (!userError && userData) {
+        const kycStatusData = {
+          user_id: user.id,
+          kyc_status: userData.kyc_status || 'pending',
+          is_verified: userData.kyc_status === 'verified',
+          can_fund: userData.kyc_status === 'verified',
+          message: userData.kyc_status === 'verified' 
+            ? 'User is verified and can fund their account'
+            : 'Identity verification required before funding'
+        }
         
-        if (statusData.is_verified) {
+        setKycStatus(kycStatusData)
+        
+        if (kycStatusData.is_verified) {
           console.log('🎉 User is already verified!')
           setIsVerified(true)
           // Auto-proceed after short delay
@@ -87,13 +86,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           }, 1500)
         }
       } else {
-        const errorText = await response.text()
-        console.error('❌ KYC status check failed:', response.status, errorText)
-        throw new Error(`Status check failed: ${response.status}`)
+        console.warn('⚠️ Could not check user KYC status:', userError)
+        // Don't throw error, just continue with verification flow
       }
     } catch (error) {
       console.error('❌ KYC status check error:', error)
-      setError('Unable to check verification status. Please try starting verification.')
+      // Don't show error, just continue with verification flow
+      console.log('ℹ️ Continuing with verification flow due to status check error')
     } finally {
       setCheckingStatus(false)
     }
@@ -546,12 +545,17 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               <button
                 onClick={() => {
                   console.log('🎯 Demo mode: Skipping verification')
+                  setLoading(true)
                   setIsVerified(true)
-                  onVerificationComplete()
+                  setTimeout(() => {
+                    setLoading(false)
+                    onVerificationComplete()
+                  }, 1000)
                 }}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                disabled={loading}
               >
-                Skip Verification (Demo)
+                {loading ? 'Processing...' : 'Skip Verification (Demo)'}
               </button>
             </div>
           )}

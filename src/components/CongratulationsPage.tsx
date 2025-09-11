@@ -8,12 +8,27 @@ interface CongratulationsPageProps {
 export function CongratulationsPage({ onContinueToPayment }: CongratulationsPageProps) {
   const [showContent, setShowContent] = useState(false);
   const [showButton, setShowButton] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setShowContent(true), 300);
     setTimeout(() => setShowButton(true), 800);
   }, []);
 
+  const handleContinueClick = () => {
+    console.log('🎉 Continue to payment clicked from congratulations page');
+    setIsProcessing(true);
+    
+    // Small delay to show processing state, then continue
+    setTimeout(() => {
+      try {
+        onContinueToPayment();
+      } catch (error) {
+        console.error('❌ Error continuing to payment:', error);
+        setIsProcessing(false);
+      }
+    }, 500);
+  };
   return (
     <div className="relative bg-white min-h-screen overflow-hidden">
       {/* Floating Balloons */}
@@ -89,14 +104,22 @@ export function CongratulationsPage({ onContinueToPayment }: CongratulationsPage
           {/* Call to Action Button */}
           <div className={`transition-all duration-1000 transform ${showButton ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'}`}>
             <button
-              onClick={onContinueToPayment}
-              className="group bg-black hover:bg-gray-800 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              onClick={handleContinueClick}
+              disabled={isProcessing}
+              className="group bg-black hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
             >
-              <div className="flex items-center space-x-3">
-                <DollarSign className="h-6 w-6" />
-                <span>Complete Your Investment</span>
-                <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
-              </div>
+              {isProcessing ? (
+                <div className="flex items-center space-x-3">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <DollarSign className="h-6 w-6" />
+                  <span>Complete Your Investment</span>
+                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
+              )}
             </button>
           </div>
         </div>

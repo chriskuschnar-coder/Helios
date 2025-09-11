@@ -93,16 +93,36 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleContinueToPayment = () => {
+    console.log('🎯 handleContinueToPayment called from congratulations');
+    console.log('📊 User status:', {
+      documents_completed: user?.documents_completed,
+      kyc_status: user?.kyc_status
+    });
+    
     // After congratulations, always go to KYC verification first
-    setShowCongratulations(false);
-    setShowKYCVerification(true);
+    try {
+      setShowCongratulations(false);
+      setShowKYCVerification(true);
+      console.log('✅ Navigated to KYC verification');
+    } catch (error) {
+      console.error('❌ Error navigating to KYC:', error);
+      // Fallback: go directly to funding if KYC fails
+      setShowCongratulations(false);
+      setShowFundingPage(true);
+    }
   };
 
   const handleKYCComplete = () => {
+    console.log('✅ KYC verification completed, proceeding to funding');
     // KYC complete, proceed to funding
-    setShowKYCVerification(false);
-    setShowCongratulations(false);
-    setShowFundingPage(true);
+    try {
+      setShowKYCVerification(false);
+      setShowCongratulations(false);
+      setShowFundingPage(true);
+      console.log('✅ Navigated to funding page');
+    } catch (error) {
+      console.error('❌ Error navigating to funding:', error);
+    }
   };
 
   const handleBackToPortfolio = () => {
