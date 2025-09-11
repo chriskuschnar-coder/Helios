@@ -624,8 +624,18 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               <div className="flex items-center space-x-2 mb-2">
                 <Clock className="h-5 w-5 text-yellow-600 animate-spin" />
                 <span className="font-medium text-yellow-900">Verification in Progress</span>
+              </div>
+              <button
+                onClick={() => {
+                  console.log('👤 User manually stopping status check')
+                  setCheckingStatus(false)
+                }}
+                className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
+              >
+                Stop Checking Status
+              </button>
             </div>
-                  Stop Checking Status
+          )}
         </div>
       )}
 
@@ -638,7 +648,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           ← Back to Portfolio
         </button>
       </div>
-    </div>
     </div>
   )
 }
