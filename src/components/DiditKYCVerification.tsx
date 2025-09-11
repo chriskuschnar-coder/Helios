@@ -513,7 +513,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
             </button>
             <button
               onClick={() => {
-                console.log('🔄 User restarting verification')
+                console.log('🔄 User restarting live verification')
                 setShowTimeoutOptions(false)
                 setError('')
                 setVerificationUrl(null)
@@ -523,7 +523,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
-              Try Verification Again
+              Restart Live Verification
             </button>
           </div>
         </div>
