@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
+import { TwoFactorChallenge } from './TwoFactorChallenge'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -15,6 +16,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [show2FA, setShow2FA] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,16 +37,44 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       if (result.error) {
         console.error('❌ Login failed:', result.error.message)
         setError(result.error.message)
+        setLoading(false)
+      } else if (result.requires2FA) {
+        console.log('🔐 Login successful, showing 2FA challenge')
+        setUserEmail(email)
+        setShow2FA(true)
+        setLoading(false)
       } else {
-        console.log('✅ Login successful')
+        console.log('✅ Login successful, no 2FA required')
         onSuccess?.()
+        setLoading(false)
       }
     } catch (err) {
       console.error('Login error:', err)
       setError('Connection error - please try again')
-    } finally {
       setLoading(false)
     }
+  }
+
+  const handle2FASuccess = () => {
+    console.log('✅ 2FA verification successful')
+    setShow2FA(false)
+    onSuccess?.()
+  }
+
+  const handle2FACancel = () => {
+    console.log('❌ 2FA cancelled')
+    setShow2FA(false)
+    setLoading(false)
+  }
+
+  if (show2FA) {
+    return (
+      <TwoFactorChallenge
+        onSuccess={handle2FASuccess}
+        onCancel={handle2FACancel}
+        userEmail={userEmail}
+      />
+    )
   }
 
   return (
@@ -166,7 +197,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
           </button>
         </p>
       </div>
-
     </div>
   )
 }
