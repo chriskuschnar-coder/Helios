@@ -284,7 +284,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
-          kyc_verified_at: userData.kyc_verified_at,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
           two_factor_method: userData.two_factor_method,

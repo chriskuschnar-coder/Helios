@@ -1,580 +1,440 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../../lib/supabase-client'
+import React, { useState, useEffect, useRef } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, ArrowRight, FileText, Camera, Clock, Upload, User, Zap, Eye, RefreshCw, X } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
 
-interface User {
+interface DiditKYCVerificationProps {
+  onVerificationComplete: () => void
+  onClose: () => void
+}
+
+interface VerificationStep {
   id: string
-  email: string
-  full_name?: string
-  phone?: string
-  documents_completed?: boolean
-  documents_completed_at?: string
-  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
-  is_kyc_verified?: boolean
-  two_factor_enabled?: boolean
-  two_factor_method?: 'email' | 'sms' | 'biometric'
-  subscription_signed_at?: string
+  title: string
+  description: string
+  icon: React.ComponentType<any>
+  status: 'pending' | 'active' | 'completed' | 'error'
 }
 
-interface Account {
-  id: string
-  balance: number
-  available_balance: number
-  total_deposits: number
-  total_withdrawals: number
-  currency: string
-  status: string
-}
+export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [verificationSubmitted, setVerificationSubmitted] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
 
-interface Subscription {
-  subscription_status: string
-  price_id: string | null
-  current_period_start: number | null
-  current_period_end: number | null
-  cancel_at_period_end: boolean
-  payment_method_brand: string | null
-  payment_method_last4: string | null
-}
-
-interface AuthError {
-  message: string
-}
-
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  pending2FA: boolean
-  pendingAuthData: { userData: any; session: any } | null
-  account: Account | null
-  subscription: Subscription | null
-  refreshAccount: () => Promise<void>
-  refreshSubscription: () => Promise<void>
-  processFunding: (amount: number, method: string, description?: string) => Promise<any>
-  markDocumentsCompleted: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
-  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
-  profile: User | null
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [pending2FA, setPending2FA] = useState(false)
-  const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
-  const [account, setAccount] = useState<Account | null>(null)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
-
-  const complete2FA = async (code: string, userData: any, session: any) => {
-    try {
-      console.log('🔐 Completing 2FA authentication for user:', userData.email)
-      
-      // Verify the 2FA code first
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          code: code,
-          method: 'email',
-          email: userData.email
-        })
-      })
-
-
-      if (!verifyResponse.ok) {
-        const errorData = await verifyResponse.json()
-        console.error('❌ Verify response error:', errorData)
-        throw new Error(errorData.error || 'Invalid verification code')
-      }
-
-      const verifyResult = await verifyResponse.json()
-      console.log('✅ 2FA verification result:', { 
-        valid: verifyResult.valid, 
-        success: verifyResult.success,
-        message: verifyResult.message 
-      })
-      
-      if (!verifyResult.valid || !verifyResult.success) {
-        throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
-      }
-
-      console.log('✅ 2FA code verified successfully')
-      
-      // Set the Supabase session to complete login
-      console.log('🔐 Setting Supabase session...')
-      const { error: sessionError } = await supabaseClient.auth.setSession(session)
-      
-      if (sessionError) {
-        console.error('❌ Failed to set session:', sessionError)
-        throw new Error('Failed to complete authentication')
-      }
-      
-      // Verify session is actually set
-      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
-      if (!currentSession) {
-        throw new Error('Session not properly established')
-      }
-      
-      console.log('✅ Session verified and established')
-      
-      // Clear 2FA pending state
-      setPending2FA(false)
-      setPendingAuthData(null)
-      
-      // Set user state immediately
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        full_name: userData.user_metadata?.full_name,
-        phone: userData.user_metadata?.phone
-      })
-      
-      // Load account data
-      await loadUserAccount(userData.id)
-      
-      console.log('🎉 2FA completion successful!')
-      return { success: true }
-    } catch (error) {
-      console.error('❌ 2FA completion failed:', error)
-      throw error
+  const steps: VerificationStep[] = [
+    {
+      id: 'upload',
+      title: 'Upload ID',
+      description: 'Government-issued photo ID',
+      icon: Upload,
+      status: 'pending'
+    },
+    {
+      id: 'selfie',
+      title: 'Take Selfie',
+      description: 'Live photo with liveness detection',
+      icon: Camera,
+      status: 'pending'
+    },
+    {
+      id: 'verify',
+      title: 'Verification',
+      description: 'Processing and approval',
+      icon: CheckCircle,
+      status: 'pending'
     }
-  }
+  ]
 
-  // Check for existing session on mount
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        setLoading(true)
-        const { data: { session }, error } = await supabaseClient.auth.getSession()
-        
-        if (error) {
-          console.warn('Session check error:', error)
-          setLoading(false)
-        } else {
-          console.log('No existing session found or session check error')
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Session check failed:', err)
-        setLoading(false)
-      }
-    }
+  const [stepStatuses, setStepStatuses] = useState<VerificationStep[]>(steps)
 
-    // Set a maximum timeout for loading state
-    const timeoutId = setTimeout(() => {
-      console.log('Auth timeout - forcing loading to false')
-      setLoading(false)
-    }, 2000) // Reduced to 2 seconds
-
-    checkSession()
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
-        clearTimeout(timeoutId) // Clear timeout when auth state changes
-        
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setAccount(null)
-          setSubscription(null)
-          setPending2FA(false)
-          setPendingAuthData(null)
-          setLoading(false)
-        }
-        // Don't auto-authenticate on SIGNED_IN - require 2FA
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeoutId)
-    }
-  }, [])
-
-  const loadUserAccount = async (userId: string) => {
-    try {
-      console.log('📊 Loading user account for:', userId)
-      // Ensure investor_units exists for this user
-      const { supabaseClient } = await import('../../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (session) {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-        
-        // Auto-create investor_units if missing
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/auto-create-investor-units`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-              'apikey': anonKey
-            },
-            body: JSON.stringify({ user_id: userId })
-          })
-        } catch (error) {
-          console.warn('⚠️ Auto-create investor units failed:', error)
-        }
-      }
-
-      const { data: accountData, error: accountError } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userId)
-
-      if (accountError) {
-        console.warn('⚠️ Account load error:', accountError)
-        // Don't throw error, just continue without account data
-      } else if (accountData && accountData.length > 0) {
-        console.log('✅ Account loaded:', accountData.id)
-        setAccount(accountData[0])
-      } else {
-        // No account found, create one
-        console.log('📝 Creating new account for user:', userId)
-        const { data: newAccountData, error: createError } = await supabaseClient
-          .from('accounts')
-          .insert({
-            user_id: userId,
-            account_type: 'trading',
-            balance: 0.00,
-            available_balance: 0.00,
-            total_deposits: 0.00,
-            total_withdrawals: 0.00,
-            currency: 'USD',
-            status: 'active'
-          })
-          .select()
-          .single()
-        
-        if (createError) {
-          console.error('❌ Failed to create account:', createError)
-        } else {
-          console.log('✅ New account created:', newAccountData.id)
-          setAccount(newAccountData)
-        }
-      }
-
-      // Load user profile data
-      const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
-        .eq('id', userId)
-        .single()
-
-      if (!userError && userData) {
-        console.log('✅ User profile loaded')
-        setUser(prev => prev ? {
-          ...prev,
-          full_name: userData.full_name,
-          phone: userData.phone,
-          documents_completed: userData.documents_completed,
-          documents_completed_at: userData.documents_completed_at,
-          kyc_status: userData.kyc_status,
-          kyc_verified_at: userData.kyc_verified_at,
-          is_kyc_verified: userData.kyc_status === 'verified',
-          two_factor_enabled: userData.two_factor_enabled,
-          two_factor_method: userData.two_factor_method,
-          subscription_signed_at: userData.subscription_signed_at
-        } : null)
-        
-        setProfile(userData)
-      }
-    } catch (err) {
-      console.error('❌ Account load failed:', err)
-      // Don't let account loading errors prevent the app from working
-    }
-  }
-
-  const refreshProfile = async () => {
-    if (user) {
-      await loadUserAccount(user.id)
-    }
-  }
-
-  const refreshAccount = async () => {
-    if (user) {
-      await loadUserAccount(user.id)
-    }
-  }
-
-  const refreshSubscription = async () => {
-    // Subscription refresh logic here
-  }
-
-  const processFunding = async (amount: number, method: string, description?: string) => {
+  const startVerification = async () => {
     if (!user) {
-      throw new Error('User not authenticated')
+      setError('User not authenticated')
+      return
     }
 
-    if (!account) {
-      throw new Error('User account not found')
-    }
+    console.log('🚀 Starting verification for user:', user.id)
+    setLoading(true)
+    setError('')
 
     try {
-      // STEP 1: Process deposit allocation through fund units
-      console.log('💰 Processing deposit allocation:', { amount, method })
-      
-      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (!session) {
-        throw new Error('No active session')
+        throw new Error('No active session - please sign in again')
       }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      // Call deposit allocation function
-      const allocationResponse = await fetch(`${supabaseUrl}/functions/v1/process-deposit-allocation`, {
+      const fullName = user.full_name || user.email.split('@')[0]
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0] || 'User'
+      const lastName = nameParts.slice(1).join(' ') || 'Name'
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
+          'apikey': anonKey,
+          'origin': window.location.origin
         },
         body: JSON.stringify({
           user_id: user.id,
-          deposit_amount: amount,
-          payment_method: method,
-          reference_id: description
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
+          return_url: `${window.location.origin}/kyc/callback`
         })
       })
 
-      if (!allocationResponse.ok) {
-        const error = await allocationResponse.json()
-        throw new Error(error.error || 'Failed to process deposit allocation')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `Verification failed (${response.status})`)
       }
 
-      const allocationResult = await allocationResponse.json()
-      console.log('✅ Deposit allocation successful:', allocationResult)
-
-      // STEP 2: Create transaction record for tracking
-      // Add transaction record
-      const { error: transactionError } = await supabaseClient
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          account_id: account.id,
-          type: 'deposit',
-          method: method,
-          amount: amount,
-          status: 'completed',
-          description: description || `${method} deposit - ${allocationResult.units_allocated.toFixed(4)} units allocated`
-        })
-
-      if (transactionError) {
-        console.error('Transaction error:', transactionError)
-        throw new Error('Failed to record transaction')
+      const sessionData = await response.json()
+      
+      if (!sessionData.client_url) {
+        throw new Error('No verification URL received')
       }
 
-      // Refresh account data to show updated balance
-      await refreshAccount()
-
-      return { success: true }
+      setVerificationUrl(sessionData.client_url)
+      setSessionId(sessionData.session_id)
+      
     } catch (error) {
-      console.error('Funding processing failed:', error)
-      throw error
+      console.error('❌ Verification start failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to start verification')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const markDocumentsCompleted = async () => {
-    if (!user) return
-
-    try {
-      const { error } = await supabaseClient
-        .from('users')
-        .update({
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('Failed to mark documents completed:', error)
-      } else {
-        setUser(prev => prev ? {
-          ...prev,
-          documents_completed: true,
-          documents_completed_at: new Date().toISOString()
-        } : null)
-      }
-    } catch (err) {
-      console.error('Error marking documents completed:', err)
-    }
+  const handleVerificationSubmitted = () => {
+    console.log('✅ User completed verification in Didit interface')
+    setVerificationSubmitted(true)
+    
+    // Redirect to verification progress screen
+    setTimeout(() => {
+      onVerificationComplete()
+    }, 2000)
   }
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      console.log('🔐 Attempting sign in for:', email)
+  // Handle iframe messages to detect when verification is actually submitted
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from Didit domain
+      if (!event.origin.includes('didit.me')) return
       
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      })
-
-      if (error) {
-        console.error('❌ Sign in error:', error)
-        
-        if (error.message.includes('Invalid login credentials')) {
-          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
-        }
-        
-        return { error: { message: error.message } }
+      console.log('📨 Received message from Didit iframe:', event.data)
+      
+      // Look for verification completion signals
+      if (event.data.type === 'verification_complete' || 
+          event.data.type === 'verification_submitted' ||
+          event.data.type === 'session_complete' ||
+          (typeof event.data === 'string' && event.data.includes('complete'))) {
+        console.log('✅ Verification submitted by user!')
+        handleVerificationSubmitted()
       }
-
-      if (data.user) {
-        console.log('✅ Sign in successful for:', data.user.email)
-        
-        // Set pending 2FA state and return requires2FA flag
-        setPending2FA(true)
-        setPendingAuthData({ userData: data.user, session: data.session })
-        
-        return { error: null, requires2FA: true }
-      }
-
-      return { error: { message: 'No user returned' } }
-    } catch (err) {
-      console.error('Sign in failed:', err)
-      return { error: { message: 'Connection error' } }
     }
-  }
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
-    try {
-      console.log('📝 Attempting sign up for:', email)
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  // Prevent infinite loading with timeout
+  useEffect(() => {
+    if (verificationUrl && !iframeLoaded) {
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ Iframe loading timeout - forcing loaded state')
+        setIframeLoaded(true)
+      }, 10000)
       
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata
-        }
-      })
-
-      if (error) {
-        console.error('❌ Sign up error:', error)
-        
-        if (error.message.includes('User already registered')) {
-          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
-        }
-        
-        if (error.message.includes('Invalid email')) {
-          return { error: { message: 'Please enter a valid email address.' } }
-        }
-        
-        if (error.message.includes('Password')) {
-          return { error: { message: 'Password must be at least 6 characters long.' } }
-        }
-        
-        return { error: { message: `Signup failed: ${error.message}` } }
-      }
-
-      if (data.user) {
-        console.log('✅ Sign up successful for:', data.user.email)
-        
-        // Create user profile with phone number
-        try {
-          const { error: profileError } = await supabaseClient
-            .from('users')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: metadata?.full_name,
-              phone: metadata?.phone
-            })
-
-          if (profileError) {
-            console.error('Error creating user profile:', profileError)
-          } else {
-            console.log('✅ User profile created successfully')
-          }
-        } catch (err) {
-          console.error('Unexpected error inserting user profile:', err)
-        }
-
-        return { error: null }
-      }
-
-      return { error: { message: 'No user returned from signup' } }
-    } catch (err) {
-      console.error('Sign up failed:', err)
-      return { error: { message: 'Connection error during signup' } }
+      return () => clearTimeout(timeout)
     }
-  }
+  }, [verificationUrl, iframeLoaded])
 
-
-  const signOut = async () => {
-    try {
-      console.log('🚪 Signing out user...')
-      
-      const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-      } else {
-        console.log('✅ Sign out successful')
-      }
-      
-      // Always clear state and reload page for clean logout
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
-      setProfile(null)
-      
-      // Force page reload to ensure clean state
-      window.location.reload()
-    } catch (err) {
-      console.error('Sign out failed:', err)
-      // Force reload on any error
-      setUser(null)
-      setAccount(null)
-      setSubscription(null)
-      setProfile(null)
-      window.location.reload()
-    }
+  // If verification was submitted, show transition message
+  if (verificationSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full text-center">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="h-10 w-10 text-blue-600" />
+          </div>
+          
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Verification Submitted Successfully
+          </h1>
+          
+          <p className="text-gray-600 mb-8">
+            Your documents have been submitted for review. You'll be redirected to the verification progress screen.
+          </p>
+          
+          <div className="flex items-center justify-center space-x-2 text-blue-600">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Redirecting...</span>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      pending2FA,
-      pendingAuthData,
-      account,
-      subscription,
-      profile,
-      refreshAccount,
-      refreshSubscription,
-      refreshProfile,
-      processFunding,
-      markDocumentsCompleted,
-      signIn,
-      complete2FA,
-      signUp,
-      signOut
-    }}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <CheckCircle className="h-12 w-12 text-green-600" />
+        </div>
+        <h3 className="text-3xl font-bold text-gray-900 mb-4">
+          Secure Identity Verification
+        </h3>
+        <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
+          Complete your identity verification to unlock funding capabilities. This secure process 
+          helps us meet regulatory requirements and protect your account.
+        </p>
+      </div>
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+      {/* Progress Steps - Static Display */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="p-6 rounded-2xl border-2 border-gray-200 bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Upload className="h-8 w-8" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900 mb-2">Upload ID</h4>
+            <p className="text-sm text-gray-600">Government-issued photo ID</p>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-2xl border-2 border-gray-200 bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Camera className="h-8 w-8" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900 mb-2">Take Selfie</h4>
+            <p className="text-sm text-gray-600">Live photo with liveness detection</p>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-2xl border-2 border-gray-200 bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900 mb-2">Instant Approval</h4>
+            <p className="text-sm text-gray-600">Automated verification</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <h4 className="font-semibold text-red-900">Verification Error</h4>
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setError('')
+              setVerificationUrl(null)
+              setSessionId(null)
+              setVerificationSubmitted(false)
+              setStepStatuses(steps)
+              setIframeLoaded(false)
+            }}
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Start Over
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!verificationUrl ? (
+        <div className="text-center space-y-8">
+          {/* Security Features */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <Shield className="h-8 w-8 text-blue-600" />
+              <h4 className="text-2xl font-bold text-blue-900">Bank-Level Security</h4>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 text-left">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">256-bit encryption for all data</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Documents processed securely and encrypted</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">No data stored on our servers</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">One-time verification process</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Full KYC/AML compliance</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Instant approval in most cases</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={startVerification}
+            disabled={loading}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 inline-flex items-center gap-4"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-8 h-8 animate-spin" />
+                Initializing Secure Verification...
+              </>
+            ) : (
+              <>
+                <Shield className="w-8 h-8" />
+                Begin Identity Verification
+                <ArrowRight className="w-6 h-6" />
+              </>
+            )}
+          </button>
+          
+          <p className="text-sm text-gray-500">
+            Secure verification powered by advanced identity technology
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Verification Interface */}
+          <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-900">Global Markets Consulting</span>
+                    <div className="text-sm text-gray-600">Secure Identity Verification</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-600 font-medium">SECURE</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Loading Overlay */}
+            {!iframeLoaded && (
+              <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-10">
+                <div className="text-center">
+                  <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Loading Verification Interface</h4>
+                  <p className="text-gray-600">Initializing secure connection...</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="relative">
+              <iframe
+                ref={iframeRef}
+                src={verificationUrl}
+                title="Identity Verification"
+                className="w-full h-[700px] border-none"
+                allow="camera; microphone"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                onLoad={() => {
+                  console.log('✅ Verification iframe loaded successfully')
+                  setIframeLoaded(true)
+                }}
+                onError={() => {
+                  console.error('❌ Verification iframe failed to load')
+                  setError('Failed to load verification interface. Please try again.')
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+                }}
+              />
+              
+              {/* Custom overlay to hide Didit branding */}
+              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white to-transparent pointer-events-none"></div>
+            </div>
+          </div>
+
+          {/* Completion Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+            <h4 className="text-lg font-semibold text-blue-900 mb-3">
+              Complete Your Verification
+            </h4>
+            <p className="text-blue-800 mb-4">
+              Please complete the verification process in the interface above. Once you've uploaded your ID and taken your selfie, 
+              the system will automatically detect completion and redirect you to the verification progress screen.
+            </p>
+            <div className="text-sm text-blue-600">
+              💡 The verification interface will automatically advance when you complete all steps
+            </div>
+          </div>
+
+          {/* Help Section */}
+          <div className="bg-gray-50 rounded-xl p-6 mt-6">
+            <h4 className="font-semibold text-gray-900 mb-4">Need Help?</h4>
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div>
+                <h5 className="font-medium text-gray-900 mb-2">Accepted ID Types:</h5>
+                <ul className="space-y-1">
+                  <li>• Driver's License</li>
+                  <li>• Passport</li>
+                  <li>• National ID Card</li>
+                  <li>• State ID Card</li>
+                </ul>
+              </div>
+              <div>
+                <h5 className="font-medium text-gray-900 mb-2">Photo Tips:</h5>
+                <ul className="space-y-1">
+                  <li>• Ensure good lighting</li>
+                  <li>• Keep ID flat and visible</li>
+                  <li>• Look directly at camera for selfie</li>
+                  <li>• Remove glasses if possible</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Back Button */}
+      <div className="mt-6 text-center">
+        <button
+          onClick={onClose}
+          className="text-gray-600 hover:text-gray-800 font-medium transition-colors inline-flex items-center gap-2"
+        >
+          <ArrowRight className="w-4 h-4 rotate-180" />
+          Back to Onboarding
+        </button>
+      </div>
+    </div>
+  )
 }
