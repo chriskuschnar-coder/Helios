@@ -274,11 +274,10 @@ SEC Registered Investment Advisor
         // Return success with SendGrid confirmation
         return new Response(JSON.stringify({
           success: true,
-          sendgrid_success: true,
           method: method,
           destination: email,
           expires_in: 600, // 10 minutes
-          message: `Live verification code sent via ${method} to ${email}`,
+          message: `Verification code sent to ${email}`,
           timestamp: new Date().toISOString()
         }), {
           headers: {
@@ -289,25 +288,7 @@ SEC Registered Investment Advisor
         
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError)
-        
-        // Fall back to demo mode if email fails
-        console.log('⚠️ Falling back to demo mode due to email failure')
-        return new Response(JSON.stringify({
-          success: true,
-          sendgrid_success: false,
-          demo_mode: true,
-          method: method,
-          destination: email,
-          expires_in: 600,
-          message: `Demo mode: Email failed, use demo code`,
-          error_details: emailError.message,
-          timestamp: new Date().toISOString()
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        })
+        throw new Error(`Email delivery failed: ${emailError.message}`)
       }
       
     } else if (method === 'sms') {

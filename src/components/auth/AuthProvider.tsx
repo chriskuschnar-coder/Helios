@@ -99,15 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const verifyResult = await verifyResponse.json()
+      console.log('✅ 2FA verification result:', { 
+        valid: verifyResult.valid, 
+        success: verifyResult.success,
+        message: verifyResult.message 
+      })
       
       if (!verifyResult.valid || !verifyResult.success) {
-        console.error('❌ Code verification failed:', verifyResult)
-        throw new Error('Invalid verification code')
+        throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
       }
 
       console.log('✅ 2FA code verified successfully')
       
       // Set the Supabase session to complete login
+      console.log('🔐 Setting Supabase session...')
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
       
       if (sessionError) {

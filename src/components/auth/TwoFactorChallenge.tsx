@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock } from 'lucide-react'
+import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock, Loader2 } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 
 interface TwoFactorChallengeProps {
@@ -22,26 +22,47 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [demoCode, setDemoCode] = useState('123456')
-  const [actualCode, setActualCode] = useState('')
-  const [isLiveMode, setIsLiveMode] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const [resendCount, setResendCount] = useState(0)
-  const [canResend, setCanResend] = useState(true)
+  const [canResend, setCanResend] = useState(false)
+  const [resendCountdown, setResendCountdown] = useState(60)
+
+  // Auto-focus and format code input
+  const handleCodeChange = (value: string) => {
+    const numericValue = value.replace(/\D/g, '').substring(0, 6)
+    setVerificationCode(numericValue)
+    setError('') // Clear error when user starts typing
+  }
+
+  // Handle Enter key submission
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && verificationCode.length === 6 && !loading) {
+      verifyCode()
+    }
+  }
+
+  // Resend countdown timer
+  useEffect(() => {
+    if (!canResend && resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(prev => prev - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else if (resendCountdown === 0) {
+      setCanResend(true)
+      setResendCountdown(60)
+    }
+  }, [canResend, resendCountdown])
 
   // Generate and send code on mount
   useEffect(() => {
-    console.log('🔐 2FA Challenge mounted - generating code for:', userEmail)
-    console.log('🔐 User data available:', { 
-      userId: userData?.id, 
-      email: userData?.email,
-      userEmail: userEmail 
-    })
+    console.log('🔐 2FA Challenge mounted - sending verification code to:', userEmail)
     sendVerificationCode()
   }, [])
 
   const sendVerificationCode = async () => {
     if (resendCount >= 3) {
-      setError('Maximum resend attempts reached. Please wait 5 minutes.')
+      setError('Maximum resend attempts reached. Please wait 5 minutes before trying again.')
       setCanResend(false)
       setTimeout(() => {
         setCanResend(true)
@@ -52,15 +73,10 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
     setError('')
     setSuccess('')
+    setEmailSent(false)
 
     try {
-      console.log('📧 Sending email verification code to:', userEmail)
-      console.log('📧 Request payload:', {
-        user_id: userData?.id,
-        method: 'email',
-        email: userEmail,
-        phone: userData?.phone
-      })
+      console.log('📧 Sending verification code to:', userEmail)
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
@@ -81,28 +97,19 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         })
       })
 
-      console.log('📧 Send code response status:', response.status)
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('📧 SendGrid error:', errorData)
         throw new Error(errorData.error || 'Failed to send verification code')
       }
 
       const result = await response.json()
-      console.log('✅ Verification code sent successfully:', result)
+      console.log('✅ Verification code sent successfully')
       
-      // Determine if we're in live mode based on SendGrid success
-      setIsLiveMode(!!result.success && !result.demo_mode && !!result.sendgrid_success)
-      
-      if (result.sendgrid_success) {
-        setSuccess(`✅ Live verification code sent to ${userEmail}`)
-        setIsLiveMode(true)
-      } else {
-        setSuccess(`📧 Verification code sent to ${userEmail}`)
-        setIsLiveMode(false)
-      }
+      setEmailSent(true)
+      setSuccess(`Verification code sent to ${userEmail}`)
       setResendCount(prev => prev + 1)
+      setCanResend(false)
+      setResendCountdown(60)
       
     } catch (error) {
       console.error('❌ Failed to send verification code:', error)
@@ -112,49 +119,48 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
   const verifyCode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
-      setError('Please enter the 6-digit verification code')
+      setError('Please enter the complete 6-digit verification code')
       return
     }
 
     if (!userData?.id) {
-      setError('User data not available. Please try logging in again.')
+      setError('Authentication session expired. Please sign in again.')
       return
     }
     
     setLoading(true)
     setError('')
-    setSuccess('')
 
     try {
-      console.log('🔐 Starting 2FA verification for user:', userData.id)
+      console.log('🔐 Verifying 2FA code for user:', userData.id)
       
       // Use AuthProvider's complete2FA method for proper session handling
       const result = await complete2FA(verificationCode, userData, session)
       
       if (result.success) {
         console.log('✅ 2FA verification and session setup complete')
-        setSuccess('Verification successful! Redirecting...')
+        setSuccess('Verification successful! Redirecting to your account...')
         
-        // Small delay to show success message, then redirect
+        // Delay to show success message, then redirect
         setTimeout(() => {
           setLoading(false)
-          console.log('🎉 Calling onSuccess to redirect to dashboard')
+          console.log('🎉 Redirecting to dashboard')
           onSuccess()
-        }, 1000)
+        }, 1500)
       } else {
-        throw new Error('2FA verification failed')
+        throw new Error('Verification failed')
       }
       
     } catch (error) {
       console.error('❌ 2FA verification failed:', error)
-      setError(error instanceof Error ? error.message : 'Verification failed')
+      setError(error instanceof Error ? error.message : 'Invalid verification code. Please try again.')
       setLoading(false)
     }
   }
 
   const resendCode = async () => {
     if (!canResend) {
-      setError('Please wait before requesting another code')
+      setError(`Please wait ${resendCountdown} seconds before requesting another code`)
       return
     }
     
@@ -164,154 +170,168 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     await sendVerificationCode()
   }
 
-  const useDemoCode = () => {
-    setVerificationCode(demoCode)
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8">
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-navy-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Back Button */}
+        <div className="mb-6">
           <button
             onClick={onCancel}
-            className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors"
+            className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors group"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back</span>
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back to Sign In</span>
           </button>
         </div>
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h2>
-          <p className="text-gray-600">
-            Enter the verification code sent to your email
-          </p>
-        </div>
-
-        {/* Email Status */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-blue-900">Verification Code Sent</span>
-          </div>
-          <p className="text-blue-800">
-            Check your email: {userEmail}
-          </p>
-        </div>
-
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-green-900 font-medium">{success}</span>
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 transform transition-all duration-300 hover:shadow-2xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-navy-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Shield className="h-10 w-10 text-white" />
             </div>
+            <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
+              Two-Factor Authentication
+            </h1>
+            <p className="text-gray-600 leading-relaxed">
+              Enter the 6-digit verification code sent to your email address
+            </p>
           </div>
-        )}
 
-        {/* Demo Code Display */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <Clock className="h-5 w-5 text-yellow-600" />
-            <span className="font-medium text-yellow-900">
-              {isLiveMode ? 'Live Mode' : 'Demo Mode'}
-            </span>
-          </div>
-          {isLiveMode ? (
-            <div>
-              <p className="text-sm text-yellow-700 mb-2">
-                ✅ Live email sent! Check your inbox for the 6-digit code.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm text-yellow-700 mb-3">
-                For testing purposes, your verification code is:
-              </p>
-              <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-yellow-300">
-                <span className="text-2xl font-bold font-mono text-yellow-900">{demoCode}</span>
-                <button
-                  onClick={useDemoCode}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                >
-                  Use Code
-                </button>
+          {/* Email Status */}
+          {emailSent && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 animate-in fade-in duration-500">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">Verification Code Sent</h3>
+                  <p className="text-sm text-blue-700">
+                    Check your email: <span className="font-medium">{userEmail}</span>
+                  </p>
+                </div>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Live Mode Status */}
-        {isLiveMode && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <Mail className="h-5 w-5 text-green-600" />
-              <span className="font-medium text-green-900">Email Sent Successfully</span>
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 animate-in fade-in duration-500">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="text-green-900 font-medium">{success}</span>
+              </div>
             </div>
-            <p className="text-sm text-green-700">
-              A 6-digit verification code has been sent to your email address. Please check your inbox (and spam folder) for the code.
-            </p>
-          </div>
-        )}
+          )}
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Enter 6-Digit Verification Code
-            </label>
-            <input
-              type="text"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
-              className="w-full px-4 py-3 text-center text-2xl font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="000000"
-              maxLength={6}
-              autoComplete="one-time-code"
-              autoFocus
-            />
-          </div>
-
+          {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 animate-in fade-in duration-300">
+              <div className="flex items-center space-x-3">
                 <AlertCircle className="h-5 w-5 text-red-600" />
                 <span className="text-red-900 font-medium">{error}</span>
               </div>
             </div>
           )}
 
-          <button
-            onClick={verifyCode}
-            disabled={loading || verificationCode.length !== 6}
-            className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            {loading ? 'Verifying...' : 'Verify Code'}
-          </button>
+          {/* Verification Code Input */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Verification Code
+              </label>
+              <input
+                type="text"
+                value={verificationCode}
+                onChange={(e) => handleCodeChange(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full px-6 py-4 text-center text-3xl font-mono font-bold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 tracking-widest bg-gray-50 focus:bg-white"
+                placeholder="000000"
+                maxLength={6}
+                autoComplete="one-time-code"
+                autoFocus
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Enter the 6-digit code from your email
+              </p>
+            </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              Didn't receive the code?
-            </p>
+            {/* Verify Button */}
             <button
-              onClick={resendCode}
-              disabled={!canResend}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+              onClick={verifyCode}
+              disabled={loading || verificationCode.length !== 6}
+              className="w-full bg-gradient-to-r from-navy-600 to-blue-600 hover:from-navy-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center space-x-3"
             >
-              {!canResend ? `Wait ${5 - Math.floor(resendCount / 60)}min` : 'Resend Code'} ({resendCount}/3)
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Verifying Code...</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-5 w-5" />
+                  <span>Verify Code</span>
+                </>
+              )}
             </button>
-          </div>
-        </div>
 
-        {/* Support Contact */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-sm text-gray-600 mb-2">
-            Need to update your email address or having trouble?
-          </p>
-          <p className="text-sm">
-            Contact support: <a href="mailto:support@globalmarketsconsulting.com" className="text-navy-600 hover:text-navy-700 font-medium">support@globalmarketsconsulting.com</a>
-          </p>
+            {/* Resend Section */}
+            <div className="text-center pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-600 mb-3">
+                Didn't receive the code?
+              </p>
+              {canResend ? (
+                <button
+                  onClick={resendCode}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors hover:underline"
+                >
+                  Resend Verification Code
+                </button>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  Resend available in <span className="font-mono font-bold text-blue-600">{resendCountdown}s</span>
+                </div>
+              )}
+              {resendCount > 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Attempts: {resendCount}/3
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Security Notice */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <Shield className="h-5 w-5 text-gray-600 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Security Notice</h4>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li>• Never share your verification code with anyone</li>
+                    <li>• This code expires in 10 minutes</li>
+                    <li>• If you didn't request this, contact support immediately</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Support Contact */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500">
+              Need help? Contact{' '}
+              <a 
+                href="mailto:support@globalmarketsconsulting.com" 
+                className="text-navy-600 hover:text-navy-700 font-medium transition-colors"
+              >
+                support@globalmarketsconsulting.com
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

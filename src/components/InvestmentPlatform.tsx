@@ -65,7 +65,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
       <TwoFactorChallenge
         onSuccess={() => {
           console.log('✅ 2FA verification successful - redirecting to dashboard')
-          // The user state should now be set by AuthProvider
+          // User state is now set by AuthProvider, component will re-render
         }}
         onCancel={async () => {
           console.log('❌ 2FA cancelled by user - signing out')
@@ -87,6 +87,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
                 console.log('✅ Signup success')
+                setShowSignup(false)
               } catch (err) {
                 console.error('❌ Signup success handler error:', err);
                 setError('Login transition failed');
@@ -100,6 +101,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
                 console.log('🎉 Login success callback - checking for 2FA requirement')
+                // Login success is handled by AuthProvider
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');

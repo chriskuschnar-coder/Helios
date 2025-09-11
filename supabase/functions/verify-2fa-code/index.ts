@@ -42,48 +42,6 @@ Deno.serve(async (req) => {
       throw new Error('Invalid verification code format - must be 6 digits')
     }
 
-    // DEMO MODE: Accept 123456 as valid code for development/testing
-    if (code === '123456') {
-      console.log('✅ Demo code accepted (123456)')
-      
-      // Still update user's last login for consistency
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      
-      try {
-        await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user_id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            last_login: new Date().toISOString()
-          })
-        })
-        console.log('✅ Demo mode: Last login updated')
-      } catch (updateError) {
-        console.warn('⚠️ Failed to update last login for demo mode:', updateError)
-      }
-
-      return new Response(JSON.stringify({
-        valid: true,
-        success: true,
-        demo_mode: true,
-        user_id: user_id,
-        message: 'Demo code verification successful',
-        timestamp: new Date().toISOString()
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      })
-    }
-
-    // LIVE MODE: Check database for real verification codes
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
@@ -168,9 +126,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         valid: true,
         success: true,
-        demo_mode: false,
         user_id: user_id,
         message: '2FA verification successful',
+        redirect_to: 'dashboard',
         timestamp: new Date().toISOString()
       }), {
         headers: {
@@ -185,6 +143,7 @@ Deno.serve(async (req) => {
         valid: false,
         success: false,
         message: 'Invalid verification code',
+        error: 'The verification code you entered is incorrect. Please check your email and try again.',
         timestamp: new Date().toISOString()
       }), {
         headers: {
