@@ -39,6 +39,15 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'investment_agreement'
     },
     {
+      id: 'lpa',
+      title: 'Limited Partnership Agreement',
+      description: 'Legal agreement defining the partnership structure and terms.',
+      required: false,
+      signed: false,
+      url: '/documents/Global_Markets_LPA_With_Schedules_1_20.pdf',
+      type: 'investment_agreement'
+    },
+    {
       id: 'investment_agreement',
       title: 'Investment Management Agreement',
       description: 'Defines the terms of our investment management relationship and fee structure.',
