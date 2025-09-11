@@ -75,13 +75,16 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
     }
 
     try {
-      const { error } = await signUp(formData.email, formData.password, {
+      const result = await signUp(formData.email, formData.password, {
         full_name: formData.fullName,
         phone: formData.phone
       })
       
-      if (error) {
-        setError(error.message)
+      if (result.error) {
+        setError(result.error.message)
+      } else if (result.showWelcome) {
+        // Show welcome page instead of immediately calling onSuccess
+        onSuccess?.(result.userData)
       } else {
         onSuccess?.()
       }

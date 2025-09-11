@@ -5,6 +5,7 @@ import { SignupForm } from './auth/SignupForm'
 import { TwoFactorChallenge } from './auth/TwoFactorChallenge'
 import { KYCVerificationInProgress } from './KYCVerificationInProgress'
 import { DashboardSelector } from './DashboardSelector'
+import { WelcomePage } from './WelcomePage'
 import { Loader2 } from 'lucide-react'
 
 interface AuthenticatedAppProps {
@@ -16,6 +17,8 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
   const [showKYCProgress, setShowKYCProgress] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
+  const [welcomeUserData, setWelcomeUserData] = useState<{ email: string; full_name?: string } | null>(null)
 
 
   // Error boundary
@@ -76,10 +79,18 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
           <SignupForm 
-            onSuccess={() => {
+            onSuccess={(userData?: { email: string; full_name?: string }) => {
               try {
                 console.log('✅ Signup success')
-                setShowSignup(false)
+                if (userData) {
+                  // Show welcome page for new users
+                  setWelcomeUserData(userData)
+                  setShowWelcome(true)
+                  setShowSignup(false)
+                } else {
+                  // Fallback to login
+                  setShowSignup(false)
+                }
               } catch (err) {
                 console.error('❌ Signup success handler error:', err);
                 setError('Login transition failed');
@@ -103,6 +114,24 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onBackToHome={onBackToHome}
           />
         )}
+      </div>
+    )
+  }
+
+  // Show welcome page for new users
+  if (showWelcome && welcomeUserData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <WelcomePage
+          userEmail={welcomeUserData.email}
+          userName={welcomeUserData.full_name}
+          onContinueToLogin={() => {
+            setShowWelcome(false)
+            setWelcomeUserData(null)
+            setShowSignup(false)
+            // This will show the login form
+          }}
+        />
       </div>
     )
   }

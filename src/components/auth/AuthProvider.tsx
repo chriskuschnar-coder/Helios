@@ -533,19 +533,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               id: data.user.id,
               email: data.user.email,
               full_name: metadata?.full_name,
-              phone: metadata?.phone
+              phone: metadata?.phone,
+              welcome_email_sent: false,
+              onboarding_completed_at: null
             })
 
           if (profileError) {
             console.error('Error creating user profile:', profileError)
           } else {
             console.log('✅ User profile created successfully')
+            
+            // Send welcome email
+            try {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+              const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+              
+              const welcomeResponse = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': anonKey,
+                  'origin': window.location.origin
+                },
+                body: JSON.stringify({
+                  user_id: data.user.id,
+                  email: data.user.email,
+                  full_name: metadata?.full_name
+                })
+              })
+
+              if (welcomeResponse.ok) {
+                console.log('✅ Welcome email sent successfully')
+              } else {
+                console.warn('⚠️ Welcome email failed to send')
+              }
+            } catch (emailError) {
+              console.warn('⚠️ Welcome email error:', emailError)
+              // Don't fail signup if email fails
+            }
           }
         } catch (err) {
           console.error('Unexpected error inserting user profile:', err)
         }
 
-        return { error: null }
+        return { 
+          error: null, 
+          showWelcome: true,
+          userData: {
+            email: data.user.email,
+            full_name: metadata?.full_name
+          }
+        }
       }
 
       return { error: { message: 'No user returned from signup' } }
