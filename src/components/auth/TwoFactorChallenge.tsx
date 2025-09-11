@@ -25,12 +25,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [biometricSupported, setBiometricSupported] = useState(false)
   const [codeSent, setCodeSent] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(600) // 10 minutes
+  const [canResend, setCanResend] = useState(false)
 
   useEffect(() => {
     checkBiometricSupport()
-    // Auto-send code based on preferred method
-    if (preferredMethod === 'email' || preferredMethod === 'sms') {
-      sendVerificationCode(preferredMethod)
+    // Auto-send email code (primary method)
+    if (userEmail) {
+      sendVerificationCode('email')
     }
   }, [])
 
@@ -38,7 +39,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     // Countdown timer for code expiration
     if (codeSent && timeRemaining > 0) {
       const timer = setTimeout(() => {
-        setTimeRemaining(prev => prev - 1)
+        setTimeRemaining(prev => {
+          const newTime = prev - 1
+          if (newTime <= 540) { // Allow resend after 1 minute (600-60=540)
+            setCanResend(true)
+          }
+          return newTime
+        })
       }, 1000)
       return () => clearTimeout(timer)
     }
@@ -96,14 +103,17 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       const result = await response.json()
       console.log('✅ Verification code sent successfully')
       
-      setCodeSent(true)
-      setTimeRemaining(600) // Reset timer
-      setSuccess(`Verification code sent to ${selectedMethod === 'email' ? userEmail : userPhone}`)
-      
-      // For demo purposes, show the code in console
+      // Show the demo code for testing
       if (result.demo_code) {
         console.log('🔑 Demo verification code:', result.demo_code)
+        setSuccess(`Code sent to ${selectedMethod === 'email' ? userEmail : userPhone}. Demo code: ${result.demo_code}`)
+      } else {
+        setSuccess(`Verification code sent to ${selectedMethod === 'email' ? userEmail : userPhone}`)
       }
+      
+      setCodeSent(true)
+      setTimeRemaining(600) // Reset timer
+      setCanResend(false)
       
     } catch (error) {
       console.error('❌ Failed to send verification code:', error)
@@ -233,7 +243,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const resendCode = async () => {
     setVerificationCode('')
     setAttempts(0)
-    setCodeSent(false)
+    setError('')
+    setSuccess('')
     await sendVerificationCode(method)
   }
 
@@ -260,66 +271,68 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           <Shield className="h-8 w-8 text-blue-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h2>
-        <p className="text-gray-600">Please verify your identity to continue</p>
+        <p className="text-gray-600">Check your email for the verification code</p>
       </div>
 
       {/* Method Selector */}
-      <div className="flex space-x-2 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <button
           onClick={() => {
             setMethod('email')
-            setCodeSent(false)
             setVerificationCode('')
             setError('')
+            setSuccess('')
             sendVerificationCode('email')
           }}
-          className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
+          className={`p-4 rounded-lg font-medium transition-colors text-center ${
             method === 'email' 
               ? 'bg-blue-600 text-white' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
-          <Mail className="h-4 w-4 mx-auto mb-1" />
-          <span className="text-sm">Email</span>
+          <Mail className="h-5 w-5 mx-auto mb-2" />
+          <div className="text-sm font-medium">Email Code</div>
+          <div className="text-xs opacity-80">{userEmail}</div>
         </button>
         
         {userPhone && (
           <button
             onClick={() => {
               setMethod('sms')
-              setCodeSent(false)
               setVerificationCode('')
               setError('')
+              setSuccess('')
               sendVerificationCode('sms')
             }}
-            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
+            className={`p-4 rounded-lg font-medium transition-colors text-center ${
               method === 'sms' 
                 ? 'bg-green-600 text-white' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Smartphone className="h-4 w-4 mx-auto mb-1" />
-            <span className="text-sm">SMS</span>
+            <Smartphone className="h-5 w-5 mx-auto mb-2" />
+            <div className="text-sm font-medium">SMS Code</div>
+            <div className="text-xs opacity-80">{userPhone}</div>
           </button>
         )}
-        
-        {biometricSupported && (
+      </div>
+
+      {/* Biometric Option (if supported) */}
+      {biometricSupported && (
+        <div className="mb-6">
           <button
             onClick={() => {
               setMethod('biometric')
               verifyBiometric()
             }}
-            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
-              method === 'biometric' 
-                ? 'bg-purple-600 text-white' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className="w-full p-4 bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg font-medium transition-colors text-center"
           >
-            <Fingerprint className="h-4 w-4 mx-auto mb-1" />
-            <span className="text-sm">Biometric</span>
+            <Fingerprint className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+            <div className="text-sm font-medium text-purple-900">Use Biometric Authentication</div>
+            <div className="text-xs text-purple-700">Face ID, Touch ID, or Fingerprint</div>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -341,7 +354,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
       {(method === 'email' || method === 'sms') && (
         <div className="space-y-6">
-          <div className={`${method === 'email' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4`}>
+          <div className={`border rounded-lg p-4 ${method === 'email' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}>
             <div className="flex items-center space-x-2 mb-2">
               {method === 'email' ? <Mail className="h-5 w-5 text-blue-600" /> : <Smartphone className="h-5 w-5 text-green-600" />}
               <span className={`font-medium ${method === 'email' ? 'text-blue-900' : 'text-green-900'}`}>
@@ -364,33 +377,11 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             )}
           </div>
 
-          {!codeSent ? (
-            <button
-              onClick={() => sendVerificationCode(method)}
-              disabled={loading}
-              className={`w-full px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
-                method === 'email' 
-                  ? 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white'
-                  : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Sending Code...
-                </>
-              ) : (
-                <>
-                  {method === 'email' ? <Mail className="h-4 w-4 mr-2" /> : <Smartphone className="h-4 w-4 mr-2" />}
-                  Send {method === 'email' ? 'Email' : 'SMS'} Code
-                </>
-              )}
-            </button>
-          ) : (
+          {codeSent && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Code
+                  Enter 6-Digit Code
                 </label>
                 <input
                   type="text"
@@ -402,12 +393,15 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   autoComplete="one-time-code"
                   autoFocus
                 />
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Check your {method === 'email' ? 'email inbox' : 'text messages'} for the code
+                </p>
               </div>
 
               <button
                 onClick={verifyCode}
                 disabled={loading || verificationCode.length !== 6}
-                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 {loading ? 'Verifying...' : 'Verify Code'}
               </button>
@@ -416,13 +410,50 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 <p className="text-sm text-gray-600 mb-2">
                   Didn't receive the code?
                 </p>
-                <button
-                  onClick={resendCode}
-                  disabled={loading || timeRemaining <= 0}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400"
-                >
-                  {timeRemaining <= 0 ? 'Code Expired - Click to Resend' : 'Resend Code'}
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={resendCode}
+                    disabled={loading || !canResend}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {timeRemaining <= 0 ? 'Code Expired - Click to Resend' : 
+                     canResend ? 'Resend Code' : `Wait ${formatTime(600 - timeRemaining)} to resend`}
+                  </button>
+                  
+                  {method === 'email' && userPhone && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          setMethod('sms')
+                          setVerificationCode('')
+                          setError('')
+                          setSuccess('')
+                          sendVerificationCode('sms')
+                        }}
+                        className="text-green-600 hover:text-green-700 text-sm font-medium"
+                      >
+                        Try SMS instead
+                      </button>
+                    </div>
+                  )}
+                  
+                  {method === 'sms' && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          setMethod('email')
+                          setVerificationCode('')
+                          setError('')
+                          setSuccess('')
+                          sendVerificationCode('email')
+                        }}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Try email instead
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

@@ -419,7 +419,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               full_name: metadata?.full_name,
               phone: metadata?.phone,
               kyc_status: 'pending',
-              two_factor_enabled: true, // Enable 2FA by default for security
+              two_factor_enabled: true, // ALWAYS enable 2FA for security
               two_factor_method: 'email' // Default to email verification
             })
 
