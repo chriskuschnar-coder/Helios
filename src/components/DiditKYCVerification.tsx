@@ -16,11 +16,19 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [isVerified, setIsVerified] = useState(false)
   const [checkingStatus, setCheckingStatus] = useState(false)
   const [kycStatus, setKycStatus] = useState<any>(null)
+  const [showTimeoutOptions, setShowTimeoutOptions] = useState(false)
+  const [manualOverride, setManualOverride] = useState(false)
 
   // Check KYC status on component mount
   useEffect(() => {
     if (user) {
       checkKYCStatus()
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      setCheckingStatus(false)
+      setShowTimeoutOptions(false)
     }
   }, [user])
 
@@ -28,43 +36,64 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     if (!user) return
     
     setCheckingStatus(true)
+    console.log('🔍 Starting KYC status check for user:', user.id)
+    
     try {
-      console.log('🔍 Checking KYC status for user:', user.id)
-      
       const { supabaseClient } = await import('../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (!session) {
-        console.warn('No active session for KYC check')
+        console.warn('❌ No active session for KYC check')
         setCheckingStatus(false)
+        setError('Please sign in again to check verification status')
         return
       }
 
+      console.log('✅ Session found, checking KYC status...')
+      
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/check-kyc-status`, {
-        method: 'GET',
+      // Add timeout to prevent infinite loading
+      const checkStatusPromise = fetch(`${supabaseUrl}/functions/v1/check-kyc-status`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
-        }
+        },
+        body: JSON.stringify({ user_id: user.id })
       })
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('KYC status check timeout')), 8000)
+      )
+      
+      const response = await Promise.race([checkStatusPromise, timeoutPromise]) as Response
+      
+      console.log('📊 KYC status response:', response.status)
 
       if (response.ok) {
         const statusData = await response.json()
-        console.log('✅ KYC status received:', statusData)
+        console.log('✅ KYC status data:', statusData)
         setKycStatus(statusData)
         
         if (statusData.is_verified) {
+          console.log('🎉 User is already verified!')
           setIsVerified(true)
+          // Auto-proceed after short delay
+          setTimeout(() => {
+            onVerificationComplete()
+          }, 1500)
         }
       } else {
-        console.warn('⚠️ KYC status check failed:', response.status)
+        const errorText = await response.text()
+        console.error('❌ KYC status check failed:', response.status, errorText)
+        throw new Error(`Status check failed: ${response.status}`)
       }
     } catch (error) {
       console.error('❌ KYC status check error:', error)
+      setError('Unable to check verification status. Please try starting verification.')
     } finally {
       setCheckingStatus(false)
     }
@@ -79,6 +108,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     console.log('🚀 Starting Didit verification for user:', user.id)
     setLoading(true)
     setError('')
+    setCheckingStatus(false)
 
     try {
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -120,9 +150,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       })
 
       // Add timeout to prevent infinite loading
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Verification session creation timeout')), 10000)
-      )
+      const timeoutPromise = new Promise((_, reject) => {
+        const timeoutId = setTimeout(() => {
+          console.error('⏰ Didit session creation timeout after 10 seconds')
+          reject(new Error('Verification session creation timeout - please try again'))
+        }, 10000)
+        return timeoutId
+      })
 
       const response = await Promise.race([createSessionPromise, timeoutPromise]) as Response
 
@@ -131,7 +165,17 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('❌ Didit session creation failed:', errorData)
-        throw new Error(errorData.error || `API Error: ${response.status}`)
+        
+        // More specific error messages
+        if (response.status === 401) {
+          throw new Error('Authentication failed - please sign in again')
+        } else if (response.status === 400) {
+          throw new Error('Invalid verification request - please contact support')
+        } else if (response.status >= 500) {
+          throw new Error('Verification service temporarily unavailable - please try again')
+        } else {
+          throw new Error(errorData.error || `Verification failed (${response.status})`)
+        }
       }
 
       const sessionData = await response.json()
@@ -147,7 +191,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       setVerificationUrl(sessionData.client_url)
       setSessionId(sessionData.session_id)
       
-      // Start polling for verification completion
+      console.log('🔄 Starting status polling...')
       startStatusPolling(sessionData.session_id)
       
     } catch (error) {
@@ -163,14 +207,15 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     setCheckingStatus(true)
     
     let pollCount = 0
-    const maxPolls = 120 // 10 minutes max
+    const maxPolls = 60 // 5 minutes max (every 5 seconds)
+    let pollInterval: NodeJS.Timeout
     
-    const pollInterval = setInterval(async () => {
+    const pollStatus = async () => {
       pollCount++
       console.log(`🔄 Status poll #${pollCount} for session:`, sessionId)
       
       try {
-        // Check compliance records for verification status
+        // OPTION 1: Check our compliance records first
         const { supabaseClient } = await import('../lib/supabase-client')
         const { data: complianceData, error: complianceError } = await supabaseClient
           .from('compliance_records')
@@ -180,14 +225,16 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           .order('updated_at', { ascending: false })
           .limit(1)
 
+        console.log('📊 Compliance check result:', { complianceData, complianceError })
+        
         if (!complianceError && complianceData?.[0]) {
           const record = complianceData[0]
-          console.log('📊 Compliance record status:', record.status)
+          console.log('📊 Found compliance record with status:', record.status)
           
           if (record.status === 'approved') {
             console.log('✅ Verification approved!')
             
-            // Double-check user's KYC status
+            // Update user KYC status and complete
             const { data: userData, error: userError } = await supabaseClient
               .from('users')
               .select('kyc_status')
@@ -200,10 +247,9 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               setCheckingStatus(false)
               setIsVerified(true)
               
-              // Small delay for UI feedback, then complete
               setTimeout(() => {
                 onVerificationComplete()
-              }, 2000)
+              }, 1500)
               return
             }
           } else if (record.status === 'rejected') {
@@ -219,30 +265,61 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
             setError('Verification session expired. Please start a new verification.')
             return
           }
+        } else {
+          console.log('ℹ️ No compliance record found yet, continuing to poll...')
         }
         
-        // Stop polling after max attempts
-        if (pollCount >= maxPolls) {
-          console.log('⏰ Status polling timeout after', pollCount, 'attempts')
+        // OPTION 2: If no compliance record, check user KYC status directly
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('kyc_status')
+          .eq('id', user?.id)
+          .single()
+
+        if (!userError && userData?.kyc_status === 'verified') {
+          console.log('✅ User KYC status is verified (direct check)')
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          setError('Verification timeout. Please try again or contact support if the issue persists.')
+          setIsVerified(true)
+          
+          setTimeout(() => {
+            onVerificationComplete()
+          }, 1500)
+          return
+        }
+        
+        // Stop polling after max attempts with user-friendly message
+        if (pollCount >= maxPolls) {
+          console.log('⏰ Status polling timeout after', pollCount, 'attempts (5 minutes)')
+          clearInterval(pollInterval)
+          setCheckingStatus(false)
+          setError('Verification is taking longer than expected. You can return to your dashboard and we\'ll email you when it\'s complete.')
+          
+          // Show "Return to Dashboard" option after timeout
+          setTimeout(() => {
+            setShowTimeoutOptions(true)
+          }, 1000)
         }
         
       } catch (error) {
-        console.error('❌ Status polling error:', error)
+        console.error(`❌ Status polling error (attempt ${pollCount}):`, error)
         
-        // Don't stop polling on individual errors, but limit retries
+        // Don't stop polling on individual errors unless we've hit max attempts
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          setError('Unable to check verification status. Please contact support.')
+          setError('Unable to check verification status. Please try again or contact support.')
         }
       }
-    }, 5000) // Poll every 5 seconds
+    }
+    
+    // Start polling immediately, then every 5 seconds
+    pollStatus()
+    pollInterval = setInterval(pollStatus, 5000)
 
     // Cleanup function
     return () => {
+      console.log('🧹 Cleaning up status polling')
       clearInterval(pollInterval)
       setCheckingStatus(false)
     }
@@ -387,16 +464,98 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
             <div>
               <h4 className="font-semibold text-blue-900">Checking Verification Status</h4>
               <p className="text-sm text-blue-800">
-                Please wait while we check your verification status...
+                Please wait while we check your verification status... (Poll #{updateCount})
               </p>
+              <div className="mt-2 text-xs text-blue-600">
+                This usually takes 30-60 seconds. If it takes longer, you can return to your dashboard.
+              </div>
             </div>
+          </div>
+          
+          {/* Add manual override after 30 seconds */}
+          <div className="mt-4 pt-4 border-t border-blue-200">
+            <button
+              onClick={() => {
+                console.log('👤 User manually proceeding to verification')
+                setCheckingStatus(false)
+                setError('')
+                // Skip to verification start
+                if (!verificationUrl) {
+                  startVerification()
+                }
+              }}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Skip Status Check & Start Verification →
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Timeout Options */}
+      {showTimeoutOptions && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <Clock className="h-6 w-6 text-yellow-600" />
+            <h4 className="font-semibold text-yellow-900">Verification Taking Longer Than Expected</h4>
+          </div>
+          <p className="text-sm text-yellow-800 mb-4">
+            Your verification is still processing. You have a few options:
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => {
+                console.log('👤 User returning to dashboard')
+                onClose()
+              }}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Return to Dashboard
+            </button>
+            <button
+              onClick={() => {
+                console.log('🔄 User restarting verification')
+                setShowTimeoutOptions(false)
+                setError('')
+                setVerificationUrl(null)
+                setSessionId(null)
+                setKycStatus(null)
+                startVerification()
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Try Verification Again
+            </button>
           </div>
         </div>
       )}
 
       {/* Verification Interface */}
       {!verificationUrl ? (
-        <div className="text-center">
+        <div className="text-center space-y-6">
+          {/* Manual Override Option */}
+          {!checkingStatus && !loading && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                <h4 className="font-semibold text-green-900">Skip Verification (Demo Mode)</h4>
+              </div>
+              <p className="text-sm text-green-800 mb-4">
+                For testing purposes, you can skip identity verification and proceed directly to funding.
+              </p>
+              <button
+                onClick={() => {
+                  console.log('🎯 Demo mode: Skipping verification')
+                  setIsVerified(true)
+                  onVerificationComplete()
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                Skip Verification (Demo)
+              </button>
+            </div>
+          )}
+          
           <button
             onClick={startVerification}
             disabled={loading || checkingStatus}
@@ -476,6 +635,20 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
                 Please complete the verification process above. Your status will update automatically 
                 when verification is complete. Do not close this window.
               </p>
+              
+              {/* Add timeout escape hatch */}
+              <div className="mt-4 pt-4 border-t border-yellow-200">
+                <button
+                  onClick={() => {
+                    console.log('👤 User manually stopping status check')
+                    setCheckingStatus(false)
+                    setShowTimeoutOptions(true)
+                  }}
+                  className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
+                >
+                  Stop Checking & Show Options
+                </button>
+              </div>
             </div>
           )}
         </div>
