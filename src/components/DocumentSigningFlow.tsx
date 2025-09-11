@@ -39,6 +39,15 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'investment_agreement'
     },
     {
+      id: 'lpa',
+      title: 'Limited Partnership Agreement – Global Markets, LP',
+      description: 'Legal framework governing the partnership structure and investor rights.',
+      required: false,
+      signed: false,
+      url: '/documents/GLOBAL MARKETS, LP (1).pdf',
+      type: 'investment_agreement'
+    },
+    {
       id: 'investment_agreement',
       title: 'Investment Management Agreement',
       description: 'Defines the terms of our investment management relationship and fee structure.',
@@ -378,7 +387,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
             <Eye className="h-12 w-12 text-blue-600 mx-auto mb-4" />
             <h4 className="text-lg font-semibold text-blue-900 mb-2">Document Review</h4>
             <p className="text-blue-700 mb-6">
-              Please review the Private Placement Memorandum above. This document provides important 
+              Please review the document above. This document provides important 
               information about the investment opportunity and does not require your signature.
             </p>
             
@@ -398,7 +407,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                   onClick={handleNextDocument}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
                 >
-                  <span>Continue to Signature Documents</span>
+                  <span>Continue to Next Document</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
