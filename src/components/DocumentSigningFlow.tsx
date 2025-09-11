@@ -39,6 +39,15 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'investment_agreement'
     },
     {
+      id: 'lpa',
+      title: 'Global Markets, LP – Limited Partnership Agreement',
+      description: 'Legal framework and terms governing the limited partnership structure.',
+      required: false,
+      signed: false,
+      url: '/documents/Global_Markets_LPA_v3.pdf',
+      type: 'investment_agreement'
+    },
+    {
       id: 'limited_partnership_agreement',
       title: 'Global Markets, LP – Limited Partnership Agreement',
       description: 'Legal framework and terms governing the limited partnership structure.',
