@@ -33,10 +33,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       if (result.error) {
         setError(result.error.message)
       } else {
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          onSuccess?.()
-        }, 100)
+        console.log('✅ Login successful, user state should update automatically')
+        onSuccess?.()
       }
     } catch (err) {
       console.error('Login error:', err)
