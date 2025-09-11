@@ -451,41 +451,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const markKYCVerified = async () => {
-    if (!user) return
-
-    try {
-      const { error } = await supabaseClient
-        .from('users')
-        .update({
-          kyc_status: 'verified',
-          kyc_verified_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('Failed to mark KYC verified:', error)
-      } else {
-        setUser(prev => prev ? {
-          ...prev,
-          kyc_status: 'verified',
-          is_kyc_verified: true,
-          kyc_verified_at: new Date().toISOString()
-        } : null)
-        
-        setProfile(prev => prev ? {
-          ...prev,
-          kyc_status: 'verified',
-          is_kyc_verified: true,
-          kyc_verified_at: new Date().toISOString()
-        } : null)
-      }
-    } catch (err) {
-      console.error('Error marking KYC verified:', err)
-    }
-  }
-
   const signIn = async (email: string, password: string) => {
     try {
       console.log('🔐 Attempting sign in for:', email)
@@ -629,7 +594,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile,
       processFunding,
       markDocumentsCompleted,
-      markKYCVerified,
       markKYCVerified,
       signIn,
       complete2FA,
