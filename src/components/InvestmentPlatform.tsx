@@ -200,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setPending2FA(false)
           setLoading(false)
           // This will trigger the KYC verification component again
+        }
         // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
     )

@@ -509,6 +509,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return { error: null }
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors inline-flex items-center gap-2"
+      }
 
       return { error: { message: 'No user returned from signup' } }
     } catch (err) {
@@ -576,6 +577,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
+    }
+  )
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')
