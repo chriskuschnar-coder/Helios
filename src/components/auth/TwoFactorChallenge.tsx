@@ -128,12 +128,11 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('✅ 2FA verification successful')
       setSuccess('Verification successful!')
       
-      // Complete authentication by calling the AuthProvider's complete2FA
-      const { useAuth } = await import('./AuthProvider')
-      const { complete2FA } = useAuth()
-      
       try {
-        await complete2FA(verificationCode, userData, session)
+        // Import and use the auth context
+        const { useAuth } = await import('./AuthProvider')
+        const authContext = useAuth()
+        await authContext.complete2FA(verificationCode, userData, session)
         console.log('🎉 2FA complete, calling onSuccess')
         onSuccess()
       } catch (authError) {

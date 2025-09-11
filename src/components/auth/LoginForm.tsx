@@ -39,13 +39,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         setError(result.error.message)
         setLoading(false)
       } else if (result.requires2FA) {
-        console.log('🔐 2FA REQUIRED - storing auth data and showing challenge')
-        setPendingAuth({ 
-          userData: result.userData, 
-          session: result.session 
-        })
-        setShow2FA(true)
+        console.log('🔐 2FA REQUIRED - redirecting to 2FA challenge')
         setLoading(false)
+        onSuccess?.() // This will trigger the parent to show 2FA
       } else {
         console.log('✅ Login successful, no 2FA required')
         setLoading(false)

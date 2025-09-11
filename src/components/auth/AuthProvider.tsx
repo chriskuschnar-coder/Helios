@@ -533,6 +533,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user,
       loading,
+      pending2FA,
+      pendingAuthData,
       account,
       subscription,
       profile,
@@ -542,7 +544,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       processFunding,
       markDocumentsCompleted,
       signIn,
-      complete2FA,
       complete2FA,
       signUp,
       signOut

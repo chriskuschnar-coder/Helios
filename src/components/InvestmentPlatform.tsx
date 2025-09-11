@@ -63,8 +63,32 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
-  // Show auth forms if no user
-  if (!user) {
+  // CRITICAL: Show 2FA challenge if pending2FA is true
+  if (pending2FA && pendingAuthData) {
+    console.log('🔐 Showing 2FA challenge - user must verify before access')
+    
+    const { TwoFactorChallenge } = await import('./auth/TwoFactorChallenge')
+    
+    return (
+      <TwoFactorChallenge
+        onSuccess={() => {
+          console.log('✅ 2FA verification successful - user now authenticated')
+        }}
+        onCancel={() => {
+          console.log('❌ 2FA cancelled - signing out')
+          const { useAuth } = await import('./auth/AuthProvider')
+          const { signOut } = useAuth()
+          signOut()
+        }}
+        userEmail={pendingAuthData.userData.email}
+        userData={pendingAuthData.userData}
+        session={pendingAuthData.session}
+      />
+    )
+  }
+
+  // Show auth forms if no user AND not pending 2FA
+  if (!user && !pending2FA) {
     console.log('🔐 Showing auth forms - no authenticated user')
     
     return (
@@ -86,7 +110,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <LoginForm 
             onSuccess={() => {
               try {
-                console.log('🎉 Login success callback - user should now access dashboard')
+                console.log('🎉 Login success callback - checking for 2FA requirement')
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');
@@ -96,6 +120,25 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onBackToHome={onBackToHome}
           />
         )}
+      </div>
+    )
+  }
+
+  // Block access if pending 2FA (safety check)
+  if (pending2FA) {
+    console.log('🚫 Blocking dashboard access - 2FA verification required')
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Verification Required</h3>
+          <p className="text-gray-600 mb-4">Please complete 2FA verification to continue</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Reload Page
+          </button>
+        </div>
       </div>
     )
   }
