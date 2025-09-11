@@ -1,205 +1,585 @@
-import React, { useState, useEffect } from 'react'
-import { AuthProvider, useAuth } from './auth/AuthProvider'
-import { LoginForm } from './auth/LoginForm'
-import { SignupForm } from './auth/SignupForm'
-import { TwoFactorChallenge } from './auth/TwoFactorChallenge'
-import { KYCVerificationInProgress } from './KYCVerificationInProgress'
-import { DashboardSelector } from './DashboardSelector'
-import { Loader2 } from 'lucide-react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseClient } from '../../lib/supabase-client'
 
-interface AuthenticatedAppProps {
-  onBackToHome?: () => void
+interface User {
+  id: string
+  email: string
+  full_name?: string
+  phone?: string
+  documents_completed?: boolean
+  documents_completed_at?: string
+  kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
+  is_kyc_verified?: boolean
+  two_factor_enabled?: boolean
+  two_factor_method?: 'email' | 'sms' | 'biometric'
+  subscription_signed_at?: string
+          // Only allow funding if verified
+          if (user.kyc_status === 'verified') {
+            // Will be handled by DashboardSelector
+          } else {
+            // Show KYC progress again if not verified
+            setShowKYCProgress(true)
+          }
 }
 
-function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
-  const { user, loading, pending2FA, pendingAuthData, signOut } = useAuth()
-  const [showSignup, setShowSignup] = useState(false)
-  const [error, setError] = useState('')
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
-  const [showKYCProgress, setShowKYCProgress] = useState(false)
+interface Account {
+  id: string
+  balance: number
+  available_balance: number
+  total_deposits: number
+  total_withdrawals: number
+  currency: string
+  status: string
+}
+
+interface Subscription {
+  subscription_status: string
+  price_id: string | null
+  current_period_start: number | null
+  current_period_end: number | null
+  cancel_at_period_end: boolean
+  payment_method_brand: string | null
+  payment_method_last4: string | null
+}
+
+interface AuthError {
+  message: string
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  pending2FA: boolean
+  pendingAuthData: { userData: any; session: any } | null
+  account: Account | null
+  subscription: Subscription | null
+  refreshAccount: () => Promise<void>
+  refreshSubscription: () => Promise<void>
+  processFunding: (amount: number, method: string, description?: string) => Promise<any>
+  markDocumentsCompleted: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
+  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
+  profile: User | null
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [pending2FA, setPending2FA] = useState(false)
+  const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
+  const [account, setAccount] = useState<Account | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+
+  const complete2FA = async (code: string, userData: any, session: any) => {
+    try {
+      console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      
+      // Verify the 2FA code first
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          code: code,
+          method: 'email',
+          email: userData.email
+        })
+      })
 
 
-  // Mark initial load as complete after a short delay
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json()
+        console.error('❌ Verify response error:', errorData)
+        throw new Error(errorData.error || 'Invalid verification code')
+      }
+
+      const verifyResult = await verifyResponse.json()
+      console.log('✅ 2FA verification result:', { 
+        valid: verifyResult.valid, 
+        success: verifyResult.success,
+        message: verifyResult.message 
+      })
+      
+      if (!verifyResult.valid || !verifyResult.success) {
+        throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
+      }
+
+      console.log('✅ 2FA code verified successfully')
+      
+      // Set the Supabase session to complete login
+      console.log('🔐 Setting Supabase session...')
+      const { error: sessionError } = await supabaseClient.auth.setSession(session)
+      
+      if (sessionError) {
+        console.error('❌ Failed to set session:', sessionError)
+        throw new Error('Failed to complete authentication')
+      }
+      
+      // Verify session is actually set
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
+      if (!currentSession) {
+        throw new Error('Session not properly established')
+      }
+      
+      console.log('✅ Session verified and established')
+      
+      // Clear 2FA pending state
+      setPending2FA(false)
+      setPendingAuthData(null)
+      
+      // Set user state immediately
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.user_metadata?.full_name,
+        phone: userData.user_metadata?.phone
+      })
+      
+      // Load account data
+      await loadUserAccount(userData.id)
+      
+      console.log('🎉 2FA completion successful!')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ 2FA completion failed:', error)
+      throw error
+    }
+  }
+
+  // Check for existing session on mount
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setInitialLoadComplete(true)
-    }, 1000)
-    
-    return () => clearTimeout(timeout)
+    const checkSession = async () => {
+      try {
+        setLoading(true)
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (error) {
+          console.warn('Session check error:', error)
+          setLoading(false)
+        } else {
+          console.log('No existing session found or session check error')
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('Session check failed:', err)
+        setLoading(false)
+      }
+    }
+
+    // Set a maximum timeout for loading state
+    const timeoutId = setTimeout(() => {
+      console.log('Auth timeout - forcing loading to false')
+      setLoading(false)
+    }, 2000) // Reduced to 2 seconds
+
+    checkSession()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        clearTimeout(timeoutId) // Clear timeout when auth state changes
+        
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setAccount(null)
+          setSubscription(null)
+          setPending2FA(false)
+          setLoading(false)
+          // This will trigger the KYC verification component again
+        // Don't auto-authenticate on SIGNED_IN - require 2FA
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeoutId)
+    }
   }, [])
 
-  // Error boundary
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => {
-              setError('');
-              window.location.reload();
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
+  const loadUserAccount = async (userId: string) => {
+    try {
+      console.log('📊 Loading user account for:', userId)
+      // Ensure investor_units exists for this user
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (session) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+        
+        // Auto-create investor_units if missing
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/auto-create-investor-units`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': anonKey
+            },
+            body: JSON.stringify({ user_id: userId })
+          })
+        } catch (error) {
+          console.warn('⚠️ Auto-create investor units failed:', error)
+        }
+      }
+
+      const { data: accountData, error: accountError } = await supabaseClient
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (accountError) {
+        console.warn('⚠️ Account load error:', accountError)
+        // Don't throw error, just continue without account data
+      } else if (accountData && accountData.length > 0) {
+        console.log('✅ Account loaded:', accountData.id)
+        setAccount(accountData[0])
+      } else {
+        // No account found, create one
+        console.log('📝 Creating new account for user:', userId)
+        const { data: newAccountData, error: createError } = await supabaseClient
+          .from('accounts')
+          .insert({
+            user_id: userId,
+            account_type: 'trading',
+            balance: 0.00,
+            available_balance: 0.00,
+            total_deposits: 0.00,
+            total_withdrawals: 0.00,
+            currency: 'USD',
+            status: 'active'
+          })
+          .select()
+          .single()
+        
+        if (createError) {
+          console.error('❌ Failed to create account:', createError)
+        } else {
+          console.log('✅ New account created:', newAccountData.id)
+          setAccount(newAccountData)
+        }
+      }
+
+      // Load user profile data
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
+        .eq('id', userId)
+        .single()
+
+      if (!userError && userData) {
+        console.log('✅ User profile loaded')
+        setUser(prev => prev ? {
+          ...prev,
+          full_name: userData.full_name,
+          phone: userData.phone,
+          documents_completed: userData.documents_completed,
+          documents_completed_at: userData.documents_completed_at,
+          kyc_status: userData.kyc_status,
+          is_kyc_verified: userData.kyc_status === 'verified',
+          two_factor_enabled: userData.two_factor_enabled,
+          two_factor_method: userData.two_factor_method,
+          subscription_signed_at: userData.subscription_signed_at
+        } : null)
+        
+        setProfile(userData)
+      }
+    } catch (err) {
+      console.error('❌ Account load failed:', err)
+      // Don't let account loading errors prevent the app from working
+    }
   }
 
-  // Show loading only during initial load
-  if (loading && !initialLoadComplete) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
-          <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
-        </div>
-      </div>
-    )
+  const refreshProfile = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
+    }
   }
 
-  // CRITICAL: Show 2FA challenge if pending2FA is true
-  if (pending2FA && pendingAuthData) {
-    return (
-      <TwoFactorChallenge
-        onSuccess={() => {
-          console.log('✅ 2FA verification successful - redirecting to dashboard')
-          // User state is now set by AuthProvider, component will re-render
-        }}
-        onCancel={async () => {
-          console.log('❌ 2FA cancelled by user - signing out')
-          await signOut()
-        }}
-        userEmail={pendingAuthData.userData.email}
-        userData={pendingAuthData.userData}
-        session={pendingAuthData.session}
-      />
-    )
+  const refreshAccount = async () => {
+    if (user) {
+      await loadUserAccount(user.id)
+    }
   }
 
-  // Show auth forms if no user AND not pending 2FA
-  if (!user && !pending2FA) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        {showSignup ? (
-          <SignupForm 
-            onSuccess={() => {
-              try {
-                console.log('✅ Signup success')
-                setShowSignup(false)
-              } catch (err) {
-                console.error('❌ Signup success handler error:', err);
-                setError('Login transition failed');
-              }
-            }}
-            onSwitchToLogin={() => setShowSignup(false)}
-            onBackToHome={onBackToHome}
-          />
-        ) : (
-          <LoginForm 
-            onSuccess={() => {
-              try {
-                console.log('🎉 Login success callback - checking for 2FA requirement')
-                // Login success is handled by AuthProvider
-              } catch (err) {
-                console.error('❌ Login success handler error:', err);
-                setError('Login transition failed');
-              }
-            }}
-            onSwitchToSignup={() => setShowSignup(true)}
-            onBackToHome={onBackToHome}
-          />
-        )}
-      </div>
-    )
+  const refreshSubscription = async () => {
+    // Subscription refresh logic here
   }
 
-  // Show KYC verification progress if user is authenticated but not verified
-  if (user && !pending2FA && showKYCProgress) {
-    return (
-      <KYCVerificationInProgress
-        onContinueBrowsing={() => setShowKYCProgress(false)}
-        onFundPortfolio={() => {
-          setShowKYCProgress(false)
-          // Will be handled by DashboardSelector
-        }}
-        onResubmitKYC={() => {
-          // Trigger KYC resubmission flow
-          setShowKYCProgress(false)
-          // Could trigger DiditKYCVerification component
-        }}
-      />
-    )
+  const processFunding = async (amount: number, method: string, description?: string) => {
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    if (!account) {
+      throw new Error('User account not found')
+    }
+
+    try {
+      // STEP 1: Process deposit allocation through fund units
+      console.log('💰 Processing deposit allocation:', { amount, method })
+      
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      // Call deposit allocation function
+      const allocationResponse = await fetch(`${supabaseUrl}/functions/v1/process-deposit-allocation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          deposit_amount: amount,
+          payment_method: method,
+          reference_id: description
+        })
+      })
+
+      if (!allocationResponse.ok) {
+        const error = await allocationResponse.json()
+        throw new Error(error.error || 'Failed to process deposit allocation')
+      }
+
+      const allocationResult = await allocationResponse.json()
+      console.log('✅ Deposit allocation successful:', allocationResult)
+
+      // STEP 2: Create transaction record for tracking
+      // Add transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: account.id,
+          type: 'deposit',
+          method: method,
+          amount: amount,
+          status: 'completed',
+          description: description || `${method} deposit - ${allocationResult.units_allocated.toFixed(4)} units allocated`
+        })
+
+      if (transactionError) {
+        console.error('Transaction error:', transactionError)
+        throw new Error('Failed to record transaction')
+      }
+
+      // Refresh account data to show updated balance
+      await refreshAccount()
+
+      return { success: true }
+    } catch (error) {
+      console.error('Funding processing failed:', error)
+      throw error
+    }
   }
 
-  // Block access if pending 2FA (safety check)
-  if (pending2FA) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Verification Required</h3>
-          <p className="text-gray-600 mb-4">Please complete 2FA verification to continue</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    )
+  const markDocumentsCompleted = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabaseClient
+        .from('users')
+        .update({
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Failed to mark documents completed:', error)
+      } else {
+        setUser(prev => prev ? {
+          ...prev,
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        } : null)
+      }
+    } catch (err) {
+      console.error('Error marking documents completed:', err)
+    }
   }
 
-  try {
-    return <DashboardSelector onShowKYCProgress={() => setShowKYCProgress(true)} />
-  } catch (err) {
-    console.error('❌ Dashboard render error:', err);
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Error</h3>
-          <p className="text-gray-600 mb-4">Failed to load dashboard</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
+  const signIn = async (email: string, password: string) => {
+    try {
+      console.log('🔐 Attempting sign in for:', email)
+      
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('❌ Sign in error:', error)
+        
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: { message: 'Invalid email or password. Please check your credentials and try again.' } }
+        }
+        
+        return { error: { message: error.message } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful for:', data.user.email)
+        
+        // Set pending 2FA state and return requires2FA flag
+        setPending2FA(true)
+        setPendingAuthData({ userData: data.user, session: data.session })
+        
+        return { error: null, requires2FA: true }
+      }
+
+      return { error: { message: 'No user returned' } }
+    } catch (err) {
+      console.error('Sign in failed:', err)
+      return { error: { message: 'Connection error' } }
+    }
   }
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      console.log('📝 Attempting sign up for:', email)
+      
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+
+      if (error) {
+        console.error('❌ Sign up error:', error)
+        
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'An account with this email already exists. Please sign in instead.' } }
+        }
+        
+        if (error.message.includes('Invalid email')) {
+          return { error: { message: 'Please enter a valid email address.' } }
+        }
+        
+        if (error.message.includes('Password')) {
+          return { error: { message: 'Password must be at least 6 characters long.' } }
+        }
+        
+        return { error: { message: `Signup failed: ${error.message}` } }
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful for:', data.user.email)
+        
+        // Create user profile with phone number
+        try {
+          const { error: profileError } = await supabaseClient
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              phone: metadata?.phone
+            })
+
+          if (profileError) {
+            console.error('Error creating user profile:', profileError)
+          } else {
+            console.log('✅ User profile created successfully')
+          }
+        } catch (err) {
+          console.error('Unexpected error inserting user profile:', err)
+        }
+
+        return { error: null }
+      }
+
+      return { error: { message: 'No user returned from signup' } }
+    } catch (err) {
+      console.error('Sign up failed:', err)
+      return { error: { message: 'Connection error during signup' } }
+    }
+  }
+
+
+  const signOut = async () => {
+    try {
+      console.log('🚪 Signing out user...')
+      
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      } else {
+        console.log('✅ Sign out successful')
+      }
+      
+      // Always clear state and reload page for clean logout
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
+      
+      // Force page reload to ensure clean state
+      window.location.reload()
+    } catch (err) {
+      console.error('Sign out failed:', err)
+      // Force reload on any error
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
+      window.location.reload()
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      pending2FA,
+      pendingAuthData,
+      account,
+      subscription,
+      profile,
+      refreshAccount,
+      refreshSubscription,
+      refreshProfile,
+      processFunding,
+      markDocumentsCompleted,
+      signIn,
+      complete2FA,
+      signUp,
+      signOut
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
-interface InvestmentPlatformProps {
-  onBackToHome?: () => void
-}
-
-export function InvestmentPlatform({ onBackToHome }: InvestmentPlatformProps) {
-  try {
-    return (
-      <AuthProvider>
-        <AuthenticatedApp onBackToHome={onBackToHome} />
-      </AuthProvider>
-    )
-  } catch (err) {
-    console.error('❌ Investment platform error:', err);
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Platform Error</h3>
-          <p className="text-gray-600 mb-4">Failed to initialize investment platform</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
+  return context
 }
