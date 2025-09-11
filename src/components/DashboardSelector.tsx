@@ -1,219 +1,167 @@
 import React, { useState } from 'react'
+import { BarChart3, Activity, LogOut, TrendingUp, Menu, X } from 'lucide-react'
+import InvestorDashboard from './InvestorDashboard'
+import HeliosDashboard from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
-import { PortfolioValueCard } from './PortfolioValueCard'
-import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
-import { FundingModal } from './FundingModal'
-import { MarketsTab } from './markets/MarketsTab'
-import { ResearchTab } from './research/ResearchTab'
-import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
-import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
-import { AIInsights } from './portfolio/AIInsights'
-import { FundNAVChart } from './portfolio/FundNAVChart'
-import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  Brain, 
-  Globe, 
-  FileText, 
-  Shield, 
-  Target,
-  Activity,
-  Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
-import { SecuritySettings } from './SecuritySettings'
 
-const InvestorDashboard: React.FC = () => {
-  const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
-  const [showFundingModal, setShowFundingModal] = useState(false)
-  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+export function DashboardSelector() {
+  const { user, signOut, account } = useAuth()
+  const [selectedDashboard, setSelectedDashboard] = useState<'investor' | 'helios'>('investor')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const currentBalance = account?.balance || 0
-  const hasActivity = currentBalance > 0
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
-      }
-      return newSet
-    })
-  }
-
-  const handleFundPortfolio = (amount?: number) => {
-    if (amount) {
-      setPrefilledAmount(amount)
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
     }
-    setShowFundingModal(true)
   }
 
-  const handleWithdraw = () => {
-    alert('Withdrawal functionality will be implemented here')
-  }
-
-  const tabs = [
-    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
-    { id: 'markets', name: 'Markets', icon: Globe },
-    { id: 'research', name: 'Research', icon: Brain },
-  ]
-
-  const portfolioSections = [
-    {
-      id: 'allocation',
-      title: 'Asset Allocation',
-      icon: Target,
-      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
-    },
-    {
-      id: 'performance',
-      title: 'Performance Analytics',
-      icon: Award,
-      component: () => <PerformanceMetrics currentBalance={currentBalance} />
-    },
-    {
-      id: 'nav',
-      title: 'Fund NAV History',
-      icon: TrendingUp,
-      component: () => <FundNAVChart />
-    },
-    {
-      id: 'insights',
-      title: 'AI Portfolio Insights',
-      icon: Brain,
-      component: () => <AIInsights currentBalance={currentBalance} />
-    }
-  ]
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <BarChart3 className="h-8 w-8 text-navy-600" />
+  // Dashboard switcher header
+  const DashboardSwitcher = () => (
+    <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
+          <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
+            <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-navy-600" />
+            <span className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-sm">
+              Global Market Consulting
+            </span>
           </div>
-          <p className="text-gray-600">Connecting to your account...</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 safe-area-bottom">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
+          
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-1 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors mobile-button mobile-compact-padding"
+          >
+            {mobileMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
+          </button>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            {/* Dashboard Toggle */}
+            <div className="flex items-center space-x-2 lg:space-x-3 bg-gray-100 rounded-lg p-1">
               <button
-                key={tab.id}
-                onClick={() => setSelectedTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
-                  selectedTab === tab.id
-                    ? 'bg-navy-600 text-white'
-                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
+                onClick={() => setSelectedDashboard('investor')}
+                className={`flex items-center space-x-1 lg:space-x-2 px-2 lg:px-4 py-2 rounded-md font-medium transition-colors mobile-button text-sm lg:text-base ${
+                  selectedDashboard === 'investor'
+                    ? 'bg-white text-navy-600 shadow-sm'
+                    : 'text-gray-600 hover:text-navy-600'
                 }`}
               >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{tab.name}</span>
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden lg:inline">Investor Portal</span>
+                <span className="lg:hidden">Investor</span>
               </button>
-            ))}
+              <button
+                onClick={() => setSelectedDashboard('helios')}
+                className={`flex items-center space-x-1 lg:space-x-2 px-2 lg:px-4 py-2 rounded-md font-medium transition-colors mobile-button text-sm lg:text-base ${
+                  selectedDashboard === 'helios'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Activity className="h-4 w-4" />
+                <span className="hidden lg:inline">Helios Trading</span>
+                <span className="lg:hidden">Helios</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center space-x-2 lg:space-x-4">
+              <div className="text-right">
+                <div className="text-xs lg:text-sm font-medium text-gray-900">
+                  ${(account?.balance || 0).toLocaleString()}
+                </div>
+                <div className="text-xs text-gray-600 hidden lg:block">{user?.email}</div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center space-x-1 lg:space-x-2 text-gray-600 hover:text-navy-600 transition-colors px-2 lg:px-3 py-2 rounded-lg hover:bg-gray-100 mobile-button text-sm"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden lg:inline">Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Tab Content */}
-        {selectedTab === 'portfolio' && (
-          <div className="space-y-6">
-            {/* Portfolio Value Card - Always Visible */}
-            <PortfolioValueCard 
-              onFundPortfolio={handleFundPortfolio}
-              onWithdraw={handleWithdraw}
-            />
-            <PortfolioPerformanceChart currentBalance={currentBalance} />
-            
-            {/* Portfolio sections in expandable folders */}
-            {portfolioSections.map((section) => (
-              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                <div 
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => toggleSection(section.id)}
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 space-y-2 sm:space-y-3 mobile-space-y-1">
+              {/* Dashboard Toggle Mobile */}
+              <div className="space-y-1 sm:space-y-2 mobile-space-y-1">
+                <button
+                  onClick={() => {
+                    setSelectedDashboard('investor')
+                    setMobileMenuOpen(false)
+                  }}
+                  className={`w-full flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-colors mobile-button mobile-compact-padding mobile-space-x-1 ${
+                    selectedDashboard === 'investor'
+                      ? 'bg-navy-600 text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
-                        <section.icon className="h-6 w-6 text-navy-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {expandedSections.has(section.id) && (
-                  <div className="border-t border-gray-100 p-6">
-                    <section.component />
-                  </div>
-                )}
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-sm sm:text-base mobile-text-sm">Investor Portal</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedDashboard('helios')
+                    setMobileMenuOpen(false)
+                  }}
+                  className={`w-full flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-colors mobile-button mobile-compact-padding mobile-space-x-1 ${
+                    selectedDashboard === 'helios'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-sm sm:text-base mobile-text-sm">Helios Trading</span>
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {selectedTab === 'markets' && <MarketsTab />}
-        {selectedTab === 'research' && <ResearchTab />}
-        {selectedTab === 'transactions' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
-              <p className="text-gray-600 mb-6">
-                View your complete transaction history and account activity
-              </p>
-              <button
-                onClick={() => handleFundPortfolio()}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add First Transaction</span>
-              </button>
+              
+              {/* Account Info Mobile */}
+              <div className="border-t border-gray-200 pt-2 sm:pt-3">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div>
+                    <div className="text-xs sm:text-sm font-medium text-gray-900 mobile-text-xs">
+                      ${(account?.balance || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-600 mobile-text-xs">{user?.email}</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleSignOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex items-center space-x-1 sm:space-x-2 text-gray-600 hover:text-navy-600 transition-colors px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 mobile-button mobile-compact-padding mobile-space-x-1"
+                  >
+                    <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-xs sm:text-sm mobile-text-xs">Sign Out</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Funding Modal */}
-      <FundingModal
-        isOpen={showFundingModal}
-        onClose={() => {
-          setShowFundingModal(false)
-          setPrefilledAmount(null)
-        }}
-        prefilledAmount={prefilledAmount}
-      />
     </div>
   )
-}
 
-export default InvestorDashboard
+  if (selectedDashboard === 'helios') {
+    return (
+      <>
+        <DashboardSwitcher />
+        <HeliosDashboard />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <DashboardSwitcher />
+      <InvestorDashboard />
+    </>
+  )
+}
