@@ -17,7 +17,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [show2FA, setShow2FA] = useState(false)
-  const [userNeedsTwoFactor, setUserNeedsTwoFactor] = useState(false)
+  const [userProfile, setUserProfile] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,52 +31,59 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setError('')
 
     try {
+      console.log('🔐 Attempting login for:', email)
       const result = await signIn(email, password)
       
       if (result.error) {
+        console.error('❌ Login failed:', result.error.message)
         setError(result.error.message)
+        setLoading(false)
       } else {
-        // Check if user has 2FA enabled
+        console.log('✅ Login successful, checking 2FA status...')
+        
+        // Get user profile to check 2FA settings
         const { supabaseClient } = await import('../../lib/supabase-client')
         const { data: userData } = await supabaseClient
           .from('users')
-          .select('two_factor_enabled')
-          .eq('email', email)
+          .select('two_factor_enabled, two_factor_method, phone, full_name')
+          .eq('email', email.toLowerCase())
           .single()
 
+        console.log('📊 User 2FA data:', userData)
+
         if (userData?.two_factor_enabled) {
-          console.log('🔐 2FA required for user')
-          setUserNeedsTwoFactor(true)
+          console.log('🔐 2FA is enabled, showing challenge')
+          setUserProfile(userData)
           setShow2FA(true)
+          setLoading(false)
         } else {
-          console.log('✅ No 2FA required, proceeding to dashboard')
-          setTimeout(() => {
-            onSuccess?.()
-          }, 100)
+          console.log('ℹ️ 2FA not enabled, proceeding to dashboard')
+          setLoading(false)
+          onSuccess?.()
         }
       }
     } catch (err) {
       console.error('Login error:', err)
       setError('Connection error - please try again')
-    } finally {
       setLoading(false)
+    } finally {
+      // Loading state is managed above
     }
   }
 
   const handle2FASuccess = () => {
     console.log('✅ 2FA verification successful')
     setShow2FA(false)
-    setTimeout(() => {
-      onSuccess?.()
-    }, 100)
+    onSuccess?.()
   }
 
   const handle2FACancel = () => {
+    console.log('❌ 2FA verification cancelled')
     setShow2FA(false)
-    setUserNeedsTwoFactor(false)
+    setUserProfile(null)
+    setLoading(false)
     // Sign out the user since they didn't complete 2FA
-    const { signOut } = useAuth()
-    signOut()
+    supabaseClient.auth.signOut()
   }
 
   if (show2FA) {
@@ -85,7 +92,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
         userEmail={email}
-        biometricEnabled={true}
+        userPhone={userProfile?.phone}
+        preferredMethod={userProfile?.two_factor_method || 'email'}
       />
     )
   }

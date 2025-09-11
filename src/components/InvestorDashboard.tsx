@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthProvider'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
 import { FundingModal } from './FundingModal'
+import { SecuritySettings } from './SecuritySettings'
 import { MarketsTab } from './markets/MarketsTab'
 import { ResearchTab } from './research/ResearchTab'
 import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
@@ -32,10 +33,11 @@ import {
 
 const InvestorDashboard: React.FC = () => {
   const { user, account, loading } = useAuth()
-  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
+  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions' | 'security'>('portfolio')
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
@@ -67,7 +69,8 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-    { id: 'transactions', name: 'Transactions', icon: FileText }
+    { id: 'transactions', name: 'Transactions', icon: FileText },
+    { id: 'security', name: 'Security', icon: Shield }
   ]
 
   const portfolioSections = [
@@ -110,6 +113,9 @@ const InvestorDashboard: React.FC = () => {
     )
   }
 
+  if (showSecuritySettings) {
+    return <SecuritySettings onBack={() => setShowSecuritySettings(false)} />
+  }
   return (
     <div className="min-h-screen bg-gray-50 safe-area-bottom">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -183,6 +189,9 @@ const InvestorDashboard: React.FC = () => {
 
         {selectedTab === 'markets' && <MarketsTab />}
         {selectedTab === 'research' && <ResearchTab />}
+        {selectedTab === 'security' && (
+          <SecuritySettings onBack={() => setSelectedTab('portfolio')} />
+        )}
         {selectedTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
             <div className="text-center py-12">

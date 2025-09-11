@@ -5,10 +5,13 @@ interface User {
   id: string
   email: string
   full_name?: string
+  phone?: string
   documents_completed?: boolean
   documents_completed_at?: string
   kyc_status?: string
   is_kyc_verified?: boolean
+  two_factor_enabled?: boolean
+  two_factor_method?: 'email' | 'sms' | 'biometric'
 }
 
 interface Account {
@@ -193,23 +196,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name')
         .eq('id', userId)
         .single()
 
       if (!userError && userData) {
         console.log('✅ User profile loaded')
-        const updatedUser = prev => prev ? {
+        setUser(prev => prev ? {
           ...prev,
+          full_name: userData.full_name,
+          phone: userData.phone,
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
           is_kyc_verified: userData.kyc_status === 'verified',
-          two_factor_enabled: userData.two_factor_enabled
-        } : null
+          two_factor_enabled: userData.two_factor_enabled,
+          two_factor_method: userData.two_factor_method
+        } : null)
         
-        setUser(updatedUser)
-        setProfile(updatedUser)
+        setProfile(userData)
       }
     } catch (err) {
       console.error('❌ Account load failed:', err)
@@ -399,6 +404,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.user) {
         console.log('✅ Sign up successful for:', data.user.email)
+        
+        // Create user profile with phone number
+        try {
+          const { error: profileError } = await supabaseClient
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: metadata?.full_name,
+              phone: metadata?.phone,
+              kyc_status: 'pending',
+              two_factor_enabled: true, // Enable 2FA by default for security
+              two_factor_method: 'email' // Default to email verification
+            })
+
+          if (profileError) {
+            console.error('❌ Failed to create user profile:', profileError)
+          } else {
+            console.log('✅ User profile created with phone number')
+          }
+        } catch (profileErr) {
+          console.error('❌ Profile creation error:', profileErr)
+        }
+        
         // User state will be updated via onAuthStateChange
         return { error: null }
       }
