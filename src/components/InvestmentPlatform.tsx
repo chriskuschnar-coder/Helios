@@ -8,14 +8,10 @@ import { Loader2 } from 'lucide-react'
 interface AuthenticatedAppProps {
   onBackToHome?: () => void
 }
-
-function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
-  const { user, loading } = useAuth()
-  const [showSignup, setShowSignup] = useState(false)
             onSuccess={() => {}}
             onSwitchToLogin={() => setShowSignup(false)}
             onBackToHome={onBackToHome}
-          />
+  if (loading) {
         )}
       </div>
     )
