@@ -40,11 +40,11 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     },
     {
       id: 'lpa',
-      title: 'Limited Partnership Agreement – Global Markets, LP',
+      title: 'Limited Partnership Agreement',
       description: 'Legal framework governing the partnership structure and investor rights.',
       required: false,
       signed: false,
-      url: '/documents/GLOBAL MARKETS, LP (1).pdf',
+      url: '/documents/Global_Markets_LPA_With_Schedules_1_20.pdf',
       type: 'investment_agreement'
     },
     {
@@ -311,4 +311,175 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                 className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-700 font-medium transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back
+                <span>Back to Portfolio</span>
+              </button>
+              
+              {currentDocumentIndex > 0 && (
+                <button
+                  onClick={handlePreviousDocument}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Previous</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              {!signedDocuments.has(currentDocument.id) && isCurrentDocumentRequired ? (
+                <button
+                  onClick={handleSignDocument}
+                  disabled={!signature.trim() || isSubmitting}
+                  className="bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Signing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      <span>Sign Document</span>
+                    </>
+                  )}
+                </button>
+              ) : isCurrentDocumentRequired ? (
+                <div className="flex items-center space-x-2 text-green-600">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">Document Signed</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 text-blue-600">
+                  <Eye className="h-5 w-5" />
+                  <span className="font-medium">Review Complete</span>
+                </div>
+              )}
+
+              {(!isCurrentDocumentRequired || signedDocuments.has(currentDocument.id)) && currentDocumentIndex < documents.length - 1 && (
+                <button
+                  onClick={handleNextDocument}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <span>Next Document</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+
+              {allRequiredSigned && currentDocumentIndex === documents.length - 1 && (
+                <button
+                  onClick={async () => {
+                    await markDocumentsCompleted()
+                    onComplete()
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Complete Onboarding</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <div className="text-center">
+            <Eye className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+            <h4 className="text-lg font-semibold text-blue-900 mb-2">Document Review</h4>
+            <p className="text-blue-700 mb-6">
+              Please review the document above. This document provides important 
+              information about the investment opportunity and does not require your signature.
+            </p>
+            
+            <div className="flex justify-center gap-3">
+              {currentDocumentIndex > 0 && (
+                <button
+                  onClick={handlePreviousDocument}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Previous</span>
+                </button>
+              )}
+              
+              {currentDocumentIndex < documents.length - 1 ? (
+                <button
+                  onClick={handleNextDocument}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <span>Continue to Next Document</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    await markDocumentsCompleted()
+                    onComplete()
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Complete Onboarding</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document List Overview */}
+      <div className="mt-8 bg-gray-50 rounded-xl p-6">
+        <h4 className="text-lg font-semibold text-gray-900 mb-4">Document Checklist</h4>
+        <div className="space-y-3">
+          {documents.map((doc, index) => (
+            <div 
+              key={doc.id}
+              className={`flex items-center justify-between p-3 rounded-lg border ${
+                index === currentDocumentIndex ? 'border-navy-500 bg-navy-50' : 'border-gray-200 bg-white'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  signedDocuments.has(doc.id) ? 'bg-green-100' : 
+                  index === currentDocumentIndex ? 'bg-navy-100' : 'bg-gray-100'
+                }`}>
+                  {signedDocuments.has(doc.id) ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : !doc.required ? (
+                    <Eye className="h-4 w-4 text-blue-600" />
+                  ) : (
+                    <span className={`font-bold text-sm ${
+                      index === currentDocumentIndex ? 'text-navy-600' : 'text-gray-600'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div className={`font-medium ${
+                    index === currentDocumentIndex ? 'text-navy-900' : 'text-gray-900'
+                  }`}>
+                    {doc.title}
+                  </div>
+                  <div className="text-sm text-gray-600">{doc.description}</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                {signedDocuments.has(doc.id) && (
+                  <span className="text-sm font-medium text-green-600">Signed</span>
+                )}
+                {!doc.required && (
+                  <span className="text-sm font-medium text-blue-600">Review Only</span>
+                )}
+                {index === currentDocumentIndex && (
+                  <span className="text-sm font-medium text-navy-600">Current</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
