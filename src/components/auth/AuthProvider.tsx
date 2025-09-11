@@ -9,6 +9,7 @@ interface User {
   documents_completed_at?: string
   kyc_status?: string
   is_kyc_verified?: boolean
+  two_factor_enabled?: boolean
 }
 
 interface Account {
@@ -40,6 +41,8 @@ interface AuthContextType {
   loading: boolean
   account: Account | null
   subscription: Subscription | null
+  twoFactorRequired: boolean
+  setTwoFactorRequired: (required: boolean) => void
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
@@ -47,6 +50,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
+  enableTwoFactor: () => Promise<{ success: boolean; error?: string }>
+  disableTwoFactor: () => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -56,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false)
 
   // Check for existing session on mount
   useEffect(() => {
@@ -72,7 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            full_name: session.user.user_metadata?.full_name
+            full_name: session.user.user_metadata?.full_name,
+            two_factor_enabled: false
           })
           await loadUserAccount(session.user.id)
           setLoading(false)
@@ -104,7 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            full_name: session.user.user_metadata?.full_name
+            full_name: session.user.user_metadata?.full_name,
+            two_factor_enabled: false
           })
           await loadUserAccount(session.user.id)
           setLoading(false)
@@ -190,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled')
         .eq('id', userId)
         .single()
 
@@ -201,7 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
-          is_kyc_verified: userData.kyc_status === 'verified'
+          is_kyc_verified: userData.kyc_status === 'verified',
+          two_factor_enabled: userData.two_factor_enabled || false
         } : null)
       }
     } catch (err) {
@@ -343,6 +352,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
+        
+        // Check if user has 2FA enabled
+        const { data: userData } = await supabaseClient
+          .from('users')
+          .select('two_factor_enabled')
+          .eq('id', data.user.id)
+          .single()
+
+        if (userData?.two_factor_enabled) {
+          console.log('🔐 2FA required for user')
+          
+          // Get available factors
+          const { data: factors } = await supabaseClient.auth.mfa.listFactors()
+          
+          if (factors && factors.totp && factors.totp.length > 0) {
+            // Create MFA challenge
+            const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
+              factorId: factors.totp[0].id
+            })
+
+            if (!challengeError && challengeData) {
+              console.log('🔐 2FA challenge created')
+              setTwoFactorRequired(true)
+              return { 
+                error: null, 
+                requiresTwoFactor: true, 
+                factorId: factors.totp[0].id,
+                challengeId: challengeData.id 
+              }
+            }
+          }
+        }
+        
         // User state will be updated via onAuthStateChange
         return { error: null }
       }
@@ -424,18 +466,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const enableTwoFactor = async () => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
+      // Update user's 2FA status in database
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ two_factor_enabled: true })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local user state
+      setUser(prev => prev ? { ...prev, two_factor_enabled: true } : null)
+      
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Failed to enable 2FA:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to enable 2FA' }
+    }
+  }
+
+  const disableTwoFactor = async () => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
+      // Get user's factors and unenroll
+      const { data: factors } = await supabaseClient.auth.mfa.listFactors()
+      
+      if (factors && factors.totp) {
+        for (const factor of factors.totp) {
+          await supabaseClient.auth.mfa.unenroll({ factorId: factor.id })
+        }
+      }
+
+      // Update user's 2FA status in database
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ two_factor_enabled: false })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local user state
+      setUser(prev => prev ? { ...prev, two_factor_enabled: false } : null)
+      
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Failed to disable 2FA:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to disable 2FA' }
+    }
+  }
+
   const value = {
     user,
     loading,
     account,
     subscription,
+    twoFactorRequired,
+    setTwoFactorRequired,
     refreshAccount,
     refreshSubscription,
     processFunding,
     markDocumentsCompleted,
     signIn,
     signUp,
-    signOut
+    signOut,
+    enableTwoFactor,
+    disableTwoFactor
   }
 
   return (

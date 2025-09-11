@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
+import { TwoFactorChallenge } from './TwoFactorChallenge'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -15,6 +16,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showTwoFactor, setShowTwoFactor] = useState(false)
+  const [twoFactorData, setTwoFactorData] = useState<{
+    factorId: string
+    challengeId: string
+  } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,6 +38,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       
       if (result.error) {
         setError(result.error.message)
+      } else if (result.requiresTwoFactor) {
+        console.log('🔐 2FA required, showing challenge')
+        setTwoFactorData({
+          factorId: result.factorId,
+          challengeId: result.challengeId
+        })
+        setShowTwoFactor(true)
       } else {
         // Small delay to ensure state updates
         setTimeout(() => {
@@ -44,6 +57,30 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleTwoFactorSuccess = () => {
+    console.log('✅ 2FA verification successful')
+    setShowTwoFactor(false)
+    setTwoFactorData(null)
+    onSuccess?.()
+  }
+
+  const handleTwoFactorBack = () => {
+    setShowTwoFactor(false)
+    setTwoFactorData(null)
+    setLoading(false)
+  }
+
+  if (showTwoFactor && twoFactorData) {
+    return (
+      <TwoFactorChallenge
+        onSuccess={handleTwoFactorSuccess}
+        onBack={handleTwoFactorBack}
+        factorId={twoFactorData.factorId}
+        challengeId={twoFactorData.challengeId}
+      />
+    )
   }
 
   return (
