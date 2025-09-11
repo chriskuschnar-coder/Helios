@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { LoginForm } from './auth/LoginForm'
 import { SignupForm } from './auth/SignupForm'
+import { TwoFactorChallenge } from './auth/TwoFactorChallenge'
 import { DashboardSelector } from './DashboardSelector'
 import { Loader2 } from 'lucide-react'
 
@@ -67,8 +68,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   if (pending2FA && pendingAuthData) {
     console.log('🔐 Showing 2FA challenge - user must verify before access')
     
-    const { TwoFactorChallenge } = await import('./auth/TwoFactorChallenge')
-    
     return (
       <TwoFactorChallenge
         onSuccess={() => {
@@ -76,9 +75,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         }}
         onCancel={() => {
           console.log('❌ 2FA cancelled - signing out')
-          const { useAuth } = await import('./auth/AuthProvider')
-          const { signOut } = useAuth()
-          signOut()
+          // Handle sign out through context
         }}
         userEmail={pendingAuthData.userData.email}
         userData={pendingAuthData.userData}
