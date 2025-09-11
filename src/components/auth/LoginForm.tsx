@@ -40,7 +40,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         setLoading(false)
       } else if (result.requires2FA) {
         console.log('🔐 2FA REQUIRED - storing auth data and showing challenge')
-        setPendingAuth({ userData: result.userData, session: result.session })
+        setPendingAuth({ 
+          userData: result.userData, 
+          session: result.session 
+        })
         setShow2FA(true)
         setLoading(false)
       } else {
@@ -74,6 +77,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       <TwoFactorChallenge
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
+        userEmail={email}
         userData={pendingAuth?.userData}
         session={pendingAuth?.session}
       />

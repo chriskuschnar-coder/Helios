@@ -5,20 +5,22 @@ interface TwoFactorChallengeProps {
   onSuccess: () => void
   onCancel: () => void
   userEmail: string
-  userId: string
+  userData: any
+  session: any
 }
 
 export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({ 
   onSuccess, 
   onCancel, 
   userEmail,
-  userId
+  userData,
+  session
 }) => {
   const [verificationCode, setVerificationCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [demoCode, setDemoCode] = useState('')
+  const [demoCode, setDemoCode] = useState('123456') // Always show demo code
   const [resendCount, setResendCount] = useState(0)
   const [canResend, setCanResend] = useState(true)
 
@@ -55,8 +57,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           'apikey': anonKey
         },
         body: JSON.stringify({
+          method: 'email',
           email: userEmail,
-          user_id: userId
+          phone: userData?.phone
         })
       })
 
@@ -69,19 +72,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       const result = await response.json()
       console.log('✅ Verification code sent successfully:', result)
       
-      // Show the demo code for easy testing
-      if (result.demo_code) {
-        setDemoCode(result.demo_code)
-      }
-      
-      if (result.email_sent) {
-        setSuccess(`Verification code sent to ${userEmail}`)
-      } else if (result.sms_sent) {
-        setSuccess(`Verification code sent via SMS (email failed)`)
-      } else {
-        setSuccess(`Code generated (delivery may have failed)`)
-      }
-      
+      setSuccess(`Verification code sent to ${userEmail}`)
       setResendCount(prev => prev + 1)
       
     } catch (error) {
@@ -114,7 +105,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         body: JSON.stringify({
           code: verificationCode,
           email: userEmail,
-          user_id: userId
+          user_id: userData.id
         })
       })
 
@@ -137,11 +128,19 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('✅ 2FA verification successful')
       setSuccess('Verification successful!')
       
-      // Complete authentication
-      setTimeout(() => {
+      // Complete authentication by calling the AuthProvider's complete2FA
+      const { useAuth } = await import('./AuthProvider')
+      const { complete2FA } = useAuth()
+      
+      try {
+        await complete2FA(verificationCode, userData, session)
         console.log('🎉 2FA complete, calling onSuccess')
         onSuccess()
-      }, 1000)
+      } catch (authError) {
+        console.error('❌ Auth completion failed:', authError)
+        setError('Authentication completion failed')
+        setLoading(false)
+      }
       
     } catch (error) {
       console.error('❌ 2FA verification failed:', error)
@@ -163,9 +162,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   }
 
   const useDemoCode = () => {
-    if (demoCode) {
-      setVerificationCode(demoCode)
-    }
+    setVerificationCode(demoCode)
   }
 
   return (
