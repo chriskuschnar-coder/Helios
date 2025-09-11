@@ -108,7 +108,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         body: JSON.stringify({
           user_id: userData.id,
           code: verificationCode,
-          email: userEmail
+          email: userData.email
         })
       })
 
