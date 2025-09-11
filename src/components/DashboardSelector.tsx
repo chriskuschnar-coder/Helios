@@ -37,6 +37,7 @@ const InvestorDashboard: React.FC = () => {
   const [showFundingModal, setShowFundingModal] = useState(false)
   const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
 
   const currentBalance = account?.balance || 0
   const hasActivity = currentBalance > 0
@@ -68,12 +69,22 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-6 w-6 text-navy-600" />
-                <span className="font-serif text-lg font-bold text-navy-900">
+    { id: 'transactions', name: 'Transactions', icon: FileText }
+  ]
+
+  const portfolioSections = [
+    {
+      id: 'allocation',
+      title: 'Asset Allocation',
+      icon: Target,
+      component: () => <InteractiveAllocationChart />
+    },
+    {
+      id: 'analytics',
+      title: 'Portfolio Analytics',
+      icon: BarChart3,
+      component: () => <PortfolioAnalytics />
+    },
     {
       id: 'performance',
       title: 'Performance Metrics',
@@ -109,6 +120,18 @@ const InvestorDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 safe-area-bottom">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-6 w-6 text-navy-600" />
+              <span className="font-serif text-lg font-bold text-navy-900">
+                InvestorPortal
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header with Security Button */}
         <div className="flex justify-between items-center mb-6">
@@ -165,6 +188,16 @@ const InvestorDashboard: React.FC = () => {
                         <section.icon className="h-6 w-6 text-navy-600" />
                       </div>
                       <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                      </div>
+                    </div>
+                    {expandedSections.has(section.id) ? (
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                    )}
+                  </div>
+                </div>
                 
                 {expandedSections.has(section.id) && (
                   <div className="border-t border-gray-100 p-6">
