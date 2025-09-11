@@ -69,6 +69,7 @@ const InvestorDashboard: React.FC = () => {
     { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
     { id: 'markets', name: 'Markets', icon: Globe },
     { id: 'research', name: 'Research', icon: Brain },
+  ]
 
   const portfolioSections = [
     {
