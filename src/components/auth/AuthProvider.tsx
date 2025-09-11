@@ -1,172 +1,234 @@
-import React, { useState } from 'react'
-import { useAuth } from './AuthProvider'
-import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase-client'
+import type { User, Session } from '@supabase/supabase-js'
 
-interface LoginFormProps {
-  onSuccess?: () => void
-  onSwitchToSignup?: () => void
-  onBackToHome?: () => void
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  session: Session | null
+  signIn: (email: string, password: string) => Promise<{ error?: any }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error?: any }>
+  signOut: () => Promise<void>
+  account: any
+  markDocumentsCompleted: () => Promise<void>
+  processFunding: (amount: number) => Promise<void>
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignup, onBackToHome }) => {
-  const { signIn } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  session: null,
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  signOut: async () => {},
+  account: null,
+  markDocumentsCompleted: async () => {},
+  processFunding: async () => {}
+})
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!email || !password) {
-      setError('Please enter both email and password')
-      return
-    }
-    
-    setLoading(true)
-    setError('')
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [account, setAccount] = useState<any>(null)
 
-    try {
-      const result = await signIn(email, password)
-      
-      if (result.error) {
-        setError(result.error.message)
-      } else {
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          onSuccess?.()
-        }, 100)
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error)
+        } else {
+          setSession(session)
+          setUser(session?.user ?? null)
+          
+          if (session?.user) {
+            await loadUserAccount(session.user.id)
+          }
+        }
+      } catch (error) {
+        console.error('Session initialization error:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error('Login error:', err)
-      setError('Connection error - please try again')
+    }
+
+    getInitialSession()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        
+        setSession(session)
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await loadUserAccount(session.user.id)
+        } else {
+          setAccount(null)
+        }
+        
+        setLoading(false)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const loadUserAccount = async (userId: string) => {
+    try {
+      const { data: accountData, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading account:', error)
+      } else {
+        setAccount(accountData)
+      }
+    } catch (error) {
+      console.error('Account loading error:', error)
+    }
+  }
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('Sign in error:', error)
+        return { error }
+      }
+
+      return { error: null }
+    } catch (error) {
+      console.error('Sign in catch error:', error)
+      return { error }
     } finally {
       setLoading(false)
     }
   }
 
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      })
+
+      if (error) {
+        console.error('Sign up error:', error)
+        return { error }
+      }
+
+      return { error: null }
+    } catch (error) {
+      console.error('Sign up catch error:', error)
+      return { error }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Sign out error:', error)
+      }
+      
+      setUser(null)
+      setSession(null)
+      setAccount(null)
+    } catch (error) {
+      console.error('Sign out catch error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const markDocumentsCompleted = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          documents_completed: true,
+          documents_completed_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error marking documents completed:', error)
+      }
+    } catch (error) {
+      console.error('Documents completion error:', error)
+    }
+  }
+
+  const processFunding = async (amount: number) => {
+    if (!user || !account) return
+
+    try {
+      // Create a funding transaction
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          account_id: account.id,
+          type: 'deposit',
+          method: 'stripe',
+          amount: amount,
+          status: 'completed'
+        })
+
+      if (error) {
+        console.error('Error processing funding:', error)
+      }
+    } catch (error) {
+      console.error('Funding processing error:', error)
+    }
+  }
+
+  const value = {
+    user,
+    loading,
+    session,
+    signIn,
+    signUp,
+    signOut,
+    account,
+    markDocumentsCompleted,
+    processFunding
+  }
+
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-6 md:p-8 mobile-card">
-      {/* Back to Home Button */}
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={onBackToHome}
-          className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors mobile-button"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back to Home</span>
-        </button>
-        <button
-          onClick={onBackToHome}
-          className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors mobile-button"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-navy-600 rounded-full flex items-center justify-center">
-            <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-white" />
-          </div>
-        </div>
-        <h1 className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-2">
-          Welcome Back
-        </h1>
-        <p className="text-sm md:text-base text-gray-600">
-          Sign in to your investment account
-        </p>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 md:px-4 py-3 rounded-lg mb-6 flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          <span className="text-sm md:text-base">{error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="email" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-4 py-3 md:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors text-base"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
-            Password
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-12 py-3 md:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors text-base"
-              placeholder="Enter your password"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors mobile-button"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="rounded border-gray-300 text-navy-600 focus:ring-navy-500 w-4 h-4"
-            />
-            <span className="ml-2 text-sm md:text-base text-gray-600">Remember me</span>
-          </label>
-          <button
-            type="button"
-            className="text-sm md:text-base text-navy-600 hover:text-navy-700 transition-colors mobile-button"
-          >
-            Forgot password?
-          </button>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 mobile-button active:scale-95 text-base"
-        >
-          {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm md:text-base text-gray-600">
-          Don't have an account?{' '}
-          <button
-            onClick={onSwitchToSignup}
-            className="text-navy-600 hover:text-navy-700 font-medium transition-colors mobile-button"
-          >
-            Sign up
-          </button>
-        </p>
-      </div>
-
-    </div>
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   )
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
