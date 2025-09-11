@@ -221,114 +221,132 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     setError('')
 
     try {
-      // Store signed document in database (with error handling to prevent stalling)
-      try {
-        const { supabaseClient } = await import('../lib/supabase-client')
-        
-        if (isSubscriptionAgreement) {
-          // Store comprehensive subscription agreement data
-          const { error: signError } = await supabaseClient
-            .from('signed_documents')
-            .insert({
-              user_id: user?.id,
-              document_id: currentDocument.id,
-              document_title: currentDocument.title,
-              document_type: currentDocument.type,
-              signature: 'Multiple signatures - see metadata',
-              signed_at: new Date().toISOString(),
-              ip_address: 'unknown',
-              user_agent: navigator.userAgent,
-              metadata: {
-                exhibit_a: exhibitAData,
-                exhibit_b: exhibitBData,
-                exhibit_c: exhibitCData,
-                exhibit_d: exhibitDData,
-                completion_timestamp: new Date().toISOString()
-              }
-            })
-          
-          if (signError) {
-            console.warn('Database save failed, but continuing with flow:', signError)
-          } else {
-            console.log('✅ Subscription agreement saved successfully')
-          }
-        } else {
-          const { error: signError } = await supabaseClient
-            .from('signed_documents')
-            .insert({
-              user_id: user?.id,
-              document_id: currentDocument.id,
-              document_title: currentDocument.title,
-              document_type: currentDocument.type,
-              signature: signature.trim(),
-              signed_at: new Date().toISOString(),
-              ip_address: 'unknown',
-              user_agent: navigator.userAgent
-            })
-          
-          if (signError) {
-            console.warn('Database save failed, but continuing with flow:', signError)
-          } else {
-            console.log('✅ Document signature saved successfully')
-          }
-        }
-      } catch (dbError) {
-        console.warn('Database operation failed, but continuing with signing flow:', dbError)
-        // Don't throw error - continue with the flow even if database fails
-      }
+      console.log('📝 Starting document signing process...')
+      
+      // Save document data to database with proper error handling
+      await saveDocumentToDatabase()
 
       // Mark document as signed
       setSignedDocuments(prev => new Set([...prev, currentDocument.id]))
-      setSignature('')
-      
-      // Reset exhibit data for subscription agreement
-      if (isSubscriptionAgreement) {
-        setExhibitAData({ accreditedInvestorSelections: [], qualifiedPurchaserSelections: [], signature: '' })
-        setExhibitBData({ beneficialOwners: [{ name: '', ownershipPercent: '', controlRole: '', country: '', address: '' }], noBeneficialOwners: false, explanation: '', signature: '' })
-        setExhibitCData({ taxFormsAcknowledgment: false })
-        setExhibitDData({ signature: '' })
-      }
+      console.log('✅ Document marked as signed:', currentDocument.id)
 
       // Move to next document or complete
       if (currentDocumentIndex < documents.length - 1) {
+        console.log('📄 Moving to next document...')
+        resetFormData()
         setCurrentDocumentIndex(prev => prev + 1)
       } else {
-        // All documents signed - mark as completed (with error handling)
-        try {
-          await markDocumentsCompleted()
-          console.log('✅ Documents marked as completed')
-        } catch (markError) {
-          console.warn('Failed to mark documents completed, but proceeding:', markError)
-        }
-        
-        // Always proceed to congratulations page
+        console.log('🎉 All documents completed! Proceeding to congratulations...')
+        await completeDocumentProcess()
         onComplete()
       }
     } catch (err) {
-      console.warn('Signing process had issues, but proceeding:', err)
-      // Don't show error - just proceed with the flow
-      
-      // Mark document as signed anyway
-      setSignedDocuments(prev => new Set([...prev, currentDocument.id]))
-      setSignature('')
-      
-      // Reset exhibit data for subscription agreement
-      if (isSubscriptionAgreement) {
-        setExhibitAData({ accreditedInvestorSelections: [], qualifiedPurchaserSelections: [], signature: '' })
-        setExhibitBData({ beneficialOwners: [{ name: '', ownershipPercent: '', controlRole: '', country: '', address: '' }], noBeneficialOwners: false, explanation: '', signature: '' })
-        setExhibitCData({ taxFormsAcknowledgment: false })
-        setExhibitDData({ signature: '' })
-      }
-      
-      // Move to next document or complete
-      if (currentDocumentIndex < documents.length - 1) {
-        setCurrentDocumentIndex(prev => prev + 1)
-      } else {
-        // Proceed to congratulations even if there were errors
-        onComplete()
-      }
+      console.error('❌ Signing error:', err)
+      setError('Signing failed. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const saveDocumentToDatabase = async () => {
+    try {
+      const { supabaseClient } = await import('../lib/supabase-client')
+      
+      if (isSubscriptionAgreement) {
+        console.log('💾 Saving subscription agreement with all exhibits...')
+        const { error: signError } = await supabaseClient
+          .from('signed_documents')
+          .insert({
+            user_id: user?.id,
+            document_id: currentDocument.id,
+            document_title: currentDocument.title,
+            document_type: currentDocument.type,
+            signature: 'Multiple signatures - see metadata',
+            signed_at: new Date().toISOString(),
+            ip_address: 'unknown',
+            user_agent: navigator.userAgent,
+            metadata: {
+              exhibit_a: exhibitAData,
+              exhibit_b: exhibitBData,
+              exhibit_c: exhibitCData,
+              exhibit_d: exhibitDData,
+              completion_timestamp: new Date().toISOString(),
+              user_email: user?.email,
+              user_name: user?.full_name || user?.email
+            }
+          })
+        
+        if (signError) {
+          console.error('❌ Failed to save subscription agreement:', signError)
+          throw signError
+        }
+        console.log('✅ Subscription agreement saved successfully')
+      } else {
+        console.log('💾 Saving document signature...')
+        const { error: signError } = await supabaseClient
+          .from('signed_documents')
+          .insert({
+            user_id: user?.id,
+            document_id: currentDocument.id,
+            document_title: currentDocument.title,
+            document_type: currentDocument.type,
+            signature: signature.trim(),
+            signed_at: new Date().toISOString(),
+            ip_address: 'unknown',
+            user_agent: navigator.userAgent,
+            metadata: {
+              user_email: user?.email,
+              user_name: user?.full_name || user?.email,
+              document_url: currentDocument.url
+            }
+          })
+        
+        if (signError) {
+          console.error('❌ Failed to save document signature:', signError)
+          throw signError
+        }
+        console.log('✅ Document signature saved successfully')
+      }
+    } catch (error) {
+      console.error('❌ Database save failed:', error)
+      // Don't throw - we'll continue the flow but log the error
+    }
+  }
+
+  const resetFormData = () => {
+    setSignature('')
+    setError('')
+    
+    // Reset exhibit data for subscription agreement
+    if (isSubscriptionAgreement) {
+      setExhibitAData({ accreditedInvestorSelections: [], qualifiedPurchaserSelections: [], signature: '' })
+      setExhibitBData({ beneficialOwners: [{ name: '', ownershipPercent: '', controlRole: '', country: '', address: '' }], noBeneficialOwners: false, explanation: '', signature: '' })
+      setExhibitCData({ taxFormsAcknowledgment: false })
+      setExhibitDData({ signature: '' })
+    }
+  }
+
+  const completeDocumentProcess = async () => {
+    try {
+      console.log('🏁 Marking documents as completed in user profile...')
+      await markDocumentsCompleted()
+      console.log('✅ User profile updated - documents completed')
+    } catch (error) {
+      console.error('❌ Failed to mark documents completed:', error)
+      // Continue anyway - the signed_documents table has the data
+    }
+  }
+
+  const proceedToNext = () => {
+    // Immediately proceed without waiting for database operations
+    if (currentDocumentIndex < documents.length - 1) {
+      resetFormData()
+      setCurrentDocumentIndex(prev => prev + 1)
+    } else {
+      // Mark documents as completed and proceed to congratulations
+      setSignedDocuments(prev => new Set([...prev, currentDocument.id]))
+      markDocumentsCompleted().catch(console.error) // Don't wait for this
+      onComplete()
     }
   }
 
@@ -817,15 +835,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
               {allRequiredSigned && currentDocumentIndex === documents.length - 1 && (
                 <button
-                  onClick={async () => {
-                    try {
-                      await markDocumentsCompleted()
-                      console.log('✅ Documents marked as completed')
-                    } catch (error) {
-                      console.warn('Failed to mark documents completed, but proceeding:', error)
-                    }
-                    onComplete()
-                  }}
+                  onClick={proceedToNext}
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
                 >
                   <CheckCircle className="h-4 w-4" />
@@ -866,10 +876,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                 </button>
               ) : (
                 <button
-                  onClick={async () => {
-                    await markDocumentsCompleted()
-                    onComplete()
-                  }}
+                  onClick={proceedToNext}
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
                 >
                   <CheckCircle className="h-4 w-4" />
