@@ -96,7 +96,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     {
       id: 'subscription_agreement',
       title: 'Subscription Agreement (Global Markets, LP)',
-      description: 'Interactive subscription agreement with investor questionnaire and required certifications.',
+      description: 'Comprehensive subscription agreement including investor questionnaire, beneficial ownership, tax forms, and AML/KYC certification.',
       required: true,
       signed: false,
       url: '/documents/Global_Markets_Subscription_Agreement.html',
@@ -132,6 +132,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const currentDocument = documents[currentDocumentIndex]
   const allRequiredSigned = documents.filter(doc => doc.required).every(doc => signedDocuments.has(doc.id))
   const isCurrentDocumentRequired = currentDocument.required
+  const isSubscriptionAgreement = currentDocument.id === 'subscription_agreement'
 
   // Accredited Investor options for Exhibit A
   const accreditedInvestorOptions = [
@@ -206,7 +207,12 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   }
 
   const handleSignDocument = async () => {
-    if (!signature.trim()) {
+    if (isSubscriptionAgreement) {
+      if (!isSubscriptionAgreementComplete()) {
+        setError('Please complete all required fields and signatures in all exhibits')
+        return
+      }
+    } else if (!signature.trim()) {
       setError('Please enter your full legal name as your signature')
       return
     }
@@ -215,10 +221,36 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
     setError('')
 
     try {
-      // Try to store signed document in database, but don't fail if it doesn't work
-      try {
-        const { supabaseClient } = await import('../lib/supabase-client')
-        await supabaseClient
+      // Store signed document in database
+      const { supabaseClient } = await import('../lib/supabase-client')
+      
+      if (isSubscriptionAgreement) {
+        // Store comprehensive subscription agreement data
+        const { error: signError } = await supabaseClient
+          .from('signed_documents')
+          .insert({
+            user_id: user?.id,
+            document_id: currentDocument.id,
+            document_title: currentDocument.title,
+            document_type: currentDocument.type,
+            signature: 'Multiple signatures - see metadata',
+            signed_at: new Date().toISOString(),
+            ip_address: 'unknown',
+            user_agent: navigator.userAgent,
+            metadata: {
+              exhibit_a: exhibitAData,
+              exhibit_b: exhibitBData,
+              exhibit_c: exhibitCData,
+              exhibit_d: exhibitDData,
+              completion_timestamp: new Date().toISOString()
+            }
+          })
+        
+        if (signError) {
+          throw new Error('Failed to save subscription agreement')
+        }
+      } else {
+        const { error: signError } = await supabaseClient
           .from('signed_documents')
           .insert({
             user_id: user?.id,
@@ -230,35 +262,34 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
             ip_address: 'unknown',
             user_agent: navigator.userAgent
           })
-        console.log('✅ Document signature saved to database')
-      } catch (dbError) {
-        console.warn('⚠️ Failed to save to database, but continuing:', dbError)
-        // Continue anyway - don't let database issues block the flow
+        
+        if (signError) {
+          throw new Error('Failed to save signature')
+        }
       }
 
       // Mark document as signed
       setSignedDocuments(prev => new Set([...prev, currentDocument.id]))
       setSignature('')
       
+      // Reset exhibit data for subscription agreement
+      if (isSubscriptionAgreement) {
+        setExhibitAData({ accreditedInvestorSelections: [], qualifiedPurchaserSelections: [], signature: '' })
+        setExhibitBData({ beneficialOwners: [{ name: '', ownershipPercent: '', controlRole: '', country: '', address: '' }], noBeneficialOwners: false, explanation: '', signature: '' })
+        setExhibitCData({ taxFormsAcknowledgment: false })
+        setExhibitDData({ signature: '' })
+      }
+
       // Move to next document or complete
       if (currentDocumentIndex < documents.length - 1) {
         setCurrentDocumentIndex(prev => prev + 1)
       } else {
-        // All documents signed - mark as completed and proceed to congratulations
-        try {
-          await markDocumentsCompleted()
-          console.log('✅ Documents marked as completed')
-        } catch (markError) {
-          console.warn('⚠️ Failed to mark documents completed, but proceeding:', markError)
-          // Continue to congratulations even if this fails
-        }
+        // All documents signed - mark as completed
+        await markDocumentsCompleted()
         onComplete()
       }
     } catch (err) {
-      console.error('❌ Document signing error:', err)
-      // Don't show error - just proceed to congratulations
-      console.log('⚠️ Proceeding to congratulations despite error')
-      onComplete()
+      setError('Failed to save signature. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -356,38 +387,324 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       {/* Signature Section or Review Section */}
       {isCurrentDocumentRequired ? (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Electronic Signature</h4>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center space-x-2 mb-2">
-                <Shield className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">Legal Electronic Signature</span>
-              </div>
-              <p className="text-sm text-blue-700">
-                By typing your full legal name below, you are providing a legally binding electronic signature 
-                equivalent to a handwritten signature under the Electronic Signatures in Global and National Commerce Act.
-              </p>
-            </div>
+          {isSubscriptionAgreement ? (
+            <div className="space-y-8">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6">Complete Subscription Agreement</h4>
+              
+              {/* Exhibit A - Investor Questionnaire */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <User className="h-6 w-6 text-blue-600" />
+                  <h5 className="text-lg font-bold text-blue-900">Exhibit A: Investor Questionnaire</h5>
+                </div>
+                
+                <div className="space-y-6">
+                  {/* Accredited Investor Section */}
+                  <div>
+                    <h6 className="font-semibold text-gray-900 mb-3">Accredited Investor Status (Select at least one):</h6>
+                    <div className="space-y-2">
+                      {accreditedInvestorOptions.map((option, index) => (
+                        <label key={index} className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={exhibitAData.accreditedInvestorSelections.includes(option)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setExhibitAData(prev => ({
+                                  ...prev,
+                                  accreditedInvestorSelections: [...prev.accreditedInvestorSelections, option]
+                                }))
+                              } else {
+                                setExhibitAData(prev => ({
+                                  ...prev,
+                                  accreditedInvestorSelections: prev.accreditedInvestorSelections.filter(s => s !== option)
+                                }))
+                              }
+                            }}
+                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
-            <div className="mb-6">
-              <label htmlFor="signature" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Legal Name (Electronic Signature)
-              </label>
-              <input
-                type="text"
-                id="signature"
-                value={signature}
-                onChange={(e) => setSignature(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
-                placeholder="Type your full legal name"
-                disabled={signedDocuments.has(currentDocument.id)}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                This constitutes your legal electronic signature
-              </p>
+                  {/* Qualified Purchaser Section */}
+                  <div>
+                    <h6 className="font-semibold text-gray-900 mb-3">Qualified Purchaser Status (Select at least one):</h6>
+                    <div className="space-y-2">
+                      {qualifiedPurchaserOptions.map((option, index) => (
+                        <label key={index} className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={exhibitAData.qualifiedPurchaserSelections.includes(option)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setExhibitAData(prev => ({
+                                  ...prev,
+                                  qualifiedPurchaserSelections: [...prev.qualifiedPurchaserSelections, option]
+                                }))
+                              } else {
+                                setExhibitAData(prev => ({
+                                  ...prev,
+                                  qualifiedPurchaserSelections: prev.qualifiedPurchaserSelections.filter(s => s !== option)
+                                }))
+                              }
+                            }}
+                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Exhibit A Signature */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Exhibit A Electronic Signature
+                    </label>
+                    <input
+                      type="text"
+                      value={exhibitAData.signature}
+                      onChange={(e) => setExhibitAData(prev => ({ ...prev, signature: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Type your full legal name"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Exhibit B - Beneficial Ownership */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Building className="h-6 w-6 text-green-600" />
+                  <h5 className="text-lg font-bold text-green-900">Exhibit B: Beneficial Ownership Form</h5>
+                </div>
+                
+                <div className="space-y-6">
+                  {/* No Beneficial Owners Option */}
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={exhibitBData.noBeneficialOwners}
+                      onChange={(e) => setExhibitBData(prev => ({ ...prev, noBeneficialOwners: e.target.checked }))}
+                      className="mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="text-sm font-medium text-gray-900">
+                      No individual owns 25% or more of this entity (explain below)
+                    </span>
+                  </label>
+
+                  {exhibitBData.noBeneficialOwners && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Explanation
+                      </label>
+                      <textarea
+                        value={exhibitBData.explanation}
+                        onChange={(e) => setExhibitBData(prev => ({ ...prev, explanation: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        rows={3}
+                        placeholder="Explain ownership structure..."
+                      />
+                    </div>
+                  )}
+
+                  {/* Beneficial Owners Table */}
+                  {!exhibitBData.noBeneficialOwners && (
+                    <div>
+                      <h6 className="font-semibold text-gray-900 mb-3">Beneficial Owners (25% or more ownership):</h6>
+                      <div className="space-y-4">
+                        {exhibitBData.beneficialOwners.map((owner, index) => (
+                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h6 className="font-medium text-gray-900">Beneficial Owner {index + 1}</h6>
+                              {exhibitBData.beneficialOwners.length > 1 && (
+                                <button
+                                  onClick={() => removeBeneficialOwner(index)}
+                                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input
+                                  type="text"
+                                  value={owner.name}
+                                  onChange={(e) => updateBeneficialOwner(index, 'name', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  placeholder="Full legal name"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Ownership %</label>
+                                <input
+                                  type="text"
+                                  value={owner.ownershipPercent}
+                                  onChange={(e) => updateBeneficialOwner(index, 'ownershipPercent', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  placeholder="e.g., 30%"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Control/Role</label>
+                                <input
+                                  type="text"
+                                  value={owner.controlRole}
+                                  onChange={(e) => updateBeneficialOwner(index, 'controlRole', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  placeholder="e.g., CEO, Managing Member"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <input
+                                  type="text"
+                                  value={owner.country}
+                                  onChange={(e) => updateBeneficialOwner(index, 'country', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  placeholder="Country of residence"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea
+                                  value={owner.address}
+                                  onChange={(e) => updateBeneficialOwner(index, 'address', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  rows={2}
+                                  placeholder="Full address"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <button
+                          onClick={addBeneficialOwner}
+                          className="text-green-600 hover:text-green-700 text-sm font-medium"
+                        >
+                          + Add Another Beneficial Owner
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exhibit B Signature */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Exhibit B Electronic Signature
+                    </label>
+                    <input
+                      type="text"
+                      value={exhibitBData.signature}
+                      onChange={(e) => setExhibitBData(prev => ({ ...prev, signature: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="Type your full legal name"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Exhibit C - U.S. Tax Forms */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <DollarSign className="h-6 w-6 text-yellow-600" />
+                  <h5 className="text-lg font-bold text-yellow-900">Exhibit C: U.S. Tax Forms</h5>
+                </div>
+                
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={exhibitCData.taxFormsAcknowledgment}
+                    onChange={(e) => setExhibitCData(prev => ({ ...prev, taxFormsAcknowledgment: e.target.checked }))}
+                    className="mt-1 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                  />
+                  <span className="text-sm font-medium text-gray-900">
+                    I will provide the applicable IRS W-9 or W-8 form via the secure portal.
+                  </span>
+                </label>
+              </div>
+
+              {/* Exhibit D - AML/KYC Certification */}
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Shield className="h-6 w-6 text-purple-600" />
+                  <h5 className="text-lg font-bold text-purple-900">Exhibit D: AML/KYC Certification</h5>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="text-sm text-purple-800 mb-4">
+                    I certify that I am in compliance with all applicable anti-money laundering (AML) and 
+                    know-your-customer (KYC) requirements, and I acknowledge that additional verification 
+                    may be required.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Exhibit D Electronic Signature
+                  </label>
+                  <input
+                    type="text"
+                    value={exhibitDData.signature}
+                    onChange={(e) => setExhibitDData(prev => ({ ...prev, signature: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Type your full legal name"
+                  />
+                </div>
+              </div>
+
+              {/* Legal Notice */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Shield className="h-5 w-5 text-gray-600" />
+                  <span className="font-medium text-gray-900">Legal Electronic Signature</span>
+                </div>
+                <p className="text-sm text-gray-700">
+                  By typing your full legal name in the signature fields above, you are providing legally binding 
+                  electronic signatures equivalent to handwritten signatures under the Electronic Signatures in 
+                  Global and National Commerce Act.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Electronic Signature</h4>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">Legal Electronic Signature</span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  By typing your full legal name below, you are providing a legally binding electronic signature 
+                  equivalent to a handwritten signature under the Electronic Signatures in Global and National Commerce Act.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="signature" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Legal Name (Electronic Signature)
+                </label>
+                <input
+                  type="text"
+                  id="signature"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
+                  placeholder="Type your full legal name"
+                  disabled={signedDocuments.has(currentDocument.id)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This constitutes your legal electronic signature
+                </p>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -424,7 +741,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
               {!signedDocuments.has(currentDocument.id) && isCurrentDocumentRequired ? (
                 <button
                   onClick={handleSignDocument}
-                  disabled={!signature.trim() || isSubmitting}
+                  disabled={isSubscriptionAgreement ? !isSubscriptionAgreementComplete() || isSubmitting : !signature.trim() || isSubmitting}
                   className="bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
                 >
                   {isSubmitting ? (
@@ -435,14 +752,14 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
                   ) : (
                     <>
                       <FileText className="h-4 w-4" />
-                      <span>Sign Document</span>
+                      <span>{isSubscriptionAgreement ? 'Complete Subscription Agreement' : 'Sign Document'}</span>
                     </>
                   )}
                 </button>
               ) : isCurrentDocumentRequired ? (
                 <div className="flex items-center space-x-2 text-green-600">
                   <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">Document Signed</span>
+                  <span className="font-medium">{isSubscriptionAgreement ? 'Subscription Agreement Complete' : 'Document Signed'}</span>
                 </div>
               ) : (
                 <div className="flex items-center space-x-2 text-blue-600">
@@ -464,12 +781,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
               {allRequiredSigned && currentDocumentIndex === documents.length - 1 && (
                 <button
                   onClick={async () => {
-                    try {
-                      await markDocumentsCompleted()
-                      console.log('✅ Documents marked as completed')
-                    } catch (error) {
-                      console.warn('⚠️ Failed to mark documents completed, but proceeding:', error)
-                    }
+                    await markDocumentsCompleted()
                     onComplete()
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
