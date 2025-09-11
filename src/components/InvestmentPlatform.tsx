@@ -12,50 +12,48 @@ interface AuthenticatedAppProps {
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
-  const [authError, setAuthError] = useState<string | null>(null)
   const [forceShowAuth, setForceShowAuth] = useState(false)
+  const [authTimeout, setAuthTimeout] = useState(false)
 
-  // Add timeout to prevent infinite loading
+  // Prevent infinite loading with shorter timeout
   useEffect(() => {
     if (loading) {
       const timeout = setTimeout(() => {
-        console.warn('⚠️ Auth loading timeout - forcing auth forms to show')
+        console.warn('Auth loading timeout - showing login forms')
         setForceShowAuth(true)
-      }, 2000) // 2 second timeout - faster response
+        setAuthTimeout(true)
+      }, 1500) // Even shorter timeout
       
       return () => clearTimeout(timeout)
     }
   }, [loading])
 
-  if (loading && !forceShowAuth) {
+  // Show loading only briefly, then force auth forms
+  if (loading && !forceShowAuth && !authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 text-navy-600 mx-auto mb-4 animate-spin" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Client Portal</h3>
-          <p className="text-gray-600">Connecting to your account...</p>
-          <div className="mt-4 text-sm text-gray-500">
-            Loading should complete within 2 seconds...
-          </div>
+          <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
+          <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
           <button
             onClick={() => setForceShowAuth(true)}
-            className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+            className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
-            Continue to Login →
+            Skip to Login →
           </button>
         </div>
       </div>
     )
   }
 
-  if (!user || forceShowAuth) {
+  if (!user || forceShowAuth || authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
           <SignupForm 
             onSuccess={() => {
-              // User will be automatically logged in after successful signup
               setForceShowAuth(false)
+              setAuthTimeout(false)
             }}
             onSwitchToLogin={() => setShowSignup(false)}
             onBackToHome={onBackToHome}
@@ -63,8 +61,8 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         ) : (
           <LoginForm 
             onSuccess={() => {
-              // User will be automatically redirected to dashboard
               setForceShowAuth(false)
+              setAuthTimeout(false)
             }}
             onSwitchToSignup={() => setShowSignup(true)}
             onBackToHome={onBackToHome}

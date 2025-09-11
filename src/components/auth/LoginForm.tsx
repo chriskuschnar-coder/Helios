@@ -18,6 +18,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email || !password) {
+      setError('Please enter both email and password')
+      return
+    }
+    
     setLoading(true)
     setError('')
 
@@ -27,7 +33,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       if (result.error) {
         setError(result.error.message)
       } else {
-        onSuccess?.()
+        // Small delay to ensure state updates
+        setTimeout(() => {
+          onSuccess?.()
+        }, 100)
       }
     } catch (err) {
       console.error('Login error:', err)
