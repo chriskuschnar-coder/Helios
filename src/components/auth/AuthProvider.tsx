@@ -362,12 +362,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // Set user temporarily for 2FA verification
+        // Set user and load account data
         setUser({
           id: data.user.id,
           email: data.user.email || '',
           full_name: data.user.user_metadata?.full_name
         })
+        
+        // Load user account data immediately
+        await loadUserAccount(data.user.id)
         
         return { error: null }
       }

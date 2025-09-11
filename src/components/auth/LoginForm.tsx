@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
-import { TwoFactorChallenge } from './TwoFactorChallenge'
-import { supabaseClient } from '../../lib/supabase-client'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
 
 interface LoginFormProps {
@@ -17,8 +15,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [show2FA, setShow2FA] = useState(false)
-  const [userProfile, setUserProfile] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,88 +34,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       if (result.error) {
         console.error('❌ Login failed:', result.error.message)
         setError(result.error.message)
-        setLoading(false)
-        return
       } else {
-        console.log('✅ Login successful, checking 2FA status...')
-        
-        // Get user profile to check 2FA settings
-        const { supabaseClient } = await import('../../lib/supabase-client')
-        const { data: userData, error: userError } = await supabaseClient
-          .from('users')
-          .select('two_factor_enabled, two_factor_method, phone, full_name, id, email')
-          .eq('email', email.toLowerCase())
-          .maybeSingle()
-
-        if (userError) {
-          console.error('❌ Failed to get user data:', userError)
-          setError('Failed to verify account settings')
-          setLoading(false)
-          return
-        }
-
-        console.log('📊 User 2FA data:', { 
-          two_factor_enabled: userData?.two_factor_enabled,
-          method: userData?.two_factor_method,
-          hasPhone: !!userData?.phone,
-          email: userData?.email
-        })
-
-        // ENFORCE 2FA FOR ALL ACCOUNTS - no exceptions
-        console.log('🔐 Enforcing 2FA for all accounts (security requirement)')
-        setUserProfile(userData)
-        setShow2FA(true)
-        setLoading(false)
-        
-        // Auto-enable 2FA in database if not already set
-        if (userData && userData.two_factor_enabled !== true) {
-          console.log('🔐 2FA is enabled, showing challenge')
-          try {
-            await supabaseClient
-              .from('users')
-              .update({ 
-                two_factor_enabled: true,
-                two_factor_method: 'email' 
-              })
-              .eq('id', userData.id)
-            console.log('✅ Auto-enabled 2FA for existing account')
-          } catch (updateError) {
-            console.warn('⚠️ Failed to auto-enable 2FA:', updateError)
-          }
-        }
+        console.log('✅ Login successful')
+        onSuccess?.()
       }
     } catch (err) {
       console.error('Login error:', err)
       setError('Connection error - please try again')
+    } finally {
       setLoading(false)
     }
-  }
-
-  const handle2FASuccess = () => {
-    console.log('✅ 2FA verification successful')
-    setShow2FA(false)
-    onSuccess?.()
-  }
-
-  const handle2FACancel = () => {
-    console.log('❌ 2FA verification cancelled')
-    setShow2FA(false)
-    setUserProfile(null)
-    setLoading(false)
-    // Sign out the user since they didn't complete 2FA
-    supabaseClient.auth.signOut()
-  }
-
-  if (show2FA) {
-    return (
-      <TwoFactorChallenge
-        onSuccess={handle2FASuccess}
-        onCancel={handle2FACancel}
-        userEmail={email}
-        userPhone={userProfile?.phone}
-        preferredMethod={userProfile?.two_factor_method || 'email'}
-      />
-    )
   }
 
   return (
