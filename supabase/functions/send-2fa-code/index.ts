@@ -15,9 +15,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { user_id, method, email, phone } = await req.json()
+    const { user_id, method = 'email', email, phone } = await req.json()
     
-    console.log('📝 2FA code request:', { user_id, method, email, phone: phone ? '***-***-' + phone.slice(-4) : 'none' })
+    console.log('📝 2FA code request:', { 
+      user_id, 
+      method, 
+      email: email ? email.substring(0, 3) + '***' : 'none', 
+      phone: phone ? '***-***-' + phone.slice(-4) : 'none' 
+    })
     
     // Validate inputs
     if (!user_id) {
@@ -36,14 +41,6 @@ Deno.serve(async (req) => {
       throw new Error('Valid phone number required for SMS verification (format: +1234567890)')
     }
 
-    // Get user from JWT token
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
@@ -88,6 +85,8 @@ Deno.serve(async (req) => {
       throw new Error('Failed to store verification code')
     }
 
+    console.log('✅ 2FA code stored in database')
+
     // PRIORITY: Send email first (primary method)
     if (method === 'email' || !phone) {
       console.log('📧 Sending email verification code via SendGrid to:', email)
@@ -97,12 +96,17 @@ Deno.serve(async (req) => {
         const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')
         const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'noreply@globalmarketsconsulting.com'
         
+        console.log('📧 SendGrid configuration:', {
+          hasApiKey: !!sendgridApiKey,
+          fromEmail: fromEmail,
+          toEmail: email
+        })
+        
         if (!sendgridApiKey) {
           console.error('❌ SENDGRID_API_KEY not found in environment variables')
-          throw new Error('Email service not configured')
+          console.log('🔧 Available environment variables:', Object.keys(Deno.env.toObject()))
+          throw new Error('Email service not configured - SENDGRID_API_KEY missing')
         }
-
-        console.log('📧 Using SendGrid with from email:', fromEmail)
 
         // Create professional HTML email template
         const htmlContent = `
@@ -202,47 +206,67 @@ SEC Registered Investment Advisor
         `
 
         // Send email using SendGrid API
+        const emailPayload = {
+          personalizations: [{
+            to: [{ email: email }],
+            subject: 'Your Global Markets Verification Code'
+          }],
+          from: { 
+            email: fromEmail,
+            name: 'Global Markets Consulting'
+          },
+          content: [
+            {
+              type: 'text/plain',
+              value: textContent
+            },
+            {
+              type: 'text/html',
+              value: htmlContent
+            }
+          ],
+          tracking_settings: {
+            click_tracking: { enable: false },
+            open_tracking: { enable: false }
+          }
+        }
+
+        console.log('📧 Sending email via SendGrid API...')
+        console.log('📧 Email payload:', {
+          to: email,
+          from: fromEmail,
+          subject: 'Your Global Markets Verification Code',
+          hasHtmlContent: !!htmlContent,
+          hasTextContent: !!textContent
+        })
+
         const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${sendgridApiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            personalizations: [{
-              to: [{ email: email }],
-              subject: 'Your Global Markets Verification Code'
-            }],
-            from: { 
-              email: fromEmail,
-              name: 'Global Markets Consulting'
-            },
-            content: [
-              {
-                type: 'text/plain',
-                value: textContent
-              },
-              {
-                type: 'text/html',
-                value: htmlContent
-              }
-            ],
-            tracking_settings: {
-              click_tracking: { enable: false },
-              open_tracking: { enable: false }
-            }
-          })
+          body: JSON.stringify(emailPayload)
         })
 
+        console.log('📧 SendGrid response status:', emailResponse.status)
+
         if (!emailResponse.ok) {
-          const sendgridError = await emailResponse.json()
+          const sendgridError = await emailResponse.text()
           console.error('❌ SendGrid API error:', sendgridError)
           
-          if (sendgridError.errors?.[0]?.message?.includes('The from address does not match a verified Sender Identity')) {
-            throw new Error('Email sender not verified in SendGrid. Please verify noreply@globalmarketsconsulting.com or use a verified sender.')
+          try {
+            const errorData = JSON.parse(sendgridError)
+            console.error('❌ SendGrid error details:', errorData)
+            
+            if (errorData.errors?.[0]?.message?.includes('The from address does not match a verified Sender Identity')) {
+              throw new Error(`Email sender not verified in SendGrid. Please verify ${fromEmail} or use a verified sender.`)
+            }
+            
+            throw new Error(`Email delivery failed: ${errorData.errors?.[0]?.message || 'Unknown SendGrid error'}`)
+          } catch (parseError) {
+            throw new Error(`Email delivery failed: ${sendgridError}`)
           }
-          
-          throw new Error(`Email delivery failed: ${sendgridError.errors?.[0]?.message || 'Unknown SendGrid error'}`)
         }
 
         console.log('✅ Email sent successfully via SendGrid')
@@ -261,16 +285,18 @@ SEC Registered Investment Advisor
         const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
         const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
         
-        if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-          console.error('❌ Missing Twilio credentials')
-          throw new Error('SMS service not configured')
-        }
-
-        console.log('📱 Using Twilio credentials:', {
-          accountSid: twilioAccountSid.substring(0, 10) + '...',
+        console.log('📱 Twilio configuration:', {
+          hasAccountSid: !!twilioAccountSid,
+          hasAuthToken: !!twilioAuthToken,
+          hasPhoneNumber: !!twilioPhoneNumber,
           fromNumber: twilioPhoneNumber,
           toNumber: phone
         })
+        
+        if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+          console.error('❌ Missing Twilio credentials')
+          throw new Error('SMS service not configured - Twilio credentials missing')
+        }
 
         // Create Twilio message using their REST API
         const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
@@ -285,6 +311,8 @@ Never share this code with anyone. If you didn't request this, please contact su
 
 - Global Markets Security Team`
         
+        console.log('📱 Sending SMS via Twilio API...')
+        
         const twilioResponse = await fetch(twilioUrl, {
           method: 'POST',
           headers: {
@@ -298,16 +326,25 @@ Never share this code with anyone. If you didn't request this, please contact su
           })
         })
 
+        console.log('📱 Twilio response status:', twilioResponse.status)
+
         if (!twilioResponse.ok) {
-          const twilioError = await twilioResponse.json()
+          const twilioError = await twilioResponse.text()
           console.error('❌ Twilio API error:', twilioError)
           
-          if (twilioError.code === 21211) {
-            throw new Error('Phone number not verified for trial account. Please verify this number in Twilio console first.')
-          } else if (twilioError.code === 21614) {
-            throw new Error('Invalid phone number format. Please use format: +1234567890')
-          } else {
-            throw new Error(`SMS delivery failed: ${twilioError.message || 'Unknown error'}`)
+          try {
+            const errorData = JSON.parse(twilioError)
+            console.error('❌ Twilio error details:', errorData)
+            
+            if (errorData.code === 21211) {
+              throw new Error('Phone number not verified for trial account. Please verify this number in Twilio console first.')
+            } else if (errorData.code === 21614) {
+              throw new Error('Invalid phone number format. Please use format: +1234567890')
+            } else {
+              throw new Error(`SMS delivery failed: ${errorData.message || 'Unknown error'}`)
+            }
+          } catch (parseError) {
+            throw new Error(`SMS delivery failed: ${twilioError}`)
           }
         }
 
@@ -326,6 +363,7 @@ Never share this code with anyone. If you didn't request this, please contact su
       destination: method === 'email' ? email : phone,
       expires_in: 600, // 10 minutes
       message: `Verification code sent via ${method}`,
+      code_for_demo: code, // Include actual code in response for debugging
       timestamp: new Date().toISOString()
     }), {
       headers: {

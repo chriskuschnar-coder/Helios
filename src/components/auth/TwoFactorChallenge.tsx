@@ -20,7 +20,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [demoCode, setDemoCode] = useState('123456') // Always show demo code
+  const [demoCode, setDemoCode] = useState('123456')
+  const [actualCode, setActualCode] = useState('')
+  const [isLiveMode, setIsLiveMode] = useState(false)
   const [resendCount, setResendCount] = useState(0)
   const [canResend, setCanResend] = useState(true)
 
@@ -55,7 +57,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         headers: {
           'Content-Type': 'application/json',
           'apikey': anonKey,
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`,
+          'origin': window.location.origin
         },
         body: JSON.stringify({
           user_id: userData.id,
@@ -73,6 +76,15 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
       const result = await response.json()
       console.log('✅ Verification code sent successfully:', result)
+      
+      // Check if we got an actual code back (for debugging)
+      if (result.code_for_demo) {
+        setActualCode(result.code_for_demo)
+        console.log('🔑 Actual code for debugging:', result.code_for_demo)
+      }
+      
+      // Determine if we're in live mode based on SendGrid success
+      setIsLiveMode(!!result.success && !result.demo_mode)
       
       setSuccess(`Verification code sent to ${userEmail}`)
       setResendCount(prev => prev + 1)
@@ -108,7 +120,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         body: JSON.stringify({
           user_id: userData.id,
           code: verificationCode,
-          email: userData.email
+          email: userData.email,
+          method: 'email'
         })
       })
 
@@ -128,15 +141,19 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         return
       }
       
-      console.log('✅ 2FA verification successful')
+      console.log('✅ 2FA verification successful', result.demo_mode ? '(demo mode)' : '(live mode)')
       setSuccess('Verification successful!')
       
       try {
-        // Import and use the auth context
-        const { useAuth } = await import('./AuthProvider')
-        // Get auth context from React context
-        const authModule = await import('./AuthProvider')
-        // We need to complete 2FA through the auth provider
+        // Complete the authentication by setting the session
+        const { supabaseClient } = await import('../../lib/supabase-client')
+        const { error: sessionError } = await supabaseClient.auth.setSession(session)
+        
+        if (sessionError) {
+          console.error('❌ Failed to set session:', sessionError)
+          throw new Error('Failed to complete authentication')
+        }
+        
         console.log('🎉 2FA complete, calling onSuccess')
         onSuccess()
       } catch (authError) {
@@ -211,25 +228,58 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           </div>
         )}
 
-        {/* Demo Code Display - EXACTLY like your demo */}
-        {demoCode && (
+        {/* Demo Code Display */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            <span className="font-medium text-yellow-900">
+              {isLiveMode ? 'Live Mode' : 'Demo Mode'}
+            </span>
+          </div>
+          {isLiveMode ? (
+            <div>
+              <p className="text-sm text-yellow-700 mb-2">
+                ✅ Live email sent! Check your inbox for the 6-digit code.
+              </p>
+              {actualCode && (
+                <p className="text-xs text-yellow-600">
+                  Debug: Code is {actualCode} (remove this in production)
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-yellow-700 mb-3">
+                For testing purposes, your verification code is:
+              </p>
+              <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-yellow-300">
+                <span className="text-2xl font-bold font-mono text-yellow-900">{demoCode}</span>
+                <button
+                  onClick={useDemoCode}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  Use Code
+                </button>
+              </div>
+              {actualCode && actualCode !== demoCode && (
+                <p className="text-xs text-yellow-600 mt-2">
+                  Live code generated: {actualCode}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Live Mode Status */}
+        {isLiveMode && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <div className="flex items-center space-x-2 mb-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <span className="font-medium text-yellow-900">Demo Mode</span>
+              <Mail className="h-5 w-5 text-green-600" />
+              <span className="font-medium text-green-900">Email Sent Successfully</span>
             </div>
-            <p className="text-sm text-yellow-700 mb-3">
-              For testing purposes, your verification code is:
+            <p className="text-sm text-green-700">
+              A 6-digit verification code has been sent to your email address. Please check your inbox (and spam folder) for the code.
             </p>
-            <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-yellow-300">
-              <span className="text-2xl font-bold font-mono text-yellow-900">{demoCode}</span>
-              <button
-                onClick={useDemoCode}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-              >
-                Use Code
-              </button>
-            </div>
           </div>
         )}
 
@@ -274,7 +324,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             <button
               onClick={resendCode}
               disabled={!canResend}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {!canResend ? `Wait ${5 - Math.floor(resendCount / 60)}min` : 'Resend Code'} ({resendCount}/3)
             </button>
