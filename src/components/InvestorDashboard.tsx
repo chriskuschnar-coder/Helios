@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { PortfolioValueCard } from './PortfolioValueCard'
 import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'

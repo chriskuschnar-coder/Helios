@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import { BarChart3, Activity, LogOut, TrendingUp, Menu, X } from 'lucide-react'
 import InvestorDashboard from './InvestorDashboard'
 import HeliosDashboard from './HeliosDashboard'
