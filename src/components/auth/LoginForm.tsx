@@ -1,172 +1,219 @@
 import React, { useState } from 'react'
-import { useAuth } from './AuthProvider'
-import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
+import { useAuth } from './auth/AuthProvider'
+import { PortfolioValueCard } from './PortfolioValueCard'
+import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
+import { FundingModal } from './FundingModal'
+import { MarketsTab } from './markets/MarketsTab'
+import { ResearchTab } from './research/ResearchTab'
+import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
+import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
+import { AIInsights } from './portfolio/AIInsights'
+import { FundNAVChart } from './portfolio/FundNAVChart'
+import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
+import { 
+  TrendingUp, 
+  BarChart3, 
+  Brain, 
+  Globe, 
+  FileText, 
+  Shield, 
+  Target,
+  Activity,
+  Plus,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  Award,
+  Eye,
+  Settings,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
+import { SecuritySettings } from './SecuritySettings'
 
-interface LoginFormProps {
-  onSuccess?: () => void
-  onSwitchToSignup?: () => void
-  onBackToHome?: () => void
-}
+const InvestorDashboard: React.FC = () => {
+  const { user, account, loading } = useAuth()
+  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignup, onBackToHome }) => {
-  const { signIn } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const currentBalance = account?.balance || 0
+  const hasActivity = currentBalance > 0
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!email || !password) {
-      setError('Please enter both email and password')
-      return
-    }
-    
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await signIn(email, password)
-      
-      if (result.error) {
-        setError(result.error.message)
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
       } else {
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          onSuccess?.()
-        }, 100)
+        newSet.add(sectionId)
       }
-    } catch (err) {
-      console.error('Login error:', err)
-      setError('Connection error - please try again')
-    } finally {
-      setLoading(false)
+      return newSet
+    })
+  }
+
+  const handleFundPortfolio = (amount?: number) => {
+    if (amount) {
+      setPrefilledAmount(amount)
     }
+    setShowFundingModal(true)
+  }
+
+  const handleWithdraw = () => {
+    alert('Withdrawal functionality will be implemented here')
+  }
+
+  const tabs = [
+    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
+    { id: 'markets', name: 'Markets', icon: Globe },
+    { id: 'research', name: 'Research', icon: Brain },
+  ]
+
+  const portfolioSections = [
+    {
+      id: 'allocation',
+      title: 'Asset Allocation',
+      icon: Target,
+      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
+    },
+    {
+      id: 'performance',
+      title: 'Performance Analytics',
+      icon: Award,
+      component: () => <PerformanceMetrics currentBalance={currentBalance} />
+    },
+    {
+      id: 'nav',
+      title: 'Fund NAV History',
+      icon: TrendingUp,
+      component: () => <FundNAVChart />
+    },
+    {
+      id: 'insights',
+      title: 'AI Portfolio Insights',
+      icon: Brain,
+      component: () => <AIInsights currentBalance={currentBalance} />
+    }
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <BarChart3 className="h-8 w-8 text-navy-600" />
+          </div>
+          <p className="text-gray-600">Connecting to your account...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-6 md:p-8 mobile-card">
-      {/* Back to Home Button */}
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={onBackToHome}
-          className="flex items-center space-x-2 text-gray-600 hover:text-navy-600 transition-colors mobile-button"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back to Home</span>
-        </button>
-        <button
-          onClick={onBackToHome}
-          className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors mobile-button"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-navy-600 rounded-full flex items-center justify-center">
-            <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-white" />
-          </div>
-        </div>
-        <h1 className="font-serif text-xl md:text-2xl font-bold text-navy-900 mb-2">
-          Welcome Back
-        </h1>
-        <p className="text-sm md:text-base text-gray-600">
-          Sign in to your investment account
-        </p>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 md:px-4 py-3 rounded-lg mb-6 flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          <span className="text-sm md:text-base">{error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="email" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-4 py-3 md:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors text-base"
-              placeholder="Enter your email"
-              required
-            />
+    <div className="min-h-screen bg-gray-50 safe-area-bottom">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id as any)}
+                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
+                  selectedTab === tab.id
+                    ? 'bg-navy-600 text-white'
+                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
+                }`}
+              >
+                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{tab.name}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
-            Password
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-12 py-3 md:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors text-base"
-              placeholder="Enter your password"
-              required
+        {/* Tab Content */}
+        {selectedTab === 'portfolio' && (
+          <div className="space-y-6">
+            {/* Portfolio Value Card - Always Visible */}
+            <PortfolioValueCard 
+              onFundPortfolio={handleFundPortfolio}
+              onWithdraw={handleWithdraw}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors mobile-button"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
-            </button>
+            <PortfolioPerformanceChart currentBalance={currentBalance} />
+            
+            {/* Portfolio sections in expandable folders */}
+            {portfolioSections.map((section) => (
+              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div 
+                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
+                        <section.icon className="h-6 w-6 text-navy-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      {expandedSections.has(section.id) ? (
+                        <ChevronDown className="h-5 w-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {expandedSections.has(section.id) && (
+                  <div className="border-t border-gray-100 p-6">
+                    <section.component />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="rounded border-gray-300 text-navy-600 focus:ring-navy-500 w-4 h-4"
-            />
-            <span className="ml-2 text-sm md:text-base text-gray-600">Remember me</span>
-          </label>
-          <button
-            type="button"
-            className="text-sm md:text-base text-navy-600 hover:text-navy-700 transition-colors mobile-button"
-          >
-            Forgot password?
-          </button>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 md:py-4 rounded-lg font-medium transition-colors duration-200 mobile-button active:scale-95 text-base"
-        >
-          {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm md:text-base text-gray-600">
-          Don't have an account?{' '}
-          <button
-            onClick={onSwitchToSignup}
-            className="text-navy-600 hover:text-navy-700 font-medium transition-colors mobile-button"
-          >
-            Sign up
-          </button>
-        </p>
+        {selectedTab === 'markets' && <MarketsTab />}
+        {selectedTab === 'research' && <ResearchTab />}
+        {selectedTab === 'transactions' && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
+              <p className="text-gray-600 mb-6">
+                View your complete transaction history and account activity
+              </p>
+              <button
+                onClick={() => handleFundPortfolio()}
+                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add First Transaction</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => {
+          setShowFundingModal(false)
+          setPrefilledAmount(null)
+        }}
+        prefilledAmount={prefilledAmount}
+      />
     </div>
   )
 }
+
+export default InvestorDashboard
