@@ -437,58 +437,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const complete2FA = async (code: string, userData: any, session: any) => {
-    try {
-      console.log('🔍 Verifying 2FA code for user:', userData.email)
-      
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify({
-          code: code,
-          email: userData.email,
-          user_id: userData.id
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('2FA verification error:', errorData)
-        return { error: { message: 'Invalid verification code' } }
-      }
-
-      const result = await response.json()
-      
-      if (result.valid) {
-        console.log('✅ 2FA verification successful, completing login')
-        
-        // Set the Supabase session
-        await supabaseClient.auth.setSession(session)
-        
-        // Now set user state and load account data
-        setUser({
-          id: userData.id,
-          email: userData.email || '',
-          full_name: userData.user_metadata?.full_name
-        })
-        await loadUserAccount(userData.id)
-        
-        return { error: null }
-      } else {
-        return { error: { message: 'Invalid verification code' } }
-      }
-    } catch (err) {
-      console.error('2FA completion failed:', err)
-      return { error: { message: 'Verification failed' } }
-    }
-  }
 
   const signOut = async () => {
     try {

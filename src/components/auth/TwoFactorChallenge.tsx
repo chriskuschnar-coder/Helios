@@ -120,18 +120,50 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     try {
       console.log('🔍 Verifying 2FA code...')
       
-      // Call the complete2FA function with user data and session
+      // Call verify-2fa-code function directly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       const completeResult = await complete2FA(verificationCode, userData, session)
       
-      if (completeResult.error) {
-        console.error('❌ 2FA completion failed:', completeResult.error)
-        setError(completeResult.error.message)
+      const response = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pendingAuth?.session?.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          code: verificationCode,
+          email: pendingAuth?.userData?.email,
+          user_id: pendingAuth?.userData?.id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ 2FA verification error:', errorData)
+        setError('Invalid verification code')
+        setLoading(false)
+        return
+      }
+
+      const result = await response.json()
+      
+      if (!result.valid) {
+        setError('Invalid verification code')
         setLoading(false)
         return
       }
       
       console.log('✅ 2FA verification successful')
       setSuccess('Verification successful!')
+      
+      // CRITICAL: Set the Supabase session to complete login
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      await supabaseClient.auth.setSession(pendingAuth?.session)
+      
+      // Clear pending auth data
+      localStorage.removeItem('pending_2fa_session')
       
       setTimeout(() => {
         console.log('🎉 2FA complete, calling onSuccess')
@@ -140,8 +172,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     } catch (error) {
       console.error('❌ 2FA verification failed:', error)
       setError(error instanceof Error ? error.message : 'Verification failed')
-    } finally {
       setLoading(false)
+    } finally {
+      // Don't set loading false here - let the success flow handle it
     }
   }
 
