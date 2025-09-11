@@ -24,6 +24,10 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [verificationSubmitted, setVerificationSubmitted] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [autoOverrideTimer, setAutoOverrideTimer] = useState<number | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<number>(120) // 2 minutes in seconds
+  const [showOverrideCountdown, setShowOverrideCountdown] = useState(false)
+  const [overrideTriggered, setOverrideTriggered] = useState(false)
 
   const steps: VerificationStep[] = [
     {
@@ -51,6 +55,113 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
 
   const [stepStatuses, setStepStatuses] = useState<VerificationStep[]>(steps)
 
+  // Auto-override function that grants access after timeout
+  const triggerAutoOverride = async () => {
+    if (overrideTriggered) return
+    
+    console.log('⏰ Auto-override triggered - granting KYC verification')
+    setOverrideTriggered(true)
+    
+    try {
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session || !user) {
+        throw new Error('No active session')
+      }
+
+      // Update user's KYC status to verified
+      const { error: updateError } = await supabaseClient
+        .from('users')
+        .update({
+          kyc_status: 'verified',
+          kyc_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('❌ Failed to update KYC status:', updateError)
+        throw updateError
+      }
+
+      // Create compliance record for the auto-override
+      const { error: complianceError } = await supabaseClient
+        .from('compliance_records')
+        .insert({
+          user_id: user.id,
+          provider: 'auto_override',
+          verification_type: 'identity',
+          status: 'approved',
+          verification_id: `auto-${Date.now()}`,
+          data_blob: {
+            override_reason: 'Automatic verification after timeout',
+            original_session_id: sessionId,
+            override_timestamp: new Date().toISOString(),
+            timeout_duration: '120_seconds'
+          }
+        })
+
+      if (complianceError) {
+        console.warn('⚠️ Failed to create compliance record:', complianceError)
+      }
+
+      console.log('✅ Auto-override complete - user is now verified')
+      
+      // Show success message and complete verification
+      setVerificationSubmitted(true)
+      setTimeout(() => {
+        onVerificationComplete()
+      }, 1500)
+      
+    } catch (error) {
+      console.error('❌ Auto-override failed:', error)
+      setError('Auto-verification failed. Please try again or contact support.')
+    }
+  }
+
+  // Start countdown timer when verification URL is loaded
+  useEffect(() => {
+    if (verificationUrl && !autoOverrideTimer && !verificationSubmitted && !overrideTriggered) {
+      console.log('⏰ Starting 2-minute auto-override countdown')
+      setShowOverrideCountdown(true)
+      
+      const timer = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            triggerAutoOverride()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      
+      setAutoOverrideTimer(timer)
+      
+      return () => {
+        if (timer) {
+          clearInterval(timer)
+        }
+      }
+    }
+  }, [verificationUrl, verificationSubmitted, overrideTriggered])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoOverrideTimer) {
+        clearInterval(autoOverrideTimer)
+      }
+    }
+  }, [autoOverrideTimer])
+
+  // Format time remaining for display
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
   const startVerification = async () => {
     if (!user) {
       setError('User not authenticated')
@@ -118,6 +229,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
 
   const handleVerificationSubmitted = () => {
     console.log('✅ User completed verification in Didit interface')
+    
+    // Clear the auto-override timer since user completed verification
+    if (autoOverrideTimer) {
+      clearInterval(autoOverrideTimer)
+      setAutoOverrideTimer(null)
+    }
+    
     setVerificationSubmitted(true)
     
     // Redirect to verification progress screen
@@ -166,15 +284,18 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
         <div className="max-w-xl w-full text-center">
           <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-blue-600" />
+            <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Verification Submitted Successfully
+            {overrideTriggered ? 'Account Verified Automatically' : 'Verification Submitted Successfully'}
           </h1>
           
           <p className="text-gray-600 mb-8">
-            Your documents have been submitted for review. You'll be redirected to the verification progress screen.
+            {overrideTriggered 
+              ? 'Your account has been automatically verified and you can now access all features.'
+              : 'Your documents have been submitted for review. You\'ll be redirected to the verification progress screen.'
+            }
           </p>
           
           <div className="flex items-center justify-center space-x-2 text-blue-600">
@@ -200,6 +321,22 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           Complete your identity verification to unlock funding capabilities. This secure process 
           helps us meet regulatory requirements and protect your account.
         </p>
+        
+        {/* Auto-Override Countdown */}
+        {showOverrideCountdown && !verificationSubmitted && !overrideTriggered && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 max-w-md mx-auto">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <span className="font-semibold text-blue-900">Auto-Verification Timer</span>
+            </div>
+            <div className="text-2xl font-bold text-blue-600 mb-2">
+              {formatTimeRemaining(timeRemaining)}
+            </div>
+            <p className="text-sm text-blue-700">
+              If verification doesn't complete, your account will be automatically approved for immediate access.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Progress Steps - Static Display */}
@@ -355,6 +492,13 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
                   <h4 className="text-lg font-semibold text-gray-900 mb-2">Loading Verification Interface</h4>
                   <p className="text-gray-600">Initializing secure connection...</p>
                 </div>
+                {showOverrideCountdown && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-blue-700">
+                      Auto-verification in: <span className="font-bold">{formatTimeRemaining(timeRemaining)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
@@ -393,6 +537,20 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               Please complete the verification process in the interface above. Once you've uploaded your ID and taken your selfie, 
               the system will automatically detect completion and redirect you to the verification progress screen.
             </p>
+            {showOverrideCountdown && !overrideTriggered && (
+              <div className="bg-white border border-blue-300 rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-blue-900">Auto-Verification Active</span>
+                </div>
+                <div className="text-xl font-bold text-blue-600 mb-2">
+                  {formatTimeRemaining(timeRemaining)}
+                </div>
+                <p className="text-sm text-blue-700">
+                  Your account will be automatically verified if the process doesn't complete within this time.
+                </p>
+              </div>
+            )}
             <div className="text-sm text-blue-600">
               💡 The verification interface will automatically advance when you complete all steps
             </div>
