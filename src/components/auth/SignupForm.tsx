@@ -74,11 +74,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
       return
     }
 
-    if (!formData.phone) {
-      setError('Phone number is required for account security')
-      setLoading(false)
-      return
-    }
     try {
       const { error } = await signUp(formData.email, formData.password, {
         full_name: formData.fullName,
@@ -159,7 +154,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number *
+            Phone Number (Optional)
           </label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -172,10 +167,9 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
               className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
               placeholder="(555) 123-4567"
               maxLength={14}
-              required
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Required for SMS verification codes and account security</p>
+          <p className="text-xs text-gray-500 mt-1">Optional - for SMS backup verification codes</p>
         </div>
 
         <div>
@@ -305,7 +299,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
         <button
           type="submit"
-          disabled={loading || !isPasswordValid || !passwordsMatch || !agreedToTerms || !formData.phone}
+          disabled={loading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
           className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
         >
           {loading ? 'Creating Account...' : 'Create Account'}

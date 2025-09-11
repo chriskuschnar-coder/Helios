@@ -27,11 +27,52 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(600) // 10 minutes
   const [canResend, setCanResend] = useState(false)
 
+  const updateContactInfo = async (type: 'email' | 'phone', newValue: string) => {
+    setLoading(true)
+    setError('')
+    
+    try {
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      // Update user profile
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ [type]: newValue })
+        .eq('email', userEmail)
+
+      if (error) {
+        throw new Error(`Failed to update ${type}`)
+      }
+
+      setSuccess(`${type === 'email' ? 'Email' : 'Phone'} updated successfully!`)
+      
+      // If updating email, resend code to new email
+      if (type === 'email') {
+        setTimeout(() => {
+          sendVerificationCode('email')
+        }, 1000)
+      }
+      
+    } catch (error) {
+      setError(error instanceof Error ? error.message : `Failed to update ${type}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     checkBiometricSupport()
-    // ALWAYS auto-send email code on mount (email is primary method)
-    if (userEmail) {
+    // ALWAYS auto-send email code on mount for ALL users
+    console.log('📧 Auto-sending email verification code to:', userEmail)
+    if (userEmail && userEmail.includes('@')) {
       sendVerificationCode('email')
+    } else {
+      setError('Invalid email address. Please contact support.')
     }
   }, [])
 
@@ -270,26 +311,20 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       </div>
 
       {/* Method Selector */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="space-y-3 mb-6">
+        {/* Email is always primary and auto-sent */}
         <button
-          onClick={() => {
-            setMethod('email')
-            setVerificationCode('')
-            setError('')
-            setSuccess('')
-            if (!codeSent) sendVerificationCode('email')
-          }}
-          className={`p-4 rounded-lg font-medium transition-colors text-center ${
-            method === 'email' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          disabled
+          className={`w-full p-4 rounded-lg font-medium text-center ${
+            method === 'email' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
           }`}
         >
           <Mail className="h-5 w-5 mx-auto mb-2" />
-          <div className="text-sm font-medium">Email Code</div>
-          <div className="text-xs opacity-80">{userEmail}</div>
+          <div className="text-sm font-medium">Email Verification (Primary)</div>
+          <div className="text-xs opacity-80">Code sent to: {userEmail}</div>
         </button>
         
+        {/* SMS backup option */}
         {userPhone && (
           <button
             onClick={() => {
@@ -299,15 +334,43 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
               setSuccess('')
               sendVerificationCode('sms')
             }}
-            className={`p-4 rounded-lg font-medium transition-colors text-center ${
+            className={`w-full p-4 rounded-lg font-medium transition-colors text-center ${
               method === 'sms' 
                 ? 'bg-green-600 text-white' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             <Smartphone className="h-5 w-5 mx-auto mb-2" />
-            <div className="text-sm font-medium">SMS Code</div>
+            <div className="text-sm font-medium">SMS Backup</div>
             <div className="text-xs opacity-80">{userPhone}</div>
+          </button>
+        )}
+        
+        {/* Update contact info option */}
+        <button
+          onClick={() => {
+            const newEmail = prompt('Enter your new email address:')
+            if (newEmail && newEmail.includes('@')) {
+              // Update email and resend code
+              updateContactInfo('email', newEmail)
+            }
+          }}
+          className="w-full p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg font-medium transition-colors text-center text-sm text-gray-600"
+        >
+          Update Email Address
+        </button>
+        
+        {!userPhone && (
+          <button
+            onClick={() => {
+              const newPhone = prompt('Enter your phone number (format: +1234567890):')
+              if (newPhone && newPhone.startsWith('+')) {
+                updateContactInfo('phone', newPhone)
+              }
+            }}
+            className="w-full p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg font-medium transition-colors text-center text-sm text-gray-600"
+          >
+            Add Phone Number for SMS Backup
           </button>
         )}
       </div>

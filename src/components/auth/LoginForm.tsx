@@ -65,16 +65,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
           email: userData?.email
         })
 
-        // ALWAYS require 2FA for security (enabled by default for all accounts)
-        if (userData?.two_factor_enabled !== false) {
+        // ENFORCE 2FA FOR ALL ACCOUNTS - no exceptions
+        console.log('🔐 Enforcing 2FA for all accounts (security requirement)')
+        setUserProfile(userData)
+        setShow2FA(true)
+        setLoading(false)
+        
+        // Auto-enable 2FA in database if not already set
+        if (userData && userData.two_factor_enabled !== true) {
           console.log('🔐 2FA is enabled, showing challenge')
-          setUserProfile(userData)
-          setShow2FA(true)
-          setLoading(false)
-        } else {
-          console.log('⚠️ 2FA disabled for this account, proceeding to dashboard')
-          setLoading(false)
-          onSuccess?.()
+          try {
+            await supabaseClient
+              .from('users')
+              .update({ 
+                two_factor_enabled: true,
+                two_factor_method: 'email' 
+              })
+              .eq('id', userData.id)
+            console.log('✅ Auto-enabled 2FA for existing account')
+          } catch (updateError) {
+            console.warn('⚠️ Failed to auto-enable 2FA:', updateError)
+          }
         }
       }
     } catch (err) {

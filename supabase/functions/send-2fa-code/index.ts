@@ -24,12 +24,12 @@ Deno.serve(async (req) => {
       throw new Error('Invalid verification method')
     }
     
-    if (method === 'email' && !email) {
+    if (!email || !email.includes('@')) {
       throw new Error('Email address required for email verification')
     }
     
-    if (method === 'sms' && !phone) {
-      throw new Error('Phone number required for SMS verification')
+    if (method === 'sms' && (!phone || !phone.startsWith('+'))) {
+      throw new Error('Valid phone number required for SMS verification (format: +1234567890)')
     }
 
     // Get user from JWT token
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     }
 
     // PRIORITY: Send email first (primary method)
-    if (method === 'email') {
+    if (method === 'email' || !phone) {
       console.log('📧 Sending email verification code via SendGrid to:', email)
       
       try {
