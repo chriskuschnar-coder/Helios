@@ -30,40 +30,22 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
   const documents: Document[] = [
     {
-      id: 'private_placement_memorandum',
+      id: 'confidential_private_placement_memorandum',
       title: 'Confidential Private Placement Memorandum',
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_PPM_Final_85pp_TOC (2) copy copy.pdf',
-      type: 'investment_agreement'
+      url: '/documents/Global_Markets_PPM_Final_85pp_TOC.pdf',
+      type: 'informational'
     },
     {
-      id: 'investment_agreement',
-      title: 'Investment Management Agreement',
-      description: 'Defines the terms of our investment management relationship and fee structure.',
-      required: true,
+      id: 'limited_partnership_agreement',
+      title: 'Limited Partnership Agreement (LPA)',
+      description: 'Legal framework governing the partnership structure and investor rights.',
+      required: false,
       signed: false,
-      url: '/documents/Improved_Private_Placement_Memorandum.docx',
-      type: 'investment_agreement'
-    },
-    {
-      id: 'risk_disclosure',
-      title: 'Risk Disclosure Statement',
-      description: 'Important information about investment risks and potential losses.',
-      required: true,
-      signed: false,
-      url: '/documents/Improved_Private_Placement_Memorandum copy.docx',
-      type: 'risk_disclosure'
-    },
-    {
-      id: 'accredited_investor',
-      title: 'Accredited Investor Certification',
-      description: 'Certification of your accredited investor status as required by SEC regulations.',
-      required: true,
-      signed: false,
-      url: '/documents/Improved_Private_Placement_Memorandum copy copy.docx',
-      type: 'accredited_investor'
+      url: '/documents/Global_Markets_LPA.pdf',
+      type: 'informational'
     },
     {
       id: 'subscription_agreement',
@@ -71,17 +53,26 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal agreement for your investment subscription in our fund.',
       required: true,
       signed: false,
-      url: '/documents/Improved_Private_Placement_Memorandum copy copy copy.docx',
+      url: '/documents/Global_Markets_Subscription_Agreement.pdf',
       type: 'subscription_agreement'
     },
     {
-      id: 'privacy_policy',
-      title: 'Privacy Policy Agreement',
-      description: 'Our privacy policy and data protection practices.',
+      id: 'investor_questionnaire',
+      title: 'Investor Questionnaire & Accreditation',
+      description: 'Certification of your accredited investor status as required by SEC regulations.',
       required: true,
       signed: false,
-      url: '/documents/Improved_Private_Placement_Memorandum copy copy copy copy.docx',
-      type: 'privacy_policy'
+      url: '/documents/Investor_Questionnaire.pdf',
+      type: 'accredited_investor'
+    },
+    {
+      id: 'risk_disclosure_aml_kyc',
+      title: 'Risk Disclosure & AML/KYC Pack',
+      description: 'Important information about investment risks, anti-money laundering, and know-your-customer requirements.',
+      required: true,
+      signed: false,
+      url: '/documents/Risk_Disclosure_Statement.pdf',
+      type: 'risk_disclosure'
     }
   ]
 
