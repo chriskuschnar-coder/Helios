@@ -71,8 +71,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
       if (error) {
         setError(error.message)
       } else {
-        console.log('✅ Signup successful, user state should update automatically')
-        console.log('✅ Signup successful, user state should update automatically')
         onSuccess?.()
       }
     } catch (err) {
