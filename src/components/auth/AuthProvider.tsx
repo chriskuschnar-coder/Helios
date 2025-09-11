@@ -71,11 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const complete2FA = async (code: string, userData: any, session: any) => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
-      console.log('🔐 Complete2FA payload:', {
-        code: '***' + code.slice(-2),
-        userId: userData.id,
-        email: userData.email
-      })
       
       // Verify the 2FA code first
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
@@ -96,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
       })
 
-      console.log('🔍 Verify response status:', verifyResponse.status)
 
       if (!verifyResponse.ok) {
         const errorData = await verifyResponse.json()
@@ -105,7 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const verifyResult = await verifyResponse.json()
-      console.log('✅ Verify result:', verifyResult)
       
       if (!verifyResult.valid || !verifyResult.success) {
         console.error('❌ Code verification failed:', verifyResult)
@@ -115,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('✅ 2FA code verified successfully')
       
       // Set the Supabase session to complete login
-      console.log('🔐 Setting session in Supabase...')
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
       
       if (sessionError) {
@@ -123,22 +115,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Failed to complete authentication')
       }
       
-      console.log('✅ Session set successfully')
+      // Verify session is actually set
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
+      if (!currentSession) {
+        throw new Error('Session not properly established')
+      }
+      
+      console.log('✅ Session verified and established')
       
       // Clear 2FA pending state
       setPending2FA(false)
       setPendingAuthData(null)
       
       // Set user state immediately
-      console.log('👤 Setting user state...')
       setUser({
         id: userData.id,
         email: userData.email,
-        full_name: userData.user_metadata?.full_name
+        full_name: userData.user_metadata?.full_name,
+        phone: userData.user_metadata?.phone
       })
       
       // Load account data
-      console.log('📊 Loading user account data...')
       await loadUserAccount(userData.id)
       
       console.log('🎉 2FA completion successful!')

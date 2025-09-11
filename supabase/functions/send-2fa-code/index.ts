@@ -279,7 +279,6 @@ SEC Registered Investment Advisor
           destination: email,
           expires_in: 600, // 10 minutes
           message: `Live verification code sent via ${method} to ${email}`,
-          code_for_demo: code, // Include actual code in response for debugging
           timestamp: new Date().toISOString()
         }), {
           headers: {
@@ -301,7 +300,6 @@ SEC Registered Investment Advisor
           destination: email,
           expires_in: 600,
           message: `Demo mode: Email failed, use demo code`,
-          code_for_demo: code,
           error_details: emailError.message,
           timestamp: new Date().toISOString()
         }), {

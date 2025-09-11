@@ -16,11 +16,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [error, setError] = useState('')
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
 
-  console.log('🔍 AuthenticatedApp state:', {
-    user: user?.email,
-    loading,
-    initialLoadComplete
-  })
 
   // Mark initial load as complete after a short delay
   useEffect(() => {
@@ -66,16 +61,14 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
 
   // CRITICAL: Show 2FA challenge if pending2FA is true
   if (pending2FA && pendingAuthData) {
-    console.log('🔐 Showing 2FA challenge - user must verify before access')
-    
     return (
       <TwoFactorChallenge
         onSuccess={() => {
-          console.log('✅ 2FA verification successful - user now authenticated')
-          // Don't need to do anything here - AuthProvider handles the state
+          console.log('✅ 2FA verification successful - redirecting to dashboard')
+          // The user state should now be set by AuthProvider
         }}
         onCancel={async () => {
-          console.log('❌ 2FA cancelled - signing out')
+          console.log('❌ 2FA cancelled by user - signing out')
           await signOut()
         }}
         userEmail={pendingAuthData.userData.email}
@@ -87,8 +80,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
 
   // Show auth forms if no user AND not pending 2FA
   if (!user && !pending2FA) {
-    console.log('🔐 Showing auth forms - no authenticated user')
-    
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
@@ -124,7 +115,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
 
   // Block access if pending 2FA (safety check)
   if (pending2FA) {
-    console.log('🚫 Blocking dashboard access - 2FA verification required')
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -142,7 +132,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   }
 
   try {
-    console.log('🚀 Rendering DashboardSelector for authenticated user:', user.email)
     return <DashboardSelector />
   } catch (err) {
     console.error('❌ Dashboard render error:', err);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock } from 'lucide-react'
+import { useAuth } from './AuthProvider'
 
 interface TwoFactorChallengeProps {
   onSuccess: () => void
@@ -16,6 +17,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   userData,
   session
 }) => {
+  const { complete2FA } = useAuth()
   const [verificationCode, setVerificationCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -90,12 +92,6 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       const result = await response.json()
       console.log('✅ Verification code sent successfully:', result)
       
-      // Check if we got an actual code back (for debugging)
-      if (result.code_for_demo) {
-        setActualCode(result.code_for_demo)
-        console.log('🔑 Actual code for debugging:', result.code_for_demo)
-      }
-      
       // Determine if we're in live mode based on SendGrid success
       setIsLiveMode(!!result.success && !result.demo_mode && !!result.sendgrid_success)
       
@@ -124,83 +120,29 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       setError('User data not available. Please try logging in again.')
       return
     }
+    
     setLoading(true)
     setError('')
+    setSuccess('')
 
     try {
-      console.log('🔍 Verifying 2FA code for user:', userData.id)
-      console.log('🔍 Verification payload:', {
-        user_id: userData.id,
-        code: '***' + verificationCode.slice(-2),
-        email: userEmail,
-        method: 'email'
-      })
+      console.log('🔐 Starting 2FA verification for user:', userData.id)
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      // Use AuthProvider's complete2FA method for proper session handling
+      const result = await complete2FA(verificationCode, userData, session)
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': anonKey,
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          code: verificationCode,
-          email: userEmail,
-          method: 'email'
-        })
-      })
-
-      console.log('🔍 Verify code response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ 2FA verification HTTP error:', errorData)
-        setError(errorData.error || 'Verification failed')
-        setLoading(false)
-        return
-      }
-
-      const result = await response.json()
-      console.log('✅ Verify code response:', result)
-      
-      if (!result.valid || !result.success) {
-        console.error('❌ Code verification failed:', result)
-        setError(result.message || 'Invalid verification code')
-        setLoading(false)
-        return
-      }
-      
-      console.log('✅ 2FA verification successful', result.demo_mode ? '(demo mode)' : '(live mode)')
-      setSuccess('Verification successful!')
-      
-      try {
-        console.log('🔐 Setting Supabase session...')
-        // Complete the authentication by setting the session
-        const { supabaseClient } = await import('../../lib/supabase-client')
-        const { error: sessionError } = await supabaseClient.auth.setSession(session)
+      if (result.success) {
+        console.log('✅ 2FA verification and session setup complete')
+        setSuccess('Verification successful! Redirecting...')
         
-        if (sessionError) {
-          console.error('❌ Failed to set session:', sessionError)
-          throw new Error('Failed to complete authentication')
-        }
-        
-        console.log('✅ Session set successfully')
-        
-        // Small delay to ensure session is properly set
+        // Small delay to show success message, then redirect
         setTimeout(() => {
-          console.log('🎉 2FA complete, calling onSuccess')
           setLoading(false)
+          console.log('🎉 Calling onSuccess to redirect to dashboard')
           onSuccess()
-        }, 500)
-        
-      } catch (authError) {
-        console.error('❌ Auth completion failed:', authError)
-        setError('Authentication completion failed')
-        setLoading(false)
+        }, 1000)
+      } else {
+        throw new Error('2FA verification failed')
       }
       
     } catch (error) {
@@ -282,11 +224,6 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
               <p className="text-sm text-yellow-700 mb-2">
                 ✅ Live email sent! Check your inbox for the 6-digit code.
               </p>
-              {actualCode && (
-                <p className="text-xs text-yellow-600">
-                  Debug: Code is {actualCode} (remove this in production)
-                </p>
-              )}
             </div>
           ) : (
             <div>
@@ -302,11 +239,6 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   Use Code
                 </button>
               </div>
-              {actualCode && actualCode !== demoCode && (
-                <p className="text-xs text-yellow-600 mt-2">
-                  Live code generated: {actualCode}
-                </p>
-              )}
             </div>
           )}
         </div>
