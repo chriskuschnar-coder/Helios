@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, TrendingUp, Shield, Award, CreditCard, Building, Zap, Coins, ArrowRight, Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import DocumentSigningFlow from './DocumentSigningFlow';
 import { CongratulationsPage } from './CongratulationsPage';
@@ -9,6 +11,8 @@ import { StripeCardForm } from './StripeCardForm';
 import { useAuth } from './auth/AuthProvider';
 import { Loader2 } from 'lucide-react';
 
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_live_51•••••itV');
 interface FundingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,7 +21,7 @@ interface FundingModalProps {
 }
 
 export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPayment }: FundingModalProps) {
-  const { account, user, markDocumentsCompleted, processFunding } = useAuth();
+  const { account, user, markDocumentsCompleted, processFunding, refreshAccount } = useAuth();
   const [amount, setAmount] = useState(prefilledAmount || 10000);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(true);
@@ -251,11 +255,9 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     // Process the funding in the database
     processFunding(amount, 'stripe', 'Credit card payment').then(() => {
       console.log('✅ Account balance updated');
+      // Refresh account data without page reload
+      refreshAccount();
       onClose();
-      // Refresh account data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     }).catch(error => {
       console.error('❌ Failed to update account balance:', error);
       // Still close modal but show error
@@ -366,11 +368,13 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 </div>
               </div>
 
-              <StripeCardForm 
-                amount={amount}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
+              <Elements stripe={stripePromise}>
+                <StripeCardForm 
+                  amount={amount}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              </Elements>
             </div>
           ) : showFundingPage ? (
             <div>

@@ -13,7 +13,7 @@
     "postbuild": "echo 'Build completed successfully'"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^3.9.2",
+    "@stripe/react-stripe-js": "^3.10.0",
     "@stripe/stripe-js": "^7.9.0",
     "@supabase/supabase-js": "^2.56.1",
     "chart.js": "^4.5.0",

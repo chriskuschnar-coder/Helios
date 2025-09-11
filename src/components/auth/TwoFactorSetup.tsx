@@ -48,21 +48,38 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
     setError('')
 
     try {
-      // Generate 6-digit code
-      const code = Math.floor(100000 + Math.random() * 900000).toString()
-      setSentCode(code)
+      // Get user session for authentication
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Please sign in to continue')
+      }
 
-      // In production, this would send an actual email
-      // For demo, we'll simulate the email send
-      console.log('📧 2FA Code sent to', user.email, ':', code)
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // Call the send-2fa-code edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          method: 'email',
+          email: user.email
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to send verification code')
+      }
+
+      const result = await response.json()
       setSuccess(`Verification code sent to ${user.email}`)
       setStep('verify')
     } catch (error) {
-      setError('Failed to send verification code')
+      setError(error instanceof Error ? error.message : 'Failed to send verification code')
     } finally {
       setLoading(false)
     }
@@ -132,12 +149,40 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
     setError('')
 
     try {
-      // Verify the code matches what we sent
-      if (verificationCode === sentCode) {
+      // Get user session for authentication
+      const { supabaseClient } = await import('../../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Please sign in to continue')
+      }
+
+      // Call the verify-2fa-code edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          code: verificationCode,
+          method: 'email',
+          email: user.email
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Verification failed')
+      }
+
+      const result = await response.json()
+      
+      if (result.valid) {
         setSuccess('Email verification successful!')
         
         // Update user's 2FA status in database
-        const { supabaseClient } = await import('../../lib/supabase-client')
         const { error: updateError } = await supabaseClient
           .from('users')
           .update({ two_factor_enabled: true })
@@ -154,7 +199,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
         setError('Invalid verification code. Please try again.')
       }
     } catch (error) {
-      setError('Verification failed. Please try again.')
+      setError(error instanceof Error ? error.message : 'Verification failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -489,31 +534,6 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
             </button>
           </div>
 
-          {/* Show the sent code for demo purposes */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-900">Demo Mode</span>
-            </div>
-            <p className="text-xs text-yellow-800 mb-2">
-              For testing purposes, your verification code is:
-            </p>
-            <div className="flex items-center space-x-2">
-              <code className="bg-white px-3 py-1 rounded border text-lg font-mono font-bold text-yellow-900">
-                {sentCode}
-              </code>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(sentCode)
-                  setSuccess('Code copied to clipboard!')
-                  setTimeout(() => setSuccess(''), 2000)
-                }}
-                className="p-1 hover:bg-yellow-100 rounded"
-              >
-                <Copy className="h-4 w-4 text-yellow-600" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     )

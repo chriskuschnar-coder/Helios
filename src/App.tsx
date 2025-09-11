@@ -12,17 +12,6 @@ export default function App() {
   const [showInvestmentPlatform, setShowInvestmentPlatform] = useState(false)
   const [platformLoading, setPlatformLoading] = useState(false)
 
-  useEffect(() => {
-    const handleNavigateToLogin = () => {
-      handleNavigateToLogin()
-    }
-
-    window.addEventListener('navigate-to-login', handleNavigateToLogin)
-    
-    return () => {
-      window.removeEventListener('navigate-to-login', handleNavigateToLogin)
-    }
-  }, [])
 
   const handleNavigateToLogin = () => {
     setPlatformLoading(true)
@@ -33,6 +22,13 @@ export default function App() {
     }, 500)
   }
 
+  useEffect(() => {
+    window.addEventListener('navigate-to-login', handleNavigateToLogin)
+    
+    return () => {
+      window.removeEventListener('navigate-to-login', handleNavigateToLogin)
+    }
+  }, [])
   const handleBackToHome = () => {
     setShowInvestmentPlatform(false)
     setPlatformLoading(false)

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { CreditCard, Shield, Lock, AlertCircle } from 'lucide-react'
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
 import { useAuth } from './auth/AuthProvider'
 
 interface StripeCardFormProps {
@@ -9,57 +10,51 @@ interface StripeCardFormProps {
 }
 
 export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormProps) {
-  const { user, processFunding } = useAuth()
+  const { user } = useAuth()
+  const stripe = useStripe()
+  const elements = useElements()
   const [loading, setLoading] = useState(false)
-  const [cardDetails, setCardDetails] = useState({
-    number: '',
-    expiry: '',
-    cvc: '',
-    name: ''
-  })
-
-  const handleCardChange = (field: string, value: string) => {
-    setCardDetails(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    const matches = v.match(/\d{4,16}/g)
-    const match = matches && matches[0] || ''
-    const parts = []
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4))
-    }
-    if (parts.length) {
-      return parts.join(' ')
-    } else {
-      return v
-    }
-  }
-
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4)
-    }
-    return v
-  }
+  const [cardholderName, setCardholderName] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!stripe || !elements) {
+      onError('Stripe has not loaded yet')
+      return
+    }
+
+    const cardElement = elements.getElement(CardElement)
+    if (!cardElement) {
+      onError('Card element not found')
+      return
+    }
+
+    if (!cardholderName.trim()) {
+      onError('Please enter the cardholder name')
+      return
+    }
+
     setLoading(true)
 
     try {
-      console.log('💳 Starting Stripe checkout for amount:', amount)
+      console.log('💳 Creating payment method for amount:', amount)
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      console.log('🔍 Using Supabase URL:', supabaseUrl)
+      // Create payment method
+      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          name: cardholderName,
+          email: user?.email
+        }
+      })
+
+      if (paymentMethodError) {
+        throw new Error(paymentMethodError.message)
+      }
+
+      console.log('✅ Payment method created:', paymentMethod.id)
 
       // Get user session for authentication
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -69,52 +64,74 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         throw new Error('Please sign in to continue')
       }
 
-      console.log('✅ User session found, creating checkout...')
-
-      // Create Stripe checkout session
-      const response = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+      // Create payment intent
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': anonKey
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
         body: JSON.stringify({
-          price_id: 'price_1S280LFhEA0kH7xcHCcUrHNN',
-          mode: 'payment',
-          amount: amount * 100,
-          success_url: `${window.location.origin}/funding-success?session_id={CHECKOUT_SESSION_ID}&amount=${amount}`,
-          cancel_url: `${window.location.origin}/funding-cancelled`
+          amount: amount * 100, // Convert to cents
+          currency: 'usd',
+          user_id: user?.id,
+          metadata: {
+            user_email: user?.email,
+            investment_amount: amount.toString()
+          }
         })
       })
 
-      console.log('📡 Checkout response status:', response.status)
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Checkout creation failed:', errorData)
-        throw new Error(errorData.error || 'Failed to create checkout session')
+        throw new Error(errorData.error?.message || 'Failed to create payment intent')
       }
 
-      const { url } = await response.json()
-      console.log('✅ Checkout URL received:', url)
-      
-      if (!url) {
-        throw new Error('No checkout URL received')
+      const { client_secret } = await response.json()
+      console.log('✅ Payment intent created')
+
+      // Confirm payment
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(client_secret, {
+        payment_method: paymentMethod.id
+      })
+
+      if (confirmError) {
+        throw new Error(confirmError.message)
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        console.log('✅ Payment succeeded')
+        onSuccess(paymentIntent)
+      } else {
+        throw new Error('Payment was not successful')
       }
       
-      console.log('🚀 Redirecting to Stripe checkout...')
-      window.location.href = url
-      
     } catch (error) {
-      console.error('❌ Stripe checkout error:', error)
+      console.error('❌ Payment error:', error)
       onError(error instanceof Error ? error.message : 'Payment failed')
+    } finally {
       setLoading(false)
     }
   }
 
   const processingFee = amount * 0.029 + 0.30
   const totalCharge = amount + processingFee
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#424770',
+        '::placeholder': {
+          color: '#aab7c4',
+        },
+      },
+      invalid: {
+        color: '#9e2146',
+      },
+    },
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,7 +142,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
           <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
         </div>
         <p className="text-xs sm:text-sm text-blue-700">
-          Your payment information is encrypted and secure. Uses Supabase + Stripe integration.
+          Your payment information is encrypted and secure. Powered by Stripe.
         </p>
       </div>
 
@@ -136,8 +153,8 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
           </label>
           <input
             type="text"
-            value={cardDetails.name}
-            onChange={(e) => handleCardChange('name', e.target.value)}
+            value={cardholderName}
+            onChange={(e) => setCardholderName(e.target.value)}
             className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Full name on card"
             required
@@ -146,47 +163,10 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
 
         <div>
           <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-            Card Number
+            Card Details
           </label>
-          <input
-            type="text"
-            value={cardDetails.number}
-            onChange={(e) => handleCardChange('number', formatCardNumber(e.target.value))}
-            className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-            placeholder="4242 4242 4242 4242"
-            maxLength={19}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              Expiry Date
-            </label>
-            <input
-              type="text"
-              value={cardDetails.expiry}
-              onChange={(e) => handleCardChange('expiry', formatExpiry(e.target.value))}
-              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-              placeholder="MM/YY"
-              maxLength={5}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-              CVC
-            </label>
-            <input
-              type="text"
-              value={cardDetails.cvc}
-              onChange={(e) => handleCardChange('cvc', e.target.value.replace(/\D/g, '').substring(0, 4))}
-              className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-              placeholder="123"
-              maxLength={4}
-              required
-            />
+          <div className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <CardElement options={cardElementOptions} />
           </div>
         </div>
       </div>
@@ -210,7 +190,7 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !stripe}
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 sm:py-4 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center justify-center"
       >
         {loading ? (
@@ -226,13 +206,13 @@ export function StripeCardForm({ amount, onSuccess, onError }: StripeCardFormPro
         )}
       </button>
       
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
         <div className="flex items-center space-x-2 mb-1">
-          <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-900 text-xs sm:text-sm">Live Mode</span>
+          <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+          <span className="font-medium text-green-900 text-xs sm:text-sm">PCI Compliant</span>
         </div>
-        <p className="text-xs text-yellow-700">
-          <strong>Live Payment:</strong> Real charges will be processed through Stripe
+        <p className="text-xs text-green-700">
+          Card details are securely processed by Stripe and never stored on our servers
         </p>
       </div>
     </form>
