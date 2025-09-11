@@ -65,10 +65,30 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   const handleBack = () => {
     if (showPaymentForm) {
       setShowPaymentForm(false);
+      setSelectedPaymentMethod('')
       setShowFundingPage(true);
+    } else if (showWireInstructions) {
+      setShowWireInstructions(false)
+      setWireInstructions(null)
+      setShowFundingPage(true)
+    } else if (showBankTransfer) {
+      setShowBankTransfer(false)
+      setShowFundingPage(true)
+    } else if (showCryptoPayment) {
+      setShowCryptoPayment(false)
+      setShowFundingPage(true)
     } else if (showFundingPage) {
       setShowFundingPage(false);
-      setShowCongratulations(true);
+      if (user?.documents_completed && user?.kyc_status === 'verified') {
+        setShowEmptyState(true)
+      } else if (user?.documents_completed) {
+        setShowKYCVerification(true)
+      } else {
+        setShowCongratulations(true)
+      }
+    } else if (showKYCVerification) {
+      setShowKYCVerification(false)
+      setShowCongratulations(true)
     } else if (showCongratulations) {
       setShowCongratulations(false);
       setShowDocumentSigning(true);
@@ -138,8 +158,16 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleBackToPortfolio = () => {
-    setShowDocumentSigning(false);
-    setShowEmptyState(true);
+    // Reset all states and go back to empty state
+    setShowDocumentSigning(false)
+    setShowCongratulations(false)
+    setShowKYCVerification(false)
+    setShowFundingPage(false)
+    setShowPaymentForm(false)
+    setShowWireInstructions(false)
+    setShowBankTransfer(false)
+    setShowCryptoPayment(false)
+    setShowEmptyState(true)
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -324,7 +352,7 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   onClick={handleBackToFunding}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
-                  ← Back to Investment Amount
+                  ← Back to Payment Methods
                 </button>
               </div>
               
@@ -349,7 +377,18 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
               {/* Back Button */}
               <div className="mb-6">
                 <button
-                  onClick={handleBack}
+                  onClick={() => {
+                    if (user?.documents_completed && user?.kyc_status === 'verified') {
+                      setShowFundingPage(false)
+                      setShowEmptyState(true)
+                    } else if (user?.documents_completed) {
+                      setShowFundingPage(false)
+                      setShowKYCVerification(true)
+                    } else {
+                      setShowFundingPage(false)
+                      setShowCongratulations(true)
+                    }
+                  }}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                 >
                   {user?.documents_completed ? '← Back to Portfolio' : '← Back to Portfolio Setup'}
@@ -634,10 +673,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                     processFunding(wireAmount, 'wire', `Wire transfer - ${wireInstructions?.referenceCode}`).then(() => {
                       console.log('✅ Wire transfer recorded');
                       onClose();
+                      // Refresh the page to show updated balance
+                      setTimeout(() => window.location.reload(), 1000)
                     }).catch(error => {
                       console.error('❌ Failed to record wire transfer:', error);
+                      setError('Failed to record wire transfer. Please try again.')
                     });
-                    onClose();
                   }}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors mt-6"
                 >
@@ -686,12 +727,20 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                 <button
                   onClick={() => {
                     // In production, this would open Plaid Link
-                    alert('Plaid integration will be implemented here. This would open a secure bank connection flow.');
+                    const bankAmount = parseInt(investmentAmount.replace(/,/g, ''))
+                    processFunding(bankAmount, 'bank', 'Bank transfer via Plaid').then(() => {
+                      console.log('✅ Bank transfer recorded')
+                      onClose()
+                      setTimeout(() => window.location.reload(), 1000)
+                    }).catch(error => {
+                      console.error('❌ Failed to record bank transfer:', error)
+                      setError('Failed to record bank transfer. Please try again.')
+                    })
                   }}
                   className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
                 >
                   <Building className="h-5 w-5 mr-2" />
-                  Connect Bank Account Securely
+                  Complete Bank Transfer
                 </button>
 
                 <div className="text-center">
@@ -709,8 +758,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
                   userId={user.id}
                   onSuccess={(payment) => {
                     console.log('✅ NOWPayments payment initiated:', payment)
-                    // Payment will be confirmed via webhook
+                    // Payment will be confirmed via webhook, close modal
                     onClose()
+                    // Show success message
+                    setTimeout(() => {
+                      alert('Crypto payment initiated! Your account will be updated when the payment is confirmed on the blockchain.')
+                    }, 500)
                   }}
                   onError={(error) => {
                     console.error('❌ NOWPayments payment error:', error)

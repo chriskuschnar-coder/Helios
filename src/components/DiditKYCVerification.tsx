@@ -18,9 +18,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [kycStatus, setKycStatus] = useState<any>(null)
   const [showTimeoutOptions, setShowTimeoutOptions] = useState(false)
   const [componentError, setComponentError] = useState('')
-  const [manualOverride, setManualOverride] = useState(false)
   const [pollCount, setPollCount] = useState(0)
-  const [autoVerifyTimer, setAutoVerifyTimer] = useState<NodeJS.Timeout | null>(null)
 
   // Check KYC status on component mount
   useEffect(() => {
@@ -38,9 +36,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       try {
         setCheckingStatus(false)
         setShowTimeoutOptions(false)
-        if (autoVerifyTimer) {
-          clearTimeout(autoVerifyTimer)
-        }
       } catch (err) {
         console.error('❌ KYC cleanup error:', err);
       }
@@ -213,77 +208,11 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       console.log('🔄 Starting status polling...')
       startStatusPolling(sessionData.session_id)
       
-      // AUTO-VERIFICATION: Automatically approve after 30 seconds if no response
-      console.log('⏰ Starting auto-verification timer (30 seconds)...')
-      const timer = setTimeout(async () => {
-        console.log('🤖 Auto-verification triggered - marking user as verified')
-        await autoApproveUser()
-      }, 30000) // 30 seconds
-      
-      setAutoVerifyTimer(timer)
-      
     } catch (error) {
       console.error('❌ Verification start failed:', error)
       setError(error instanceof Error ? error.message : 'Failed to start verification')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const autoApproveUser = async () => {
-    try {
-      console.log('🤖 Auto-approving user verification...')
-      
-      const { supabaseClient } = await import('../lib/supabase-client')
-      
-      // Update user KYC status to verified
-      const { error: userUpdateError } = await supabaseClient
-        .from('users')
-        .update({
-          kyc_status: 'verified',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user?.id)
-
-      if (userUpdateError) {
-        console.error('❌ Failed to auto-approve user:', userUpdateError)
-        return
-      }
-
-      // Create compliance record
-      const { error: complianceError } = await supabaseClient
-        .from('compliance_records')
-        .insert({
-          user_id: user?.id,
-          provider: 'didit',
-          verification_type: 'identity',
-          status: 'approved',
-          verification_id: sessionId || 'auto-approved',
-          data_blob: {
-            auto_approved: true,
-            auto_approved_at: new Date().toISOString(),
-            reason: 'Auto-approval after 30 seconds due to Didit integration delay'
-          }
-        })
-
-      if (complianceError) {
-        console.warn('⚠️ Failed to create compliance record:', complianceError)
-      }
-
-      console.log('✅ User auto-approved successfully')
-      
-      // Clear timers and update UI
-      setCheckingStatus(false)
-      setIsVerified(true)
-      
-      // Proceed to funding after short delay
-      setTimeout(() => {
-        onVerificationComplete()
-      }, 1500)
-      
-    } catch (error) {
-      console.error('❌ Auto-approval failed:', error)
-      setError('Auto-verification failed. Please contact support.')
     }
   }
 
@@ -381,16 +310,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           console.log('⏰ Status polling timeout after', pollCount, 'attempts (5 minutes)')
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          setError('Verification is taking longer than expected. You can return to your dashboard and we\'ll email you when it\'s complete.')
+          setError('Verification is taking longer than expected. Please contact support or try starting a new verification session.')
           
           // Show "Return to Dashboard" option after timeout
           setTimeout(() => {
             setShowTimeoutOptions(true)
           }, 1000)
-          
-          // If polling times out, trigger auto-approval
-          console.log('⏰ Polling timeout - triggering auto-approval')
-          await autoApproveUser()
         }
         
       } catch (error) {
@@ -400,8 +325,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          console.log('⏰ Max polls reached - triggering auto-approval')
-          await autoApproveUser()
+          setError('Verification polling failed. Please try again or contact support.')
         }
       }
     }
@@ -415,9 +339,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       console.log('🧹 Cleaning up status polling')
       clearInterval(pollInterval)
       setCheckingStatus(false)
-      if (autoVerifyTimer) {
-        clearTimeout(autoVerifyTimer)
-      }
     }
   }
 
@@ -601,7 +522,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
-                console.log('👤 User returning to dashboard')
+                console.log('👤 User returning to dashboard from timeout')
                 onClose()
               }}
               className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
@@ -610,7 +531,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
             </button>
             <button
               onClick={() => {
-                console.log('🔄 User restarting verification')
+                console.log('🔄 User starting new verification session')
                 setShowTimeoutOptions(false)
                 setError('')
                 setVerificationUrl(null)
@@ -620,7 +541,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
-              Try Verification Again
+              Start New Verification
             </button>
           </div>
         </div>
@@ -703,27 +624,8 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               <div className="flex items-center space-x-2 mb-2">
                 <Clock className="h-5 w-5 text-yellow-600 animate-spin" />
                 <span className="font-medium text-yellow-900">Verification in Progress</span>
-              </div>
-              <p className="text-sm text-yellow-800">
-                Please complete the verification process above. If Didit doesn't respond within 30 seconds, 
-                we'll automatically approve your verification. Do not close this window.
-              </p>
-              
-              {/* Manual approval option */}
-              <div className="mt-4 pt-4 border-t border-yellow-200">
-                <button
-                  onClick={() => {
-                    console.log('👤 User manually triggering auto-approval')
-                    setCheckingStatus(false)
-                    setShowTimeoutOptions(true)
-                  }}
-                  className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
-                >
-                  Auto-Approve Verification (Skip Didit) →
-                </button>
-              </div>
             </div>
-          )}
+                  Stop Checking Status
         </div>
       )}
 
