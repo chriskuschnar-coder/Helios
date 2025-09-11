@@ -25,14 +25,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       const result = await signIn(email, password)
       
       if (result.error) {
+        console.error('Login error:', result.error)
         setError(result.error.message)
-      } else {
-        onSuccess?.()
+        setLoading(false)
+        return
       }
+
+      // Success - wait for auth state change
+      console.log('Login successful:', result)
+      
+      // Don't set loading to false here - let AuthProvider handle it
+      onSuccess?.()
     } catch (err) {
-      console.error('Login error:', err)
-      setError('Connection error - please try again')
-    } finally {
+      console.error('Login exception:', err)
+      setError('An unexpected error occurred')
       setLoading(false)
     }
   }
