@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { TwoFactorChallenge } from './TwoFactorChallenge'
+import { supabaseClient } from '../../lib/supabase-client'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, AlertCircle, ArrowLeft, X } from 'lucide-react'
 
 interface LoginFormProps {
@@ -95,7 +96,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
     setUserProfile(null)
     setLoading(false)
     // Sign out the user since they didn't complete 2FA
-    const { supabaseClient } = await import('../../lib/supabase-client')
     supabaseClient.auth.signOut()
   }
 

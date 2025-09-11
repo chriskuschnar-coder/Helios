@@ -420,4 +420,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               id: data.user.id,
               email: data.user.email,
               full_name: metadata?.full_name,
-              phone: metadata?.phone,
