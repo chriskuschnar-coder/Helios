@@ -16,20 +16,12 @@ import {
   Brain, 
   Globe, 
   FileText, 
-  Shield, 
   Target,
   Activity,
   Plus,
-  RefreshCw,
-  Calendar,
-  DollarSign,
-  Award,
-  Eye,
-  Settings,
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
-import { SecuritySettings } from './SecuritySettings'
 
 const InvestorDashboard: React.FC = () => {
   const { user, account, loading } = useAuth()
@@ -80,7 +72,7 @@ const InvestorDashboard: React.FC = () => {
     {
       id: 'performance',
       title: 'Performance Analytics',
-      icon: Award,
+      icon: BarChart3,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
     },
     {
