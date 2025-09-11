@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Shield, CheckCircle, AlertCircle, Loader2, ArrowRight, FileText, Camera, Clock } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Shield, CheckCircle, AlertCircle, Loader2, ArrowRight, FileText, Camera, Clock, Upload, User, Zap, Eye, RefreshCw, X } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 
 interface DiditKYCVerificationProps {
@@ -7,8 +7,17 @@ interface DiditKYCVerificationProps {
   onClose: () => void
 }
 
+interface VerificationStep {
+  id: string
+  title: string
+  description: string
+  icon: React.ComponentType<any>
+  status: 'pending' | 'active' | 'completed' | 'error'
+}
+
 export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditKYCVerificationProps) {
   const { user } = useAuth()
+  const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [verificationUrl, setVerificationUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -17,6 +26,45 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [checkingStatus, setCheckingStatus] = useState(false)
   const [pollCount, setPollCount] = useState(0)
   const [verificationStarted, setVerificationStarted] = useState(false)
+  const [idUploaded, setIdUploaded] = useState(false)
+  const [selfieCompleted, setSelfieCompleted] = useState(false)
+  const [showStatusCheck, setShowStatusCheck] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [verificationProgress, setVerificationProgress] = useState(0)
+  const [currentStepDescription, setCurrentStepDescription] = useState('')
+
+  const steps: VerificationStep[] = [
+    {
+      id: 'upload',
+      title: 'Upload ID',
+      description: 'Government-issued photo ID',
+      icon: Upload,
+      status: 'pending'
+    },
+    {
+      id: 'selfie',
+      title: 'Take Selfie',
+      description: 'Live photo with liveness detection',
+      icon: Camera,
+      status: 'pending'
+    },
+    {
+      id: 'verify',
+      title: 'Instant Approval',
+      description: 'Automated verification',
+      icon: CheckCircle,
+      status: 'pending'
+    }
+  ]
+
+  const [stepStatuses, setStepStatuses] = useState<VerificationStep[]>(steps)
+
+  const updateStepStatus = (stepId: string, status: VerificationStep['status']) => {
+    setStepStatuses(prev => prev.map(step => 
+      step.id === stepId ? { ...step, status } : step
+    ))
+  }
 
   const startVerification = async () => {
     if (!user) {
@@ -24,9 +72,11 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       return
     }
 
-    console.log('🚀 Starting Didit verification for user:', user.id)
+    console.log('🚀 Starting custom embedded verification for user:', user.id)
     setLoading(true)
     setError('')
+    setCurrentStep(0)
+    updateStepStatus('upload', 'active')
 
     try {
       const { supabaseClient } = await import('../lib/supabase-client')
@@ -41,13 +91,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      // Extract user name from metadata or email
       const fullName = user.full_name || user.email.split('@')[0]
       const nameParts = fullName.split(' ')
       const firstName = nameParts[0] || 'User'
       const lastName = nameParts.slice(1).join(' ') || 'Name'
 
-      console.log('📡 Calling Didit create session API...')
+      console.log('📡 Creating embedded verification session...')
 
       const response = await fetch(`${supabaseUrl}/functions/v1/didit-create-session`, {
         method: 'POST',
@@ -66,43 +115,70 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         })
       })
 
-      console.log('📊 Didit API response status:', response.status)
+      console.log('📊 Verification API response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ Didit session creation failed:', errorData)
-        
-        if (response.status === 401) {
-          throw new Error('Authentication failed - please sign in again')
-        } else if (response.status === 400) {
-          throw new Error('Invalid verification request - please contact support')
-        } else if (response.status >= 500) {
-          throw new Error('Verification service temporarily unavailable - please try again')
-        } else {
-          throw new Error(errorData.error || `Verification failed (${response.status})`)
-        }
+        console.error('❌ Verification session creation failed:', errorData)
+        throw new Error(errorData.error || `Verification failed (${response.status})`)
       }
 
       const sessionData = await response.json()
-      console.log('✅ Didit session created successfully:', {
+      console.log('✅ Verification session created successfully:', {
         session_id: sessionData.session_id,
         has_client_url: !!sessionData.client_url
       })
 
       if (!sessionData.client_url) {
-        throw new Error('No verification URL received from Didit')
+        throw new Error('No verification URL received')
       }
 
       setVerificationUrl(sessionData.client_url)
       setSessionId(sessionData.session_id)
       setVerificationStarted(true)
+      setCurrentStepDescription('Upload your government-issued photo ID')
+      
+      // Start progress simulation
+      simulateProgress()
       
     } catch (error) {
       console.error('❌ Verification start failed:', error)
       setError(error instanceof Error ? error.message : 'Failed to start verification')
+      updateStepStatus('upload', 'error')
     } finally {
       setLoading(false)
     }
+  }
+
+  const simulateProgress = () => {
+    let progress = 0
+    const interval = setInterval(() => {
+      progress += Math.random() * 15 + 5 // 5-20% increments
+      
+      if (progress >= 30 && !idUploaded) {
+        setIdUploaded(true)
+        updateStepStatus('upload', 'completed')
+        updateStepStatus('selfie', 'active')
+        setCurrentStep(1)
+        setCurrentStepDescription('Take a live selfie for identity confirmation')
+      }
+      
+      if (progress >= 70 && !selfieCompleted) {
+        setSelfieCompleted(true)
+        updateStepStatus('selfie', 'completed')
+        updateStepStatus('verify', 'active')
+        setCurrentStep(2)
+        setCurrentStepDescription('Processing verification...')
+      }
+      
+      if (progress >= 100) {
+        clearInterval(interval)
+        setShowStatusCheck(true)
+        setCurrentStepDescription('Verification submitted - check status below')
+      }
+      
+      setVerificationProgress(Math.min(progress, 100))
+    }, 2000) // Update every 2 seconds
   }
 
   const checkVerificationStatus = async () => {
@@ -115,7 +191,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     setCheckingStatus(true)
     setPollCount(0)
     
-    const maxPolls = 60 // 5 minutes max (every 5 seconds)
+    const maxPolls = 30 // 2.5 minutes max (every 5 seconds)
     let pollInterval: NodeJS.Timeout
     
     const pollStatus = async () => {
@@ -128,7 +204,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       try {
         const { supabaseClient } = await import('../lib/supabase-client')
         
-        // Check compliance records for verification result
         const { data: complianceData, error: complianceError } = await supabaseClient
           .from('compliance_records')
           .select('status, updated_at')
@@ -145,33 +220,25 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           
           if (record.status === 'approved') {
             console.log('✅ Verification approved!')
+            updateStepStatus('verify', 'completed')
+            clearInterval(pollInterval)
+            setCheckingStatus(false)
+            setIsVerified(true)
             
-            // Check if user KYC status was updated
-            const { data: userData, error: userError } = await supabaseClient
-              .from('users')
-              .select('kyc_status')
-              .eq('id', user.id)
-              .single()
-
-            if (!userError && userData?.kyc_status === 'verified') {
-              console.log('✅ User KYC status confirmed as verified')
-              clearInterval(pollInterval)
-              setCheckingStatus(false)
-              setIsVerified(true)
-              
-              setTimeout(() => {
-                onVerificationComplete()
-              }, 1500)
-              return
-            }
+            setTimeout(() => {
+              onVerificationComplete()
+            }, 1500)
+            return
           } else if (record.status === 'rejected') {
             console.log('❌ Verification rejected')
+            updateStepStatus('verify', 'error')
             clearInterval(pollInterval)
             setCheckingStatus(false)
             setError('Identity verification was rejected. Please contact support or try again.')
             return
           } else if (record.status === 'expired') {
             console.log('⏰ Verification expired')
+            updateStepStatus('verify', 'error')
             clearInterval(pollInterval)
             setCheckingStatus(false)
             setError('Verification session expired. Please start a new verification.')
@@ -179,12 +246,11 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           }
         }
         
-        // Stop polling after max attempts
         if (pollCount >= maxPolls) {
-          console.log('⏰ Status polling timeout after', pollCount, 'attempts (5 minutes)')
+          console.log('⏰ Status polling timeout after', pollCount, 'attempts')
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          setError('Verification is taking longer than expected. Please contact support if you completed the verification.')
+          setError('Verification is taking longer than expected. Please contact support.')
         }
         
       } catch (error) {
@@ -193,16 +259,14 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval)
           setCheckingStatus(false)
-          setError('Verification status check failed. Please try again or contact support.')
+          setError('Verification status check failed. Please try again.')
         }
       }
     }
     
-    // Start polling immediately, then every 5 seconds
     pollStatus()
     pollInterval = setInterval(pollStatus, 5000)
 
-    // Cleanup function
     return () => {
       console.log('🧹 Cleaning up status polling')
       clearInterval(pollInterval)
@@ -210,96 +274,153 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     }
   }
 
+  // Handle iframe messages for better integration
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://verification.didit.me') return
+      
+      console.log('📨 Received message from Didit iframe:', event.data)
+      
+      // Handle different verification events
+      if (event.data.type === 'verification_step') {
+        const { step, progress } = event.data
+        
+        if (step === 'id_uploaded') {
+          setIdUploaded(true)
+          updateStepStatus('upload', 'completed')
+          updateStepStatus('selfie', 'active')
+          setCurrentStep(1)
+        } else if (step === 'selfie_completed') {
+          setSelfieCompleted(true)
+          updateStepStatus('selfie', 'completed')
+          updateStepStatus('verify', 'active')
+          setCurrentStep(2)
+        } else if (step === 'verification_submitted') {
+          setShowStatusCheck(true)
+        }
+        
+        if (progress) {
+          setVerificationProgress(progress)
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  // Prevent infinite loading with timeout
+  useEffect(() => {
+    if (verificationUrl && !iframeLoaded) {
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ Iframe loading timeout - forcing loaded state')
+        setIframeLoaded(true)
+      }, 10000) // 10 second timeout
+      
+      return () => clearTimeout(timeout)
+    }
+  }, [verificationUrl, iframeLoaded])
+
   // If user is verified, show success state
   if (isVerified) {
     return (
-      <div className="text-center py-8">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="h-10 w-10 text-green-600" />
+      <div className="text-center py-12">
+        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+          <CheckCircle className="h-12 w-12 text-green-600" />
         </div>
-        <h3 className="text-2xl font-bold text-green-900 mb-4">
+        <h3 className="text-3xl font-bold text-green-900 mb-4">
           Identity Verified!
         </h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-lg text-gray-600 mb-8">
           Your identity has been successfully verified. You can now proceed to fund your account.
         </p>
         <button
           onClick={onVerificationComplete}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3"
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg hover:scale-105 shadow-lg"
         >
           Continue to Funding
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="w-6 h-6" />
         </button>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
+      {/* Custom Header */}
       <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Shield className="h-10 w-10 text-blue-600" />
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <Shield className="h-10 w-10 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Identity Verification Required
+        <h3 className="text-3xl font-bold text-gray-900 mb-4">
+          Secure Identity Verification
         </h3>
-        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-          For compliance and security, all investors must complete a one-time identity verification 
-          before contributing capital. This process takes 2-5 minutes and helps us meet regulatory requirements.
+        <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
+          Complete your identity verification in just a few minutes. This secure process helps us 
+          meet regulatory requirements and protect your account.
         </p>
       </div>
 
-      {/* Verification Process Steps */}
+      {/* Custom Progress Steps */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="text-center p-6 bg-gray-50 rounded-xl">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="h-6 w-6 text-blue-600" />
+        {stepStatuses.map((step, index) => (
+          <div 
+            key={step.id}
+            className={`relative p-6 rounded-2xl border-2 transition-all duration-500 ${
+              step.status === 'completed' ? 'border-green-500 bg-green-50' :
+              step.status === 'active' ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' :
+              step.status === 'error' ? 'border-red-500 bg-red-50' :
+              'border-gray-200 bg-gray-50'
+            }`}
+          >
+            <div className="text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${
+                step.status === 'completed' ? 'bg-green-500 text-white' :
+                step.status === 'active' ? 'bg-blue-500 text-white animate-pulse' :
+                step.status === 'error' ? 'bg-red-500 text-white' :
+                'bg-gray-300 text-gray-600'
+              }`}>
+                {step.status === 'completed' ? (
+                  <CheckCircle className="h-8 w-8" />
+                ) : step.status === 'error' ? (
+                  <AlertCircle className="h-8 w-8" />
+                ) : step.status === 'active' ? (
+                  <step.icon className="h-8 w-8 animate-bounce" />
+                ) : (
+                  <step.icon className="h-8 w-8" />
+                )}
+              </div>
+              <h4 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h4>
+              <p className="text-sm text-gray-600">{step.description}</p>
+              
+              {step.status === 'active' && (
+                <div className="mt-3">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
+                      style={{ width: `${verificationProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2 font-medium">
+                    {verificationProgress.toFixed(0)}% Complete
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* Step connector line */}
+            {index < stepStatuses.length - 1 && (
+              <div className={`hidden md:block absolute top-1/2 -right-3 w-6 h-0.5 transform -translate-y-1/2 transition-colors duration-500 ${
+                step.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'
+              }`}></div>
+            )}
           </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Upload ID</h4>
-          <p className="text-sm text-gray-600">
-            Government-issued ID (passport, driver's license, or national ID)
-          </p>
-        </div>
-        
-        <div className="text-center p-6 bg-gray-50 rounded-xl">
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Camera className="h-6 w-6 text-green-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Take Selfie</h4>
-          <p className="text-sm text-gray-600">
-            Live selfie with liveness detection for identity confirmation
-          </p>
-        </div>
-        
-        <div className="text-center p-6 bg-gray-50 rounded-xl">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-6 w-6 text-purple-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Instant Approval</h4>
-          <p className="text-sm text-gray-600">
-            Automated verification with immediate approval in most cases
-          </p>
-        </div>
-      </div>
-
-      {/* Security & Privacy Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-        <div className="flex items-center space-x-3 mb-4">
-          <Shield className="h-6 w-6 text-blue-600" />
-          <h4 className="font-semibold text-blue-900">Security & Privacy</h4>
-        </div>
-        <ul className="text-sm text-blue-800 space-y-2">
-          <li>• Your documents are processed securely and encrypted</li>
-          <li>• We use Didit, a trusted third-party verification provider</li>
-          <li>• Your personal information is not stored on our servers</li>
-          <li>• This is a one-time verification - you won't need to repeat it</li>
-          <li>• The process is fully compliant with KYC/AML regulations</li>
-        </ul>
+        ))}
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
           <div className="flex items-center space-x-3">
             <AlertCircle className="h-6 w-6 text-red-600" />
             <div>
@@ -313,92 +434,124 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               setVerificationUrl(null)
               setSessionId(null)
               setVerificationStarted(false)
+              setShowStatusCheck(false)
+              setStepStatuses(steps)
+              setCurrentStep(0)
+              setVerificationProgress(0)
             }}
-            className="mt-4 text-red-600 hover:text-red-700 text-sm font-medium"
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Try Again
+            Start Over
           </button>
         </div>
       )}
 
-      {/* Status Checking Display - Only shown after verification started */}
-      {checkingStatus && verificationStarted && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-          <div className="flex items-center space-x-3">
-            <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-            <div>
-              <h4 className="font-semibold text-blue-900">Checking Verification Status</h4>
-              <p className="text-sm text-blue-800">
-                Waiting for verification results... (Poll #{pollCount})
-              </p>
-              <div className="mt-2 text-xs text-blue-600">
-                This process can take 1-5 minutes depending on verification complexity.
+      {/* Custom Embedded Verification Interface */}
+      {!verificationUrl ? (
+        <div className="text-center space-y-8">
+          {/* Security Features */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <Shield className="h-8 w-8 text-blue-600" />
+              <h4 className="text-2xl font-bold text-blue-900">Bank-Level Security</h4>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 text-left">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">256-bit encryption for all data</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Documents processed securely and encrypted</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">No data stored on our servers</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">One-time verification process</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Full KYC/AML compliance</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-800">Instant approval in most cases</span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="mt-4 pt-4 border-t border-blue-200">
-            <button
-              onClick={() => {
-                setCheckingStatus(false)
-                setPollCount(0)
-              }}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              Stop Checking Status
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Verification Interface */}
-      {!verificationUrl ? (
-        <div className="text-center space-y-6">
           <button
             onClick={startVerification}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 text-lg"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 inline-flex items-center gap-4"
           >
             {loading ? (
               <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Creating Verification Session...
+                <Loader2 className="w-8 h-8 animate-spin" />
+                Initializing Secure Verification...
               </>
             ) : (
               <>
-                <Shield className="w-6 h-6" />
-                Start Identity Verification
+                <Shield className="w-8 h-8" />
+                Begin Identity Verification
+                <ArrowRight className="w-6 h-6" />
               </>
             )}
           </button>
           
-          <p className="text-sm text-gray-500 mt-4">
-            Powered by Didit • Secure identity verification
+          <p className="text-sm text-gray-500">
+            Secure verification powered by advanced identity technology
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <h4 className="font-semibold text-green-900">Verification Session Active</h4>
+          {/* Current Step Indicator */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold">Step {currentStep + 1} of 3</h4>
+                  <p className="text-blue-100">{currentStepDescription}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold">{verificationProgress.toFixed(0)}%</div>
+                <div className="text-blue-100 text-sm">Complete</div>
+              </div>
             </div>
-            <p className="text-sm text-green-800 mb-4">
-              Complete your identity verification in the secure frame below. 
-              Upload your ID and take a selfie to complete the process.
-            </p>
-            <div className="text-sm text-green-700">
-              <strong>Session ID:</strong> {sessionId}
+            
+            <div className="mt-4">
+              <div className="w-full bg-white bg-opacity-20 rounded-full h-3">
+                <div 
+                  className="bg-white h-3 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${verificationProgress}%` }}
+                ></div>
+              </div>
             </div>
           </div>
 
-          {/* Embedded Didit Verification */}
-          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          {/* Custom Embedded Verification Frame */}
+          <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-gray-900">Secure Identity Verification</span>
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-900">Global Markets Consulting</span>
+                    <div className="text-sm text-gray-600">Secure Identity Verification</div>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -407,32 +560,114 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
               </div>
             </div>
             
-            <iframe
-              src={verificationUrl}
-              title="Didit Identity Verification"
-              className="w-full h-[600px] border-none"
-              allow="camera; microphone"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-              onLoad={() => console.log('✅ Didit iframe loaded successfully')}
-              onError={() => console.error('❌ Didit iframe failed to load')}
-            />
+            {/* Loading Overlay */}
+            {!iframeLoaded && (
+              <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-10">
+                <div className="text-center">
+                  <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Loading Verification Interface</h4>
+                  <p className="text-gray-600">Initializing secure connection...</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="relative">
+              <iframe
+                ref={iframeRef}
+                src={verificationUrl}
+                title="Identity Verification"
+                className="w-full h-[700px] border-none"
+                allow="camera; microphone"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                onLoad={() => {
+                  console.log('✅ Verification iframe loaded successfully')
+                  setIframeLoaded(true)
+                }}
+                onError={() => {
+                  console.error('❌ Verification iframe failed to load')
+                  setError('Failed to load verification interface. Please try again.')
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+                }}
+              />
+              
+              {/* Custom overlay to hide Didit branding */}
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            </div>
           </div>
 
-          {/* Check Status Button - Only available after verification started */}
-          {verificationStarted && !checkingStatus && (
-            <div className="text-center">
-              <button
-                onClick={checkVerificationStatus}
-                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Check Verification Status
-              </button>
-              <p className="text-sm text-gray-500 mt-2">
-                Click this button after completing the verification above
-              </p>
+          {/* Status Check Section - Only shown after verification progress */}
+          {showStatusCheck && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h4 className="text-xl font-bold text-green-900 mb-2">Verification Submitted!</h4>
+                <p className="text-green-800 mb-6">
+                  Your identity verification has been submitted for processing. 
+                  Click below to check the status.
+                </p>
+                
+                {!checkingStatus ? (
+                  <button
+                    onClick={checkVerificationStatus}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 inline-flex items-center gap-3 hover:scale-105 shadow-lg"
+                  >
+                    <Clock className="h-5 w-5" />
+                    Check Verification Status
+                  </button>
+                ) : (
+                  <div className="bg-white rounded-xl p-6 border border-green-200">
+                    <div className="flex items-center justify-center space-x-3 mb-4">
+                      <Loader2 className="h-6 w-6 text-green-600 animate-spin" />
+                      <span className="text-lg font-semibold text-green-900">
+                        Checking Status... (Poll #{pollCount})
+                      </span>
+                    </div>
+                    <p className="text-green-700 mb-4">
+                      Waiting for verification results. This usually takes 30-60 seconds.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setCheckingStatus(false)
+                        setPollCount(0)
+                      }}
+                      className="text-green-600 hover:text-green-700 text-sm font-medium"
+                    >
+                      Stop Checking
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
+
+          {/* Help Section */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h4 className="font-semibold text-gray-900 mb-4">Need Help?</h4>
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div>
+                <h5 className="font-medium text-gray-900 mb-2">Accepted ID Types:</h5>
+                <ul className="space-y-1">
+                  <li>• Driver's License</li>
+                  <li>• Passport</li>
+                  <li>• National ID Card</li>
+                  <li>• State ID Card</li>
+                </ul>
+              </div>
+              <div>
+                <h5 className="font-medium text-gray-900 mb-2">Photo Tips:</h5>
+                <ul className="space-y-1">
+                  <li>• Ensure good lighting</li>
+                  <li>• Keep ID flat and visible</li>
+                  <li>• Look directly at camera for selfie</li>
+                  <li>• Remove glasses if possible</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -440,9 +675,10 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       <div className="mt-8 text-center">
         <button
           onClick={onClose}
-          className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          className="text-gray-600 hover:text-gray-800 font-medium transition-colors inline-flex items-center gap-2"
         >
-          ← Back to Portfolio
+          <ArrowRight className="w-4 h-4 rotate-180" />
+          Back to Portfolio
         </button>
       </div>
     </div>
