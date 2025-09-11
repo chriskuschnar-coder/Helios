@@ -39,4 +39,7 @@ docs/generated
 
 # Other large files
 public/documents/
-public/Facetune_*
+public/Facetune_*drafts/
+*.bak
+test-files/
+*.jpeg
