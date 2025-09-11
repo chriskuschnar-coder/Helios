@@ -27,27 +27,19 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     }
   }, [loading])
 
+  // Show loading spinner while auth is being determined
   if (loading && !forceShowAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 text-navy-600 mx-auto mb-4 animate-spin" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Client Portal</h3>
-          <p className="text-gray-600">Connecting to your account...</p>
-          <div className="mt-4 text-sm text-gray-500">
-            Loading should complete within 2 seconds...
-          </div>
-          <button
-            onClick={() => setForceShowAuth(true)}
-            className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            Continue to Login →
-          </button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
   }
 
+  // If no user, show auth forms
   if (!user || forceShowAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -74,6 +66,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
+  // User is authenticated, show dashboard selector
   return <DashboardSelector />
 }
 
