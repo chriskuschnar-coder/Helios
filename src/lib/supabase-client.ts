@@ -18,10 +18,11 @@ console.log('🔧 Supabase client configuration:', {
 
 // Create Supabase client with proper configuration
 export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
     persistSession: true, // Keep user logged in across browser sessions
     autoRefreshToken: true, // Automatically refresh expired tokens
     detectSessionInUrl: true, // Handle auth redirects
-    flowType: 'pkce' // Use PKCE flow for better security
+    flowType: 'pkce', // Use PKCE flow for better security
     persistSession: true,
     detectSessionInUrl: false
   },
