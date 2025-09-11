@@ -53,6 +53,10 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
   const [signature, setSignature] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null)
+  const [zoomLevel, setZoomLevel] = useState(100)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [exhibitAData, setExhibitAData] = useState<ExhibitAData>({
     accreditedInvestorSelections: [],
     qualifiedPurchaserSelections: [],
@@ -1241,5 +1245,112 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
         </div>
       </div>
     )}
+  </>
+)
+
+// Add the missing state and preview modal outside the main return
+const DocumentPreviewModal = () => {
+  if (!showDocumentPreview || !previewDoc) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl max-h-[90vh]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Eye className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{previewDoc.title}</h3>
+              <p className="text-sm text-gray-600">Document Preview</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setZoomLevel(Math.max(50, zoomLevel - 25))}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Zoom Out"
+            >
+              <Minus className="h-4 w-4 text-gray-600" />
+            </button>
+            <span className="text-sm text-gray-600 min-w-[60px] text-center">{zoomLevel}%</span>
+            <button
+              onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Zoom In"
+            >
+              <Plus className="h-4 w-4 text-gray-600" />
+            </button>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Toggle Fullscreen"
+            >
+              <Maximize className="h-4 w-4 text-gray-600" />
+            </button>
+            <button
+              onClick={() => setShowDocumentPreview(false)}
+              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+              title="Close Preview"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+        
+        <div className={`${isFullscreen ? 'h-[85vh]' : 'h-[70vh]'} bg-gray-100 relative overflow-hidden`}>
+          <div className="w-full h-full overflow-auto">
+            {previewDoc.url.endsWith('.pdf') ? (
+              <iframe
+                src={`${previewDoc.url}#zoom=${zoomLevel}`}
+                title={`Preview: ${previewDoc.title}`}
+                className="w-full h-full border-none"
+                style={{ minHeight: '100%' }}
+              />
+            ) : (
+              <iframe
+                src={previewDoc.url}
+                title={`Preview: ${previewDoc.title}`}
+                className="w-full h-full border-none"
+                style={{ 
+                  minHeight: '100%',
+                  transform: `scale(${zoomLevel / 100})`,
+                  transformOrigin: 'top left'
+                }}
+              />
+            )}
+          </div>
+        </div>
+        
+        <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Shield className="h-4 w-4 text-green-600" />
+              <span>Secure Document Preview</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <a
+                href={previewDoc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>Open in New Tab</span>
+              </a>
+              <a
+                href={previewDoc.url}
+                download
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-700 text-sm font-medium transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download PDF</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
