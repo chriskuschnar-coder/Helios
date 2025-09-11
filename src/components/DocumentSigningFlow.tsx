@@ -44,7 +44,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal agreement defining the partnership structure and terms.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_LPA_With_Schedules_1_20.pdf',
+      url: '/documents/Global_Markets_LPA_v2.pdf',
       type: 'investment_agreement'
     },
     {
