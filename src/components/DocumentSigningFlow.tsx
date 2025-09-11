@@ -81,7 +81,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_Subscription_Agreement_Complete.pdf/Global_Markets_Subscription_Agreement_Complete (1).pdf',
+      url: '/documents/Global_Markets_Subscription_Agreement_Complete (1).pdf',
       type: 'informational'
     },
     {
