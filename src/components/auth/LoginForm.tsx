@@ -76,14 +76,13 @@ const InvestorDashboard: React.FC = () => {
       title: 'Asset Allocation',
       icon: Target,
       component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
-      } else if ((result as any)?.requiresTwoFactor) {
-      if (result?.error) {
+    },
+    {
       id: 'performance',
-          factorId: (result as any).factorId,
-          challengeId: (result as any).challengeId
+      title: 'Performance Metrics',
+      icon: Activity,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
     },
-        setLoading(false) // Stop loading when showing 2FA
     {
       id: 'nav',
       title: 'Fund NAV History',
@@ -94,9 +93,7 @@ const InvestorDashboard: React.FC = () => {
       id: 'insights',
       title: 'AI Portfolio Insights',
       icon: Brain,
-      if (!showTwoFactor) {
-        setLoading(false)
-      }
+      component: () => <AIInsights />
     }
   ]
 
