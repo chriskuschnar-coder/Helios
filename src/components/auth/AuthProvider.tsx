@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase-client'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface Account {
   id: string
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('accounts')
         .select('*')
         .eq('user_id', userId)
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
@@ -135,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     })
@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: {
@@ -156,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await supabaseClient.auth.signOut()
   }
 
   const value = {
