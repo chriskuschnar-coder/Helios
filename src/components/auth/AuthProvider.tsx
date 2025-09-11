@@ -421,8 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: data.user.email,
               full_name: metadata?.full_name,
               phone: metadata?.phone
-            }
-            )
+            })
 
           if (profileError) {
             console.error('Error creating user profile:', profileError)
@@ -486,6 +485,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
-    }
-  }
 }
