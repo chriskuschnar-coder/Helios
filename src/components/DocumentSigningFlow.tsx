@@ -82,7 +82,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       required: false,
       signed: false,
       url: '/documents/Global_Markets_PPM_Final_85pp_TOC.pdf',
-      type: 'investment_agreement'
+      type: 'informational'
     },
     {
       id: 'limited_partnership_agreement',
@@ -90,7 +90,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal framework governing the partnership structure and investor rights.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_Subscription_Agreement_Complete.pdf',
+      url: '/documents/GLOBAL MARKETS, LP.pdf',
       type: 'informational'
     },
     {
