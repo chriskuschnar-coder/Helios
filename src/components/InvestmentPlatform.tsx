@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabaseClient } from '../lib/supabase-client'
+import { supabaseClient } from '../../lib/supabase-client'
 
 interface User {
   id: string
@@ -13,6 +13,21 @@ interface User {
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
   subscription_signed_at?: string
+        {/* Investment platform content will go here */}
+        <div className="p-4">
+          <button 
+            onClick={onBackToHome}
+            className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Back to Home
+          </button>
+          <h1 className="text-2xl font-bold">Investment Platform</h1>
+          <p className="mt-2 text-gray-600">Platform content coming soon...</p>
+        </div>
+      </div>
+    </AuthProvider>
+  )
+}
 }
 
 interface Account {
@@ -208,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('📊 Loading user account for:', userId)
       // Ensure investor_units exists for this user
-      const { supabaseClient } = await import('../lib/supabase-client')
+      const { supabaseClient } = await import('../../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (session) {
@@ -328,7 +343,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // STEP 1: Process deposit allocation through fund units
       console.log('💰 Processing deposit allocation:', { amount, method })
       
-      const { supabaseClient } = await import('../lib/supabase-client')
+      const { supabaseClient } = await import('../../lib/supabase-client')
       const { data: { session } } = await supabaseClient.auth.getSession()
       
       if (!session) {
