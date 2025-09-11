@@ -12,6 +12,7 @@ interface User {
   is_kyc_verified?: boolean
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
+  subscription_signed_at?: string
 }
 
 interface Account {
@@ -270,7 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name')
+        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
         .eq('id', userId)
         .single()
 
@@ -285,7 +286,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           kyc_status: userData.kyc_status,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
-          two_factor_method: userData.two_factor_method
+          two_factor_method: userData.two_factor_method,
+          subscription_signed_at: userData.subscription_signed_at
         } : null)
         
         setProfile(userData)
