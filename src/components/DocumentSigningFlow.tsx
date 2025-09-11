@@ -44,7 +44,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal framework governing the partnership structure and investor rights.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_LPA.pdf',
+      url: '/documents/GLOBAL MARKETS, LP.pdf',
       type: 'informational'
     },
     {
