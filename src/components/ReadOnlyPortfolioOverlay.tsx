@@ -13,8 +13,6 @@ interface User {
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
   subscription_signed_at?: string
-          title: '🕒 Identity Verification in Progress',
-          message: 'Funding is temporarily locked until your identity is verified. You can browse the portal in read-only mode. We\'ll notify you automatically when verification completes.',
 }
 
 interface Account {
@@ -286,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
+          kyc_verified_at: userData.kyc_verified_at,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
           two_factor_method: userData.two_factor_method,
@@ -508,7 +507,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         return { error: null }
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors inline-flex items-center gap-2"
       }
 
       return { error: { message: 'No user returned from signup' } }
@@ -521,13 +519,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-          title: '❌ Verification Failed',
-          message: 'Your verification could not be approved. This may be due to document quality or information mismatch. Please resubmit your documents to unlock funding features.',
+      console.log('🚪 Signing out user...')
+      
       const { error } = await supabaseClient.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
       } else {
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors inline-flex items-center gap-2"
+        console.log('✅ Sign out successful')
       }
       
       // Always clear state and reload page for clean logout
@@ -537,10 +535,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null)
       
       // Force page reload to ensure clean state
-        return 'Funding locked - Verification failed, please resubmit documents'
+      window.location.reload()
     } catch (err) {
-        return 'Funding locked - Complete identity verification to unlock funding features'
-          message: 'Complete identity verification to unlock funding and trading features. This is a one-time process required by financial regulations.',
+      console.error('Sign out failed:', err)
+      // Force reload on any error
       setUser(null)
       setAccount(null)
       setSubscription(null)
@@ -548,9 +546,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.reload()
     }
   }
-          className={`${className} opacity-60 cursor-not-allowed relative filter grayscale`}
+
   return (
-    <div className={`bg-${status.color}-50 border-2 border-${status.color}-200 rounded-xl p-6 mb-6 shadow-sm`}>
+    <AuthContext.Provider value={{
       user,
       loading,
       pending2FA,
@@ -558,12 +556,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       account,
       subscription,
       profile,
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-20 shadow-lg">
+      refreshAccount,
       refreshSubscription,
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-          
-          {/* Status indicator */}
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+      refreshProfile,
       processFunding,
       markDocumentsCompleted,
       signIn,
@@ -577,12 +572,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-    }
-  )
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
 }
-        return 'Funding temporarily locked - Identity verification in progress (usually 1-5 minutes)'
