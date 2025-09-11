@@ -361,7 +361,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
-        // User state will be updated via onAuthStateChange
+        
+        // CRITICAL: Don't set user state yet - wait for 2FA completion
+        // The user state will only be set after successful 2FA verification
+        console.log('🔐 Login successful, but 2FA verification required before setting user state')
+        
         return { error: null }
       }
 

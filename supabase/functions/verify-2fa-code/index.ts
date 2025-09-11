@@ -20,8 +20,8 @@ Deno.serve(async (req) => {
     console.log('🔑 2FA verification request:', { code: '***' + code.slice(-2), method, email })
     
     // Validate inputs
-    if (!code || code.length !== 6) {
-      throw new Error('Invalid verification code format')
+    if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+      throw new Error('Invalid verification code format - must be 6 digits')
     }
     
     if (!method || !['email', 'sms'].includes(method)) {
@@ -64,24 +64,37 @@ Deno.serve(async (req) => {
     })
 
     if (!codesResponse.ok) {
+      console.error('❌ Failed to retrieve verification codes')
       throw new Error('Failed to retrieve verification codes')
     }
 
     const codes = await codesResponse.json()
+    console.log('📊 Found codes:', codes.length)
     
     if (codes.length === 0) {
-      throw new Error('No valid verification code found. Please request a new code.')
+      throw new Error('No valid verification code found. Code may have expired. Please request a new code.')
     }
 
     const storedCode = codes[0]
-    console.log('🔍 Comparing codes:', { provided: '***' + code.slice(-2), stored: '***' + storedCode.code.slice(-2) })
+    console.log('🔍 Comparing codes:', { 
+      provided: '***' + code.slice(-2), 
+      stored: '***' + storedCode.code.slice(-2),
+      expires: storedCode.expires_at,
+      used: storedCode.used
+    })
+
+    // Check if code has expired
+    if (new Date(storedCode.expires_at) < new Date()) {
+      console.log('⏰ Code has expired')
+      throw new Error('Verification code has expired. Please request a new code.')
+    }
 
     // Verify the code matches
     if (code === storedCode.code) {
       console.log('✅ 2FA code verification successful')
       
       // Mark code as used
-      await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?id=eq.${storedCode.id}`, {
+      const markUsedResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?id=eq.${storedCode.id}`, {
         method: 'PATCH',
         headers: {
           'apikey': supabaseServiceKey,
@@ -94,8 +107,12 @@ Deno.serve(async (req) => {
         })
       })
 
+      if (!markUsedResponse.ok) {
+        console.error('❌ Failed to mark code as used')
+      }
+
       // Update user's last login timestamp
-      await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+      const updateLoginResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
         method: 'PATCH',
         headers: {
           'apikey': supabaseServiceKey,
@@ -108,6 +125,10 @@ Deno.serve(async (req) => {
         })
       })
 
+      if (!updateLoginResponse.ok) {
+        console.error('❌ Failed to update last login')
+      }
+
       return new Response(JSON.stringify({
         valid: true,
         message: '2FA verification successful',
@@ -119,7 +140,7 @@ Deno.serve(async (req) => {
         },
       })
     } else {
-      console.log('❌ 2FA code verification failed')
+      console.log('❌ 2FA code verification failed - codes do not match')
       
       return new Response(JSON.stringify({
         valid: false,
