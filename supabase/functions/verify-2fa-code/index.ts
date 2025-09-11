@@ -15,13 +15,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { user_id, code, method = 'email' } = await req.json()
+    const { user_id, code, email, method = 'email' } = await req.json()
     
-    console.log('🔍 2FA verification request:', { user_id, code: code ? '***' + code.slice(-2) : 'none', email })
+    console.log('🔍 2FA verification request:', { user_id, code: code ? '***' + code.slice(-2) : 'none', email: email ? email.substring(0, 3) + '***' : 'none' })
     
     // Validate inputs
     if (!user_id) {
       throw new Error('User ID required')
+    }
+    
+    if (!email) {
+      throw new Error('Email required')
     }
     
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
