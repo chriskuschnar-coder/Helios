@@ -29,11 +29,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
   useEffect(() => {
     checkBiometricSupport()
-    // Auto-send email code on mount (email is primary method)
-    if (userEmail && preferredMethod === 'email') {
+    // ALWAYS auto-send email code on mount (email is primary method)
+    if (userEmail) {
       sendVerificationCode('email')
-    } else if (userPhone && preferredMethod === 'sms') {
-      sendVerificationCode('sms')
     }
   }, [])
 

@@ -85,12 +85,12 @@ Deno.serve(async (req) => {
       throw new Error('Failed to store verification code')
     }
 
-    // Send verification code based on method
+    // PRIORITY: Send email first (primary method)
     if (method === 'email') {
-      console.log('📧 Sending email verification code to:', email)
+      console.log('📧 Sending email verification code via SendGrid to:', email)
       
       try {
-        // Get SendGrid API key from environment
+        // Get SendGrid credentials
         const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')
         const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'noreply@globalmarketsconsulting.com'
         
@@ -250,10 +250,10 @@ SEC Registered Investment Advisor
       }
       
     } else if (method === 'sms') {
-      console.log('📱 Sending SMS verification code to:', phone)
+      console.log('📱 Sending SMS verification code via Twilio to:', phone)
       
       try {
-        // Get Twilio credentials from environment
+        // Get Twilio credentials
         const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
         const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
         const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER')

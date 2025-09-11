@@ -42,13 +42,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       } else {
         console.log('✅ Login successful, checking 2FA status...')
         
-        // CRITICAL: Get user profile to check 2FA settings BEFORE proceeding
+        // Get user profile to check 2FA settings
         const { supabaseClient } = await import('../../lib/supabase-client')
         const { data: userData, error: userError } = await supabaseClient
           .from('users')
-          .select('two_factor_enabled, two_factor_method, phone, full_name, id')
+          .select('two_factor_enabled, two_factor_method, phone, full_name, id, email')
           .eq('email', email.toLowerCase())
-          .single()
+          .maybeSingle()
 
         if (userError) {
           console.error('❌ Failed to get user data:', userError)
@@ -60,17 +60,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         console.log('📊 User 2FA data:', { 
           two_factor_enabled: userData?.two_factor_enabled,
           method: userData?.two_factor_method,
-          hasPhone: !!userData?.phone 
+          hasPhone: !!userData?.phone,
+          email: userData?.email
         })
 
-        // Check if 2FA is enabled for this user
-        if (userData?.two_factor_enabled === true) {
+        // ALWAYS require 2FA for security (enabled by default for all accounts)
+        if (userData?.two_factor_enabled !== false) {
           console.log('🔐 2FA is enabled, showing challenge')
           setUserProfile(userData)
           setShow2FA(true)
           setLoading(false)
         } else {
-          console.log('✅ 2FA not required, proceeding to dashboard')
+          console.log('⚠️ 2FA disabled for this account, proceeding to dashboard')
           setLoading(false)
           onSuccess?.()
         }
