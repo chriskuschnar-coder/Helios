@@ -79,8 +79,8 @@ const InvestorDashboard: React.FC = () => {
     },
     {
       id: 'performance',
-      title: 'Performance Metrics',
-      icon: Activity,
+      title: 'Performance Analytics',
+      icon: Award,
       component: () => <PerformanceMetrics currentBalance={currentBalance} />
     },
     {
@@ -93,7 +93,7 @@ const InvestorDashboard: React.FC = () => {
       id: 'insights',
       title: 'AI Portfolio Insights',
       icon: Brain,
-      component: () => <AIInsights />
+      component: () => <AIInsights currentBalance={currentBalance} />
     }
   ]
 
