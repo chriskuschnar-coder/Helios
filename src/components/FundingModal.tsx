@@ -79,8 +79,15 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
   };
 
   const handleDocumentComplete = () => {
-    // Mark documents as completed in database
-    markDocumentsCompleted();
+    console.log('🎉 Document completion handler called')
+    // Mark documents as completed in database (background operation)
+    markDocumentsCompleted().then(() => {
+      console.log('✅ Documents marked as completed in user profile')
+    }).catch(error => {
+      console.warn('⚠️ Failed to mark documents completed:', error)
+    })
+    
+    // Immediately proceed to congratulations
     setShowDocumentSigning(false);
     setShowCongratulations(true);
   };
