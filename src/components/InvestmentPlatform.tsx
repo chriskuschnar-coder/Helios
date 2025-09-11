@@ -11,7 +11,7 @@ interface AuthenticatedAppProps {
 }
 
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
-  const { user, loading, pending2FA, pendingAuthData } = useAuth()
+  const { user, loading, pending2FA, pendingAuthData, signOut } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [error, setError] = useState('')
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
@@ -73,9 +73,9 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         onSuccess={() => {
           console.log('✅ 2FA verification successful - user now authenticated')
         }}
-        onCancel={() => {
+        onCancel={async () => {
           console.log('❌ 2FA cancelled - signing out')
-          // Handle sign out through context
+          await signOut()
         }}
         userEmail={pendingAuthData.userData.email}
         userData={pendingAuthData.userData}

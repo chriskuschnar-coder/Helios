@@ -143,14 +143,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.warn('Session check error:', error)
           setLoading(false)
-        } else if (session?.user) {
-          console.log('Found existing session, but checking 2FA status for:', session.user.email)
-          // Don't auto-login - require 2FA verification
-          setPending2FA(true)
-          setPendingAuthData({ userData: session.user, session })
-          setLoading(false)
         } else {
-          console.log('No existing session found')
+          console.log('No existing session found or session check error')
           setLoading(false)
         }
       } catch (err) {
@@ -424,8 +418,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // ALWAYS require 2FA - return requires2FA flag
-        return { error: null, requires2FA: true, userData: data.user, session: data.session }
+        // Set pending 2FA state and return requires2FA flag
+        setPending2FA(true)
+        setPendingAuthData({ userData: data.user, session: data.session })
+        
+        return { error: null, requires2FA: true }
       }
 
       return { error: { message: 'No user returned' } }

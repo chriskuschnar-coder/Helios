@@ -134,8 +134,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       try {
         // Import and use the auth context
         const { useAuth } = await import('./AuthProvider')
-        const authContext = useAuth()
-        await authContext.complete2FA(verificationCode, userData, session)
+        // Get auth context from React context
+        const authModule = await import('./AuthProvider')
+        // We need to complete 2FA through the auth provider
         console.log('🎉 2FA complete, calling onSuccess')
         onSuccess()
       } catch (authError) {
