@@ -81,7 +81,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_PPM_Final_85pp_TOC.pdf',
+      url: '/documents/Global_Markets_Subscription_Agreement_Complete (1).pdf',
       type: 'informational'
     },
     {
