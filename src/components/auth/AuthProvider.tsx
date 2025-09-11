@@ -101,7 +101,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Get initial session
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    supabaseClient.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn('⚠️ Session error:', error.message)
+        // Clear invalid session
+        supabaseClient.auth.signOut()
+        setSession(null)
+        setUser(null)
+        setProfile(null)
+        setAccount(null)
+        setLoading(false)
+        return
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
       
@@ -116,6 +128,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state change:', event, session ? 'session exists' : 'no session')
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('✅ Token refreshed successfully')
+        }
+        
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          console.log('👋 User signed out or deleted')
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+          setAccount(null)
+          setLoading(false)
+          return
+        }
+        
         setSession(session)
         setUser(session?.user ?? null)
         
@@ -156,7 +184,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signOut = async () => {
-    await supabaseClient.auth.signOut()
+    try {
+      await supabaseClient.auth.signOut()
+      setSession(null)
+      setUser(null)
+      setProfile(null)
+      setAccount(null)
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Force clear state even if signOut fails
+      setSession(null)
+      setUser(null)
+      setProfile(null)
+      setAccount(null)
+    }
   }
 
   const value = {
