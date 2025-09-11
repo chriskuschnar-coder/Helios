@@ -15,11 +15,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, method, email } = await req.json()
+    const { user_id, code, email } = await req.json()
     
-    console.log('🔑 2FA verification request:', { code: '***' + code.slice(-2), method, email })
+    console.log('🔍 2FA verification request:', { user_id, code: code ? '***' + code.slice(-2) : 'none', email })
     
     // Validate inputs
+    if (!user_id) {
+      throw new Error('User ID required')
+    }
+    
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
       throw new Error('Invalid verification code format - must be 6 digits')
     }

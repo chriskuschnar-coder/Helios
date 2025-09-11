@@ -15,11 +15,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { method, email, phone } = await req.json()
+    const { user_id, method, email, phone } = await req.json()
     
-    console.log('📝 2FA code request:', { method, email, phone: phone ? '***-***-' + phone.slice(-4) : 'none' })
+    console.log('📝 2FA code request:', { user_id, method, email, phone: phone ? '***-***-' + phone.slice(-4) : 'none' })
     
     // Validate inputs
+    if (!user_id) {
+      throw new Error('User ID required')
+    }
+    
     if (!method || !['email', 'sms'].includes(method)) {
       throw new Error('Invalid verification method')
     }
@@ -43,24 +47,23 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Verify user
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'apikey': supabaseServiceKey
-      }
-    })
-    
-    if (!userResponse.ok) {
-      throw new Error('Invalid user token')
-    }
-    
-    const user = await userResponse.json()
-    console.log('✅ User authenticated for 2FA:', user.email)
-
     // Generate 6-digit verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     console.log('🔑 Generated 2FA code:', code)
+
+    // Clear any existing codes for this user
+    const deleteResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?user_id=eq.${user_id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!deleteResponse.ok) {
+      console.warn('⚠️ Failed to clear existing 2FA codes (may not exist)')
+    }
 
     // Store code in database with expiration
     const storeResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes`, {
@@ -72,7 +75,7 @@ Deno.serve(async (req) => {
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        user_id: user.id,
+        user_id: user_id,
         code: code,
         method: method,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes

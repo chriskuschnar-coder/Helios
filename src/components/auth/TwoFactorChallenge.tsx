@@ -58,6 +58,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
+          user_id: userData.id,
           method: 'email',
           email: userEmail,
           phone: userData?.phone
@@ -105,9 +106,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
+          user_id: userData.id,
           code: verificationCode,
-          email: userEmail,
-          user_id: userData.id
+          email: userEmail
         })
       })
 
