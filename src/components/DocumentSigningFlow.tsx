@@ -30,22 +30,40 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
   const documents: Document[] = [
     {
-      id: 'confidential-ppm',
+      id: 'private_placement_memorandum',
       title: 'Confidential Private Placement Memorandum',
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
       signed: false,
-      url: '/documents/Global_Markets_PPM_Final_85pp_TOC.pdf',
+      url: '/documents/Global_Markets_PPM_Final_85pp_TOC (2) copy copy.pdf',
       type: 'investment_agreement'
     },
     {
-      id: 'limited-partnership-agreement',
-      title: 'Limited Partnership Agreement',
-      description: 'Legal framework and terms governing the limited partnership structure.',
-      required: false,
+      id: 'investment_agreement',
+      title: 'Investment Management Agreement',
+      description: 'Defines the terms of our investment management relationship and fee structure.',
+      required: true,
       signed: false,
-      url: '/documents/Global_Markets_LPA.pdf',
+      url: '/documents/Improved_Private_Placement_Memorandum.docx',
       type: 'investment_agreement'
+    },
+    {
+      id: 'risk_disclosure',
+      title: 'Risk Disclosure Statement',
+      description: 'Important information about investment risks and potential losses.',
+      required: true,
+      signed: false,
+      url: '/documents/Improved_Private_Placement_Memorandum copy.docx',
+      type: 'risk_disclosure'
+    },
+    {
+      id: 'accredited_investor',
+      title: 'Accredited Investor Certification',
+      description: 'Certification of your accredited investor status as required by SEC regulations.',
+      required: true,
+      signed: false,
+      url: '/documents/Improved_Private_Placement_Memorandum copy copy.docx',
+      type: 'accredited_investor'
     },
     {
       id: 'subscription_agreement',
@@ -53,26 +71,17 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       description: 'Legal agreement for your investment subscription in our fund.',
       required: true,
       signed: false,
-      url: '/documents/Global_Markets_Subscription_Agreement.pdf',
+      url: '/documents/Improved_Private_Placement_Memorandum copy copy copy.docx',
       type: 'subscription_agreement'
     },
     {
-      id: 'investor_questionnaire',
-      title: 'Investor Questionnaire & Accreditation',
-      description: 'Certification of your accredited investor status as required by SEC regulations.',
+      id: 'privacy_policy',
+      title: 'Privacy Policy Agreement',
+      description: 'Our privacy policy and data protection practices.',
       required: true,
       signed: false,
-      url: '/documents/Investor_Questionnaire.pdf',
-      type: 'accredited_investor'
-    },
-    {
-      id: 'risk-disclosure-aml',
-      title: 'Risk Disclosure & AML/KYC Pack',
-      description: 'Important information about investment risks, potential losses, and compliance requirements.',
-      required: true,
-      signed: false,
-      url: '/documents/Risk_Disclosure_Statement.pdf',
-      type: 'risk_disclosure'
+      url: '/documents/Improved_Private_Placement_Memorandum copy copy copy copy.docx',
+      type: 'privacy_policy'
     }
   ]
 
