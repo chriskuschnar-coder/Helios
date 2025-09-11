@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, CreditCard, Building2, Smartphone, DollarSign } from 'lucide-react'
-import { StripeCardForm } from './StripeCardForm'
+import StripeCardForm from './StripeCardForm'
 import { NOWPaymentsCrypto } from './NOWPaymentsCrypto'
 
 interface FundingModalProps {
