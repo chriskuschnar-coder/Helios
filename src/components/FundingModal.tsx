@@ -222,12 +222,12 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
     setWireInstructions({
       amount: amount,
       referenceCode: referenceCode,
-      bankName: 'JPMorgan Chase Bank, N.A.',
-      routingNumber: '021000021',
-      accountNumber: '4567890123',
-      accountName: 'Global Market Consulting LLC',
-      swiftCode: 'CHASUS33',
-      bankAddress: '270 Park Avenue, New York, NY 10017',
+      bankName: 'Bank of America, N.A.',
+      routingNumber: '026009593',
+      accountNumber: '898163803149',
+      accountName: 'Global Markets Consulting',
+      swiftCode: 'BOFAUS3N',
+      bankAddress: '222 Broadway, New York, NY 10038',
       beneficiaryAddress: '200 South Biscayne Boulevard, Suite 2800, Miami, FL 33131'
     });
   };
