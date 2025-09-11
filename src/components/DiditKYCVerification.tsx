@@ -639,5 +639,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         </button>
       </div>
     </div>
+    </div>
   )
 }
