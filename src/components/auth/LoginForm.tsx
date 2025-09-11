@@ -17,7 +17,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [show2FA, setShow2FA] = useState(false)
-  const [userEmail, setUserEmail] = useState('')
+  const [pendingAuth, setPendingAuth] = useState<{ userData: any; session: any } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,38 +39,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         setError(result.error.message)
         setLoading(false)
       } else if (result.requires2FA) {
-        console.log('🔐 2FA REQUIRED - transitioning to challenge screen')
-        setUserEmail(email) 
+        console.log('🔐 2FA REQUIRED - storing auth data and showing challenge')
+        setPendingAuth({ userData: result.userData, session: result.session })
         setShow2FA(true)
-        setLoading(false) // Stop loading to show 2FA screen
-        
-        // Send 2FA code immediately
-        try {
-          const pendingSessionData = localStorage.getItem('pending_2fa_session')
-          if (pendingSessionData) {
-            const pendingSession = JSON.parse(pendingSessionData)
-            
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-            
-            await fetch(`${supabaseUrl}/functions/v1/send-2fa-code`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${pendingSession.session.access_token}`,
-                'apikey': anonKey
-              },
-              body: JSON.stringify({
-                email: pendingSession.email,
-                user_id: pendingSession.id
-              })
-            })
-            
-            console.log('✅ 2FA code sent during login transition')
-          }
-        } catch (codeError) {
-          console.warn('⚠️ Failed to send 2FA code during login:', codeError)
-        }
+        setLoading(false)
       } else {
         console.log('✅ Login successful, no 2FA required')
         setLoading(false)
@@ -86,12 +58,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
   const handle2FASuccess = () => {
     console.log('✅ 2FA verification successful')
     setShow2FA(false)
+    setPendingAuth(null)
     onSuccess?.()
   }
 
   const handle2FACancel = () => {
     console.log('❌ 2FA cancelled')
     setShow2FA(false)
+    setPendingAuth(null)
     setLoading(false)
   }
 
@@ -100,7 +74,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       <TwoFactorChallenge
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
-        userEmail={userEmail}
+        userData={pendingAuth?.userData}
+        session={pendingAuth?.session}
       />
     )
   }

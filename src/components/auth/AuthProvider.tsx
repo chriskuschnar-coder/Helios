@@ -363,21 +363,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // CRITICAL: ALWAYS require 2FA - do NOT set user state yet
-        console.log('🔐 ALWAYS requiring 2FA verification for security')
-        
-        // Store session data for 2FA process but DO NOT set user state
-        const pendingUserData = {
-          id: data.user.id,
-          email: data.user.email || '',
-          session: data.session
-        }
-        
-        // Store in localStorage for 2FA process
-        localStorage.setItem('pending_2fa_session', JSON.stringify(pendingUserData))
-        
-        // CRITICAL: Return requires2FA=true WITHOUT setting user state
-        return { error: null, requires2FA: true }
+        // ALWAYS require 2FA - return requires2FA flag
+        return { error: null, requires2FA: true, userData: data.user, session: data.session }
       }
 
       return { error: { message: 'No user returned' } }
@@ -450,17 +437,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const complete2FA = async (code: string) => {
-    // Get pending session data
-    const pendingSessionData = localStorage.getItem('pending_2fa_session')
-    if (!pendingSessionData) {
-      return { error: { message: 'No pending 2FA session found' } }
-    }
-
-    const pendingSession = JSON.parse(pendingSessionData)
-    
+  const complete2FA = async (code: string, userData: any, session: any) => {
     try {
-      console.log('🔍 Verifying 2FA code for user:', pendingSession.email)
+      console.log('🔍 Verifying 2FA code for user:', userData.email)
       
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
@@ -469,13 +448,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pendingSession.session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
           code: code,
-          email: pendingSession.email,
-          user_id: pendingSession.id
+          email: userData.email,
+          user_id: userData.id
         })
       })
 
@@ -490,18 +469,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.valid) {
         console.log('✅ 2FA verification successful, completing login')
         
-        // Clear pending session data
-        localStorage.removeItem('pending_2fa_session')
-        
         // Set the Supabase session
-        await supabaseClient.auth.setSession(pendingSession.session)
+        await supabaseClient.auth.setSession(session)
         
         // Now set user state and load account data
         setUser({
-          id: pendingSession.id,
-          email: pendingSession.email
+          id: userData.id,
+          email: userData.email || '',
+          full_name: userData.user_metadata?.full_name
         })
-        await loadUserAccount(pendingSession.id)
+        await loadUserAccount(userData.id)
         
         return { error: null }
       } else {
@@ -517,31 +494,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🚪 Signing out user...')
       
-      // Clear any pending 2FA data
-      localStorage.removeItem('pending_2fa_session')
-      
       const { error } = await supabaseClient.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
-        // Force clear state even if signOut fails
-        setUser(null)
-        setAccount(null)
-        setSubscription(null)
-        setProfile(null)
       } else {
         console.log('✅ Sign out successful')
-        setUser(null)
-        setAccount(null)
-        setSubscription(null)
-        setProfile(null)
       }
-    } catch (err) {
-      console.error('Sign out failed:', err)
-      // Force clear state on any error
+      
+      // Always clear state and reload page for clean logout
       setUser(null)
       setAccount(null)
       setSubscription(null)
       setProfile(null)
+      
+      // Force page reload to ensure clean state
+      window.location.reload()
+    } catch (err) {
+      console.error('Sign out failed:', err)
+      // Force reload on any error
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
+      window.location.reload()
     }
   }
 

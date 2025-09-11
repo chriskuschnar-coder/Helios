@@ -5,36 +5,35 @@ import { useAuth } from './AuthProvider'
 interface TwoFactorChallengeProps {
   onSuccess: () => void
   onCancel: () => void
-  userEmail: string
+  userData: any
+  session: any
 }
 
 export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({ 
   onSuccess, 
   onCancel, 
-  userEmail
+  userData,
+  session
 }) => {
   const { complete2FA } = useAuth()
   const [verificationCode, setVerificationCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [codeSent, setCodeSent] = useState(false)
   const [sendingCode, setSendingCode] = useState(true)
   const [demoCode, setDemoCode] = useState('')
   const [resendCount, setResendCount] = useState(0)
   const [canResend, setCanResend] = useState(true)
 
   useEffect(() => {
-    // Check if we have a pending session and send code
-    const pendingSessionData = localStorage.getItem('pending_2fa_session')
-    if (pendingSessionData) {
-      console.log('🔐 2FA Challenge mounted - sending verification code')
+    if (userData && session) {
+      console.log('🔐 2FA Challenge mounted - sending verification code to:', userData.email)
       sendVerificationCode()
     } else {
-      console.error('❌ No pending 2FA session found')
-      setError('No pending authentication session found')
+      console.error('❌ No user data or session provided')
+      setError('Authentication data missing')
     }
-  }, [])
+  }, [userData, session])
 
   const sendVerificationCode = async () => {
     if (resendCount >= 3) {
@@ -52,15 +51,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setSuccess('')
 
     try {
-      console.log('📧 Sending email verification code to:', userEmail)
-      
-      // Get pending session data
-      const pendingSessionData = localStorage.getItem('pending_2fa_session')
-      if (!pendingSessionData) {
-        throw new Error('No pending 2FA session found')
-      }
-      
-      const pendingSession = JSON.parse(pendingSessionData)
+      console.log('📧 Sending email verification code to:', userData.email)
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
@@ -69,12 +60,12 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pendingSession.session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
-          email: userEmail,
-          user_id: pendingSession.id
+          email: userData.email,
+          user_id: userData.id
         })
       })
 
@@ -88,14 +79,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('✅ Verification code sent successfully:', result)
       
       if (result.email_sent) {
-        setSuccess(`Verification code sent to ${userEmail}`)
+        setSuccess(`Verification code sent to ${userData.email}`)
       } else if (result.sms_sent) {
         setSuccess(`Verification code sent via SMS (email failed)`)
       } else {
         setSuccess(`Code generated (delivery may have failed)`)
       }
       
-      setCodeSent(true)
       setResendCount(prev => prev + 1)
       
       // Show demo code for testing
@@ -130,9 +120,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     try {
       console.log('🔍 Verifying 2FA code...')
       
-      // CRITICAL: Call the complete2FA function from useAuth
-      console.log('🔄 Completing 2FA login process with useAuth...')
-      const completeResult = await complete2FA(verificationCode)
+      // Call the complete2FA function with user data and session
+      const completeResult = await complete2FA(verificationCode, userData, session)
       
       if (completeResult.error) {
         console.error('❌ 2FA completion failed:', completeResult.error)
@@ -199,7 +188,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
               <span className="font-medium text-blue-900">Verification Code Sent</span>
             </div>
             <p className="text-blue-800">
-              Check your email: {userEmail}
+              Check your email: {userData?.email}
             </p>
           </div>
         )}

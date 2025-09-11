@@ -12,36 +12,14 @@ interface AuthenticatedAppProps {
 function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
-  const [forceShowAuth, setForceShowAuth] = useState(false)
   const [authTimeout, setAuthTimeout] = useState(false)
   const [error, setError] = useState('')
-  const [pending2FA, setPending2FA] = useState(false)
 
   console.log('🔍 AuthenticatedApp state:', {
     user: user?.email,
     loading,
-    forceShowAuth,
-    authTimeout,
-    pending2FA
+    authTimeout
   })
-
-  // Check for pending 2FA session on mount and during renders
-  useEffect(() => {
-    const checkPending2FA = () => {
-      const pendingSession = localStorage.getItem('pending_2fa_session')
-      if (pendingSession && !user) {
-        console.log('🔐 Found pending 2FA session - showing challenge')
-        setPending2FA(true)
-        setForceShowAuth(true)
-      } else if (!pendingSession && pending2FA) {
-        console.log('✅ 2FA completed - clearing pending state')
-        setPending2FA(false)
-        setForceShowAuth(false)
-      }
-    }
-    
-    checkPending2FA()
-  }, [user, pending2FA])
 
   // Prevent infinite loading with shorter timeout
   useEffect(() => {
@@ -49,7 +27,6 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('Auth loading timeout - showing login forms')
-        setForceShowAuth(true)
         setAuthTimeout(true)
       }, 1500) // Even shorter timeout
       
@@ -83,36 +60,20 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   }
 
   // Show loading only briefly, then force auth forms
-  if (loading && !forceShowAuth && !authTimeout) {
+  if (loading && !authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 text-navy-600 mx-auto mb-3 animate-spin" />
           <h3 className="text-base font-semibold text-gray-900 mb-2">Loading Portal</h3>
-          <button
-            onClick={() => setForceShowAuth(true)}
-            className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            Skip to Login →
-          </button>
         </div>
       </div>
     )
   }
 
-  // CRITICAL: Show auth forms if no user OR if user exists but hasn't completed 2FA
-  // Check if there's a pending 2FA session
-  const pendingSession = localStorage.getItem('pending_2fa_session')
-  
-  // CRITICAL: Block dashboard access if no user OR pending 2FA exists
-  if (!user || forceShowAuth || authTimeout || pendingSession || pending2FA) {
-    console.log('🔐 Showing auth forms - reasons:', {
-      noUser: !user,
-      forceShowAuth,
-      authTimeout,
-      pendingSession: !!pendingSession,
-      pending2FA
-    })
+  // Show auth forms if no user or auth timeout
+  if (!user || authTimeout) {
+    console.log('🔐 Showing auth forms - user:', !!user, 'timeout:', authTimeout)
     
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -120,9 +81,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
           <SignupForm 
             onSuccess={() => {
               try {
-              setForceShowAuth(false)
               setAuthTimeout(false)
-              setPending2FA(false)
               } catch (err) {
                 console.error('❌ Signup success handler error:', err);
                 setError('Login transition failed');
@@ -136,10 +95,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
               console.log('🎉 Login success callback - user should now access dashboard')
-              localStorage.removeItem('pending_2fa_session') // Clear any pending 2FA data
-              setForceShowAuth(false)
               setAuthTimeout(false)
-              setPending2FA(false)
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');
