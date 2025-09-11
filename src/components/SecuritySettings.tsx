@@ -1,253 +1,231 @@
 import React, { useState } from 'react'
-import { Shield, Smartphone, Key, AlertTriangle, CheckCircle, Settings, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
-import { TwoFactorSetup } from './auth/TwoFactorSetup'
+import { PortfolioValueCard } from './PortfolioValueCard'
+import { PortfolioPerformanceChart } from './PortfolioPerformanceChart'
+import { FundingModal } from './FundingModal'
+import { MarketsTab } from './markets/MarketsTab'
+import { ResearchTab } from './research/ResearchTab'
+import { PerformanceMetrics } from './portfolio/PerformanceMetrics'
+import { InteractiveAllocationChart } from './portfolio/InteractiveAllocationChart'
+import { AIInsights } from './portfolio/AIInsights'
+import { FundNAVChart } from './portfolio/FundNAVChart'
+import { PortfolioAnalytics } from './portfolio/PortfolioAnalytics'
+import { 
+  TrendingUp, 
+  BarChart3, 
+  Brain, 
+  Globe, 
+  FileText, 
+  Shield, 
+  Target,
+  Activity,
+  Plus,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  Award,
+  Eye,
+  Settings,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
+import { SecuritySettings } from './SecuritySettings'
 
-export function SecuritySettings() {
-  const { user, enableTwoFactor, disableTwoFactor } = useAuth()
-  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false)
+const InvestorDashboard: React.FC = () => {
+  const { user, account, loading } = useAuth()
+  const [selectedTab, setSelectedTab] = useState<'portfolio' | 'markets' | 'research' | 'transactions'>('portfolio')
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [prefilledAmount, setPrefilledAmount] = useState<number | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
-  const handleEnable2FA = () => {
-    setShowTwoFactorSetup(true)
-  }
+  const currentBalance = account?.balance || 0
+  const hasActivity = currentBalance > 0
 
-  const handleDisable2FA = async () => {
-    setLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      const result = await disableTwoFactor()
-      
-      if (result.success) {
-        setSuccess('Two-factor authentication has been disabled')
-        setShowDisableConfirm(false)
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
       } else {
-        setError(result.error || 'Failed to disable 2FA')
+        newSet.add(sectionId)
       }
-    } catch (err) {
-      setError('Failed to disable 2FA')
-    } finally {
-      setLoading(false)
-    }
+      return newSet
+    })
   }
 
-  const handle2FASuccess = () => {
-    setShowTwoFactorSetup(false)
-    setSuccess('Two-factor authentication has been enabled successfully!')
+  const handleFundPortfolio = (amount?: number) => {
+    if (amount) {
+      setPrefilledAmount(amount)
+    }
+    setShowFundingModal(true)
+  }
+
+  const handleWithdraw = () => {
+    alert('Withdrawal functionality will be implemented here')
+  }
+
+  const tabs = [
+    { id: 'portfolio', name: 'Portfolio', icon: BarChart3 },
+    { id: 'markets', name: 'Markets', icon: Globe },
+    { id: 'research', name: 'Research', icon: Brain },
+          const { error: unenrollError } = await supabaseClient.auth.mfa.unenroll({ 
+            factorId: factor.id 
+          })
+          
+          if (unenrollError) {
+            console.error('❌ Unenroll error:', unenrollError)
+            throw unenrollError
+          }
+  ]
+
+  const portfolioSections = [
+    {
+      id: 'allocation',
+      } else {
+        console.log('ℹ️ No TOTP factors found to unenroll')
+      title: 'Asset Allocation',
+      icon: Target,
+      component: () => <InteractiveAllocationChart currentBalance={currentBalance} />
+    },
+    {
+      id: 'performance',
+      title: 'Performance Analytics',
+      icon: Award,
+      component: () => <PerformanceMetrics currentBalance={currentBalance} />
+        console.error('❌ Database update error:', error)
+    },
+    {
+      id: 'nav',
+      title: 'Fund NAV History',
+      icon: TrendingUp,
+      component: () => <FundNAVChart />
+      console.log('✅ 2FA disabled successfully')
+    },
+    {
+      id: 'insights',
+      title: 'AI Portfolio Insights',
+      icon: Brain,
+      component: () => <AIInsights currentBalance={currentBalance} />
+    }
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-navy-100 rounded-full flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <BarChart3 className="h-8 w-8 text-navy-600" />
+          </div>
+          <p className="text-gray-600">Connecting to your account...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Shield className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Security Settings</h3>
-            <p className="text-sm text-gray-600">Manage your account security preferences</p>
+    <div className="min-h-screen bg-gray-50 safe-area-bottom">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id as any)}
+                className={`flex items-center space-x-2 px-4 sm:px-6 py-4 font-medium text-sm sm:text-base transition-all duration-200 whitespace-nowrap mobile-nav-tab ${
+                  selectedTab === tab.id
+                    ? 'bg-navy-600 text-white'
+                    : 'text-gray-600 hover:text-navy-600 hover:bg-gray-50'
+                }`}
+              >
+                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{tab.name}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <span className="text-red-900 font-medium">{error}</span>
-            </div>
+        {/* Tab Content */}
+        {selectedTab === 'portfolio' && (
+          <div className="space-y-6">
+            {/* Portfolio Value Card - Always Visible */}
+            <PortfolioValueCard 
+              onFundPortfolio={handleFundPortfolio}
+              onWithdraw={handleWithdraw}
+            />
+            <PortfolioPerformanceChart currentBalance={currentBalance} />
+            
+            {/* Portfolio sections in expandable folders */}
+            {portfolioSections.map((section) => (
+              <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div 
+                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
+                        <section.icon className="h-6 w-6 text-navy-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">Click to expand detailed analysis</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      {expandedSections.has(section.id) ? (
+                        <ChevronDown className="h-5 w-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {expandedSections.has(section.id) && (
+                  <div className="border-t border-gray-100 p-6">
+                    <section.component />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-green-900 font-medium">{success}</span>
+        {selectedTab === 'markets' && <MarketsTab />}
+        {selectedTab === 'research' && <ResearchTab />}
+        {selectedTab === 'transactions' && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction History</h3>
+              <p className="text-gray-600 mb-6">
+                View your complete transaction history and account activity
+              </p>
+              <button
+                onClick={() => handleFundPortfolio()}
+                className="bg-navy-600 hover:bg-navy-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add First Transaction</span>
+              </button>
             </div>
           </div>
         )}
-
-        <div className="space-y-6">
-          {/* Two-Factor Authentication */}
-          <div className="border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  user?.two_factor_enabled ? 'bg-green-100' : 'bg-gray-100'
-                }`}>
-                  <Smartphone className={`h-4 w-4 ${
-                    user?.two_factor_enabled ? 'text-green-600' : 'text-gray-600'
-                  }`} />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">Two-Factor Authentication</h4>
-                  <p className="text-sm text-gray-600">
-                    Add an extra layer of security with authenticator app codes
-                  </p>
-                </div>
-              </div>
-              
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                user?.two_factor_enabled 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {user?.two_factor_enabled ? 'Enabled' : 'Disabled'}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {user?.two_factor_enabled ? (
-                <div>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="text-green-900 font-medium">
-                        Two-factor authentication is active
-                      </span>
-                    </div>
-                    <p className="text-sm text-green-700 mt-2">
-                      Your account is protected with TOTP-based two-factor authentication.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowDisableConfirm(true)}
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    {loading ? 'Disabling...' : 'Disable 2FA'}
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                      <span className="text-yellow-900 font-medium">
-                        Two-factor authentication is not enabled
-                      </span>
-                    </div>
-                    <p className="text-sm text-yellow-700 mt-2">
-                      Enable 2FA to add an extra layer of security to your account.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleEnable2FA}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Enable 2FA
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Password Security */}
-          <div className="border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Lock className="h-4 w-4 text-gray-600" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Password</h4>
-                <p className="text-sm text-gray-600">
-                  Change your account password
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                // TODO: Implement password change flow
-                setError('Password change functionality coming soon')
-              }}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Change Password
-            </button>
-          </div>
-
-          {/* Session Management */}
-          <div className="border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Settings className="h-4 w-4 text-gray-600" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Active Sessions</h4>
-                <p className="text-sm text-gray-600">
-                  Manage your active login sessions
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">Current Session</div>
-                  <div className="text-sm text-gray-600">
-                    {navigator.userAgent.includes('Chrome') ? 'Chrome' : 
-                     navigator.userAgent.includes('Firefox') ? 'Firefox' : 
-                     navigator.userAgent.includes('Safari') ? 'Safari' : 'Browser'} • 
-                    {new Date().toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Disable 2FA Confirmation Modal */}
-      {showDisableConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Disable Two-Factor Authentication?
-              </h3>
-              <p className="text-gray-600">
-                This will make your account less secure. Are you sure you want to continue?
-              </p>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDisableConfirm(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDisable2FA}
-                disabled={loading}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-              >
-                {loading ? 'Disabling...' : 'Disable 2FA'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Two-Factor Setup Modal */}
-      {showTwoFactorSetup && (
-        <TwoFactorSetup
-          onClose={() => setShowTwoFactorSetup(false)}
-          onSuccess={handle2FASuccess}
-        />
-      )}
-    </>
+      {/* Funding Modal */}
+      <FundingModal
+        isOpen={showFundingModal}
+        onClose={() => {
+          setShowFundingModal(false)
+          setPrefilledAmount(null)
+        }}
+        prefilledAmount={prefilledAmount}
+      />
+    </div>
   )
 }
+
+export default InvestorDashboard
