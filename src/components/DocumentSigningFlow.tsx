@@ -30,7 +30,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
 
   const documents: Document[] = [
     {
-      id: 'ppm',
+      id: 'confidential-ppm',
       title: 'Confidential Private Placement Memorandum',
       description: 'Comprehensive investment overview, strategy details, and fund structure information.',
       required: false,
@@ -39,7 +39,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'investment_agreement'
     },
     {
-      id: 'lpa',
+      id: 'limited-partnership-agreement',
       title: 'Limited Partnership Agreement',
       description: 'Legal framework and terms governing the limited partnership structure.',
       required: false,
@@ -66,7 +66,7 @@ export function DocumentSigningFlow({ onComplete, onBack }: DocumentSigningFlowP
       type: 'accredited_investor'
     },
     {
-      id: 'risk_disclosure_aml',
+      id: 'risk-disclosure-aml',
       title: 'Risk Disclosure & AML/KYC Pack',
       description: 'Important information about investment risks, potential losses, and compliance requirements.',
       required: true,
