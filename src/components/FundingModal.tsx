@@ -99,11 +99,23 @@ export function FundingModal({ isOpen, onClose, prefilledAmount, onProceedToPaym
       kyc_status: user?.kyc_status
     });
     
-    // After congratulations, always go to KYC verification first
     try {
-      setShowCongratulations(false);
-      setShowKYCVerification(true);
-      console.log('✅ Navigated to KYC verification');
+      console.log('🔄 Transitioning from congratulations to KYC...');
+      
+      // Add small delay to ensure state is clean
+      setTimeout(() => {
+        try {
+          setShowCongratulations(false);
+          setShowKYCVerification(true);
+          console.log('✅ Successfully navigated to KYC verification');
+        } catch (innerError) {
+          console.error('❌ Inner navigation error:', innerError);
+          // Fallback: go directly to funding
+          setShowCongratulations(false);
+          setShowFundingPage(true);
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('❌ Error navigating to KYC:', error);
       // Fallback: go directly to funding if KYC fails

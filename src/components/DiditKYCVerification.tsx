@@ -17,20 +17,64 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
   const [checkingStatus, setCheckingStatus] = useState(false)
   const [kycStatus, setKycStatus] = useState<any>(null)
   const [showTimeoutOptions, setShowTimeoutOptions] = useState(false)
+  const [componentError, setComponentError] = useState('')
   const [manualOverride, setManualOverride] = useState(false)
 
   // Check KYC status on component mount
   useEffect(() => {
-    if (user) {
-      checkKYCStatus()
+    try {
+      if (user) {
+        checkKYCStatus()
+      }
+    } catch (err) {
+      console.error('❌ KYC component mount error:', err);
+      setComponentError('Failed to initialize verification');
     }
     
     // Cleanup on unmount
     return () => {
-      setCheckingStatus(false)
-      setShowTimeoutOptions(false)
+      try {
+        setCheckingStatus(false)
+        setShowTimeoutOptions(false)
+      } catch (err) {
+        console.error('❌ KYC cleanup error:', err);
+      }
     }
   }, [user])
+
+  // Component error boundary
+  if (componentError) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertCircle className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-2xl font-bold text-red-900 mb-4">
+          Verification Error
+        </h3>
+        <p className="text-gray-600 mb-6">
+          {componentError}
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={() => {
+              setComponentError('');
+              setError('');
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium mr-3"
+          >
+            Try Again
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Return to Portfolio
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const checkKYCStatus = async () => {
     if (!user) return
@@ -82,7 +126,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
           setIsVerified(true)
           // Auto-proceed after short delay
           setTimeout(() => {
-            onVerificationComplete()
+            try {
+              onVerificationComplete()
+            } catch (err) {
+              console.error('❌ Verification complete callback error:', err);
+              setError('Failed to proceed after verification');
+            }
           }, 1500)
         }
       } else {

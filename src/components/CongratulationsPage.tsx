@@ -9,26 +9,69 @@ export function CongratulationsPage({ onContinueToPayment }: CongratulationsPage
   const [showContent, setShowContent] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    setTimeout(() => setShowContent(true), 300);
-    setTimeout(() => setShowButton(true), 800);
+    try {
+      setTimeout(() => setShowContent(true), 300);
+      setTimeout(() => setShowButton(true), 800);
+    } catch (err) {
+      console.error('❌ Congratulations page initialization error:', err);
+      setError('Page initialization failed');
+    }
   }, []);
 
   const handleContinueClick = () => {
     console.log('🎉 Continue to payment clicked from congratulations page');
+    
+    if (!onContinueToPayment) {
+      console.error('❌ onContinueToPayment function not provided');
+      setError('Navigation function not available');
+      return;
+    }
+    
     setIsProcessing(true);
+    setError('');
     
     // Small delay to show processing state, then continue
     setTimeout(() => {
       try {
+        console.log('🚀 Calling onContinueToPayment...');
         onContinueToPayment();
       } catch (error) {
         console.error('❌ Error continuing to payment:', error);
+        setError('Failed to continue to payment. Please try again.');
         setIsProcessing(false);
       }
     }, 500);
   };
+  
+  // Error boundary fallback
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="h-8 w-8 text-red-600" />
+        </div>
+        <h3 className="text-xl font-bold text-red-900 mb-4">
+          Something went wrong
+        </h3>
+        <p className="text-gray-600 mb-6">
+          {error}
+        </p>
+        <button
+          onClick={() => {
+            setError('');
+            setIsProcessing(false);
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+  
   return (
     <div className="relative bg-white min-h-screen overflow-hidden">
       {/* Floating Balloons */}

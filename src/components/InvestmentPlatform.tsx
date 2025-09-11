@@ -14,9 +14,11 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [showSignup, setShowSignup] = useState(false)
   const [forceShowAuth, setForceShowAuth] = useState(false)
   const [authTimeout, setAuthTimeout] = useState(false)
+  const [error, setError] = useState('')
 
   // Prevent infinite loading with shorter timeout
   useEffect(() => {
+    try {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('Auth loading timeout - showing login forms')
@@ -26,7 +28,32 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
       
       return () => clearTimeout(timeout)
     }
+    } catch (err) {
+      console.error('❌ Auth timeout setup error:', err);
+      setError('Authentication setup failed');
+    }
   }, [loading])
+
+  // Error boundary
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError('');
+              window.location.reload();
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading only briefly, then force auth forms
   if (loading && !forceShowAuth && !authTimeout) {
@@ -52,8 +79,13 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         {showSignup ? (
           <SignupForm 
             onSuccess={() => {
+              try {
               setForceShowAuth(false)
               setAuthTimeout(false)
+              } catch (err) {
+                console.error('❌ Signup success handler error:', err);
+                setError('Login transition failed');
+              }
             }}
             onSwitchToLogin={() => setShowSignup(false)}
             onBackToHome={onBackToHome}
@@ -61,8 +93,13 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
         ) : (
           <LoginForm 
             onSuccess={() => {
+              try {
               setForceShowAuth(false)
               setAuthTimeout(false)
+              } catch (err) {
+                console.error('❌ Login success handler error:', err);
+                setError('Login transition failed');
+              }
             }}
             onSwitchToSignup={() => setShowSignup(true)}
             onBackToHome={onBackToHome}
@@ -72,7 +109,25 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
     )
   }
 
-  return <DashboardSelector />
+  try {
+    return <DashboardSelector />
+  } catch (err) {
+    console.error('❌ Dashboard render error:', err);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Error</h3>
+          <p className="text-gray-600 mb-4">Failed to load dashboard</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
 
 interface InvestmentPlatformProps {
@@ -80,9 +135,27 @@ interface InvestmentPlatformProps {
 }
 
 export function InvestmentPlatform({ onBackToHome }: InvestmentPlatformProps) {
-  return (
-    <AuthProvider>
-      <AuthenticatedApp onBackToHome={onBackToHome} />
-    </AuthProvider>
-  )
+  try {
+    return (
+      <AuthProvider>
+        <AuthenticatedApp onBackToHome={onBackToHome} />
+      </AuthProvider>
+    )
+  } catch (err) {
+    console.error('❌ Investment platform error:', err);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Platform Error</h3>
+          <p className="text-gray-600 mb-4">Failed to initialize investment platform</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
