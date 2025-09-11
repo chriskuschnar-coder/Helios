@@ -363,89 +363,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('✅ Sign in successful for:', data.user.email)
         
-        // CRITICAL: Check if user has 2FA enabled BEFORE setting user state
-        const { data: userData, error: userError } = await supabaseClient
-          .from('users')
-          .select('two_factor_enabled, two_factor_method, full_name, phone, documents_completed, kyc_status')
-          .eq('id', data.user.id)
-          .single()
-
-        console.log('🔍 User 2FA status:', {
-          two_factor_enabled: userData?.two_factor_enabled,
-          two_factor_method: userData?.two_factor_method,
-          user_id: data.user.id
-        })
-
-        if (!userError && userData?.two_factor_enabled) {
-          console.log('🔐 2FA enabled for user, sending verification code')
-          
-          // IMPORTANT: Do NOT set user state yet - keep them in pending state
-          // Set minimal user data for 2FA process only
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            full_name: userData.full_name,
-            phone: userData.phone,
-            two_factor_enabled: true,
-            two_factor_method: userData.two_factor_method,
-            documents_completed: userData.documents_completed,
-            kyc_status: userData.kyc_status
-          })
-
-          // Send 2FA code via email
-          try {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-            
-            const codeResponse = await fetch(`${supabaseUrl}/functions/v1/send-2fa-code`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.session?.access_token}`,
-                'apikey': anonKey
-              },
-              body: JSON.stringify({
-                method: 'email',
-                email: data.user.email
-              })
-            })
-
-            if (codeResponse.ok) {
-              console.log('✅ 2FA code sent successfully')
-              const codeResult = await codeResponse.json()
-              console.log('📧 Email send result:', codeResult)
-            } else {
-              console.warn('⚠️ Failed to send 2FA code, but continuing with 2FA flow')
-              const errorData = await codeResponse.json()
-              console.error('📧 Email send error:', errorData)
-            }
-          } catch (codeError) {
-            console.warn('⚠️ 2FA code sending failed:', codeError)
-          }
-          
-          // CRITICAL: Return requires2FA flag WITHOUT loading account data
-          console.log('🔐 Returning requires2FA=true to show challenge')
-          return { error: null, requires2FA: true }
-        } else {
-          console.log('✅ No 2FA required, completing login')
-          
-          // Set user and load account data for users without 2FA
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            full_name: userData?.full_name || data.user.user_metadata?.full_name,
-            phone: userData?.phone,
-            documents_completed: userData?.documents_completed,
-            kyc_status: userData?.kyc_status,
-            two_factor_enabled: userData?.two_factor_enabled || false,
-            two_factor_method: userData?.two_factor_method
-          })
-          
-          // Load user account data
-          await loadUserAccount(data.user.id)
-          
-          return { error: null }
+        // CRITICAL: ALWAYS require 2FA - do NOT set user state yet
+        console.log('🔐 ALWAYS requiring 2FA verification for security')
+        
+        // Store session data for 2FA process but DO NOT set user state
+        const pendingUserData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          session: data.session
         }
+        
+        // Store in localStorage for 2FA process
+        localStorage.setItem('pending_2fa_session', JSON.stringify(pendingUserData))
+        
+        // CRITICAL: Return requires2FA=true WITHOUT setting user state
+        return { error: null, requires2FA: true }
       }
 
       return { error: { message: 'No user returned' } }
@@ -519,24 +451,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const complete2FA = async (code: string) => {
-    if (!user) {
-      return { error: { message: 'No user found' } }
+    // Get pending session data
+    const pendingSessionData = localStorage.getItem('pending_2fa_session')
+    if (!pendingSessionData) {
+      return { error: { message: 'No pending 2FA session found' } }
     }
 
+    const pendingSession = JSON.parse(pendingSessionData)
+    
     try {
-      // Verify the 2FA code
-      const { data, error } = await supabaseClient.functions.invoke('verify-2fa-code', {
-        body: { code, user_id: user.id }
+      console.log('🔍 Verifying 2FA code for user:', pendingSession.email)
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pendingSession.session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          code: code,
+          email: pendingSession.email,
+          user_id: pendingSession.id
+        })
       })
 
-      if (error) {
-        console.error('2FA verification error:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('2FA verification error:', errorData)
         return { error: { message: 'Invalid verification code' } }
       }
 
-      if (data?.success) {
-        // Refresh user profile and account data
-        await refreshProfile()
+      const result = await response.json()
+      
+      if (result.valid) {
+        console.log('✅ 2FA verification successful, completing login')
+        
+        // Clear pending session data
+        localStorage.removeItem('pending_2fa_session')
+        
+        // Set the Supabase session
+        await supabaseClient.auth.setSession(pendingSession.session)
+        
+        // Now set user state and load account data
+        setUser({
+          id: pendingSession.id,
+          email: pendingSession.email
+        })
+        await loadUserAccount(pendingSession.id)
+        
         return { error: null }
       } else {
         return { error: { message: 'Invalid verification code' } }
@@ -549,10 +515,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Signing out user...')
+      
+      // Clear any pending 2FA data
+      localStorage.removeItem('pending_2fa_session')
+      
       const { error } = await supabaseClient.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
+        // Force clear state even if signOut fails
+        setUser(null)
+        setAccount(null)
+        setSubscription(null)
+        setProfile(null)
       } else {
+        console.log('✅ Sign out successful')
         setUser(null)
         setAccount(null)
         setSubscription(null)
@@ -560,6 +537,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error('Sign out failed:', err)
+      // Force clear state on any error
+      setUser(null)
+      setAccount(null)
+      setSubscription(null)
+      setProfile(null)
     }
   }
 

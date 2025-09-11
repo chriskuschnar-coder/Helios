@@ -11,9 +11,13 @@ export function DashboardSelector() {
 
   const handleSignOut = async () => {
     try {
+      console.log('🚪 Dashboard sign out initiated')
       await signOut()
+      console.log('✅ Sign out completed')
     } catch (error) {
       console.error('Error signing out:', error)
+      // Force reload on sign out error
+      window.location.reload()
     }
   }
 

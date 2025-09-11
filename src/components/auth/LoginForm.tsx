@@ -39,10 +39,38 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         setError(result.error.message)
         setLoading(false)
       } else if (result.requires2FA) {
-        console.log('🔐 2FA REQUIRED - showing challenge screen')
-        setUserEmail(email)
+        console.log('🔐 2FA REQUIRED - transitioning to challenge screen')
+        setUserEmail(email) 
         setShow2FA(true)
         setLoading(false) // Stop loading to show 2FA screen
+        
+        // Send 2FA code immediately
+        try {
+          const pendingSessionData = localStorage.getItem('pending_2fa_session')
+          if (pendingSessionData) {
+            const pendingSession = JSON.parse(pendingSessionData)
+            
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+            
+            await fetch(`${supabaseUrl}/functions/v1/send-2fa-code`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${pendingSession.session.access_token}`,
+                'apikey': anonKey
+              },
+              body: JSON.stringify({
+                email: pendingSession.email,
+                user_id: pendingSession.id
+              })
+            })
+            
+            console.log('✅ 2FA code sent during login transition')
+          }
+        } catch (codeError) {
+          console.warn('⚠️ Failed to send 2FA code during login:', codeError)
+        }
       } else {
         console.log('✅ Login successful, no 2FA required')
         setLoading(false)

@@ -15,14 +15,33 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   const [forceShowAuth, setForceShowAuth] = useState(false)
   const [authTimeout, setAuthTimeout] = useState(false)
   const [error, setError] = useState('')
+  const [pending2FA, setPending2FA] = useState(false)
 
   console.log('🔍 AuthenticatedApp state:', {
     user: user?.email,
     loading,
-    two_factor_enabled: user?.two_factor_enabled,
     forceShowAuth,
-    authTimeout
+    authTimeout,
+    pending2FA
   })
+
+  // Check for pending 2FA session on mount and during renders
+  useEffect(() => {
+    const checkPending2FA = () => {
+      const pendingSession = localStorage.getItem('pending_2fa_session')
+      if (pendingSession && !user) {
+        console.log('🔐 Found pending 2FA session - showing challenge')
+        setPending2FA(true)
+        setForceShowAuth(true)
+      } else if (!pendingSession && pending2FA) {
+        console.log('✅ 2FA completed - clearing pending state')
+        setPending2FA(false)
+        setForceShowAuth(false)
+      }
+    }
+    
+    checkPending2FA()
+  }, [user, pending2FA])
 
   // Prevent infinite loading with shorter timeout
   useEffect(() => {
@@ -82,7 +101,19 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
   }
 
   // CRITICAL: Show auth forms if no user OR if user exists but hasn't completed 2FA
-  if (!user || forceShowAuth || authTimeout) {
+  // Check if there's a pending 2FA session
+  const pendingSession = localStorage.getItem('pending_2fa_session')
+  
+  // CRITICAL: Block dashboard access if no user OR pending 2FA exists
+  if (!user || forceShowAuth || authTimeout || pendingSession || pending2FA) {
+    console.log('🔐 Showing auth forms - reasons:', {
+      noUser: !user,
+      forceShowAuth,
+      authTimeout,
+      pendingSession: !!pendingSession,
+      pending2FA
+    })
+    
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showSignup ? (
@@ -91,6 +122,7 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
               try {
               setForceShowAuth(false)
               setAuthTimeout(false)
+              setPending2FA(false)
               } catch (err) {
                 console.error('❌ Signup success handler error:', err);
                 setError('Login transition failed');
@@ -104,8 +136,10 @@ function AuthenticatedApp({ onBackToHome }: AuthenticatedAppProps) {
             onSuccess={() => {
               try {
               console.log('🎉 Login success callback - user should now access dashboard')
+              localStorage.removeItem('pending_2fa_session') // Clear any pending 2FA data
               setForceShowAuth(false)
               setAuthTimeout(false)
+              setPending2FA(false)
               } catch (err) {
                 console.error('❌ Login success handler error:', err);
                 setError('Login transition failed');
