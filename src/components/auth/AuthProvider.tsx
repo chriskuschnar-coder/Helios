@@ -41,13 +41,15 @@ interface AuthError {
 interface AuthContextType {
   user: User | null
   loading: boolean
+  pending2FA: boolean
+  pendingAuthData: { userData: any; session: any } | null
   account: Account | null
   subscription: Subscription | null
   refreshAccount: () => Promise<void>
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   markDocumentsCompleted: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean }>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -61,12 +63,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pending2FA, setPending2FA] = useState(false)
+  const [pendingAuthData, setPendingAuthData] = useState<{ userData: any; session: any } | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   const complete2FA = async (code: string, userData: any, session: any) => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      
+      // Verify the 2FA code first
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
+      
+      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          code: code,
+          method: 'email',
+          email: userData.email
+        })
+      })
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json()
+        throw new Error(errorData.error || 'Invalid verification code')
+      }
+
+      const verifyResult = await verifyResponse.json()
+      if (!verifyResult.valid) {
+        throw new Error('Invalid verification code')
+      }
+
+      console.log('✅ 2FA code verified successfully')
       
       // Set the Supabase session to complete login
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
@@ -77,6 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('✅ Session set successfully')
+      
+      // Clear 2FA pending state
+      setPending2FA(false)
+      setPendingAuthData(null)
       
       // Set user state immediately
       setUser({
@@ -106,13 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn('Session check error:', error)
           setLoading(false)
         } else if (session?.user) {
-          console.log('Found existing session for:', session.user.email)
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            full_name: session.user.user_metadata?.full_name
-          })
-          await loadUserAccount(session.user.id)
+          console.log('Found existing session, but checking 2FA status for:', session.user.email)
+          // Don't auto-login - require 2FA verification
+          setPending2FA(true)
+          setPendingAuthData({ userData: session.user, session })
           setLoading(false)
         } else {
           console.log('No existing session found')
@@ -138,20 +173,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed:', event, session?.user?.email)
         clearTimeout(timeoutId) // Clear timeout when auth state changes
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            full_name: session.user.user_metadata?.full_name
-          })
-          await loadUserAccount(session.user.id)
-          setLoading(false)
-        } else if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
           setUser(null)
           setAccount(null)
           setSubscription(null)
+          setPending2FA(false)
+          setPendingAuthData(null)
           setLoading(false)
         }
+        // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
     )
 
