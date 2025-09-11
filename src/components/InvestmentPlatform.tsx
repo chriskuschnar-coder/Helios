@@ -13,17 +13,6 @@ interface User {
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
   subscription_signed_at?: string
-          // Only allow funding if verified
-          if (user.kyc_status === 'verified') {
-            // Will be handled by DashboardSelector
-          } else {
-            // Show KYC progress again if not verified
-            setShowKYCProgress(true)
-          }
-}
-
-interface Account {
-  id: string
   balance: number
   available_balance: number
   total_deposits: number
@@ -198,8 +187,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAccount(null)
           setSubscription(null)
           setPending2FA(false)
+          setPendingAuthData(null)
           setLoading(false)
-          // This will trigger the KYC verification component again
         }
         // Don't auto-authenticate on SIGNED_IN - require 2FA
       }
@@ -291,6 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
+          kyc_verified_at: userData.kyc_verified_at,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
           two_factor_method: userData.two_factor_method,
