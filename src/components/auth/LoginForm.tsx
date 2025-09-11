@@ -35,6 +35,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
       } else {
         console.log('✅ Login successful, user state should update automatically')
         onSuccess?.()
+      }
+    } catch (err) {
       console.error('Login error:', err)
       setError('Connection error - please try again')
     } finally {
