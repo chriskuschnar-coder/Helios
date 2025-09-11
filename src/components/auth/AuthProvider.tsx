@@ -420,10 +420,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               id: data.user.id,
               email: data.user.email,
               full_name: metadata?.full_name,
+              phone: metadata?.phone
             }
             )
+
+          if (profileError) {
+            console.error('Error creating user profile:', profileError)
+          } else {
+            console.log('✅ User profile created successfully')
+          }
+        } catch (err) {
+          console.error('Unexpected error inserting user profile:', err)
         }
+
+        return { error: null }
       }
+
+      return { error: { message: 'No user returned from signup' } }
+    } catch (err) {
+      console.error('Sign up failed:', err)
+      return { error: { message: 'Connection error during signup' } }
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabaseClient.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      } else {
+        setUser(null)
+        setAccount(null)
+        setSubscription(null)
+        setProfile(null)
+      }
+    } catch (err) {
+      console.error('Sign out failed:', err)
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      account,
+      subscription,
+      profile,
+      refreshAccount,
+      refreshSubscription,
+      refreshProfile,
+      processFunding,
+      markDocumentsCompleted,
+      signIn,
+      signUp,
+      signOut
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
     }
   }
 }
