@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     })
 
     if (!deleteResponse.ok) {
-      console.warn('⚠️ Failed to clear existing SMS codes (may not exist)')
+      console.warn('⚠️ Failed to clear existing SMS 2FA codes (may not exist)')
     }
 
     // Store code in database with expiration
