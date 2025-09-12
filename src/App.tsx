@@ -7,10 +7,15 @@ import { Footer } from './components/Footer'
 import { InvestmentPlatform } from './components/InvestmentPlatform'
 import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
+import { PWAInstallBanner } from './components/PWAInstallBanner'
+import { PWAInstallPrompt } from './components/PWAInstallPrompt'
+import { usePWA } from './hooks/usePWA'
 
 export default function App() {
   const [showInvestmentPlatform, setShowInvestmentPlatform] = useState(false)
   const [platformLoading, setPlatformLoading] = useState(false)
+  const { showInstallBanner, installApp, dismissInstallBanner, isInstallable, isStandalone } = usePWA()
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
 
   const handleNavigateToLogin = () => {
@@ -25,10 +30,32 @@ export default function App() {
   useEffect(() => {
     window.addEventListener('navigate-to-login', handleNavigateToLogin)
     
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('✅ Service Worker registered:', registration.scope)
+          })
+          .catch((error) => {
+            console.error('❌ Service Worker registration failed:', error)
+          })
+      })
+    }
+    
+    // Show install prompt after 30 seconds if installable
+    const installTimer = setTimeout(() => {
+      if (isInstallable && !isStandalone && !showInstallBanner) {
+        setShowInstallPrompt(true)
+      }
+    }, 30000)
+    
     return () => {
       window.removeEventListener('navigate-to-login', handleNavigateToLogin)
+      clearTimeout(installTimer)
     }
-  }, [])
+  }, [isInstallable, isStandalone, showInstallBanner])
+  
   const handleBackToHome = () => {
     setShowInvestmentPlatform(false)
     setPlatformLoading(false)
@@ -57,6 +84,14 @@ export default function App() {
       <About />
       <Services />
       <Footer />
+      
+      {/* PWA Install Components */}
+      <PWAInstallBanner />
+      <PWAInstallPrompt
+        onInstall={installApp}
+        onDismiss={() => setShowInstallPrompt(false)}
+        isVisible={showInstallPrompt}
+      />
     </div>
   )
 }
