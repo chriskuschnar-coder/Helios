@@ -206,7 +206,10 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setResendCount(0)
     setCanResend(true)
     setEmailSent(false)
-    sendVerificationCode()
+    // Send SMS code immediately when switching
+    setTimeout(() => {
+      sendVerificationCode()
+    }, 100)
   }
 
   const switchToEmail = () => {
