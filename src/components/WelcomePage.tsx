@@ -122,11 +122,11 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200">
-                    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full p-2">
-                      <path d="M20 80 L35 65 L50 50 L65 35 L80 20" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                      <path d="M20 20 L35 35 L50 50 L65 65 L80 80" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                      <path d="M70 20 L80 20 L80 30" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                      <path d="M70 80 L80 80 L80 70" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <img 
+                      src="/gmc-logo.png" 
+                      alt="Global Markets Consulting" 
+                      className="w-full h-full object-contain p-2"
+                    />
                     </svg>
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">SEC Registered</h3>
