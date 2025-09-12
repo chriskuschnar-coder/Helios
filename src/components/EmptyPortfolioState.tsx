@@ -48,7 +48,6 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
             alt="Global Markets Consulting" 
             className="w-full h-full object-contain p-3"
           />
-          </svg>
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
           {statusMessage.title}
