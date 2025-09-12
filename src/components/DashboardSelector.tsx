@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { BarChart3, Activity, LogOut, TrendingUp, Menu, X } from 'lucide-react'
-import { Logo } from './Logo'
 import InvestorDashboard from './InvestorDashboard'
 import HeliosDashboard from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
@@ -17,22 +16,10 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
   const handleSignOut = async () => {
     try {
       console.log('🚪 Dashboard sign out initiated')
-      
-      // Check for active session before signing out
-      const { supabaseClient } = await import('../lib/supabase-client')
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      
-      if (!session) {
-        console.log('ℹ️ No active session, clearing local state')
-        // Clear local state and reload
-        window.location.reload()
-        return
-      }
-      
       await signOut()
       console.log('✅ Sign out completed')
     } catch (error) {
-      console.warn('⚠️ Sign out error, forcing reload:', error)
+      console.error('Error signing out:', error)
       // Force reload on sign out error
       window.location.reload()
     }
@@ -43,7 +30,12 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
     <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
-          <Logo size="medium" showText={true} />
+          <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
+            <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-navy-600" />
+            <span className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-sm">
+              Global Market Consulting
+            </span>
+          </div>
           
           {/* Mobile Menu Button */}
           <button
@@ -78,8 +70,8 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
                 }`}
               >
                 <Activity className="h-4 w-4" />
-                <span className="hidden lg:inline">Live Trading</span>
-                <span className="lg:hidden">Trading</span>
+                <span className="hidden lg:inline">Helios Trading</span>
+                <span className="lg:hidden">Helios</span>
               </button>
             </div>
             

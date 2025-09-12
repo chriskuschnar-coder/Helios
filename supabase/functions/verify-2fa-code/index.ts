@@ -16,14 +16,13 @@ Deno.serve(async (req) => {
 
   try {
     const requestBody = await req.json()
-    const { user_id, code, email, phone, method = 'email' } = requestBody
+    const { user_id, code, email, method = 'email' } = requestBody
     
     console.log('🔍 2FA verification request:', { 
       requestBody,
       user_id, 
       code: code ? '***' + code.slice(-2) : 'none', 
       email: email ? email.substring(0, 3) + '***' : 'none',
-      phone: phone ? '***-***-' + phone.slice(-4) : 'none',
       method 
     })
     
@@ -33,14 +32,9 @@ Deno.serve(async (req) => {
       throw new Error('User ID required')
     }
     
-    if (method === 'email' && (!email || !email.includes('@'))) {
+    if (!email) {
       console.error('❌ Missing email in request')
-      throw new Error('Email required for email verification')
-    }
-    
-    if (method === 'sms' && (!phone || !phone.startsWith('+'))) {
-      console.error('❌ Missing or invalid phone in request')
-      throw new Error('Valid phone number required for SMS verification')
+      throw new Error('Email required')
     }
     
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {

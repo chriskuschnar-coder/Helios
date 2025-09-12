@@ -33,12 +33,12 @@ Deno.serve(async (req) => {
       throw new Error('Invalid verification method')
     }
     
-    if (method === 'email' && (!email || !email.includes('@'))) {
+    if (!email || !email.includes('@')) {
       throw new Error('Email address required for email verification')
     }
     
-    if (method === 'sms' && (!phone || phone.length < 10)) {
-      throw new Error('Valid phone number required for SMS verification')
+    if (method === 'sms' && (!phone || !phone.startsWith('+'))) {
+      throw new Error('Valid phone number required for SMS verification (format: +1234567890)')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -91,112 +91,8 @@ Deno.serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 500))
     console.log('⏱️ Database commit delay completed')
 
-    // CRITICAL: Route to correct API based on method
-    if (method === 'sms' && phone) {
-      console.log('📱 Sending SMS verification code via Twilio to:', phone)
-      
-      try {
-        // Get Twilio credentials
-        const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
-        const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
-        const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
-        
-        console.log('📱 Twilio configuration:', {
-          hasAccountSid: !!twilioAccountSid,
-          hasAuthToken: !!twilioAuthToken,
-          hasPhoneNumber: !!twilioPhoneNumber,
-          fromNumber: twilioPhoneNumber,
-          toNumber: phone
-        })
-        
-        if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-          console.error('❌ Missing Twilio credentials')
-          throw new Error('SMS service not configured')
-        }
-        
-        // Format phone number for Twilio (ensure it starts with +1)
-        let formattedPhone = phone.replace(/[^\d]/g, '') // Remove all non-digits
-        if (!formattedPhone.startsWith('1') && formattedPhone.length === 10) {
-          formattedPhone = '1' + formattedPhone // Add country code for US numbers
-        }
-        formattedPhone = '+' + formattedPhone // Add + prefix
-        
-        console.log('📱 Formatted phone number:', formattedPhone)
-        
-        // Create Twilio message using their REST API
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
-        
-        const messageBody = `Global Markets Consulting
-
-Your verification code is: ${code}
-
-This code expires in 10 minutes.
-
-Never share this code with anyone. If you didn't request this, please contact support.
-
-- Global Markets Security Team`
-        
-        console.log('📱 Sending SMS via Twilio API...')
-        
-        const twilioResponse = await fetch(twilioUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            To: formattedPhone,
-            From: twilioPhoneNumber,
-            Body: messageBody
-          })
-        })
-
-        console.log('📱 Twilio response status:', twilioResponse.status)
-
-        if (!twilioResponse.ok) {
-          const twilioError = await twilioResponse.text()
-          console.error('❌ Twilio API error:', twilioError)
-          
-          try {
-            const errorData = JSON.parse(twilioError)
-            console.error('❌ Twilio error details:', errorData)
-            
-            if (errorData.code === 21211) {
-              throw new Error('Phone number not verified for trial account. Please verify this number in Twilio console first.')
-            } else if (errorData.code === 21614) {
-              throw new Error('Invalid phone number format. Please use format: +1234567890')
-            } else {
-              throw new Error(`SMS delivery failed: ${errorData.message || 'Unknown error'}`)
-            }
-          } catch (parseError) {
-            throw new Error(`SMS delivery failed: ${twilioError}`)
-          }
-        }
-
-        const twilioResult = await twilioResponse.json()
-        console.log('✅ SMS sent successfully via Twilio:', twilioResult.sid)
-        
-        // Return success for SMS
-        return new Response(JSON.stringify({
-          success: true,
-          method: 'sms',
-          destination: formattedPhone,
-          expires_in: 600, // 10 minutes
-          message: `Verification code sent via SMS to ${formattedPhone}`,
-          timestamp: new Date().toISOString()
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        })
-        
-      } catch (smsError) {
-        console.error('❌ SMS sending failed:', smsError)
-        throw new Error(`SMS delivery failed: ${smsError.message}`)
-      }
-      
-    } else if (method === 'email' && email) {
+    // PRIORITY: Send email first (primary method)
+    if (method === 'email' || !phone) {
       console.log('📧 Sending email verification code via SendGrid to:', email)
       
       try {
@@ -212,6 +108,7 @@ Never share this code with anyone. If you didn't request this, please contact su
         
         if (!sendgridApiKey) {
           console.error('❌ SENDGRID_API_KEY not found in environment variables')
+          console.log('🔧 Available environment variables:', Object.keys(Deno.env.toObject()))
           throw new Error('Email service not configured - SENDGRID_API_KEY missing')
         }
 
@@ -229,11 +126,11 @@ Never share this code with anyone. If you didn't request this, please contact su
               
               <!-- Header -->
               <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
-                <div style="width: 80px; height: 80px; background-color: rgba(255, 255, 255, 0.9); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; padding: 16px;">
-                  <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M25 75 L45 55 L55 65 L75 25" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M65 25 L75 25 L75 35 Z" fill="#2563eb"/>
-                    <path d="M25 25 L35 35 L45 55 L75 75" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <div style="width: 60px; height: 60px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
                   </svg>
                 </div>
                 <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Global Markets Consulting</h1>
@@ -381,7 +278,7 @@ SEC Registered Investment Advisor
         // Return success with SendGrid confirmation
         return new Response(JSON.stringify({
           success: true,
-          method: 'email',
+          method: method,
           destination: email,
           expires_in: 600, // 10 minutes
           message: `Verification code sent to ${email}`,
@@ -397,9 +294,102 @@ SEC Registered Investment Advisor
         console.error('❌ Email sending failed:', emailError)
         throw new Error(`Email delivery failed: ${emailError.message}`)
       }
-    } else {
-      throw new Error(`Invalid verification method: ${method} or missing required data (email: ${!!email}, phone: ${!!phone})`)
+      
+    } else if (method === 'sms') {
+      console.log('📱 Sending SMS verification code via Twilio to:', phone)
+      
+      try {
+        // Get Twilio credentials
+        const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
+        const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')
+        const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
+        
+        console.log('📱 Twilio configuration:', {
+          hasAccountSid: !!twilioAccountSid,
+          hasAuthToken: !!twilioAuthToken,
+          hasPhoneNumber: !!twilioPhoneNumber,
+          fromNumber: twilioPhoneNumber,
+          toNumber: phone
+        })
+        
+        if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+          console.error('❌ Missing Twilio credentials')
+          throw new Error('SMS service not configured - Twilio credentials missing')
+        }
+
+        // Create Twilio message using their REST API
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
+        
+        const messageBody = `Global Markets Consulting
+
+Your verification code is: ${code}
+
+This code expires in 10 minutes.
+
+Never share this code with anyone. If you didn't request this, please contact support.
+
+- Global Markets Security Team`
+        
+        console.log('📱 Sending SMS via Twilio API...')
+        
+        const twilioResponse = await fetch(twilioUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            To: phone,
+            From: twilioPhoneNumber,
+            Body: messageBody
+          })
+        })
+
+        console.log('📱 Twilio response status:', twilioResponse.status)
+
+        if (!twilioResponse.ok) {
+          const twilioError = await twilioResponse.text()
+          console.error('❌ Twilio API error:', twilioError)
+          
+          try {
+            const errorData = JSON.parse(twilioError)
+            console.error('❌ Twilio error details:', errorData)
+            
+            if (errorData.code === 21211) {
+              throw new Error('Phone number not verified for trial account. Please verify this number in Twilio console first.')
+            } else if (errorData.code === 21614) {
+              throw new Error('Invalid phone number format. Please use format: +1234567890')
+            } else {
+              throw new Error(`SMS delivery failed: ${errorData.message || 'Unknown error'}`)
+            }
+          } catch (parseError) {
+            throw new Error(`SMS delivery failed: ${twilioError}`)
+          }
+        }
+
+        const twilioResult = await twilioResponse.json()
+        console.log('✅ SMS sent successfully via Twilio:', twilioResult.sid)
+        
+      } catch (smsError) {
+        console.error('❌ SMS sending failed:', smsError)
+        throw new Error(smsError.message || 'Failed to send SMS verification code')
+      }
     }
+
+    return new Response(JSON.stringify({
+      success: true,
+      method: method,
+      destination: method === 'email' ? email : phone,
+      expires_in: 600, // 10 minutes
+      message: `Verification code sent via ${method}`,
+      code_for_demo: code, // Include actual code in response for debugging
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
+    })
   } catch (error) {
     console.error('❌ Send 2FA code error:', error)
     
