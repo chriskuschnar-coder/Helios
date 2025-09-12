@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { About } from './components/About'
@@ -6,16 +6,14 @@ import { Services } from './components/Services'
 import { Footer } from './components/Footer'
 import { InvestmentPlatform } from './components/InvestmentPlatform'
 import { Loader2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { PWAInstallBanner } from './components/PWAInstallBanner'
 
 export default function App() {
   const [showInvestmentPlatform, setShowInvestmentPlatform] = useState(false)
   const [platformLoading, setPlatformLoading] = useState(false)
 
-
   const handleNavigateToLogin = () => {
     setPlatformLoading(true)
-    // Small delay to show loading state
     setTimeout(() => {
       setPlatformLoading(false)
       setShowInvestmentPlatform(true)
@@ -24,11 +22,9 @@ export default function App() {
 
   useEffect(() => {
     window.addEventListener('navigate-to-login', handleNavigateToLogin)
-    
-    return () => {
-      window.removeEventListener('navigate-to-login', handleNavigateToLogin)
-    }
+    return () => window.removeEventListener('navigate-to-login', handleNavigateToLogin)
   }, [])
+
   const handleBackToHome = () => {
     setShowInvestmentPlatform(false)
     setPlatformLoading(false)
@@ -57,6 +53,9 @@ export default function App() {
       <About />
       <Services />
       <Footer />
+
+      {/* ✅ Show the PWA Install Banner on home page */}
+      <PWAInstallBanner />
     </div>
   )
 }
