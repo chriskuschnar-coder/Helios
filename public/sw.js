@@ -10,8 +10,7 @@ const STATIC_ASSETS = [
   '/portal',
   '/markets',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/gmc-logo.png'
 ]
 
 // API endpoints to cache

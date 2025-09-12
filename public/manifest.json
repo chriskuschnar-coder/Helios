@@ -12,49 +12,49 @@
   "categories": ["finance", "business", "productivity"],
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
+      "src": "/gmc-logo.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-96x96.png",
+      "src": "/gmc-logo.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-128x128.png",
+      "src": "/gmc-logo.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-144x144.png",
+      "src": "/gmc-logo.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-152x152.png",
+      "src": "/gmc-logo.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/gmc-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-384x384.png",
+      "src": "/gmc-logo.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/gmc-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -66,21 +66,21 @@
       "short_name": "Portfolio",
       "description": "View your investment portfolio",
       "url": "/?tab=portfolio",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
     },
     {
       "name": "Markets",
       "short_name": "Markets",
       "description": "Live market data and analysis",
       "url": "/?tab=markets",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
     },
     {
       "name": "Trading",
       "short_name": "Trading",
       "description": "Helios trading terminal",
       "url": "/?tab=trading",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
     }
   ],
   "screenshots": [

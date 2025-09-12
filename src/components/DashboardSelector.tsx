@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { BarChart3, Activity, LogOut, TrendingUp, Menu, X } from 'lucide-react'
+import { Logo } from './Logo'
 import InvestorDashboard from './InvestorDashboard'
 import HeliosDashboard from './HeliosDashboard'
 import { useAuth } from './auth/AuthProvider'
@@ -43,9 +44,7 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
           <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-navy-600 rounded border border-gray-200 flex items-center justify-center">
-              <span className="text-white font-bold text-xs sm:text-sm">G</span>
-            </div>
+            <Logo size="sm" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
             <span className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-sm">
               Global Market Consulting
             </span>

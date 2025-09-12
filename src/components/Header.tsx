@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Menu, X, TrendingUp } from 'lucide-react'
+import { Logo } from './Logo'
 
 interface HeaderProps {
   onNavigateToLogin?: () => void
@@ -19,9 +20,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-navy-600 rounded border border-gray-200 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">G</span>
-            </div>
+            <Logo size="md" />
             <span className="font-serif text-xl font-bold text-navy-900">
               GMC
             </span>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Shield, Mail, ArrowLeft, AlertCircle, CheckCircle, RefreshCw, Clock, Loader2, Phone, MessageSquare } from 'lucide-react'
+import { Logo } from '../Logo'
 import { useAuth } from './AuthProvider'
 
 interface TwoFactorChallengeProps {
@@ -296,8 +297,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
 
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-navy-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <Shield className="h-10 w-10 text-white" />
+            <div className="w-20 h-20 bg-white rounded-xl shadow-lg border border-gray-200 flex items-center justify-center mx-auto mb-6 p-4">
+              <Logo size="lg" />
             </div>
             <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
               Two-Factor Authentication
