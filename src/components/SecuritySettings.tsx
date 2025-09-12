@@ -1381,22 +1381,4 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
       {showPasswordConfirmModal && <PasswordConfirmModal />}
     </div>
   )
-
-  // Helper function to terminate individual sessions
-  const terminateSession = async (sessionId: string) => {
-    setActionLoading(`session-${sessionId}`)
-    
-    try {
-      // In production, this would call an API to revoke the specific session
-      setActiveSessions(prev => prev.filter(s => s.id !== sessionId))
-      await logSecurityEvent('session_terminated', `Session terminated: ${sessionId}`)
-      setSuccess('Session terminated successfully')
-      
-    } catch (error) {
-      console.error('Failed to terminate session:', error)
-      setError('Failed to terminate session')
-    } finally {
-      setActionLoading(null)
-    }
-  }
 }
