@@ -604,16 +604,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🚪 Signing out user...')
       
-      const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        // Handle session_not_found gracefully - this is expected when session already expired
-        if (error.message?.includes('Session from session_id claim in JWT does not exist')) {
-          console.warn('⚠️ Session already expired on server, proceeding with local logout')
+      // Check if session exists before attempting signOut
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (session) {
+        console.log('🔐 Valid session found, signing out...')
+        const { error } = await supabaseClient.auth.signOut()
+        if (error) {
+          console.warn('⚠️ Sign out error (continuing with local logout):', error.message)
         } else {
-          console.error('Sign out error:', error)
+          console.log('✅ Sign out successful')
         }
       } else {
-        console.log('✅ Sign out successful')
+        console.log('ℹ️ No active session found, proceeding with local logout')
       }
       
       // Always clear state and reload page for clean logout
@@ -625,12 +628,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Force page reload to ensure clean state
       window.location.reload()
     } catch (err) {
-      // Handle session_not_found gracefully
-      if (err instanceof Error && err.message?.includes('Session from session_id claim in JWT does not exist')) {
-        console.warn('⚠️ Session already expired, proceeding with local logout')
-      } else {
-        console.error('Sign out failed:', err)
-      }
+      console.warn('⚠️ Sign out error (continuing with local logout):', err)
       
       // Always force reload and clear state on any error
       setUser(null)

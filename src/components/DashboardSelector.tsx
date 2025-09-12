@@ -16,10 +16,22 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
   const handleSignOut = async () => {
     try {
       console.log('🚪 Dashboard sign out initiated')
+      
+      // Check for active session before signing out
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (!session) {
+        console.log('ℹ️ No active session, clearing local state')
+        // Clear local state and reload
+        window.location.reload()
+        return
+      }
+      
       await signOut()
       console.log('✅ Sign out completed')
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.warn('⚠️ Sign out error, forcing reload:', error)
       // Force reload on sign out error
       window.location.reload()
     }

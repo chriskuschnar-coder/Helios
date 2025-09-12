@@ -7,6 +7,8 @@ const DYNAMIC_CACHE = 'gmc-dynamic-v1.0.0'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/portal',
+  '/markets',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -209,5 +211,13 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
       clients.openWindow('/')
     )
+  }
+})
+
+// Handle skip waiting message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('🔄 Skipping waiting, activating new service worker')
+    self.skipWaiting()
   }
 })

@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { PWAInstallBanner } from './components/PWAInstallBanner'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
+import { PWAUpdateNotification } from './components/PWAUpdateNotification'
 import { usePWA } from './hooks/usePWA'
 
 export default function App() {
@@ -16,7 +17,20 @@ export default function App() {
   const [platformLoading, setPlatformLoading] = useState(false)
   const { showInstallBanner, installApp, dismissInstallBanner, isInstallable, isStandalone } = usePWA()
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false)
+  const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
+  const showUpdateNotification = () => {
+    setShowUpdateNotification(true)
+  }
+
+  const handleAppUpdate = async () => {
+    if (serviceWorkerRegistration?.waiting) {
+      serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
+      return true
+    }
+    return false
+  }
 
   const handleNavigateToLogin = () => {
     setPlatformLoading(true)
@@ -31,11 +45,28 @@ export default function App() {
     window.addEventListener('navigate-to-login', handleNavigateToLogin)
     
     // Register service worker for PWA functionality
-    if ('serviceWorker' in navigator && !window.location.hostname.includes('stackblitz')) {
+    if ('serviceWorker' in navigator && 
+        !window.location.hostname.includes('stackblitz') && 
+        !window.location.hostname.includes('localhost') &&
+        process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
             console.log('✅ Service Worker registered:', registration.scope)
+            setServiceWorkerRegistration(registration)
+            
+            // Listen for service worker updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Show update notification
+                    showUpdateNotification()
+                  }
+                })
+              }
+            })
           })
           .catch((error) => {
             console.error('❌ Service Worker registration failed:', error)
@@ -91,6 +122,11 @@ export default function App() {
         onInstall={installApp}
         onDismiss={() => setShowInstallPrompt(false)}
         isVisible={showInstallPrompt}
+      />
+      <PWAUpdateNotification
+        isVisible={showUpdateNotification}
+        onUpdate={handleAppUpdate}
+        onDismiss={() => setShowUpdateNotification(false)}
       />
     </div>
   )
