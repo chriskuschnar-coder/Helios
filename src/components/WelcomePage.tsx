@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { CheckCircle, ArrowRight, Mail, TrendingUp, Shield, Award, Sparkles } from 'lucide-react'
-import { PWAInstallPrompt } from './PWAInstallPrompt'
-import { usePWA } from '../hooks/usePWA'
 
 interface WelcomePageProps {
   userEmail: string
@@ -14,10 +12,8 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
   const [showButton, setShowButton] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
 
-  // ✅ PWA Hook
-  const { showInstallPrompt, installApp, dismissPrompt } = usePWA()
-
   useEffect(() => {
+    // Staggered animation entrance
     setTimeout(() => setShowContent(true), 300)
     setTimeout(() => setShowButton(true), 800)
     setTimeout(() => setShowConfetti(true), 500)
@@ -29,6 +25,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
     <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
+        {/* Floating Particles */}
         {showConfetti && [...Array(20)].map((_, i) => (
           <div
             key={i}
@@ -42,6 +39,8 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
             }}
           />
         ))}
+        
+        {/* Gradient Orbs */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-40 h-40 bg-indigo-200 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute top-1/2 right-20 w-24 h-24 bg-purple-200 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
@@ -49,19 +48,45 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
 
       <style jsx>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
-          50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-20px) rotate(180deg);
+            opacity: 1;
+          }
         }
+        
         @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
+        
         @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
-        .animate-slide-up { animation: slideInUp 0.6s ease-out; }
-        .animate-scale-in { animation: scaleIn 0.5s ease-out; }
+        
+        .animate-slide-up {
+          animation: slideInUp 0.6s ease-out;
+        }
+        
+        .animate-scale-in {
+          animation: scaleIn 0.5s ease-out;
+        }
       `}</style>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4 md:p-6">
@@ -76,19 +101,22 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
                 🎉 Congratulations!
               </h1>
+              
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-blue-600 mb-6">
                 Welcome to Global Markets Consulting
               </h2>
+              
               <p className="text-lg md:text-xl text-gray-600 mb-2">
                 Hello <span className="font-semibold text-gray-900">{displayName}</span>,
               </p>
+              
               <p className="text-base md:text-lg text-gray-600 max-w-xl mx-auto">
                 Your account has been created successfully. You're now ready to access our institutional-grade investment platform.
               </p>
             </div>
           </div>
 
-          {/* Features */}
+          {/* Welcome Features */}
           <div className={`transition-all duration-1000 transform ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-xl mb-8 animate-slide-up">
               <div className="grid md:grid-cols-3 gap-6">
@@ -99,6 +127,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                   <h3 className="font-semibold text-gray-900 mb-2">SEC Registered</h3>
                   <p className="text-sm text-gray-600">Fully compliant investment advisor</p>
                 </div>
+                
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Award className="h-8 w-8 text-green-600" />
@@ -106,6 +135,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                   <h3 className="font-semibold text-gray-900 mb-2">SIPC Protected</h3>
                   <p className="text-sm text-gray-600">Investments protected up to $500,000</p>
                 </div>
+                
                 <div className="text-center">
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <TrendingUp className="h-8 w-8 text-purple-600" />
@@ -130,7 +160,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
             </div>
           </div>
 
-          {/* CTA Button */}
+          {/* Call to Action Button */}
           <div className={`transition-all duration-1000 transform ${showButton ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'}`}>
             <button
               onClick={onContinueToLogin}
@@ -142,12 +172,13 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                 <ArrowRight className="h-6 w-6 md:h-8 md:w-8 group-hover:translate-x-1 transition-transform duration-300" />
               </div>
             </button>
+            
             <p className="text-sm text-gray-500 mt-4">
               You'll complete 2FA setup and account verification next
             </p>
           </div>
 
-          {/* Next Steps */}
+          {/* Next Steps Preview */}
           <div className={`transition-all duration-1000 transform ${showButton ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="mt-12 bg-white bg-opacity-80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-center">
@@ -155,34 +186,50 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                 What's Next?
               </h3>
               <div className="grid md:grid-cols-2 gap-4 text-left">
-                {[
-                  ['Two-Factor Authentication', 'Secure your account with 2FA'],
-                  ['Document Review', 'Sign investment agreements'],
-                  ['Identity Verification', 'Complete KYC process'],
-                  ['Fund Account', 'Begin investing'],
-                ].map(([title, desc], i) => (
-                  <div key={i} className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-blue-600 font-bold text-sm">{i + 1}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{title}</h4>
-                      <p className="text-sm text-gray-600">{desc}</p>
-                    </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-600 font-bold text-sm">1</span>
                   </div>
-                ))}
+                  <div>
+                    <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
+                    <p className="text-sm text-gray-600">Secure your account with 2FA</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-600 font-bold text-sm">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Document Review</h4>
+                    <p className="text-sm text-gray-600">Sign investment agreements</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-600 font-bold text-sm">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Identity Verification</h4>
+                    <p className="text-sm text-gray-600">Complete KYC process</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-600 font-bold text-sm">4</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Fund Account</h4>
+                    <p className="text-sm text-gray-600">Begin investing</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* ✅ Add the PWA Install Prompt here */}
-      <PWAInstallPrompt
-        isVisible={showInstallPrompt}
-        onInstall={installApp}
-        onDismiss={dismissPrompt}
-      />
     </div>
   )
 }
