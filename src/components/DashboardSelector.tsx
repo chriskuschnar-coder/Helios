@@ -44,10 +44,7 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
           <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
-            <Logo size="md" />
-            <span className="font-serif text-lg sm:text-xl font-bold text-navy-900">
-              GMC
-            </span>
+            <Logo size="medium" showText={true} />
           </div>
           
           {/* Mobile Menu Button */}

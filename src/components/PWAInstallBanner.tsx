@@ -23,7 +23,7 @@ export function PWAInstallBanner() {
       <div className="p-4">
         <div className="flex items-start space-x-3">
           <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Logo size="lg" variant="white" />
+            <Logo size="medium" variant="white" />
           </div>
           
           <div className="flex-1 min-w-0">

@@ -1,17 +1,22 @@
 import React from 'react'
 
 interface LogoProps {
+  size?: 'small' | 'medium' | 'large' | 'xl'
   className?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  showText?: boolean
   variant?: 'default' | 'white' | 'dark'
 }
 
-export function Logo({ className = '', size = 'md', variant = 'default' }: LogoProps) {
+export function Logo({ 
+  size = 'medium', 
+  className = '', 
+  showText = false,
+  variant = 'default' 
+}: LogoProps) {
   const sizeClasses = {
-    xs: 'w-4 h-4',
-    sm: 'w-6 h-6', 
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12',
+    small: 'w-6 h-6',
+    medium: 'w-8 h-8', 
+    large: 'w-12 h-12',
     xl: 'w-16 h-16'
   }
 
@@ -29,23 +34,58 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
   const colors = getColors()
 
   return (
-    <svg 
-      className={`${sizeClasses[size]} ${className}`}
-      viewBox="0 0 512 512" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Blue upward trending arrow */}
-      <path 
-        d="M128 384 L256 256 L320 320 L448 128 L448 192 L384 128 Z" 
-        fill={colors.blue}
-      />
+    <div className={`flex items-center space-x-2 ${className}`}>
+      <svg 
+        className={sizeClasses[size]}
+        viewBox="0 0 512 512" 
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Blue upward trending arrow */}
+        <path 
+          d="M128 384 L256 256 L320 320 L448 128" 
+          fill="none" 
+          stroke={colors.blue} 
+          strokeWidth="32" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        />
+        
+        {/* Blue arrow head */}
+        <path 
+          d="M384 128 L448 128 L448 192" 
+          fill="none" 
+          stroke={colors.blue} 
+          strokeWidth="32" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        />
+        
+        {/* Black downward trending arrow */}
+        <path 
+          d="M64 128 L192 256 L256 192 L384 384" 
+          fill="none" 
+          stroke={colors.black} 
+          strokeWidth="32" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        />
+        
+        {/* Black arrow head */}
+        <path 
+          d="M320 384 L384 384 L384 320" 
+          fill="none" 
+          stroke={colors.black} 
+          strokeWidth="32" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        />
+      </svg>
       
-      {/* Black downward trending arrow */}
-      <path 
-        d="M64 128 L192 256 L256 192 L384 384 L384 320 L320 384 Z" 
-        fill={colors.black}
-      />
-    </svg>
+      {showText && (
+        <span className="font-serif text-xl font-bold text-navy-900">
+          GMC
+        </span>
+      )}
+    </div>
   )
 }
