@@ -61,8 +61,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   useEffect(() => {
     console.log('🔐 2FA Challenge mounted - sending verification code to:', userEmail)
     // Check if user has phone number for SMS option
-    if (userData?.phone) {
-      setUserPhone(userData.phone)
+    if (userData?.phone || userData?.user_metadata?.phone) {
+      setUserPhone(userData.phone || userData.user_metadata?.phone)
     }
     sendVerificationCode()
   }, [])
@@ -198,6 +198,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setVerificationCode('')
     setResendCount(0)
     setCanResend(true)
+    setEmailSent(false)
     sendVerificationCode()
   }
 
@@ -209,6 +210,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setVerificationCode('')
     setResendCount(0)
     setCanResend(true)
+    setEmailSent(false)
     sendVerificationCode()
   }
   return (
@@ -228,8 +230,9 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 transform transition-all duration-300 hover:shadow-2xl">
           {/* Method Selector */}
-          {(userPhone || emailFailed) && (
+          {userPhone && (
             <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Choose Verification Method:</h4>
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={switchToEmail}
@@ -246,19 +249,17 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   <span>Email</span>
                   {emailFailed && <span className="text-xs text-red-500">(Unavailable)</span>}
                 </button>
-                {userPhone && (
-                  <button
-                    onClick={switchToSMS}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                      verificationMethod === 'sms'
-                        ? 'bg-white text-green-600 shadow-sm'
-                        : 'text-gray-600 hover:text-green-600'
-                    }`}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    <span>SMS</span>
-                  </button>
-                )}
+                <button
+                  onClick={switchToSMS}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
+                    verificationMethod === 'sms'
+                      ? 'bg-white text-green-600 shadow-sm'
+                      : 'text-gray-600 hover:text-green-600'
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>SMS</span>
+                </button>
               </div>
               {emailFailed && userPhone && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -363,7 +364,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 disabled={loading}
               />
               <p className="text-xs text-gray-500 mt-2 text-center">
-                Enter the 6-digit code from your email
+                Enter the 6-digit code from your {verificationMethod === 'email' ? 'email' : 'text message'}
               </p>
             </div>
 
@@ -410,14 +411,17 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 )}
                 
                 {/* Alternative method option */}
-                {userPhone && !emailFailed && verificationMethod === 'email' && (
+                {userPhone && verificationMethod === 'email' && (
                   <div className="pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-2">Having trouble with email?</p>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {emailFailed ? 'Email verification unavailable.' : 'Having trouble with email?'}
+                    </p>
                     <button
                       onClick={switchToSMS}
-                      className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                      className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors flex items-center space-x-1 mx-auto"
                     >
-                      Try SMS instead
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Use SMS instead ({userPhone})</span>
                     </button>
                   </div>
                 )}
