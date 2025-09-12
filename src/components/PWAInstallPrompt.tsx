@@ -116,11 +116,12 @@ export function PWAInstallPrompt({ onInstall, onDismiss, isVisible }: PWAInstall
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-6">
           <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-gray-200 overflow-hidden">
-            <img 
-              src="/logo.png" 
-              alt="GMC" 
-              className="w-12 h-12 object-contain"
-            />
+            <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-12 h-12">
+              <path d="M20 80 L35 65 L50 50 L65 35 L80 20" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M20 20 L35 35 L50 50 L65 65 L80 80" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M70 20 L80 20 L80 30" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M70 80 L80 80 L80 70" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Install GMC App
