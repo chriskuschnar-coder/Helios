@@ -44,11 +44,11 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
           <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
             <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-white rounded border border-gray-200 p-0.5">
-              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M20 80 L35 65 L50 50 L65 35 L80 20" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M20 20 L35 35 L50 50 L65 65 L80 80" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M70 20 L80 20 L80 30" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M70 80 L80 80 L80 70" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <img 
+                src="/gmc-logo.png" 
+                alt="GMC" 
+                className="w-full h-full object-contain"
+              />
               </svg>
             </div>
             <span className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-sm">

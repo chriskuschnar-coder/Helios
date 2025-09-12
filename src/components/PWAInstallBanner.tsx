@@ -22,11 +22,11 @@ export function PWAInstallBanner() {
       <div className="p-4">
         <div className="flex items-start space-x-3">
           <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-            <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
-              <path d="M20 80 L35 65 L50 50 L65 35 L80 20" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M20 20 L35 35 L50 50 L65 65 L80 80" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M70 20 L80 20 L80 30" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M70 80 L80 80 L80 70" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <img 
+              src="/gmc-logo.png" 
+              alt="GMC" 
+              className="w-6 h-6 object-contain"
+            />
             </svg>
           </div>
           
