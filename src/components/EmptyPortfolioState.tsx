@@ -43,11 +43,12 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
     <div className="text-center py-12">
       <div className="mb-8">
         <div className="w-24 h-24 rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200 mx-auto mb-6">
-          <img 
-            src="/logo.png" 
-            alt="Global Markets Consulting" 
-            className="w-full h-full object-contain p-3"
-          />
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full p-3">
+            <path d="M20 80 L35 65 L50 50 L65 35 L80 20" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M20 20 L35 35 L50 50 L65 65 L80 80" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M70 20 L80 20 L80 30" stroke="#2563eb" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M70 80 L80 80 L80 70" stroke="#000000" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
           {statusMessage.title}
