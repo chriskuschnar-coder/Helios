@@ -9,9 +9,12 @@ interface User {
   documents_completed?: boolean
   documents_completed_at?: string
   kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
+  kyc_verified_at?: string
   is_kyc_verified?: boolean
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
+  two_factor_backup_codes?: any[]
+  security_alerts_enabled?: boolean
   subscription_signed_at?: string
 }
 
@@ -50,6 +53,7 @@ interface AuthContextType {
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   markDocumentsCompleted: () => Promise<void>
+  markKYCVerified: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -276,7 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
+        .select('documents_completed, documents_completed_at, kyc_status, kyc_verified_at, two_factor_enabled, two_factor_method, two_factor_backup_codes, security_alerts_enabled, phone, full_name, subscription_signed_at')
         .eq('id', userId)
         .single()
 
@@ -289,9 +293,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
+          kyc_verified_at: userData.kyc_verified_at,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
           two_factor_method: userData.two_factor_method,
+          two_factor_backup_codes: userData.two_factor_backup_codes,
+          security_alerts_enabled: userData.security_alerts_enabled,
           subscription_signed_at: userData.subscription_signed_at
         } : null)
         
@@ -648,6 +655,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile,
       processFunding,
       markDocumentsCompleted,
+      markKYCVerified,
       markKYCVerified,
       signIn,
       complete2FA,

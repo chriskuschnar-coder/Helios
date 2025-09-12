@@ -26,7 +26,8 @@ import {
   Copy,
   X,
   Plus,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react'
 import { useAuth } from './auth/AuthProvider'
 import { TwoFactorSetup } from './auth/TwoFactorSetup'
@@ -81,61 +82,46 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
   const [backupCodes, setBackupCodes] = useState<BackupCode[]>([])
   const [showBackupCodes, setShowBackupCodes] = useState(false)
   const [selectedTwoFactorMethod, setSelectedTwoFactorMethod] = useState<'email' | 'sms' | 'authenticator'>('email')
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [showPasswordConfirmModal, setShowPasswordConfirmModal] = useState(false)
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [pendingAction, setPendingAction] = useState<'disable2fa' | 'logoutAll' | null>(null)
 
-  // Calculate security score
-  const calculateSecurityScore = () => {
-    let score = 30 // Base score
-    
-    if (profile?.two_factor_enabled) score += 40
-    if (passwordData.new && getPasswordStrength(passwordData.new) >= 4) score += 20
-    if (emailNotifications) score += 10
-    
-    return Math.min(score, 100)
-  }
-
-  const securityScore = calculateSecurityScore()
-
-  // Generate mock data for demo
+  // Load real data on component mount
   useEffect(() => {
-    generateMockSessions()
-    generateMockAlerts()
-    generateMockBackupCodes()
-  }, [])
+    loadSecurityData()
+  }, [user])
 
-  const generateMockSessions = () => {
-    const sessions: ActiveSession[] = [
-      {
-        id: '1',
-        device: 'MacBook Pro',
-        browser: 'Chrome 120.0',
-        ip: '192.168.1.100',
-        location: 'Miami, FL, US',
-        lastActive: new Date().toISOString(),
-        current: true
-      },
-      {
-        id: '2',
-        device: 'iPhone 15 Pro',
-        browser: 'Safari Mobile',
-        ip: '10.0.0.45',
-        location: 'Miami, FL, US',
-        lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        current: false
-      },
-      {
-        id: '3',
-        device: 'Windows PC',
-        browser: 'Edge 119.0',
-        ip: '203.0.113.45',
-        location: 'New York, NY, US',
-        lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        current: false
+  const loadSecurityData = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      
+      // Load user profile data
+      await refreshProfile()
+      
+      // Load security alerts (mock for now, but structure for real implementation)
+      await loadSecurityAlerts()
+      
+      // Load active sessions (mock for now)
+      await loadActiveSessions()
+      
+      // Load backup codes if 2FA is enabled
+      if (profile?.two_factor_enabled) {
+        await loadBackupCodes()
       }
-    ]
-    setActiveSessions(sessions)
+      
+    } catch (error) {
+      console.error('Failed to load security data:', error)
+      setError('Failed to load security information')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const generateMockAlerts = () => {
+  const loadSecurityAlerts = async () => {
+    // In production, this would fetch from an audit_logs table
     const alerts: SecurityAlert[] = [
       {
         id: '1',
@@ -168,19 +154,84 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
     setSecurityAlerts(alerts)
   }
 
-  const generateMockBackupCodes = () => {
-    const codes: BackupCode[] = [
-      { code: 'ABC123DEF', used: false },
-      { code: 'GHI456JKL', used: false },
-      { code: 'MNO789PQR', used: true },
-      { code: 'STU012VWX', used: false },
-      { code: 'YZA345BCD', used: false },
-      { code: 'EFG678HIJ', used: false },
-      { code: 'KLM901NOP', used: false },
-      { code: 'QRS234TUV', used: false }
+  const loadActiveSessions = async () => {
+    // In production, this would fetch from a sessions table
+    const sessions: ActiveSession[] = [
+      {
+        id: '1',
+        device: 'MacBook Pro',
+        browser: 'Chrome 120.0',
+        ip: '192.168.1.100',
+        location: 'Miami, FL, US',
+        lastActive: new Date().toISOString(),
+        current: true
+      },
+      {
+        id: '2',
+        device: 'iPhone 15 Pro',
+        browser: 'Safari Mobile',
+        ip: '10.0.0.45',
+        location: 'Miami, FL, US',
+        lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        current: false
+      }
     ]
-    setBackupCodes(codes)
+    setActiveSessions(sessions)
   }
+
+  const loadBackupCodes = async () => {
+    try {
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { data: userData, error } = await supabaseClient
+        .from('users')
+        .select('two_factor_backup_codes')
+        .eq('id', user?.id)
+        .single()
+
+      if (!error && userData?.two_factor_backup_codes) {
+        setBackupCodes(userData.two_factor_backup_codes)
+      } else {
+        // Generate new backup codes if none exist
+        await generateNewBackupCodes()
+      }
+    } catch (error) {
+      console.error('Failed to load backup codes:', error)
+    }
+  }
+
+  const generateNewBackupCodes = async () => {
+    const codes: BackupCode[] = Array.from({ length: 8 }, () => ({
+      code: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      used: false
+    }))
+
+    try {
+      const { supabaseClient } = await import('../lib/supabase-client')
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ two_factor_backup_codes: codes })
+        .eq('id', user?.id)
+
+      if (!error) {
+        setBackupCodes(codes)
+      }
+    } catch (error) {
+      console.error('Failed to generate backup codes:', error)
+    }
+  }
+
+  // Calculate security score
+  const calculateSecurityScore = () => {
+    let score = 30 // Base score
+    
+    if (profile?.two_factor_enabled) score += 40
+    if (passwordData.new && getPasswordStrength(passwordData.new) >= 4) score += 20
+    if (emailNotifications) score += 10
+    
+    return Math.min(score, 100)
+  }
+
+  const securityScore = calculateSecurityScore()
 
   const getPasswordStrength = (password: string) => {
     let strength = 0
@@ -236,36 +287,74 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
     setShowTwoFactorSetup(true)
   }
 
-  const handleDisable2FA = async () => {
-    if (!confirm('Are you sure you want to disable two-factor authentication? This will make your account less secure.')) {
+  const handleDisable2FA = () => {
+    setPendingAction('disable2fa')
+    setShowPasswordConfirmModal(true)
+  }
+
+  const handleLogoutAllSessions = () => {
+    setPendingAction('logoutAll')
+    setShowPasswordConfirmModal(true)
+  }
+
+  const confirmAction = async () => {
+    if (!passwordConfirmation.trim()) {
+      setError('Please enter your password to confirm')
       return
     }
 
-    setLoading(true)
+    setActionLoading(pendingAction)
+    
     try {
       const { supabaseClient } = await import('../lib/supabase-client')
-      const { error } = await supabaseClient
-        .from('users')
-        .update({ 
-          two_factor_enabled: false,
-          two_factor_method: null,
-          two_factor_backup_codes: []
-        })
-        .eq('id', user?.id)
+      
+      // Verify current password first
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+        email: user?.email || '',
+        password: passwordConfirmation
+      })
 
-      if (error) {
-        throw error
+      if (signInError) {
+        throw new Error('Incorrect password')
       }
 
-      localStorage.removeItem('biometric_credential_id')
-      await refreshProfile()
-      setSuccess('Two-factor authentication has been disabled')
+      if (pendingAction === 'disable2fa') {
+        // Disable 2FA
+        const { error } = await supabaseClient
+          .from('users')
+          .update({ 
+            two_factor_enabled: false,
+            two_factor_method: null,
+            two_factor_backup_codes: []
+          })
+          .eq('id', user?.id)
+
+        if (error) throw error
+
+        // Clear any stored biometric credentials
+        localStorage.removeItem('biometric_credential_id')
+        
+        await refreshProfile()
+        setSuccess('Two-factor authentication has been disabled')
+        setBackupCodes([])
+        
+      } else if (pendingAction === 'logoutAll') {
+        // Log out all sessions
+        await supabaseClient.auth.signOut({ scope: 'global' })
+        // This will trigger a page reload via auth state change
+        return
+      }
+
+      setShowPasswordConfirmModal(false)
+      setPasswordConfirmation('')
+      setPendingAction(null)
       setError('')
+      
     } catch (error) {
-      console.error('Error disabling 2FA:', error)
-      setError('Failed to disable 2FA. Please try again.')
+      console.error('Action failed:', error)
+      setError(error instanceof Error ? error.message : 'Action failed')
     } finally {
-      setLoading(false)
+      setActionLoading(null)
     }
   }
 
@@ -282,50 +371,137 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
       return
     }
 
-    setLoading(true)
+    setActionLoading('changePassword')
+    
     try {
       const { supabaseClient } = await import('../lib/supabase-client')
+      
+      // First verify current password
+      const { error: verifyError } = await supabaseClient.auth.signInWithPassword({
+        email: user?.email || '',
+        password: passwordData.current
+      })
+
+      if (verifyError) {
+        throw new Error('Current password is incorrect')
+      }
+
+      // Update password
       const { error } = await supabaseClient.auth.updateUser({
         password: passwordData.new
       })
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
+
+      // Log security event
+      await logSecurityEvent('password_change', 'Password changed successfully')
 
       setSuccess('Password updated successfully')
       setPasswordData({ current: '', new: '', confirm: '' })
       setShowPasswordChange(false)
       setError('')
+      
     } catch (error) {
-      console.error('Error changing password:', error)
-      setError('Failed to change password. Please try again.')
+      console.error('Password change failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to change password')
     } finally {
-      setLoading(false)
+      setActionLoading(null)
     }
   }
 
-  const handleLogoutAllSessions = async () => {
-    if (!confirm('This will log you out of all devices. You will need to sign in again. Continue?')) {
-      return
-    }
-
-    setLoading(true)
+  const handleToggleEmailNotifications = async () => {
+    setActionLoading('emailNotifications')
+    
     try {
       const { supabaseClient } = await import('../lib/supabase-client')
-      await supabaseClient.auth.signOut({ scope: 'global' })
-      // This will trigger a page reload via the auth state change
+      const newValue = !emailNotifications
+      
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ security_alerts_enabled: newValue })
+        .eq('id', user?.id)
+
+      if (error) throw error
+
+      setEmailNotifications(newValue)
+      setSuccess(`Security notifications ${newValue ? 'enabled' : 'disabled'}`)
+      
     } catch (error) {
-      console.error('Error logging out all sessions:', error)
-      setError('Failed to log out all sessions')
-      setLoading(false)
+      console.error('Failed to update notification settings:', error)
+      setError('Failed to update notification settings')
+    } finally {
+      setActionLoading(null)
     }
   }
 
-  const handle2FASetupComplete = () => {
+  const handle2FAMethodChange = async (newMethod: 'email' | 'sms' | 'authenticator') => {
+    if (!profile?.two_factor_enabled) return
+
+    setActionLoading('changeMethod')
+    
+    try {
+      const { supabaseClient } = await import('../lib/supabase-client')
+      
+      const { error } = await supabaseClient
+        .from('users')
+        .update({ two_factor_method: newMethod })
+        .eq('id', user?.id)
+
+      if (error) throw error
+
+      await refreshProfile()
+      setSuccess(`2FA method changed to ${newMethod}`)
+      
+    } catch (error) {
+      console.error('Failed to change 2FA method:', error)
+      setError('Failed to change 2FA method')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const logSecurityEvent = async (type: string, message: string) => {
+    try {
+      // In production, this would log to an audit_logs table
+      const newAlert: SecurityAlert = {
+        id: Date.now().toString(),
+        type: type as any,
+        message,
+        timestamp: new Date().toISOString(),
+        ip: '192.168.1.100', // Would get real IP
+        location: 'Miami, FL, US', // Would get real location
+        device: 'Current Device'
+      }
+      
+      setSecurityAlerts(prev => [newAlert, ...prev.slice(0, 9)]) // Keep last 10
+    } catch (error) {
+      console.error('Failed to log security event:', error)
+    }
+  }
+
+  const handle2FASetupComplete = async () => {
     setShowTwoFactorSetup(false)
-    refreshProfile()
+    await refreshProfile()
+    await generateNewBackupCodes()
+    await logSecurityEvent('2fa_enabled', 'Two-factor authentication enabled')
     setSuccess('Two-factor authentication has been enabled successfully!')
+  }
+
+  const terminateSession = async (sessionId: string) => {
+    setActionLoading(`session-${sessionId}`)
+    
+    try {
+      // In production, this would revoke the specific session
+      setActiveSessions(prev => prev.filter(s => s.id !== sessionId))
+      await logSecurityEvent('session_terminated', `Session terminated: ${sessionId}`)
+      setSuccess('Session terminated successfully')
+      
+    } catch (error) {
+      console.error('Failed to terminate session:', error)
+      setError('Failed to terminate session')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const copyBackupCode = (code: string) => {
@@ -339,14 +515,116 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
       .map(code => code.code)
       .join('\n')
     
-    const blob = new Blob([`Global Markets Consulting - Backup Codes\n\nGenerated: ${new Date().toLocaleString()}\n\n${codesText}\n\nKeep these codes safe and secure. Each code can only be used once.`], { type: 'text/plain' })
+    const blob = new Blob([
+      `Global Markets Consulting - Backup Codes\n\n`,
+      `Generated: ${new Date().toLocaleString()}\n`,
+      `Account: ${user?.email}\n\n`,
+      `${codesText}\n\n`,
+      `IMPORTANT:\n`,
+      `- Keep these codes safe and secure\n`,
+      `- Each code can only be used once\n`,
+      `- Use these codes if you lose access to your 2FA device\n`,
+      `- Generate new codes if you suspect they've been compromised`
+    ], { type: 'text/plain' })
+    
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'gmc-backup-codes.txt'
+    a.download = `gmc-backup-codes-${new Date().toISOString().split('T')[0]}.txt`
     a.click()
     URL.revokeObjectURL(url)
+    
+    setSuccess('Backup codes downloaded successfully')
   }
+
+  const regenerateBackupCodes = async () => {
+    if (!confirm('This will invalidate all existing backup codes. Continue?')) {
+      return
+    }
+
+    setActionLoading('regenerateCodes')
+    
+    try {
+      await generateNewBackupCodes()
+      await logSecurityEvent('backup_codes_regenerated', 'Backup codes regenerated')
+      setSuccess('New backup codes generated successfully')
+      
+    } catch (error) {
+      console.error('Failed to regenerate backup codes:', error)
+      setError('Failed to regenerate backup codes')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  // Password Confirmation Modal
+  const PasswordConfirmModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Confirm Action</h3>
+          <button
+            onClick={() => {
+              setShowPasswordConfirmModal(false)
+              setPasswordConfirmation('')
+              setPendingAction(null)
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-gray-700 mb-4">
+            {pendingAction === 'disable2fa' 
+              ? 'Enter your password to disable two-factor authentication. This will make your account less secure.'
+              : 'Enter your password to log out of all sessions. You will need to sign in again.'
+            }
+          </p>
+          
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="password"
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="Enter your password"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={confirmAction}
+            disabled={!passwordConfirmation.trim() || !!actionLoading}
+            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+          >
+            {actionLoading === pendingAction ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              'Confirm'
+            )}
+          </button>
+          <button
+            onClick={() => {
+              setShowPasswordConfirmModal(false)
+              setPasswordConfirmation('')
+              setPendingAction(null)
+            }}
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   if (showTwoFactorSetup) {
     return (
@@ -382,11 +660,12 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
             </div>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => window.location.reload()}
+                onClick={loadSecurityData}
+                disabled={loading}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Refresh"
               >
-                <RefreshCw className="h-4 w-4 text-gray-600" />
+                <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -422,14 +701,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
         )}
 
         {/* Security Score */}
-        <div className={`rounded-xl p-6 mb-8 border-2 ${getSecurityScoreColor(securityScore)}`}>
+        <div className={`rounded-xl p-6 mb-8 border-2 transition-all duration-300 ${getSecurityScoreColor(securityScore)}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
                 <Shield className="h-6 w-6 text-navy-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Security Score</h2>
+                <h2 className="text-xl font-bold">Account Security Score</h2>
                 <p className="text-sm opacity-80">Your account security rating</p>
               </div>
             </div>
@@ -478,9 +757,10 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
               </div>
               <button
                 onClick={handleEnable2FA}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                disabled={!!actionLoading}
+                className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                Enable Now
+                {actionLoading === 'enable2fa' ? 'Enabling...' : 'Enable Now'}
               </button>
             </div>
           </div>
@@ -506,15 +786,15 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                   {profile?.two_factor_enabled ? (
                     <>
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span className="text-green-700 font-medium text-sm">Enabled</span>
                       </div>
                       <button
                         onClick={handleDisable2FA}
-                        disabled={loading}
+                        disabled={!!actionLoading}
                         className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                       >
-                        {loading ? 'Disabling...' : 'Disable'}
+                        {actionLoading === 'disable2fa' ? 'Disabling...' : 'Disable'}
                       </button>
                     </>
                   ) : (
@@ -525,9 +805,10 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                       </div>
                       <button
                         onClick={handleEnable2FA}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                        disabled={!!actionLoading}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                       >
-                        Enable 2FA
+                        {actionLoading === 'enable2fa' ? 'Enabling...' : 'Enable 2FA'}
                       </button>
                     </>
                   )}
@@ -544,8 +825,54 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                     <p className="text-sm text-green-700">
                       Method: {profile.two_factor_method === 'email' ? 'Email Verification' : 
                                profile.two_factor_method === 'sms' ? 'SMS Verification' : 
+                               profile.two_factor_method === 'authenticator' ? 'Authenticator App' :
                                'Biometric Authentication'}
                     </p>
+                  </div>
+
+                  {/* Method Selection */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Change 2FA Method</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handle2FAMethodChange('email')}
+                        disabled={!!actionLoading || profile.two_factor_method === 'email'}
+                        className={`p-3 border-2 rounded-lg text-center transition-all ${
+                          profile.two_factor_method === 'email'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <Mail className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+                        <div className="text-xs font-medium">Email</div>
+                      </button>
+                      
+                      <button
+                        onClick={() => handle2FAMethodChange('sms')}
+                        disabled={!!actionLoading || profile.two_factor_method === 'sms'}
+                        className={`p-3 border-2 rounded-lg text-center transition-all ${
+                          profile.two_factor_method === 'sms'
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <MessageSquare className="h-5 w-5 mx-auto mb-1 text-green-600" />
+                        <div className="text-xs font-medium">SMS</div>
+                      </button>
+                      
+                      <button
+                        onClick={() => handle2FAMethodChange('authenticator')}
+                        disabled={!!actionLoading || profile.two_factor_method === 'authenticator'}
+                        className={`p-3 border-2 rounded-lg text-center transition-all ${
+                          profile.two_factor_method === 'authenticator'
+                            ? 'border-purple-500 bg-purple-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <QrCode className="h-5 w-5 mx-auto mb-1 text-purple-600" />
+                        <div className="text-xs font-medium">App</div>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Backup Codes */}
@@ -564,9 +891,19 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                         </button>
                         <button
                           onClick={downloadBackupCodes}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          disabled={!!actionLoading}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-blue-400"
+                          title="Download backup codes"
                         >
                           <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={regenerateBackupCodes}
+                          disabled={!!actionLoading}
+                          className="text-orange-600 hover:text-orange-700 text-sm font-medium disabled:text-orange-400"
+                          title="Generate new codes"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${actionLoading === 'regenerateCodes' ? 'animate-spin' : ''}`} />
                         </button>
                       </div>
                     </div>
@@ -576,7 +913,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                         {backupCodes.map((backup, index) => (
                           <div
                             key={index}
-                            className={`p-2 rounded border text-center font-mono text-sm ${
+                            className={`p-2 rounded border text-center font-mono text-sm transition-all ${
                               backup.used 
                                 ? 'bg-gray-100 text-gray-500 line-through' 
                                 : 'bg-gray-50 text-gray-900 hover:bg-gray-100 cursor-pointer'
@@ -592,51 +929,6 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                     <p className="text-xs text-gray-500 mt-2">
                       {backupCodes.filter(c => !c.used).length} unused codes remaining
                     </p>
-                  </div>
-                </div>
-              )}
-
-              {!profile?.two_factor_enabled && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <button
-                      onClick={() => setSelectedTwoFactorMethod('email')}
-                      className={`p-4 border-2 rounded-lg text-center transition-all ${
-                        selectedTwoFactorMethod === 'email'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <Mail className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                      <div className="font-medium text-gray-900">Email</div>
-                      <div className="text-xs text-gray-600">Verification codes via email</div>
-                    </button>
-                    
-                    <button
-                      onClick={() => setSelectedTwoFactorMethod('sms')}
-                      className={`p-4 border-2 rounded-lg text-center transition-all ${
-                        selectedTwoFactorMethod === 'sms'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <MessageSquare className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                      <div className="font-medium text-gray-900">SMS</div>
-                      <div className="text-xs text-gray-600">Text message codes</div>
-                    </button>
-                    
-                    <button
-                      onClick={() => setSelectedTwoFactorMethod('authenticator')}
-                      className={`p-4 border-2 rounded-lg text-center transition-all ${
-                        selectedTwoFactorMethod === 'authenticator'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <QrCode className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-                      <div className="font-medium text-gray-900">Authenticator</div>
-                      <div className="text-xs text-gray-600">Google Authenticator, Authy</div>
-                    </button>
                   </div>
                 </div>
               )}
@@ -657,7 +949,8 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                 
                 <button
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  disabled={!!actionLoading}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   Change Password
                 </button>
@@ -727,7 +1020,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                       <div className="mt-2">
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="text-sm text-gray-600">Strength:</span>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPasswordStrengthLabel(getPasswordStrength(passwordData.new)).color}`}>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium transition-all duration-300 ${getPasswordStrengthLabel(getPasswordStrength(passwordData.new)).color}`}>
                             {getPasswordStrengthLabel(getPasswordStrength(passwordData.new)).label}
                           </div>
                         </div>
@@ -788,10 +1081,17 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                   <div className="flex space-x-3">
                     <button
                       type="submit"
-                      disabled={loading || !passwordData.current || !passwordData.new || !passwordData.confirm || passwordData.new !== passwordData.confirm}
-                      className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      disabled={!!actionLoading || !passwordData.current || !passwordData.new || !passwordData.confirm || passwordData.new !== passwordData.confirm}
+                      className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center"
                     >
-                      {loading ? 'Updating...' : 'Update Password'}
+                      {actionLoading === 'changePassword' ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Password'
+                      )}
                     </button>
                     <button
                       type="button"
@@ -825,10 +1125,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                   <input
                     type="checkbox"
                     checked={emailNotifications}
-                    onChange={(e) => setEmailNotifications(e.target.checked)}
+                    onChange={handleToggleEmailNotifications}
+                    disabled={!!actionLoading}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
+                  {actionLoading === 'emailNotifications' && (
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin text-blue-600" />
+                  )}
                 </label>
               </div>
 
@@ -883,16 +1187,23 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                 
                 <button
                   onClick={handleLogoutAllSessions}
-                  disabled={loading}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  disabled={!!actionLoading}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center"
                 >
-                  {loading ? 'Logging Out...' : 'Log Out All'}
+                  {actionLoading === 'logoutAll' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Logging Out...
+                    </>
+                  ) : (
+                    'Log Out All'
+                  )}
                 </button>
               </div>
 
               <div className="space-y-3">
                 {activeSessions.map((session) => (
-                  <div key={session.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={session.id} className="border border-gray-200 rounded-lg p-4 transition-all hover:shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -927,14 +1238,16 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                       
                       {!session.current && (
                         <button
-                          onClick={() => {
-                            setActiveSessions(prev => prev.filter(s => s.id !== session.id))
-                            setSuccess('Session terminated successfully')
-                          }}
-                          className="text-red-600 hover:text-red-700 p-1"
+                          onClick={() => terminateSession(session.id)}
+                          disabled={!!actionLoading}
+                          className="text-red-600 hover:text-red-700 p-1 disabled:text-red-400"
                           title="Terminate session"
                         >
-                          <LogOut className="h-4 w-4" />
+                          {actionLoading === `session-${session.id}` ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <LogOut className="h-4 w-4" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -955,11 +1268,20 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
                     <p className="text-sm text-gray-600">Monitor login attempts and security events</p>
                   </div>
                 </div>
+                
+                <button
+                  onClick={loadSecurityData}
+                  disabled={loading}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Refresh alerts"
+                >
+                  <RefreshCw className={`h-4 w-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+                </button>
               </div>
 
               <div className="space-y-3">
                 {securityAlerts.map((alert) => (
-                  <div key={alert.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={alert.id} className="border border-gray-200 rounded-lg p-4 transition-all hover:shadow-sm">
                     <div className="flex items-start space-x-3">
                       <div className="mt-0.5">
                         {getAlertIcon(alert.type)}
@@ -1054,6 +1376,27 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
           </div>
         </div>
       </div>
+
+      {/* Password Confirmation Modal */}
+      {showPasswordConfirmModal && <PasswordConfirmModal />}
     </div>
   )
+
+  // Helper function to terminate individual sessions
+  const terminateSession = async (sessionId: string) => {
+    setActionLoading(`session-${sessionId}`)
+    
+    try {
+      // In production, this would call an API to revoke the specific session
+      setActiveSessions(prev => prev.filter(s => s.id !== sessionId))
+      await logSecurityEvent('session_terminated', `Session terminated: ${sessionId}`)
+      setSuccess('Session terminated successfully')
+      
+    } catch (error) {
+      console.error('Failed to terminate session:', error)
+      setError('Failed to terminate session')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 }
