@@ -37,8 +37,8 @@ Deno.serve(async (req) => {
       throw new Error('Email address required for email verification')
     }
     
-    if (method === 'sms' && (!phone || !phone.startsWith('+'))) {
-      throw new Error('Valid phone number required for SMS verification (format: +1234567890)')
+    if (method === 'sms' && (!phone || phone.length < 10)) {
+      throw new Error('Valid phone number required for SMS verification - no phone number on file')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

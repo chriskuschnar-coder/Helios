@@ -157,7 +157,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number (Optional)
+            Phone Number (Optional - for SMS backup codes)
           </label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -172,7 +172,9 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
               maxLength={14}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Optional - for SMS backup verification codes</p>
+          <p className="text-xs text-gray-500 mt-1">
+            <strong>Recommended:</strong> Add phone number for SMS backup when email verification is unavailable
+          </p>
         </div>
 
         <div>
