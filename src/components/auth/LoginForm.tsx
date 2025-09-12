@@ -107,7 +107,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
               alt="Global Markets Consulting" 
               className="w-full h-full object-contain p-2"
             />
-            </svg>
           </div>
         </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
