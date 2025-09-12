@@ -42,8 +42,12 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
   return (
     <div className="text-center py-12">
       <div className="mb-8">
-        <div className="w-24 h-24 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <TrendingUp className="w-12 h-12 text-navy-600" />
+        <div className="w-24 h-24 rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200 mx-auto mb-6">
+          <img 
+            src="/logo.png" 
+            alt="Global Markets Consulting" 
+            className="w-full h-full object-contain p-3"
+          />
         </div>
         <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
           {statusMessage.title}
