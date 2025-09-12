@@ -20,10 +20,6 @@ export default function App() {
   const [showUpdateNotification, setShowUpdateNotification] = useState(false)
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
-  const showUpdateNotification = () => {
-    setShowUpdateNotification(true)
-  }
-
   const handleAppUpdate = async () => {
     if (serviceWorkerRegistration?.waiting) {
       serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
