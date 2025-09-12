@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Menu, X, TrendingUp } from 'lucide-react'
+import { Logo } from './Logo'
 
 interface HeaderProps {
   onNavigateToLogin?: () => void
