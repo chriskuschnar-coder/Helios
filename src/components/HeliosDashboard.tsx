@@ -4,7 +4,6 @@ import TickerTape from './TickerTape';
 import { HeliosTradingTerminal } from './trading/HeliosTradingTerminal';
 
 const HeliosDashboard: React.FC = () => {
-
   return (
     <div className="min-h-screen bg-gray-900 safe-area-bottom">
       {/* TradingView Ticker Tape */}
@@ -12,7 +11,7 @@ const HeliosDashboard: React.FC = () => {
         <TickerTape />
       </div>
       
-      {/* Helios Trading Terminal */}
+      {/* New Helios Trading Terminal with Redirect */}
       <div className="p-4">
         <HeliosTradingTerminal />
       </div>
