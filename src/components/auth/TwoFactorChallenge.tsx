@@ -240,36 +240,21 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setSmsError(null)
 
     try {
-      console.log(`🔐 Verifying ${verificationMethod} code for user:`, userData.id)
-      
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
-      
-      // Use separate endpoints for email and SMS verification
-      const endpoint = verificationMethod === 'email' ? 'verify-email-code' : 'verify-sms-code'
-      const payload = verificationMethod === 'email' 
-        ? { user_id: userData.id, code: verificationCode, email: userEmail }
-        : { user_id: userData.id, code: verificationCode, phone: userPhone }
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-          'apikey': anonKey
-        },
-        body: JSON.stringify(payload)
+      console.log(`🔐 Starting ${verificationMethod} code verification:`, {
+        user_id: userData.id,
+        method: verificationMethod,
+        code_length: verificationCode.length,
+        code_preview: '***' + verificationCode.slice(-2),
+        email: userData.email,
+        phone: userPhone
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Verification failed')
-      }
-
-      const result = await response.json()
       
-      if (result.valid && result.success) {
-        console.log(`✅ ${verificationMethod} verification successful`)
+      // Use AuthProvider's complete2FA method for proper session handling
+      console.log('🔐 Calling AuthProvider complete2FA...')
+      const authResult = await complete2FA(verificationCode, userData, session, verificationMethod)
+      
+      if (authResult.success) {
+        console.log(`✅ ${verificationMethod} verification and session setup successful`)
         
         // Show success message for the current method
         if (verificationMethod === 'email') {
@@ -278,25 +263,25 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           setSmsSuccess('SMS verification successful! Redirecting to your account...')
         }
         
-        // Use AuthProvider's complete2FA method for proper session handling
-        const authResult = await complete2FA(verificationCode, userData, session, verificationMethod)
-        
-        if (authResult.success) {
-          // Delay to show success message, then redirect
-          setTimeout(() => {
-            setLoading(false)
-            console.log('🎉 Redirecting to dashboard')
-            onSuccess()
-          }, 1500)
-        } else {
-          throw new Error('Session setup failed')
-        }
+        // Delay to show success message, then redirect
+        setTimeout(() => {
+          setLoading(false)
+          console.log('🎉 Redirecting to dashboard')
+          onSuccess()
+        }, 1500)
       } else {
-        throw new Error(result.error || 'Invalid verification code. Please try again.')
+        throw new Error('Session setup failed after verification')
       }
       
     } catch (error) {
-      console.error(`❌ ${verificationMethod} verification failed:`, error)
+      console.error(`❌ ${verificationMethod} verification process failed:`, {
+        error: error.message,
+        stack: error.stack,
+        user_id: userData?.id,
+        method: verificationMethod,
+        code_preview: '***' + verificationCode.slice(-2)
+      })
+      
       const errorMessage = error instanceof Error ? error.message : 'Invalid verification code. Please try again.'
       
       // Set error for current method only

@@ -43,10 +43,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    console.log('🔍 Checking database for email verification codes...')
+    console.log('🔍 Checking database for email verification codes for user:', user_id)
     
-    // Get the most recent unused email code for this user
-    const codesResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?user_id=eq.${user_id}&method=eq.email&used=eq.false&expires_at=gte.${new Date().toISOString()}&order=created_at.desc&limit=1`, {
+    // Get the most recent unused email code for this user with detailed query
+    const currentTime = new Date().toISOString()
+    const queryUrl = `${supabaseUrl}/rest/v1/two_factor_codes?user_id=eq.${user_id}&method=eq.email&used=eq.false&expires_at=gte.${currentTime}&order=created_at.desc&limit=1`
+    console.log('🔍 Query URL:', queryUrl)
+    
+    const codesResponse = await fetch(queryUrl, {
       headers: {
         'apikey': supabaseServiceKey,
         'Authorization': `Bearer ${supabaseServiceKey}`,
@@ -55,12 +59,26 @@ Deno.serve(async (req) => {
     })
 
     if (!codesResponse.ok) {
+      const codesError = await codesResponse.text()
+      console.error('❌ Failed to retrieve email verification codes:', codesError)
       console.error('❌ Failed to retrieve email verification codes')
       throw new Error('Failed to retrieve verification codes')
     }
 
     const codes = await codesResponse.json()
-    console.log('📊 Found email codes:', codes.length)
+    console.log('📊 Email codes query result:', {
+      found: codes.length,
+      user_id: user_id,
+      method: 'email',
+      current_time: currentTime,
+      codes: codes.map(c => ({
+        id: c.id,
+        code_preview: '***' + c.code.slice(-2),
+        expires_at: c.expires_at,
+        used: c.used,
+        created_at: c.created_at
+      }))
+    })
     
     if (codes.length === 0) {
       console.error('❌ No valid email codes found for user:', user_id)
@@ -72,7 +90,9 @@ Deno.serve(async (req) => {
       provided: '***' + code.slice(-2), 
       stored: '***' + storedCode.code.slice(-2),
       expires: storedCode.expires_at,
-      used: storedCode.used
+      used: storedCode.used,
+      created_at: storedCode.created_at,
+      time_remaining: Math.floor((new Date(storedCode.expires_at).getTime() - Date.now()) / 1000) + 's'
     })
 
     // Check if code has expired
@@ -86,6 +106,7 @@ Deno.serve(async (req) => {
       console.log('✅ Email code verification successful')
       
       // Mark code as used to prevent reuse
+      console.log('🔒 Marking email code as used...')
       const markUsedResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?id=eq.${storedCode.id}`, {
         method: 'PATCH',
         headers: {
@@ -100,10 +121,15 @@ Deno.serve(async (req) => {
       })
 
       if (!markUsedResponse.ok) {
+        const markError = await markUsedResponse.text()
+        console.error('❌ Failed to mark email code as used:', markError)
+      } else {
+        console.log('✅ Email code marked as used successfully')
         console.error('❌ Failed to mark email code as used')
       }
 
       // Update user's last login timestamp
+      console.log('📝 Updating user last login timestamp...')
       const updateLoginResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user_id}`, {
         method: 'PATCH',
         headers: {
@@ -119,6 +145,10 @@ Deno.serve(async (req) => {
       })
 
       if (!updateLoginResponse.ok) {
+        const updateError = await updateLoginResponse.text()
+        console.error('❌ Failed to update last login:', updateError)
+      } else {
+        console.log('✅ User last login updated successfully')
         console.error('❌ Failed to update last login')
       }
 
@@ -129,6 +159,7 @@ Deno.serve(async (req) => {
         method: 'email',
         message: 'Email verification successful',
         redirect_to: 'dashboard',
+        session_ready: true,
         timestamp: new Date().toISOString()
       }), {
         headers: {
@@ -138,6 +169,13 @@ Deno.serve(async (req) => {
       })
     } else {
       console.log('❌ Email code verification failed - codes do not match')
+      console.log('🔍 Code comparison details:', {
+        provided_code: code,
+        stored_code: storedCode.code,
+        match: code === storedCode.code,
+        provided_length: code.length,
+        stored_length: storedCode.code.length
+      })
       
       return new Response(JSON.stringify({
         valid: false,

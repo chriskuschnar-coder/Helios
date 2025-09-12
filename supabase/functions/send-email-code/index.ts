@@ -38,7 +38,8 @@ Deno.serve(async (req) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     console.log('🔑 Generated email code for user:', user_id)
 
-    // Clear any existing email codes for this user
+    // Clear any existing email codes for this user (method-specific)
+    console.log('🧹 Clearing existing email codes for user:', user_id)
     const deleteResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes?user_id=eq.${user_id}&method=eq.email`, {
       method: 'DELETE',
       headers: {
@@ -49,17 +50,20 @@ Deno.serve(async (req) => {
     })
 
     if (!deleteResponse.ok) {
-      console.warn('⚠️ Failed to clear existing email 2FA codes (may not exist)')
+      console.warn('⚠️ Failed to clear existing email codes (may not exist)')
+    } else {
+      console.log('✅ Existing email codes cleared')
     }
 
     // Store code in database with expiration
+    console.log('💾 Storing email verification code in database...')
     const storeResponse = await fetch(`${supabaseUrl}/rest/v1/two_factor_codes`, {
       method: 'POST',
       headers: {
         'apikey': supabaseServiceKey,
         'Authorization': `Bearer ${supabaseServiceKey}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        'Prefer': 'return=representation'
       },
       body: JSON.stringify({
         user_id: user_id,
@@ -71,11 +75,24 @@ Deno.serve(async (req) => {
     })
 
     if (!storeResponse.ok) {
+      const storeError = await storeResponse.text()
+      console.error('❌ Failed to store email code:', storeError)
       console.error('❌ Failed to store email code')
       throw new Error('Failed to store verification code')
+    } else {
+      const storedCode = await storeResponse.json()
+      console.log('✅ Email code stored successfully:', {
+        id: storedCode[0]?.id,
+        user_id: user_id,
+        method: 'email',
+        expires_at: storedCode[0]?.expires_at,
+        code_preview: '***' + code.slice(-2)
+      })
     }
 
-    console.log('✅ Email code stored in database')
+    // Add delay to ensure database transaction is fully committed
+    await new Promise(resolve => setTimeout(resolve, 500))
+    console.log('⏱️ Database commit delay completed')
 
     // Get SendGrid credentials
     const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')

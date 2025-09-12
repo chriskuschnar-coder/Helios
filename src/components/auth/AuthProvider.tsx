@@ -76,6 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const complete2FA = async (code: string, userData: any, session: any, method: string = 'email') => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      console.log('🔍 2FA completion details:', {
+        user_id: userData.id,
+        method: method,
+        code_length: code.length,
+        has_session: !!session
+      })
       
       // Verify the 2FA code using the appropriate endpoint
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
@@ -87,6 +93,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? { user_id: userData.id, code: code, email: userData.email }
         : { user_id: userData.id, code: code, phone: userData.phone || userData.user_metadata?.phone }
 
+      console.log('📡 Calling verification endpoint:', endpoint)
+      console.log('📦 Verification payload:', {
+        user_id: userData.id,
+        method: method,
+        code_preview: '***' + code.slice(-2),
+        email: method === 'email' ? userData.email : undefined,
+        phone: method === 'sms' ? (userData.phone || userData.user_metadata?.phone) : undefined
+      })
       const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
         method: 'POST',
         headers: {
@@ -97,21 +111,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(payload)
       })
 
+      console.log('📊 Verification response status:', verifyResponse.status)
 
       if (!verifyResponse.ok) {
         const errorData = await verifyResponse.json()
-        console.error('❌ Verify response error:', errorData)
+        console.error('❌ Verification API error:', {
+          status: verifyResponse.status,
+          error: errorData,
+          endpoint: endpoint,
+          user_id: userData.id
+        })
         throw new Error(errorData.error || 'Invalid verification code')
       }
 
       const verifyResult = await verifyResponse.json()
-      console.log('✅ 2FA verification result:', { 
+      console.log('✅ Verification API response:', { 
         valid: verifyResult.valid, 
         success: verifyResult.success,
-        message: verifyResult.message 
+        message: verifyResult.message,
+        method: verifyResult.method,
+        session_ready: verifyResult.session_ready
       })
       
       if (!verifyResult.valid || !verifyResult.success) {
+        console.error('❌ Verification failed:', {
+          valid: verifyResult.valid,
+          success: verifyResult.success,
+          error: verifyResult.error,
+          message: verifyResult.message
+        })
         throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
       }
 
@@ -119,6 +147,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Set the Supabase session to complete login
       console.log('🔐 Setting Supabase session...')
+      console.log('🔍 Session details:', {
+        access_token_preview: session.access_token?.substring(0, 20) + '...',
+        refresh_token_preview: session.refresh_token?.substring(0, 20) + '...',
+        expires_at: session.expires_at,
+        user_id: session.user?.id
+      })
+      
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
       
       if (sessionError) {
@@ -129,16 +164,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Verify session is actually set
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
       if (!currentSession) {
+        console.error('❌ Session verification failed - no current session found')
         throw new Error('Session not properly established')
       }
       
-      console.log('✅ Session verified and established')
+      console.log('✅ Session verified and established:', {
+        user_id: currentSession.user?.id,
+        email: currentSession.user?.email,
+        expires_at: currentSession.expires_at
+      })
       
       // Clear 2FA pending state
       setPending2FA(false)
       setPendingAuthData(null)
       
       // Set user state immediately
+      console.log('👤 Setting user state...')
       setUser({
         id: userData.id,
         email: userData.email,
@@ -147,12 +188,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       // Load account data
+      console.log('📊 Loading user account data...')
       await loadUserAccount(userData.id)
       
       console.log('🎉 2FA completion successful!')
       return { success: true }
     } catch (error) {
       console.error('❌ 2FA completion failed:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        user_id: userData?.id,
+        method: method
+      })
       throw error
     }
   }
