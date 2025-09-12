@@ -31,7 +31,7 @@ export default function App() {
     window.addEventListener('navigate-to-login', handleNavigateToLogin)
     
     // Register service worker for PWA functionality
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !window.location.hostname.includes('stackblitz')) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
