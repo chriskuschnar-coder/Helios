@@ -101,12 +101,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
 
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 bg-navy-600 rounded-xl flex items-center justify-center shadow-lg">
             <TrendingUp className="h-8 w-8 text-white" />
           </div>
         </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
-          Welcome Back
+          Global Markets Consulting
         </h1>
         <p className="text-base text-gray-600">
           Sign in to your investment account
