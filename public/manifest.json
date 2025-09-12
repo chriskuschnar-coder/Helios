@@ -12,49 +12,49 @@
   "categories": ["finance", "business", "productivity"],
   "icons": [
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/gmc-logo.png",
+      "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -66,21 +66,21 @@
       "short_name": "Portfolio",
       "description": "View your investment portfolio",
       "url": "/?tab=portfolio",
-      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png", "sizes": "96x96" }]
     },
     {
       "name": "Markets",
       "short_name": "Markets",
       "description": "Live market data and analysis",
       "url": "/?tab=markets",
-      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png", "sizes": "96x96" }]
     },
     {
       "name": "Trading",
       "short_name": "Trading",
       "description": "Helios trading terminal",
       "url": "/?tab=trading",
-      "icons": [{ "src": "/gmc-logo.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/ChatGPT Image Sep 12, 2025, 01_24_45 AM copy copy copy copy copy copy.png", "sizes": "96x96" }]
     }
   ],
   "screenshots": [

@@ -1,4 +1,4 @@
-<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <!-- Blue upward trending arrow -->
   <path d="M128 384 L256 256 L320 320 L448 128 L448 192 L384 128 Z" fill="#1E7EF7" stroke="none"/>
   
