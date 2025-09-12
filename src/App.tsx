@@ -19,6 +19,7 @@ export default function App() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [showUpdateNotification, setShowUpdateNotification] = useState(false)
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null)
+  const [debugPWA, setDebugPWA] = useState(false)
 
   const handleAppUpdate = async () => {
     if (serviceWorkerRegistration?.waiting) {
@@ -73,13 +74,24 @@ export default function App() {
     // Show install prompt after 30 seconds if installable
     const installTimer = setTimeout(() => {
       if (isInstallable && !isStandalone && !showInstallBanner) {
+        console.log('🔍 PWA Debug: Showing install prompt after 30s timer')
         setShowInstallPrompt(true)
       }
+      console.log('🔍 PWA Debug: Timer fired - isInstallable:', isInstallable, 'isStandalone:', isStandalone, 'showInstallBanner:', showInstallBanner)
     }, 30000)
+    
+    // Debug: Show install prompt immediately for testing
+    const debugTimer = setTimeout(() => {
+      if (!isStandalone) {
+        console.log('🔍 PWA Debug: Force showing install prompt for testing')
+        setShowInstallPrompt(true)
+      }
+    }, 5000) // Show after 5 seconds for testing
     
     return () => {
       window.removeEventListener('navigate-to-login', handleNavigateToLogin)
       clearTimeout(installTimer)
+      clearTimeout(debugTimer)
     }
   }, [isInstallable, isStandalone, showInstallBanner])
   
@@ -119,6 +131,24 @@ export default function App() {
         onDismiss={() => setShowInstallPrompt(false)}
         isVisible={showInstallPrompt}
       />
+      
+      {/* Debug PWA Status */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-4 right-4 bg-black text-white p-3 rounded-lg text-xs z-50">
+          <div>PWA Debug:</div>
+          <div>Installable: {isInstallable ? '✅' : '❌'}</div>
+          <div>Standalone: {isStandalone ? '✅' : '❌'}</div>
+          <div>Show Banner: {showInstallBanner ? '✅' : '❌'}</div>
+          <div>Show Prompt: {showInstallPrompt ? '✅' : '❌'}</div>
+          <button 
+            onClick={() => setShowInstallPrompt(true)}
+            className="mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs"
+          >
+            Force Show Prompt
+          </button>
+        </div>
+      )}
+      
       <PWAUpdateNotification
         isVisible={showUpdateNotification}
         onUpdate={handleAppUpdate}
