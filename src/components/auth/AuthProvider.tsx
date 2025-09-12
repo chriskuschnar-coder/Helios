@@ -9,9 +9,12 @@ interface User {
   documents_completed?: boolean
   documents_completed_at?: string
   kyc_status?: 'unverified' | 'pending' | 'verified' | 'rejected'
+  kyc_verified_at?: string
   is_kyc_verified?: boolean
   two_factor_enabled?: boolean
   two_factor_method?: 'email' | 'sms' | 'biometric'
+  two_factor_backup_codes?: any[]
+  security_alerts_enabled?: boolean
   subscription_signed_at?: string
 }
 
@@ -50,11 +53,12 @@ interface AuthContextType {
   refreshSubscription: () => Promise<void>
   processFunding: (amount: number, method: string, description?: string) => Promise<any>
   markDocumentsCompleted: () => Promise<void>
+  markKYCVerified: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; requires2FA?: boolean; userData?: any; session?: any }>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
-  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
+  complete2FA: (code: string, userData: any, session: any, method?: string) => Promise<{ success: boolean }>
   profile: User | null
 }
 
@@ -69,44 +73,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
-  const complete2FA = async (code: string, userData: any, session: any) => {
+  const complete2FA = async (code: string, userData: any, session: any, method: string = 'email') => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
+      console.log('🔍 2FA completion details:', {
+        user_id: userData.id,
+        method: method,
+        code_length: code.length,
+        has_session: !!session
+      })
       
-      // Verify the 2FA code first
+      // Verify the 2FA code using the appropriate endpoint
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+      // Use separate endpoints for email and SMS verification
+      const endpoint = method === 'email' ? 'verify-email-code' : 'verify-sms-code'
+      const payload = method === 'email' 
+        ? { user_id: userData.id, code: code, email: userData.email }
+        : { user_id: userData.id, code: code, phone: userData.phone || userData.user_metadata?.phone }
+
+      console.log('📡 Calling verification endpoint:', endpoint)
+      console.log('📦 Verification payload:', {
+        user_id: userData.id,
+        method: method,
+        code_preview: '***' + code.slice(-2),
+        email: method === 'email' ? userData.email : undefined,
+        phone: method === 'sms' ? (userData.phone || userData.user_metadata?.phone) : undefined
+      })
+      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
-        body: JSON.stringify({
-          user_id: userData.id,
-          code: code,
-          method: 'email',
-          email: userData.email
-        })
+        body: JSON.stringify(payload)
       })
 
+      console.log('📊 Verification response status:', verifyResponse.status)
 
       if (!verifyResponse.ok) {
         const errorData = await verifyResponse.json()
-        console.error('❌ Verify response error:', errorData)
+        console.error('❌ Verification API error:', {
+          status: verifyResponse.status,
+          error: errorData,
+          endpoint: endpoint,
+          user_id: userData.id
+        })
         throw new Error(errorData.error || 'Invalid verification code')
       }
 
       const verifyResult = await verifyResponse.json()
-      console.log('✅ 2FA verification result:', { 
+      console.log('✅ Verification API response:', { 
         valid: verifyResult.valid, 
         success: verifyResult.success,
-        message: verifyResult.message 
+        message: verifyResult.message,
+        method: verifyResult.method,
+        session_ready: verifyResult.session_ready
       })
       
       if (!verifyResult.valid || !verifyResult.success) {
+        console.error('❌ Verification failed:', {
+          valid: verifyResult.valid,
+          success: verifyResult.success,
+          error: verifyResult.error,
+          message: verifyResult.message
+        })
         throw new Error(verifyResult.error || verifyResult.message || 'Invalid verification code')
       }
 
@@ -114,6 +147,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Set the Supabase session to complete login
       console.log('🔐 Setting Supabase session...')
+      console.log('🔍 Session details:', {
+        access_token_preview: session.access_token?.substring(0, 20) + '...',
+        refresh_token_preview: session.refresh_token?.substring(0, 20) + '...',
+        expires_at: session.expires_at,
+        user_id: session.user?.id
+      })
+      
       const { error: sessionError } = await supabaseClient.auth.setSession(session)
       
       if (sessionError) {
@@ -124,16 +164,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Verify session is actually set
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
       if (!currentSession) {
+        console.error('❌ Session verification failed - no current session found')
         throw new Error('Session not properly established')
       }
       
-      console.log('✅ Session verified and established')
+      console.log('✅ Session verified and established:', {
+        user_id: currentSession.user?.id,
+        email: currentSession.user?.email,
+        expires_at: currentSession.expires_at
+      })
       
       // Clear 2FA pending state
       setPending2FA(false)
       setPendingAuthData(null)
       
       // Set user state immediately
+      console.log('👤 Setting user state...')
       setUser({
         id: userData.id,
         email: userData.email,
@@ -142,12 +188,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       // Load account data
+      console.log('📊 Loading user account data...')
       await loadUserAccount(userData.id)
       
       console.log('🎉 2FA completion successful!')
       return { success: true }
     } catch (error) {
       console.error('❌ 2FA completion failed:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        user_id: userData?.id,
+        method: method
+      })
       throw error
     }
   }
@@ -276,7 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load user profile data
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
-        .select('documents_completed, documents_completed_at, kyc_status, two_factor_enabled, two_factor_method, phone, full_name, subscription_signed_at')
+        .select('documents_completed, documents_completed_at, kyc_status, kyc_verified_at, two_factor_enabled, two_factor_method, two_factor_backup_codes, security_alerts_enabled, phone, full_name, subscription_signed_at')
         .eq('id', userId)
         .single()
 
@@ -289,9 +342,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           documents_completed: userData.documents_completed,
           documents_completed_at: userData.documents_completed_at,
           kyc_status: userData.kyc_status,
+          kyc_verified_at: userData.kyc_verified_at,
           is_kyc_verified: userData.kyc_status === 'verified',
           two_factor_enabled: userData.two_factor_enabled,
           two_factor_method: userData.two_factor_method,
+          two_factor_backup_codes: userData.two_factor_backup_codes,
+          security_alerts_enabled: userData.security_alerts_enabled,
           subscription_signed_at: userData.subscription_signed_at
         } : null)
         
@@ -597,16 +653,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🚪 Signing out user...')
       
-      const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        // Handle session_not_found gracefully - this is expected when session already expired
-        if (error.message?.includes('Session from session_id claim in JWT does not exist')) {
-          console.warn('⚠️ Session already expired on server, proceeding with local logout')
+      // Check if session exists before attempting signOut
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      
+      if (session) {
+        console.log('🔐 Valid session found, signing out...')
+        const { error } = await supabaseClient.auth.signOut()
+        if (error) {
+          console.warn('⚠️ Sign out error (continuing with local logout):', error.message)
         } else {
-          console.error('Sign out error:', error)
+          console.log('✅ Sign out successful')
         }
       } else {
-        console.log('✅ Sign out successful')
+        console.log('ℹ️ No active session found, proceeding with local logout')
       }
       
       // Always clear state and reload page for clean logout
@@ -618,12 +677,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Force page reload to ensure clean state
       window.location.reload()
     } catch (err) {
-      // Handle session_not_found gracefully
-      if (err instanceof Error && err.message?.includes('Session from session_id claim in JWT does not exist')) {
-        console.warn('⚠️ Session already expired, proceeding with local logout')
-      } else {
-        console.error('Sign out failed:', err)
-      }
+      console.warn('⚠️ Sign out error (continuing with local logout):', err)
       
       // Always force reload and clear state on any error
       setUser(null)
@@ -648,6 +702,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile,
       processFunding,
       markDocumentsCompleted,
+      markKYCVerified,
       markKYCVerified,
       signIn,
       complete2FA,
