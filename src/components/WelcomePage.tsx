@@ -226,8 +226,11 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                     <p className="text-sm text-gray-600">Begin investing</p>
                   </div>
                 </div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
       </div>
     </div>
   )
