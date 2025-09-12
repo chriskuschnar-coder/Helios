@@ -18,7 +18,7 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
   const getColors = () => {
     switch (variant) {
       case 'white':
-        return { blue: '#ffffff', black: '#ffffff' }
+        return { blue: '#ffffff', black: '#e5e7eb' }
       case 'dark':
         return { blue: '#2563eb', black: '#1f2937' }
       default:
@@ -35,35 +35,15 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Blue upward trending line */}
+      {/* Blue upward trending arrow */}
       <path 
-        d="M128 384 L256 256 L320 320 L448 128" 
-        stroke={colors.blue} 
-        strokeWidth="48" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        fill="none"
-      />
-      
-      {/* Blue arrow head */}
-      <path 
-        d="M384 128 L448 128 L448 192 Z" 
+        d="M128 384 L256 256 L320 320 L448 128 L448 192 L384 128 Z" 
         fill={colors.blue}
       />
       
-      {/* Black downward trending line */}
+      {/* Black downward trending arrow */}
       <path 
-        d="M64 128 L192 256 L256 192 L384 384" 
-        stroke={colors.black} 
-        strokeWidth="48" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        fill="none"
-      />
-      
-      {/* Black arrow head */}
-      <path 
-        d="M320 384 L384 384 L384 320 Z" 
+        d="M64 128 L192 256 L256 192 L384 384 L384 320 L320 384 Z" 
         fill={colors.black}
       />
     </svg>
