@@ -192,6 +192,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
               required
             />
           </div>
+          <p className="text-xs text-gray-500 mt-1">Primary method for account notifications</p>
         </div>
 
         <div>

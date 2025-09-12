@@ -58,7 +58,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
-  complete2FA: (code: string, userData: any, session: any) => Promise<{ success: boolean }>
+  complete2FA: (code: string, userData: any, session: any, method?: string) => Promise<{ success: boolean }>
   profile: User | null
 }
 
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
 
-  const complete2FA = async (code: string, userData: any, session: any) => {
+  const complete2FA = async (code: string, userData: any, session: any, method: string = 'email') => {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
       
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           user_id: userData.id,
           code: code,
-          method: 'email',
+          method: method,
           email: userData.email
         })
       })
