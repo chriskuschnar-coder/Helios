@@ -33,12 +33,12 @@ Deno.serve(async (req) => {
       throw new Error('Invalid verification method')
     }
     
-    if (!email || !email.includes('@')) {
+    if (method === 'email' && (!email || !email.includes('@'))) {
       throw new Error('Email address required for email verification')
     }
     
     if (method === 'sms' && (!phone || phone.length < 10)) {
-      throw new Error('Valid phone number required for SMS verification - no phone number on file')
+      throw new Error('Valid phone number required for SMS verification')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 500))
     console.log('⏱️ Database commit delay completed')
 
-    // Send via the requested method
+    // CRITICAL: Route to correct API based on method
     if (method === 'sms' && phone) {
       console.log('📱 Sending SMS verification code via Twilio to:', phone)
       
@@ -113,6 +113,15 @@ Deno.serve(async (req) => {
           console.error('❌ Missing Twilio credentials')
           throw new Error('SMS service not configured')
         }
+        
+        // Format phone number for Twilio (ensure it starts with +1)
+        let formattedPhone = phone.replace(/[^\d]/g, '') // Remove all non-digits
+        if (!formattedPhone.startsWith('1') && formattedPhone.length === 10) {
+          formattedPhone = '1' + formattedPhone // Add country code for US numbers
+        }
+        formattedPhone = '+' + formattedPhone // Add + prefix
+        
+        console.log('📱 Formatted phone number:', formattedPhone)
         
         // Create Twilio message using their REST API
         const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`
@@ -136,7 +145,7 @@ Never share this code with anyone. If you didn't request this, please contact su
             'Content-Type': 'application/x-www-form-urlencoded'
           },
           body: new URLSearchParams({
-            To: phone,
+            To: formattedPhone,
             From: twilioPhoneNumber,
             Body: messageBody
           })
@@ -171,9 +180,9 @@ Never share this code with anyone. If you didn't request this, please contact su
         return new Response(JSON.stringify({
           success: true,
           method: 'sms',
-          destination: phone,
+          destination: formattedPhone,
           expires_in: 600, // 10 minutes
-          message: `Verification code sent via SMS to ${phone}`,
+          message: `Verification code sent via SMS to ${formattedPhone}`,
           timestamp: new Date().toISOString()
         }), {
           headers: {
@@ -187,7 +196,7 @@ Never share this code with anyone. If you didn't request this, please contact su
         throw new Error(`SMS delivery failed: ${smsError.message}`)
       }
       
-    } else if (method === 'email') {
+    } else if (method === 'email' && email) {
       console.log('📧 Sending email verification code via SendGrid to:', email)
       
       try {
@@ -203,7 +212,6 @@ Never share this code with anyone. If you didn't request this, please contact su
         
         if (!sendgridApiKey) {
           console.error('❌ SENDGRID_API_KEY not found in environment variables')
-          console.log('🔧 Available environment variables:', Object.keys(Deno.env.toObject()))
           throw new Error('Email service not configured - SENDGRID_API_KEY missing')
         }
 
@@ -390,7 +398,7 @@ SEC Registered Investment Advisor
         throw new Error(`Email delivery failed: ${emailError.message}`)
       }
     } else {
-      throw new Error('Invalid verification method or missing phone number')
+      throw new Error(`Invalid verification method: ${method} or missing required data (email: ${!!email}, phone: ${!!phone})`)
     }
   } catch (error) {
     console.error('❌ Send 2FA code error:', error)
