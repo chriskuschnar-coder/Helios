@@ -23,7 +23,7 @@ export function PWAInstallBanner() {
       <div className="p-4">
         <div className="flex items-start space-x-3">
           <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Logo size="sm" variant="white" />
+            <Logo size="md" variant="white" />
           </div>
           
           <div className="flex-1 min-w-0">
@@ -47,8 +47,6 @@ export function PWAInstallBanner() {
                 onClick={dismissInstallBanner}
                 className="text-blue-200 hover:text-white transition-colors p-2"
               >
-            <Logo size="sm" variant="white" />
-          </div>
         </div>
         
         <div className="mt-3 flex items-center space-x-4 text-xs text-blue-200">

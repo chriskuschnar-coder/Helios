@@ -76,8 +76,8 @@ export function PWAInstallPrompt({ onInstall, onDismiss, isVisible }: PWAInstall
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Install on {instructions.device}</h3>
-            <Logo size="xl" />
-            <button
+              </div>
+            </div>
               onClick={onDismiss}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
@@ -115,7 +115,7 @@ export function PWAInstallPrompt({ onInstall, onDismiss, isVisible }: PWAInstall
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-6">
           <div className="w-20 h-20 rounded-2xl shadow-lg bg-white border border-gray-200 mx-auto mb-6 flex items-center justify-center p-3">
-            <Logo size="xl" />
+            <Logo size="xl" className="p-2" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Install GMC App

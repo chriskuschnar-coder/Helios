@@ -20,7 +20,7 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
       case 'white':
         return { blue: '#ffffff', black: '#ffffff' }
       case 'dark':
-        return { blue: '#2563eb', black: '#000000' }
+        return { blue: '#2563eb', black: '#1f2937' }
       default:
         return { blue: '#2563eb', black: '#000000' }
     }
@@ -37,9 +37,9 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
     >
       {/* Blue upward trending arrow */}
       <path 
-        d="M25 75 L45 55 L55 65 L75 25" 
+        d="M25 75 L50 50 L60 60 L85 25" 
         stroke={colors.blue} 
-        strokeWidth="8" 
+        strokeWidth="12" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
         fill="none"
@@ -47,18 +47,24 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
       
       {/* Blue triangle/arrow head */}
       <path 
-        d="M65 25 L75 25 L75 35 Z" 
+        d="M75 25 L85 25 L85 35 Z" 
         fill={colors.blue}
       />
       
       {/* Black downward trending line */}
       <path 
-        d="M25 25 L35 35 L45 55 L75 75" 
+        d="M15 25 L40 50 L50 40 L75 75" 
         stroke={colors.black} 
-        strokeWidth="8" 
+        strokeWidth="12" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
         fill="none"
+      />
+      
+      {/* Black triangle/arrow head */}
+      <path 
+        d="M65 75 L75 75 L75 65 Z" 
+        fill={colors.black}
       />
     </svg>
   )

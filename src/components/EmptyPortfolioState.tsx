@@ -44,7 +44,9 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
     <div className="text-center py-12">
       <div className="mb-8">
         <div className="w-24 h-24 rounded-xl shadow-lg bg-white border border-gray-200 mx-auto mb-6 flex items-center justify-center p-4">
-          <Logo size="xl" />
+          <Logo size="xl" className="p-2" />
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">
           {statusMessage.title}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto mb-8">
