@@ -77,23 +77,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔐 Completing 2FA authentication for user:', userData.email)
       
-      // Verify the 2FA code first
+      // Verify the 2FA code using the appropriate endpoint
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-2fa-code`, {
+      // Use separate endpoints for email and SMS verification
+      const endpoint = method === 'email' ? 'verify-email-code' : 'verify-sms-code'
+      const payload = method === 'email' 
+        ? { user_id: userData.id, code: code, email: userData.email }
+        : { user_id: userData.id, code: code, phone: userData.phone || userData.user_metadata?.phone }
+
+      const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
-        body: JSON.stringify({
-          user_id: userData.id,
-          code: code,
-          method: method,
-          email: userData.email
-        })
+        body: JSON.stringify(payload)
       })
 
 

@@ -23,14 +23,16 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
   const [resendCount, setResendCount] = useState(0)
   const [canResend, setCanResend] = useState(false)
-  const [resendCountdown, setResendCountdown] = useState(60)
+  const [resendCountdown, setResendCountdown] = useState(30)
   const [verificationMethod, setVerificationMethod] = useState<'email' | 'sms'>('email')
   const [emailFailed, setEmailFailed] = useState(false)
+  const [smsFailed, setSmsFailed] = useState(false)
   const [userPhone, setUserPhone] = useState('')
   const [hasPhoneOnFile, setHasPhoneOnFile] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
 
   // Auto-focus and format code input
   const handleCodeChange = (value: string) => {
@@ -55,13 +57,14 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       return () => clearTimeout(timer)
     } else if (resendCountdown === 0) {
       setCanResend(true)
-      setResendCountdown(60)
+      setResendCountdown(30)
     }
   }, [canResend, resendCountdown])
 
-  // Generate and send code on mount
+  // Check for phone number and send initial code
   useEffect(() => {
-    console.log('🔐 2FA Challenge mounted - sending verification code to:', userEmail)
+    console.log('🔐 2FA Challenge mounted - checking user data')
+    
     // Check if user has phone number on file for SMS option
     if (userData?.phone || userData?.user_metadata?.phone) {
       const phoneNumber = userData.phone || userData.user_metadata?.phone
@@ -72,11 +75,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       console.log('📱 No phone number on file - SMS verification not available')
       setHasPhoneOnFile(false)
     }
-    sendVerificationCode()
+    
+    // Send initial verification code via email
+    sendVerificationCode('email')
   }, [])
 
-  const sendVerificationCode = async () => {
-    if (resendCount >= 3) {
+  const sendVerificationCode = async (method: 'email' | 'sms' = verificationMethod) => {
+    if (resendCount >= 5) {
       setError('Maximum resend attempts reached. Please wait 5 minutes before trying again.')
       setCanResend(false)
       setTimeout(() => {
@@ -86,17 +91,26 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
       return
     }
 
+    setSendingCode(true)
     setError('')
     setSuccess('')
-    setEmailSent(false)
+    setCodeSent(false)
+    setEmailFailed(false)
+    setSmsFailed(false)
 
     try {
-      console.log(`📧 Sending verification code via ${verificationMethod} to:`, verificationMethod === 'email' ? userEmail : userPhone)
+      console.log(`📧 Sending verification code via ${method}`)
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-2fa-code`, {
+      // Use separate endpoints for email and SMS
+      const endpoint = method === 'email' ? 'send-email-code' : 'send-sms-code'
+      const payload = method === 'email' 
+        ? { user_id: userData?.id, email: userEmail }
+        : { user_id: userData?.id, phone: userPhone }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,44 +118,50 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           'Authorization': `Bearer ${session?.access_token}`,
           'origin': window.location.origin
         },
-        body: JSON.stringify({
-          user_id: userData?.id,
-          method: verificationMethod,
-          email: userEmail,
-          phone: verificationMethod === 'sms' ? userPhone : null
-        })
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error(`❌ ${method} API error:`, errorData)
         
-        // If email failed due to limits, suggest SMS
-        if (errorData.error?.includes('email') && verificationMethod === 'email' && userPhone) {
+        // Handle specific error types
+        if (method === 'email') {
           setEmailFailed(true)
-          setError('Email verification temporarily unavailable. Please use SMS verification instead.')
-          return
+          if (errorData.error?.includes('credits exceeded') || errorData.error?.includes('maximum credits')) {
+            throw new Error('Email service temporarily unavailable - maximum credits exceeded. Please try SMS verification instead.')
+          } else if (errorData.error?.includes('sender not verified')) {
+            throw new Error('Email service configuration issue. Please try SMS verification instead.')
+          } else {
+            throw new Error(errorData.error || 'Email delivery failed. Please try SMS verification instead.')
+          }
+        } else {
+          setSmsFailed(true)
+          if (errorData.error?.includes('not verified for trial')) {
+            throw new Error('SMS service configuration issue. Please try email verification instead.')
+          } else if (errorData.error?.includes('Invalid phone number')) {
+            throw new Error('Invalid phone number format. Please try email verification instead.')
+          } else {
+            throw new Error(errorData.error || 'SMS delivery failed. Please try email verification instead.')
+          }
         }
-        
-        throw new Error(errorData.error || `Failed to send ${verificationMethod} verification code`)
       }
 
       const result = await response.json()
-      console.log('✅ Verification code sent successfully')
+      console.log(`✅ ${method} verification code sent successfully`)
       
-      setEmailSent(true)
-      setSuccess(`Verification code sent to ${verificationMethod === 'email' ? userEmail : userPhone}`)
+      setCodeSent(true)
+      setVerificationMethod(method)
+      setSuccess(`Verification code sent to ${method === 'email' ? userEmail : userPhone}`)
       setResendCount(prev => prev + 1)
       setCanResend(false)
-      setResendCountdown(60)
+      setResendCountdown(30)
       
     } catch (error) {
-      console.error('❌ Failed to send verification code:', error)
-      setError(error instanceof Error ? error.message : 'Failed to send verification code')
-      
-      // If email failed and we have phone, suggest SMS
-      if (error instanceof Error && error.message.includes('email') && userPhone && verificationMethod === 'email') {
-        setEmailFailed(true)
-      }
+      console.error(`❌ Failed to send ${method} verification code:`, error)
+      setError(error instanceof Error ? error.message : `Failed to send ${method} verification code`)
+    } finally {
+      setSendingCode(false)
     }
   }
 
@@ -160,27 +180,57 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setError('')
 
     try {
-      console.log('🔐 Verifying 2FA code for user:', userData.id)
+      console.log(`🔐 Verifying ${verificationMethod} code for user:`, userData.id)
       
-      // Use AuthProvider's complete2FA method for proper session handling
-      const result = await complete2FA(verificationCode, userData, session, verificationMethod)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://upevugqarcvxnekzddeh.supabase.co'
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwZXZ1Z3FhcmN2eG5la3pkZGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODkxMzUsImV4cCI6MjA3MjA2NTEzNX0.t4U3lS3AHF-2OfrBts772eJbxSdhqZr6ePGgkl5kSq4'
       
-      if (result.success) {
-        console.log('✅ 2FA verification and session setup complete')
+      // Use separate endpoints for email and SMS verification
+      const endpoint = verificationMethod === 'email' ? 'verify-email-code' : 'verify-sms-code'
+      const payload = verificationMethod === 'email' 
+        ? { user_id: userData.id, code: verificationCode, email: userEmail }
+        : { user_id: userData.id, code: verificationCode, phone: userPhone }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Verification failed')
+      }
+
+      const result = await response.json()
+      
+      if (result.valid && result.success) {
+        console.log(`✅ ${verificationMethod} verification successful`)
         setSuccess('Verification successful! Redirecting to your account...')
         
-        // Delay to show success message, then redirect
-        setTimeout(() => {
-          setLoading(false)
-          console.log('🎉 Redirecting to dashboard')
-          onSuccess()
-        }, 1500)
+        // Use AuthProvider's complete2FA method for proper session handling
+        const authResult = await complete2FA(verificationCode, userData, session, verificationMethod)
+        
+        if (authResult.success) {
+          // Delay to show success message, then redirect
+          setTimeout(() => {
+            setLoading(false)
+            console.log('🎉 Redirecting to dashboard')
+            onSuccess()
+          }, 1500)
+        } else {
+          throw new Error('Session setup failed')
+        }
       } else {
-        throw new Error('Verification failed')
+        throw new Error(result.error || 'Invalid verification code. Please try again.')
       }
       
     } catch (error) {
-      console.error('❌ 2FA verification failed:', error)
+      console.error(`❌ ${verificationMethod} verification failed:`, error)
       setError(error instanceof Error ? error.message : 'Invalid verification code. Please try again.')
       setLoading(false)
     }
@@ -195,35 +245,46 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
     setVerificationCode('')
     setError('')
     setSuccess('')
-    await sendVerificationCode()
+    await sendVerificationCode(verificationMethod)
   }
 
   const switchToSMS = () => {
+    if (!hasPhoneOnFile || !userPhone) {
+      setError('No phone number on file. SMS verification not available.')
+      return
+    }
+    
     setVerificationMethod('sms')
     setEmailFailed(false)
+    setSmsFailed(false)
     setError('')
     setSuccess('')
     setVerificationCode('')
     setResendCount(0)
     setCanResend(true)
-    setEmailSent(false)
-    // Send SMS code immediately when switching to SMS method
+    setCodeSent(false)
+    // Send SMS code immediately when switching
     setTimeout(() => {
-      sendVerificationCode()
+      sendVerificationCode('sms')
     }, 100)
   }
 
   const switchToEmail = () => {
     setVerificationMethod('email')
     setEmailFailed(false)
+    setSmsFailed(false)
     setError('')
     setSuccess('')
     setVerificationCode('')
     setResendCount(0)
     setCanResend(true)
-    setEmailSent(false)
-    sendVerificationCode()
+    setCodeSent(false)
+    // Send email code immediately when switching
+    setTimeout(() => {
+      sendVerificationCode('email')
+    }, 100)
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-50 to-blue-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -247,7 +308,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={switchToEmail}
-                  disabled={emailFailed}
+                  disabled={emailFailed || sendingCode}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
                     verificationMethod === 'email' && !emailFailed
                       ? 'bg-white text-blue-600 shadow-sm'
@@ -258,21 +319,27 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 >
                   <Mail className="h-4 w-4" />
                   <span>Email</span>
-                  {emailFailed && <span className="text-xs text-red-500">(Unavailable)</span>}
+                  {emailFailed && <span className="text-xs text-red-500">(Failed)</span>}
                 </button>
                 <button
                   onClick={switchToSMS}
+                  disabled={smsFailed || sendingCode}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
                     verificationMethod === 'sms'
                       ? 'bg-white text-green-600 shadow-sm'
+                      : smsFailed
+                      ? 'text-gray-400 cursor-not-allowed'
                       : 'text-gray-600 hover:text-green-600'
                   }`}
                 >
                   <MessageSquare className="h-4 w-4" />
                   <span>SMS</span>
+                  {smsFailed && <span className="text-xs text-red-500">(Failed)</span>}
                 </button>
               </div>
-              {emailFailed && hasPhoneOnFile && (
+              
+              {/* Method-specific error messages */}
+              {emailFailed && verificationMethod === 'email' && hasPhoneOnFile && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -282,12 +349,13 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   </div>
                 </div>
               )}
-              {emailFailed && !hasPhoneOnFile && (
+              
+              {smsFailed && verificationMethod === 'sms' && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-4 w-4 text-red-600" />
                     <span className="text-red-800 text-sm font-medium">
-                      Email verification temporarily unavailable and no phone number on file. Please contact support.
+                      SMS verification failed. Please try email verification instead.
                     </span>
                   </div>
                 </div>
@@ -308,8 +376,8 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             </p>
           </div>
 
-          {/* Email Status */}
-          {emailSent && (
+          {/* Code Sent Status */}
+          {codeSent && (
             <div className={`border rounded-xl p-4 mb-6 animate-in fade-in duration-500 ${
               verificationMethod === 'email' 
                 ? 'bg-blue-50 border-blue-200' 
@@ -382,7 +450,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 maxLength={6}
                 autoComplete="one-time-code"
                 autoFocus
-                disabled={loading}
+                disabled={loading || sendingCode}
               />
               <p className="text-xs text-gray-500 mt-2 text-center">
                 Enter the 6-digit code from your {verificationMethod === 'email' ? 'email' : 'text message'}
@@ -392,7 +460,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
             {/* Verify Button */}
             <button
               onClick={verifyCode}
-              disabled={loading || verificationCode.length !== 6}
+              disabled={loading || verificationCode.length !== 6 || sendingCode}
               className="w-full bg-gradient-to-r from-navy-600 to-blue-600 hover:from-navy-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center space-x-3"
             >
               {loading ? (
@@ -414,15 +482,21 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 Didn't receive the code?
               </p>
               <div className="space-y-3">
-                {canResend ? (
+                {canResend && !sendingCode ? (
                   <button
                     onClick={resendCode}
                     className={`${
                       verificationMethod === 'email' ? 'text-blue-600 hover:text-blue-700' : 'text-green-600 hover:text-green-700'
-                    } text-sm font-semibold transition-colors hover:underline`}
+                    } text-sm font-semibold transition-colors hover:underline flex items-center space-x-1 mx-auto`}
                   >
-                    Resend {verificationMethod === 'email' ? 'Email' : 'SMS'} Code
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Resend {verificationMethod === 'email' ? 'Email' : 'SMS'} Code</span>
                   </button>
+                ) : sendingCode ? (
+                  <div className="text-sm text-gray-500 flex items-center space-x-2 justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Sending {verificationMethod === 'email' ? 'email' : 'SMS'}...</span>
+                  </div>
                 ) : (
                   <div className="text-sm text-gray-500">
                     Resend available in <span className={`font-mono font-bold ${
@@ -432,14 +506,19 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 )}
                 
                 {/* Alternative method option */}
-                {hasPhoneOnFile && userPhone && verificationMethod === 'email' && (
+                {hasPhoneOnFile && userPhone && verificationMethod === 'email' && !sendingCode && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs text-gray-500 mb-2">
                       {emailFailed ? 'Email verification unavailable.' : 'Having trouble with email?'}
                     </p>
                     <button
                       onClick={switchToSMS}
-                      className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors flex items-center space-x-1 mx-auto"
+                      disabled={smsFailed}
+                      className={`text-sm font-medium transition-colors flex items-center space-x-1 mx-auto ${
+                        smsFailed 
+                          ? 'text-gray-400 cursor-not-allowed' 
+                          : 'text-green-600 hover:text-green-700'
+                      }`}
                     >
                       <MessageSquare className="h-4 w-4" />
                       <span>Use SMS instead ({userPhone})</span>
@@ -447,44 +526,28 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   </div>
                 )}
                 
-                {hasPhoneOnFile && userPhone && verificationMethod === 'sms' && (
+                {hasPhoneOnFile && userPhone && verificationMethod === 'sms' && !sendingCode && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs text-gray-500 mb-2">Prefer email verification?</p>
                     <button
                       onClick={switchToEmail}
                       disabled={emailFailed}
-                      className={`text-sm font-medium transition-colors ${
+                      className={`text-sm font-medium transition-colors flex items-center space-x-1 mx-auto ${
                         emailFailed 
                           ? 'text-gray-400 cursor-not-allowed' 
                           : 'text-blue-600 hover:text-blue-700'
                       }`}
                     >
-                      {emailFailed ? 'Email unavailable' : 'Switch to email'}
+                      <Mail className="h-4 w-4" />
+                      <span>Switch to email</span>
                     </button>
-                  </div>
-                )}
-                
-                {/* No phone on file message */}
-                {!hasPhoneOnFile && emailFailed && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <div className="text-left">
-                          <p className="text-red-800 text-sm font-medium">No Phone Number on File</p>
-                          <p className="text-red-700 text-xs">
-                            SMS verification requires a phone number. Please contact support for assistance.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
               
               {resendCount > 0 && (
                 <p className="text-xs text-gray-400 mt-2">
-                  Attempts: {resendCount}/3
+                  Attempts: {resendCount}/5
                 </p>
               )}
             </div>
@@ -499,7 +562,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   <h4 className="text-sm font-semibold text-gray-900 mb-1">Security Notice</h4>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Never share your verification code with anyone</li>
-                    <li>• This code expires in 10 minutes</li>
+                    <li>• This code expires in {verificationMethod === 'email' ? '10' : '5'} minutes</li>
                     <li>• If you didn't request this, contact support immediately</li>
                     {verificationMethod === 'sms' && (
                       <li>• SMS charges may apply from your carrier</li>
