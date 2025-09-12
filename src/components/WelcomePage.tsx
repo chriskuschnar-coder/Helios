@@ -232,6 +232,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
           </div>
         </div>
       </div>
+    </div>
     </>
   )
 }
