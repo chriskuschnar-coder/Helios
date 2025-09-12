@@ -316,7 +316,7 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Secure Identity Verification
-        </h3>
+        </h2>
         <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
           Complete your identity verification to unlock funding capabilities. This secure process 
           helps us meet regulatory requirements and protect your account.
