@@ -5,9 +5,10 @@ import { useAuth } from './AuthProvider'
 interface TwoFactorSetupProps {
   onComplete: () => void
   onCancel: () => void
+  preferredMethod?: 'email' | 'sms'
 }
 
-export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel }) => {
+export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel, preferredMethod }) => {
   const { user } = useAuth()
   const [step, setStep] = useState<'method' | 'email' | 'biometric' | 'verify'>('method')
   const [selectedMethod, setSelectedMethod] = useState<'email' | 'sms' | 'biometric' | null>(null)
@@ -26,6 +27,11 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
     // Get user phone number if available
     if (user?.phone) {
       setUserPhone(user.phone)
+    }
+    // Auto-select preferred method if provided
+    if (preferredMethod && preferredMethod !== 'biometric') {
+      setSelectedMethod(preferredMethod)
+      setStep(preferredMethod === 'email' ? 'email' : 'email') // Reuse email step for SMS
     }
   }, [])
 

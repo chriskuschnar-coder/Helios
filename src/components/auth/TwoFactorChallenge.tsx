@@ -443,7 +443,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
               {resendCount > 0 && (
                 <p className="text-xs text-gray-400 mt-2">
                   Attempts: {resendCount}/3
-                </div>
+                </p>
               )}
             </div>
           </div>

@@ -86,6 +86,8 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
   const [showPasswordConfirmModal, setShowPasswordConfirmModal] = useState(false)
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [pendingAction, setPendingAction] = useState<'disable2fa' | 'logoutAll' | null>(null)
+  const [show2FAMethodModal, setShow2FAMethodModal] = useState(false)
+  const [selectedNewMethod, setSelectedNewMethod] = useState<'email' | 'sms'>('email')
 
   // Load real data on component mount
   useEffect(() => {
@@ -295,6 +297,12 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
   const handleLogoutAllSessions = () => {
     setPendingAction('logoutAll')
     setShowPasswordConfirmModal(true)
+  }
+
+  const handleMethodSelection = (method: 'email' | 'sms') => {
+    setSelectedNewMethod(method)
+    setShow2FAMethodModal(false)
+    setShowTwoFactorSetup(true)
   }
 
   const confirmAction = async () => {
@@ -631,6 +639,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
       <TwoFactorSetup 
         onComplete={handle2FASetupComplete}
         onCancel={() => setShowTwoFactorSetup(false)}
+        preferredMethod={selectedNewMethod}
       />
     )
   }
@@ -1376,6 +1385,60 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onBack }) =>
           </div>
         </div>
       </div>
+
+      {/* 2FA Method Selection Modal */}
+      {show2FAMethodModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Choose Verification Method</h3>
+              <p className="text-gray-600">Select how you'd like to receive verification codes</p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => handleMethodSelection('email')}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all text-left group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Email Verification</h4>
+                    <p className="text-sm text-gray-600">{user?.email}</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleMethodSelection('sms')}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all text-left group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <MessageSquare className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">SMS Verification</h4>
+                    <p className="text-sm text-gray-600">{user?.phone}</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShow2FAMethodModal(false)}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Password Confirmation Modal */}
       {showPasswordConfirmModal && <PasswordConfirmModal />}
