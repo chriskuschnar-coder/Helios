@@ -29,6 +29,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   const [verificationMethod, setVerificationMethod] = useState<'email' | 'sms'>('email')
   const [emailFailed, setEmailFailed] = useState(false)
   const [userPhone, setUserPhone] = useState('')
+  const [hasPhoneOnFile, setHasPhoneOnFile] = useState(false)
 
   // Auto-focus and format code input
   const handleCodeChange = (value: string) => {
@@ -60,9 +61,15 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
   // Generate and send code on mount
   useEffect(() => {
     console.log('🔐 2FA Challenge mounted - sending verification code to:', userEmail)
-    // Check if user has phone number for SMS option
+    // Check if user has phone number on file for SMS option
     if (userData?.phone || userData?.user_metadata?.phone) {
-      setUserPhone(userData.phone || userData.user_metadata?.phone)
+      const phoneNumber = userData.phone || userData.user_metadata?.phone
+      setUserPhone(phoneNumber)
+      setHasPhoneOnFile(true)
+      console.log('📱 Phone number on file found:', phoneNumber.substring(0, 3) + '***')
+    } else {
+      console.log('📱 No phone number on file - SMS verification not available')
+      setHasPhoneOnFile(false)
     }
     sendVerificationCode()
   }, [])
@@ -230,7 +237,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 transform transition-all duration-300 hover:shadow-2xl">
           {/* Method Selector */}
-          {userPhone && (
+          {hasPhoneOnFile && userPhone && (
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Choose Verification Method:</h4>
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
@@ -261,12 +268,22 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   <span>SMS</span>
                 </button>
               </div>
-              {emailFailed && userPhone && (
+              {emailFailed && hasPhoneOnFile && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                     <span className="text-yellow-800 text-sm font-medium">
-                      Email verification temporarily unavailable. Please use SMS instead.
+                      Email verification temporarily unavailable. Please use SMS to your number on file instead.
+                    </span>
+                  </div>
+                </div>
+              )}
+              {emailFailed && !hasPhoneOnFile && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <span className="text-red-800 text-sm font-medium">
+                      Email verification temporarily unavailable and no phone number on file. Please contact support.
                     </span>
                   </div>
                 </div>
@@ -411,7 +428,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                 )}
                 
                 {/* Alternative method option */}
-                {userPhone && verificationMethod === 'email' && (
+                {hasPhoneOnFile && userPhone && verificationMethod === 'email' && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs text-gray-500 mb-2">
                       {emailFailed ? 'Email verification unavailable.' : 'Having trouble with email?'}
@@ -426,7 +443,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                   </div>
                 )}
                 
-                {userPhone && verificationMethod === 'sms' && (
+                {hasPhoneOnFile && userPhone && verificationMethod === 'sms' && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs text-gray-500 mb-2">Prefer email verification?</p>
                     <button
@@ -440,6 +457,23 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
                     >
                       {emailFailed ? 'Email unavailable' : 'Switch to email'}
                     </button>
+                  </div>
+                )}
+                
+                {/* No phone on file message */}
+                {!hasPhoneOnFile && emailFailed && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <div className="text-left">
+                          <p className="text-red-800 text-sm font-medium">No Phone Number on File</p>
+                          <p className="text-red-700 text-xs">
+                            SMS verification requires a phone number. Please contact support for assistance.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
