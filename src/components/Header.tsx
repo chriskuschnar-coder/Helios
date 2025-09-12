@@ -25,7 +25,6 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 alt="GMC" 
                 className="w-full h-full object-contain"
               />
-              </svg>
             </div>
             <span className="font-serif text-xl font-bold text-navy-900">
               GMC
