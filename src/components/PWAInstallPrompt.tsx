@@ -76,9 +76,7 @@ export function PWAInstallPrompt({ onInstall, onDismiss, isVisible }: PWAInstall
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Install on {instructions.device}</h3>
-                <p className="text-sm text-gray-600">Follow these steps</p>
-              </div>
-            </div>
+            <Logo size="xl" />
             <button
               onClick={onDismiss}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"

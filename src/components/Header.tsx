@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Menu, X, TrendingUp } from 'lucide-react'
 import { Logo } from './Logo'
+import { Logo } from './Logo'
 
 interface HeaderProps {
   onNavigateToLogin?: () => void
@@ -77,9 +78,7 @@ export function Header({ onNavigateToLogin }: HeaderProps) {
                 }}
                 className="block w-full text-left px-3 py-2 text-navy-600 hover:text-navy-700 font-medium"
               >
-                Professional Portal
-              </button>
-            </div>
+            <Logo size="md" />
           </div>
         )}
       </nav>

@@ -1,7 +1,7 @@
 // Service Worker for Global Markets Consulting PWA
-const CACHE_NAME = 'gmc-v1.0.0'
-const STATIC_CACHE = 'gmc-static-v1.0.0'
-const DYNAMIC_CACHE = 'gmc-dynamic-v1.0.0'
+const CACHE_NAME = 'gmc-v1.0.1'
+const STATIC_CACHE = 'gmc-static-v1.0.1'
+const DYNAMIC_CACHE = 'gmc-dynamic-v1.0.1'
 
 // Assets to cache immediately
 const STATIC_ASSETS = [

@@ -231,9 +231,9 @@ Never share this code with anyone. If you didn't request this, please contact su
               <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
                 <div style="width: 80px; height: 80px; background-color: rgba(255, 255, 255, 0.9); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; padding: 16px;">
                   <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 80 L50 40 L65 55 L80 20" stroke="#2563eb" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M20 20 L35 35 L50 60 L80 80" stroke="#000000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M65 20 L80 20 L80 35 Z" fill="#2563eb"/>
+                    <path d="M25 75 L45 55 L55 65 L75 25" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M65 25 L75 25 L75 35 Z" fill="#2563eb"/>
+                    <path d="M25 25 L35 35 L45 55 L75 75" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                   </svg>
                 </div>
                 <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Global Markets Consulting</h1>

@@ -95,7 +95,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
           {/* Main Success Icon */}
           <div className={`transition-all duration-1000 transform ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl animate-scale-in">
-              <CheckCircle className="h-12 w-12 md:h-16 md:w-16 text-white" />
+              <Logo size="xl" variant="white" />
             </div>
 
             <div className="mb-8 animate-slide-up">

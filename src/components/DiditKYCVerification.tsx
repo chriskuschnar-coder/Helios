@@ -313,8 +313,6 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
       <div className="text-center mb-8">
         <div className="w-20 h-20 bg-white rounded-xl shadow-lg border border-gray-200 flex items-center justify-center mx-auto mb-6 p-4">
           <Logo size="lg" />
-        </div>
-        <h3 className="text-3xl font-bold text-gray-900 mb-4">
           Secure Identity Verification
         </h3>
         <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">

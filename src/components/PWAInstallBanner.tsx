@@ -47,9 +47,7 @@ export function PWAInstallBanner() {
                 onClick={dismissInstallBanner}
                 className="text-blue-200 hover:text-white transition-colors p-2"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            <Logo size="sm" variant="white" />
           </div>
         </div>
         

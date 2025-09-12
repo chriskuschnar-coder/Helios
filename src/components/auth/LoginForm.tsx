@@ -104,8 +104,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignu
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-xl shadow-lg bg-white border border-gray-200 flex items-center justify-center p-3">
             <Logo size="lg" />
-          </div>
-        </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
           Global Markets Consulting
         </h1>
