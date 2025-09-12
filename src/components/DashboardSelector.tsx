@@ -70,8 +70,8 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
                 }`}
               >
                 <Activity className="h-4 w-4" />
-                <span className="hidden lg:inline">Helios Trading</span>
-                <span className="lg:hidden">Helios</span>
+                <span className="hidden lg:inline">Live Trading</span>
+                <span className="lg:hidden">Trading</span>
               </button>
             </div>
             
