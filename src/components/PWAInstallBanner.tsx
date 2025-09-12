@@ -27,7 +27,6 @@ export function PWAInstallBanner() {
               alt="GMC" 
               className="w-6 h-6 object-contain"
             />
-            </svg>
           </div>
           
           <div className="flex-1 min-w-0">

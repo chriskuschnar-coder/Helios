@@ -49,7 +49,6 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
                 alt="GMC" 
                 className="w-full h-full object-contain"
               />
-              </svg>
             </div>
             <span className="font-serif text-sm sm:text-lg md:text-xl font-bold text-navy-900 mobile-text-sm">
               Global Market Consulting

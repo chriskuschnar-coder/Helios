@@ -127,7 +127,6 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                       alt="Global Markets Consulting" 
                       className="w-full h-full object-contain p-2"
                     />
-                    </svg>
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">SEC Registered</h3>
                   <p className="text-sm text-gray-600">Fully compliant investment advisor</p>

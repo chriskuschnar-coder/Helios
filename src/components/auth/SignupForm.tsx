@@ -122,7 +122,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
               alt="Global Markets Consulting" 
               className="w-full h-full object-contain p-2"
             />
-            </svg>
           </div>
         </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
