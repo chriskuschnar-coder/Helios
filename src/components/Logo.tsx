@@ -25,9 +25,9 @@ export function Logo({
       case 'white':
         return { blue: '#ffffff', black: '#e5e7eb' }
       case 'dark':
-        return { blue: '#2563eb', black: '#1f2937' }
+        return { blue: '#1E7EF7', black: '#1f2937' }
       default:
-        return { blue: '#2563eb', black: '#000000' }
+        return { blue: '#1E7EF7', black: '#000000' }
     }
   }
 
@@ -42,42 +42,16 @@ export function Logo({
       >
         {/* Blue upward trending arrow */}
         <path 
-          d="M128 384 L256 256 L320 320 L448 128" 
-          fill="none" 
-          stroke={colors.blue} 
-          strokeWidth="32" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        
-        {/* Blue arrow head */}
-        <path 
-          d="M384 128 L448 128 L448 192" 
-          fill="none" 
-          stroke={colors.blue} 
-          strokeWidth="32" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
+          d="M128 384 L256 256 L320 320 L448 128 L448 192 L384 128 Z" 
+          fill={colors.blue} 
+          stroke="none"
         />
         
         {/* Black downward trending arrow */}
         <path 
-          d="M64 128 L192 256 L256 192 L384 384" 
-          fill="none" 
-          stroke={colors.black} 
-          strokeWidth="32" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        
-        {/* Black arrow head */}
-        <path 
-          d="M320 384 L384 384 L384 320" 
-          fill="none" 
-          stroke={colors.black} 
-          strokeWidth="32" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
+          d="M64 128 L192 256 L256 192 L384 384 L384 320 L320 384 Z" 
+          fill={colors.black} 
+          stroke="none"
         />
       </svg>
       

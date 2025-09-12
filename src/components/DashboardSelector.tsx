@@ -43,9 +43,7 @@ export function DashboardSelector({ onShowKYCProgress }: DashboardSelectorProps)
     <div className="bg-white border-b border-gray-200 sticky top-0 z-50 safe-area-top shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
-          <div className="flex items-center space-x-1 sm:space-x-2 mobile-space-x-1">
-            <Logo size="medium" showText={true} />
-          </div>
+          <Logo size="medium" showText={true} />
           
           {/* Mobile Menu Button */}
           <button
