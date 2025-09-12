@@ -23,6 +23,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
   const displayName = userName || userEmail.split('@')[0]
 
   return (
+    <>
     <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -233,5 +234,6 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
       </div>
       </div>
     </div>
+    </>
   )
 }
