@@ -31,39 +31,39 @@ export function Logo({ className = '', size = 'md', variant = 'default' }: LogoP
   return (
     <svg 
       className={`${sizeClasses[size]} ${className}`}
-      viewBox="0 0 100 100" 
+      viewBox="0 0 512 512" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Blue upward trending arrow */}
+      {/* Blue upward trending line */}
       <path 
-        d="M25 75 L50 50 L60 60 L85 25" 
+        d="M128 384 L256 256 L320 320 L448 128" 
         stroke={colors.blue} 
-        strokeWidth="12" 
+        strokeWidth="48" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
         fill="none"
       />
       
-      {/* Blue triangle/arrow head */}
+      {/* Blue arrow head */}
       <path 
-        d="M75 25 L85 25 L85 35 Z" 
+        d="M384 128 L448 128 L448 192 Z" 
         fill={colors.blue}
       />
       
       {/* Black downward trending line */}
       <path 
-        d="M15 25 L40 50 L50 40 L75 75" 
+        d="M64 128 L192 256 L256 192 L384 384" 
         stroke={colors.black} 
-        strokeWidth="12" 
+        strokeWidth="48" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
         fill="none"
       />
       
-      {/* Black triangle/arrow head */}
+      {/* Black arrow head */}
       <path 
-        d="M65 75 L75 75 L75 65 Z" 
+        d="M320 384 L384 384 L384 320 Z" 
         fill={colors.black}
       />
     </svg>

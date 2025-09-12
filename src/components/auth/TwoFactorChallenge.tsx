@@ -298,7 +298,7 @@ export const TwoFactorChallenge: React.FC<TwoFactorChallengeProps> = ({
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-white rounded-xl shadow-lg border border-gray-200 flex items-center justify-center mx-auto mb-6 p-4">
-              <Logo size="lg" className="p-1" />
+              <Logo size="lg" />
             </div>
             <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
               Two-Factor Authentication

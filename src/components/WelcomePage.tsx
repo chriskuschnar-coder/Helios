@@ -95,7 +95,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
           {/* Main Success Icon */}
           <div className={`transition-all duration-1000 transform ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
             <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl animate-scale-in">
-              <Logo size="xl" variant="white" className="p-2" />
+              <Logo size="xl" variant="white" />
             </div>
 
             <div className="mb-8 animate-slide-up">
@@ -123,8 +123,7 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-xl shadow-lg bg-white border border-gray-200 flex items-center justify-center p-3 mx-auto mb-4">
-                    <Logo size="lg" className="p-1" />
-                  </div>
+                    <Logo size="lg" />
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">SEC Registered</h3>
                   <p className="text-sm text-gray-600">Fully compliant investment advisor</p>
@@ -227,9 +226,8 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
                     <p className="text-sm text-gray-600">Begin investing</p>
                   </div>
                 </div>
-              </div>
+            <Logo size="lg" />
             </div>
-          </div>
         </div>
       </div>
     </div>
