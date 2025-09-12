@@ -94,11 +94,11 @@ Deno.serve(async (req) => {
           
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
-            <div style="width: 80px; height: 80px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
+            <div style="width: 80px; height: 80px; background-color: rgba(255, 255, 255, 0.9); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; padding: 16px;">
+              <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M25 75 L45 55 L55 65 L75 25" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M65 25 L75 25 L75 35 Z" fill="#2563eb"/>
+                <path d="M25 25 L35 35 L45 55 L75 75" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
               </svg>
             </div>
             <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 700; font-family: Georgia, serif;">Global Markets Consulting</h1>

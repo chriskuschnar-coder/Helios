@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { TrendingUp, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle, ArrowLeft, X, Phone } from 'lucide-react'
+import { Logo } from '../Logo'
 
 interface SignupFormProps {
   onSuccess?: () => void
@@ -116,15 +117,13 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-navy-600 rounded-full flex items-center justify-center">
-            <TrendingUp className="h-8 w-8 text-white" />
-          </div>
+          <Logo size="xl" />
         </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">
-          Create Account
+          Global Markets Consulting
         </h1>
         <p className="text-gray-600">
-          Join our investment platform
+          Create your investment account
         </p>
       </div>
 
@@ -140,58 +139,55 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
           <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
             Full Name
           </label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
+          <input
+            type="text"
+            id="fullName"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors bg-white"
+            placeholder="Enter your full name"
+            required
+            autoComplete="name"
+          />
         </div>
 
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number (Optional)
+            Phone Number (Optional - for SMS backup codes)
           </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
-              className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
-              placeholder="(555) 123-4567"
-              maxLength={14}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Optional - for SMS backup verification codes</p>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors bg-white"
+            placeholder="(555) 123-4567"
+            maxLength={14}
+            autoComplete="tel"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            <strong>Recommended:</strong> Add phone number for SMS backup when email verification is unavailable
+          </p>
         </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
             Email Address
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full pl-9 sm:pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors bg-white"
+            placeholder="Enter your email"
+            required
+            autoComplete="email"
+          />
+          <p className="text-xs text-gray-500 mt-1">Primary method for account notifications</p>
         </div>
 
         <div>
@@ -199,21 +195,21 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <input
               type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full pl-9 sm:pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
+              className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors bg-white"
               placeholder="Create a password"
               required
+              autoComplete="new-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
             >
               {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
             </button>
@@ -249,14 +245,15 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full pl-9 sm:pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors"
+              className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-colors bg-white"
               placeholder="Confirm your password"
               required
+              autoComplete="new-password"
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
             >
               {showConfirmPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
             </button>
@@ -303,7 +300,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
         <button
           type="submit"
           disabled={loading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
-          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+          className="w-full bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-semibold transition-colors duration-200 text-lg min-h-[52px] shadow-sm hover:shadow-md disabled:shadow-none"
         >
           {loading ? 'Creating Account...' : 'Create Account'}
         </button>
