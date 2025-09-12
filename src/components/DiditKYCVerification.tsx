@@ -311,12 +311,12 @@ export function DiditKYCVerification({ onVerificationComplete, onClose }: DiditK
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="flex justify-center mb-6">
-          <Logo size="xl" />
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <CheckCircle className="h-12 w-12 text-green-600" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <h3 className="text-3xl font-bold text-gray-900 mb-4">
           Secure Identity Verification
-        </h2>
+        </h3>
         <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
           Complete your identity verification to unlock funding capabilities. This secure process 
           helps us meet regulatory requirements and protect your account.

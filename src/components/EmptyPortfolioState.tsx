@@ -1,6 +1,5 @@
 import React from 'react'
 import { TrendingUp, ArrowRight, Shield, Award, CheckCircle } from 'lucide-react'
-import { Logo } from './Logo'
 import { useAuth } from './auth/AuthProvider'
 
 interface EmptyPortfolioStateProps {
@@ -43,10 +42,10 @@ export function EmptyPortfolioState({ onFundAccount, onAmountSelect }: EmptyPort
   return (
     <div className="text-center py-12">
       <div className="mb-8">
-        <div className="flex justify-center mb-6">
-          <Logo size="xl" />
+        <div className="w-24 h-24 bg-navy-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <TrendingUp className="w-12 h-12 text-navy-600" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <h3 className="font-serif text-2xl font-bold text-navy-900 mb-4">
           {statusMessage.title}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto mb-8">

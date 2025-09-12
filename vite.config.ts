@@ -6,7 +6,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    manifest: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -19,8 +18,5 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
-  },
-  define: {
-    __PWA_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0')
   }
 })

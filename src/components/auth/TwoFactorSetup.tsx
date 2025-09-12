@@ -1,17 +1,16 @@
 import React, { useState } from 'react'
-import { Shield, Mail, Smartphone, CheckCircle, AlertCircle, ArrowLeft, Copy, RefreshCw, Fingerprint, Phone, MessageSquare } from 'lucide-react'
+import { Shield, Mail, Smartphone, CheckCircle, AlertCircle, ArrowLeft, Copy, RefreshCw, Fingerprint } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 
 interface TwoFactorSetupProps {
   onComplete: () => void
   onCancel: () => void
-  preferredMethod?: 'email' | 'sms'
 }
 
-export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel, preferredMethod }) => {
+export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel }) => {
   const { user } = useAuth()
   const [step, setStep] = useState<'method' | 'email' | 'biometric' | 'verify'>('method')
-  const [selectedMethod, setSelectedMethod] = useState<'email' | 'sms' | 'biometric' | null>(null)
+  const [selectedMethod, setSelectedMethod] = useState<'email' | 'biometric' | null>(null)
   const [verificationCode, setVerificationCode] = useState('')
   const [sentCode, setSentCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,20 +18,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
   const [success, setSuccess] = useState('')
   const [biometricSupported, setBiometricSupported] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
-  const [userPhone, setUserPhone] = useState('')
 
   // Check biometric support on component mount
   React.useEffect(() => {
     checkBiometricSupport()
-    // Get user phone number if available
-    if (user?.phone) {
-      setUserPhone(user.phone)
-    }
-    // Auto-select preferred method if provided
-    if (preferredMethod && preferredMethod !== 'biometric') {
-      setSelectedMethod(preferredMethod)
-      setStep(preferredMethod === 'email' ? 'email' : 'email') // Reuse email step for SMS
-    }
   }, [])
 
   const checkBiometricSupport = async () => {
@@ -50,13 +39,8 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
   }
 
   const sendEmailCode = async () => {
-    if (!user?.email && selectedMethod === 'email') {
+    if (!user?.email) {
       setError('No email address found')
-      return
-    }
-    
-    if (!userPhone && selectedMethod === 'sms') {
-      setError('No phone number found')
       return
     }
 
@@ -81,9 +65,8 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
         body: JSON.stringify({
-          method: selectedMethod,
-          email: user.email,
-          phone: selectedMethod === 'sms' ? userPhone : null
+          method: 'email',
+          email: user.email
         })
       })
 
@@ -93,7 +76,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
       }
 
       const result = await response.json()
-      setSuccess(`Verification code sent to ${selectedMethod === 'email' ? user.email : userPhone}`)
+      setSuccess(`Verification code sent to ${user.email}`)
       setStep('verify')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to send verification code')
@@ -268,28 +251,6 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
             </div>
           </button>
 
-          {/* SMS 2FA Option */}
-          {userPhone && (
-            <button
-              onClick={() => {
-                setSelectedMethod('sms')
-                setStep('email') // Reuse the same step for SMS
-              }}
-              className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all text-left group"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                  <MessageSquare className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">SMS Verification</h3>
-                  <p className="text-sm text-gray-600">Receive codes via text message</p>
-                  <p className="text-xs text-green-600 mt-1">✓ Works without internet • {userPhone}</p>
-                </div>
-              </div>
-            </button>
-          )}
-
           {/* Biometric 2FA Option */}
           <button
             onClick={() => {
@@ -333,7 +294,6 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
             <li>• Required for withdrawals and sensitive operations</li>
             <li>• Industry standard for financial platforms</li>
             <li>• Can be disabled later if needed</li>
-            {userPhone && <li>• SMS backup available if email is unavailable</li>}
           </ul>
         </div>
       </div>
@@ -354,43 +314,19 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
         </div>
 
         <div className="text-center mb-8">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-            selectedMethod === 'email' ? 'bg-blue-100' : 'bg-green-100'
-          }`}>
-            {selectedMethod === 'email' ? (
-              <Mail className="h-8 w-8 text-blue-600" />
-            ) : (
-              <Phone className="h-8 w-8 text-green-600" />
-            )}
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="h-8 w-8 text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {selectedMethod === 'email' ? 'Email' : 'SMS'} Verification
-          </h2>
-          <p className="text-gray-600">
-            We'll send verification codes to your {selectedMethod === 'email' ? 'email' : 'phone'}
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Verification</h2>
+          <p className="text-gray-600">We'll send verification codes to your email</p>
         </div>
 
-        <div className={`border rounded-lg p-4 mb-6 ${
-          selectedMethod === 'email' 
-            ? 'bg-blue-50 border-blue-200' 
-            : 'bg-green-50 border-green-200'
-        }`}>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center space-x-2 mb-2">
-            {selectedMethod === 'email' ? (
-              <Mail className="h-5 w-5 text-blue-600" />
-            ) : (
-              <Phone className="h-5 w-5 text-green-600" />
-            )}
-            <span className={`font-medium ${
-              selectedMethod === 'email' ? 'text-blue-900' : 'text-green-900'
-            }`}>
-              {selectedMethod === 'email' ? 'Email Address' : 'Phone Number'}
-            </span>
+            <Mail className="h-5 w-5 text-blue-600" />
+            <span className="font-medium text-blue-900">Email Address</span>
           </div>
-          <p className={selectedMethod === 'email' ? 'text-blue-800' : 'text-green-800'}>
-            {selectedMethod === 'email' ? user?.email : userPhone}
-          </p>
+          <p className="text-blue-800">{user?.email}</p>
         </div>
 
         {error && (
@@ -413,38 +349,30 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
 
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            When you sign in, we'll send a 6-digit verification code to your {selectedMethod === 'email' ? 'email address' : 'phone number'}. 
+            When you sign in, we'll send a 6-digit verification code to your email address. 
             You'll need to enter this code to complete the login process.
           </p>
 
           <button
             onClick={sendEmailCode}
             disabled={loading}
-            className={`w-full disabled:opacity-50 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
-              selectedMethod === 'email' 
-                ? 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400' 
-                : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-            }`}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
           >
             {loading ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Sending Test {selectedMethod === 'email' ? 'Email' : 'SMS'}...
+                Sending Test Code...
               </>
             ) : (
               <>
-                {selectedMethod === 'email' ? (
-                  <Mail className="h-4 w-4 mr-2" />
-                ) : (
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                )}
-                Send Test {selectedMethod === 'email' ? 'Email' : 'SMS'} Code
+                <Mail className="h-4 w-4 mr-2" />
+                Send Test Verification Code
               </>
             )}
           </button>
 
           <p className="text-xs text-gray-500 text-center">
-            We'll send a test code to verify your {selectedMethod === 'email' ? 'email' : 'phone'} works correctly
+            We'll send a test code to verify your email works correctly
           </p>
         </div>
       </div>
@@ -600,13 +528,9 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCa
             <button
               onClick={resendCode}
               disabled={loading}
-              className={`text-sm font-medium ${
-                selectedMethod === 'email' 
-                  ? 'text-blue-600 hover:text-blue-700' 
-                  : 'text-green-600 hover:text-green-700'
-              }`}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
-              Resend {selectedMethod === 'email' ? 'Email' : 'SMS'} Code
+              Resend Code
             </button>
           </div>
 
