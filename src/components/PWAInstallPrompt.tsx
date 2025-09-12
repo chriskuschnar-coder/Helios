@@ -115,12 +115,8 @@ export function PWAInstallPrompt({ onInstall, onDismiss, isVisible }: PWAInstall
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-6">
-          <div className="w-20 h-20 rounded-2xl shadow-lg overflow-hidden bg-white border border-gray-200 mx-auto mb-6">
-            <img 
-              src="/gmc-logo.png" 
-              alt="Global Markets Consulting" 
-              className="w-full h-full object-contain p-3"
-            />
+          <div className="w-20 h-20 rounded-2xl shadow-lg bg-navy-600 border border-gray-200 mx-auto mb-6 flex items-center justify-center">
+            <span className="text-white font-bold text-2xl">G</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Install GMC App

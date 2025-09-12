@@ -116,12 +116,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLog
 
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200">
-            <img 
-              src="/gmc-logo.png" 
-              alt="Global Markets Consulting" 
-              className="w-full h-full object-contain p-2"
-            />
+          <div className="w-16 h-16 rounded-xl shadow-lg bg-navy-600 border border-gray-200 flex items-center justify-center">
+            <span className="text-white font-bold text-xl">G</span>
           </div>
         </div>
         <h1 className="font-serif text-2xl font-bold text-navy-900 mb-2">

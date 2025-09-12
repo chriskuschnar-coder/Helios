@@ -121,12 +121,8 @@ export function WelcomePage({ userEmail, userName, onContinueToLogin }: WelcomeP
             <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-xl mb-8 animate-slide-up">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="w-16 h-16 rounded-xl shadow-lg overflow-hidden bg-white border border-gray-200">
-                    <img 
-                      src="/gmc-logo.png" 
-                      alt="Global Markets Consulting" 
-                      className="w-full h-full object-contain p-2"
-                    />
+                  <div className="w-16 h-16 rounded-xl shadow-lg bg-navy-600 border border-gray-200 flex items-center justify-center">
+                    <span className="text-white font-bold text-xl">G</span>
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">SEC Registered</h3>
                   <p className="text-sm text-gray-600">Fully compliant investment advisor</p>

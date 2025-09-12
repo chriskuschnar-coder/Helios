@@ -21,12 +21,8 @@ export function PWAInstallBanner() {
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-gradient-to-r from-navy-600 to-blue-600 text-white rounded-xl shadow-2xl border border-navy-500 z-50 animate-in slide-in-from-bottom duration-500">
       <div className="p-4">
         <div className="flex items-start space-x-3">
-          <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-            <img 
-              src="/gmc-logo.png" 
-              alt="GMC" 
-              className="w-6 h-6 object-contain"
-            />
+          <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-lg">G</span>
           </div>
           
           <div className="flex-1 min-w-0">
